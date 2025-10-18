@@ -90,11 +90,8 @@ const Navbar = () => {
                             />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-poppins font-bold text-xl lg:text-2xl bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
+                            <span className={`font-poppins font-bold text-xl lg:text-2xl bg-clip-text ${isScrolled ? "text-black" : "text-white"}`}>
                                 RentFlow360
-                            </span>
-                            <span className="text-xs text-gray-500 font-inter -mt-1 hidden sm:block">
-                                Professional
                             </span>
                         </div>
                     </a>
@@ -176,7 +173,7 @@ const Navbar = () => {
                     </button>
                 </div>
 
-                {/* Premium Mobile Menu */}
+                {/* Mobile Menu */}
                 {(menuAnimation === 'opening' || menuAnimation === 'open' || menuAnimation === 'closing') && (
                     <>
                         {/* Backdrop Overlay */}
