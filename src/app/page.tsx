@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Navbar from "./components/Navbar";
+import HeroSection from "./components/HeroSection";
 
 export default function Home() {
   const plans = [
@@ -41,58 +43,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
-      {/* Navbar */}
-      <header className="w-full flex justify-between items-center px-8 py-6 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <Image
-            src="/logo.jpg"
-            alt="Kips Reality Logo"
-            width={50}
-            height={50}
-            className="rounded"
-          />
-          <h1 className="text-2xl font-bold text-[#1E293B] tracking-wide">
-            KIPS REALITY
-          </h1>
-        </div>
-        <nav className="hidden md:flex space-x-8 font-medium">
-          <a href="#" className="hover:text-[#FACC15] transition">Home</a>
-          <a href="#about" className="hover:text-[#FACC15] transition">About</a>
-          <a href="#services" className="hover:text-[#FACC15] transition">Services</a>
-          <a href="#plans" className="hover:text-[#FACC15] transition">Plans</a>
-          <a href="#contact" className="hover:text-[#FACC15] transition">Contact</a>
-        </nav>
-      </header>
-
+      <Navbar />
       {/* Hero Section */}
-      <section className="flex flex-col md:flex-row items-center justify-between flex-1 px-8 py-20 md:px-20">
-        <div className="max-w-xl space-y-6">
-          <h2 className="text-5xl md:text-6xl font-extrabold leading-tight">
-            <span className="text-[#FACC15]">Modern</span> Property <br />
-            <span className="text-[#1E293B]">Management</span>
-          </h2>
-          <p className="text-gray-600 text-lg">
-            Sleek, professional, and easy-to-use solutions for finding, renting,
-            and managing your dream properties.
-          </p>
-          <button className="bg-[#1E293B] text-white font-semibold rounded-md px-8 py-4 shadow-lg hover:bg-[#0f172a] transition transform hover:scale-105">
-            Get Started
-          </button>
-        </div>
-
-        {/* Hero Logo */}
-        <div className="mt-12 md:mt-0 flex justify-center md:justify-end flex-1">
-          <div className="w-72 h-72  bg-[#FACC15]/10 flex items-center justify-center shadow-xl p-6">
-            <Image
-              src="/logo.jpg"
-              alt="Kips Reality Logo"
-              width={200}
-              height={200}
-              className="object-contain"
-            />
-          </div>
-        </div>
-      </section>
+      <HeroSection />
       {/* About Us Section */}
       <section id="about" className="px-8 py-20 md:px-20 bg-white">
         <div className="max-w-5xl mx-auto space-y-12">
