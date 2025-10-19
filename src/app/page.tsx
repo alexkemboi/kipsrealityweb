@@ -1,14 +1,14 @@
 import Image from "next/image";
-import Navbar from "./components/Navbar";
-import HeroSection from "./components/HeroSection";
-import About from "./components/AboutUs";
-import Footer from "./components/Footer";
-import WhatMakes from "./components/WhatMakes";
-import OurTeam from "./components/OurTeam";
-import BrandPromise from "./components/BrandPromise";
-import Services from "./components/ServicesSection";
-import Plans from "./components/Plans";
-import Contact from "./components/ContactUs";
+import Navbar from "./components/LandingPage/Navbar";
+import HeroSection from "./components/LandingPage/HeroSection";
+import About from "./components/LandingPage/AboutUs";
+import Footer from "./components/LandingPage/Footer";
+import WhatMakes from "./components/LandingPage/WhatMakes";
+import OurTeam from "./components/LandingPage/OurTeam";
+import BrandPromise from "./components/LandingPage/BrandPromise";
+import Services from "./components/LandingPage/ServicesSection";
+import Plans from "./components/LandingPage/Plans";
+import Contact from "./components/LandingPage/ContactUs";
 
 export default function Home() {
   

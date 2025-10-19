@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { Button } from "../components/ui/button";
+import { Button } from "../ui/button";
 import {
     Drawer, DrawerClose,
     DrawerContent,
@@ -9,7 +9,7 @@ import {
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
-} from "./ui/drawer";
+} from "../ui/drawer";
 import { Menu, X, Calendar } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
