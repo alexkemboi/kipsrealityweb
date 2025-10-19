@@ -13,6 +13,7 @@ import {
 import { Menu, X, Calendar } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
+import Link from "next/link";
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -28,8 +29,8 @@ const Navbar = () => {
     }, []);
 
     const navLinks = [
-        { name: "Home", href: "#home" },
-        { name: "Features", href: "#features" },
+        { name: "Home", href: "/" },
+        { name: "services", href: "/services" },
         { name: "Pricing", href: "#pricing" },
         { name: "Integrations", href: "#integrations" },
         { name: "About", href: "#about" },
@@ -84,25 +85,38 @@ const Navbar = () => {
                     </div>
 
                     {/* Desktop CTA Buttons */}
-                    <div className="hidden lg:flex items-center space-x-4">
+                   <div className="hidden lg:flex items-center space-x-4">
+                    {/* Login Button */}
+                    <Link href="/login">
                         <Button
-                            variant="ghost"
-                            className={`font-inter transition-all duration-200 ${isScrolled
-                                ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                                : "text-white hover:text-white hover:bg-white/20"
-                                }`}
+                        variant="ghost"
+                        className={`font-inter transition-all duration-200 ${
+                            isScrolled
+                            ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
+                            : "text-white hover:text-white hover:bg-white/20"
+                        }`}
                         >
-                            Login
+                        Login
                         </Button>
+                    </Link>
+
+                    {/* Signup Button */}
+                    <Link href="/signup">
                         <Button
-                            className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${isScrolled ? "px-6 py-2" : "px-8 py-3"
-                                }`}
+                        className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${
+                            isScrolled ? "px-6 py-2" : "px-8 py-3"
+                        }`}
                         >
-                            Start Free Trial
-                            <Calendar className={`ml-2 group-hover:scale-110 transition-transform ${isScrolled ? "w-4 h-4" : "w-5 h-5"
-                                }`} />
+                        Start Free Trial
+                        <Calendar
+                            className={`ml-2 group-hover:scale-110 transition-transform ${
+                            isScrolled ? "w-4 h-4" : "w-5 h-5"
+                            }`}
+                        />
                         </Button>
+                    </Link>
                     </div>
+
                     {/* Mobile Menu Drawer Trigger */}
                     <Drawer direction="right">
                         <DrawerTrigger asChild>
