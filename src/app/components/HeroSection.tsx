@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Button } from "@/components/ui/button";
+import { Button } from './ui/button';
 import { Play, ArrowRight, Shield, Zap, TrendingUp, Building2, Users, CheckCircle } from "lucide-react";
 import heroCityscape from "@/assets/hero-cityscape.jpg";
 
@@ -16,20 +16,20 @@ const HeroSection = () => {
                     quality={90}
                 />
 
-                {/* Overlay Gradients */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95" />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-900/60" />
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 via-transparent to-slate-900/40" />
+                {/* Standardized Overlays */}
+                <div className="absolute inset-0 bg-neutral-900/95" />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
+                <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
 
                 {/* Grid Overlay */}
                 <div className="absolute inset-0 opacity-[0.03]">
                     <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
                 </div>
 
-                {/* Floating Gradient Orbs */}
-                <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-blue-500/15 to-cyan-500/15 rounded-full blur-3xl animate-float-slow" />
-                <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-float-medium delay-2000" />
-                <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-r from-cyan-500/8 to-emerald-500/8 rounded-full blur-3xl animate-float-slow delay-1000" />
+                {/* Standardized Floating Orbs */}
+                <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl animate-float-slow" />
+                <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float-medium delay-2000" />
+                <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-blue-400/8 rounded-full blur-3xl animate-float-slow delay-1000" />
             </div>
 
             {/* Content */}
@@ -42,7 +42,7 @@ const HeroSection = () => {
                             <div className="space-y-6">
                                 <h1 className="font-poppins font-bold text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white leading-tight tracking-tight">
                                     Manage Your Properties{" "}
-                                    <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
+                                    <span className="text-gradient-primary animate-gradient">
                                         Like a Pro
                                     </span>
                                 </h1>
@@ -84,7 +84,7 @@ const HeroSection = () => {
                             <div className="flex flex-col sm:flex-row items-center gap-4">
                                 <Button
                                     size="lg"
-                                    className="font-inter text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group relative overflow-hidden"
+                                    className="font-inter text-lg px-8 py-6 bg-gradient-primary hover:from-blue-700 hover:to-cyan-700 text-white shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group relative overflow-hidden"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                                     <span className="relative">Start Free Trial</span>
@@ -104,7 +104,7 @@ const HeroSection = () => {
                         {/* Right Column - Dashboard */}
                         <div className="relative">
                             {/* Main Dashboard Card */}
-                            <div className="relative bg-gradient-to-br from-white/15 to-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
+                            <div className="relative bg-white/15 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
                                 {/* Dashboard Header */}
                                 <div className="flex items-center justify-between mb-6">
                                     <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ const HeroSection = () => {
                             </div>
 
                             {/* Floating Notification Cards */}
-                            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-4 shadow-2xl animate-float-slow hover:scale-105 transition-transform duration-300 cursor-pointer group backdrop-blur-sm">
+                            <div className="absolute -top-4 -right-4 bg-gradient-primary rounded-2xl p-4 shadow-2xl animate-float-slow hover:scale-105 transition-transform duration-300 cursor-pointer group backdrop-blur-sm">
                                 <div className="text-white font-bold text-sm">AI Insights</div>
                                 <div className="text-white/90 text-xs">+15% ROI opportunity</div>
                                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full animate-ping" />
