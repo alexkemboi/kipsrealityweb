@@ -1,6 +1,12 @@
 import Image from 'next/image';
-import { Shield, Zap, TrendingUp, Building2, Users, CheckCircle } from "lucide-react";
+import { Zap, Building2, CheckCircle } from "lucide-react";
 import heroCityscape from "@/assets/hero-cityscape.jpg";
+
+const featurePoints = [
+    { icon: Zap, text: "90% Faster Rent Collection", subtext: "Automated payments" },
+    { icon: Building2, text: "Unlimited Properties", subtext: "Scale effortlessly" },
+    { icon: CheckCircle, text: "24/7 Support", subtext: "Always available" }
+]
 
 const HeroSection = () => {
     return (
@@ -52,14 +58,7 @@ const HeroSection = () => {
 
                             {/* Feature Points */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-2xl">
-                                {[
-                                    { icon: Zap, text: "90% Faster Rent Collection", subtext: "Automated payments" },
-                                    { icon: Shield, text: "Bank-Level Security", subtext: "SOC 2 Certified" },
-                                    { icon: TrendingUp, text: "27% Higher ROI", subtext: "Average increase" },
-                                    { icon: Building2, text: "Unlimited Properties", subtext: "Scale effortlessly" },
-                                    { icon: Users, text: "Happy Tenants", subtext: "4.8/5 satisfaction" },
-                                    { icon: CheckCircle, text: "24/7 Support", subtext: "Always available" }
-                                ].map((item, index) => (
+                                {featurePoints.map((item, index) => (
                                     <div
                                         key={index}
                                         className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/10 transition-all duration-300 cursor-pointer group backdrop-blur-sm"

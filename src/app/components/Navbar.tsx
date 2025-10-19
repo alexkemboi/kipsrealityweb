@@ -15,6 +15,7 @@ import { Menu, X, Calendar } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
 import { ThemeToggle } from "./theme-toggle";
+import { navLinks } from "../data/navlinks";
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -29,15 +30,7 @@ const Navbar = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    const navLinks = [
-        { name: "Home", href: "#home" },
-        { name: "Features", href: "#features" },
-        { name: "Pricing", href: "#pricing" },
-        { name: "Integrations", href: "#integrations" },
-        { name: "About", href: "#about" },
-        { name: "Blog", href: "#blog" },
-        { name: "Contact", href: "#contact" },
-    ];
+
 
     return (
         <nav
