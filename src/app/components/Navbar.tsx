@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { Menu, X, ChevronDown, Phone, Calendar, ArrowRight, Home, Zap, DollarSign, BookOpen } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
@@ -59,7 +59,7 @@ const Navbar = () => {
                 { label: "Landlords", description: "Simplify rental management" }
             ]
         },
-        { name: "Features", href: "#features", icon: Home },
+        { name: "services", href: "/services", icon: Home },
         { name: "Pricing", href: "#pricing", icon: DollarSign },
         { name: "Resources", href: "#resources", icon: BookOpen },
     ];
