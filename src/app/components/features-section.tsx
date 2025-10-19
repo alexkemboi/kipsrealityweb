@@ -153,7 +153,7 @@ const FeaturesSection = () => {
     return (
         <section id="features" className="relative">
             {/* Bridge Cards - Overlapping Section */}
-            <div className="relative bg-white dark:bg-neutral-900 -mt-20 lg:-mt-20 z-10">
+            <div className="relative dark:bg-neutral-900 -mt-20 lg:-mt-20 z-20">
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {bridgeCards.map((card) => (
@@ -168,7 +168,7 @@ const FeaturesSection = () => {
                                         }}
                                     />
                                     {/* Dark Overlay */}
-                                    <div className="absolute inset-0 bg-neutral-900/60 group-hover:bg-neutral-900/50 transition-all duration-500" />
+                                    <div className="absolute inset-0 bg-neutral-900/70 group-hover:bg-neutral-900/50 transition-all duration-500" />
                                 </div>
                                 <div className="relative h-full flex items-center p-6 text-white">
                                     <div className="space-y-3">
