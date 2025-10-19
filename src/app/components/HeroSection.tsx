@@ -1,6 +1,5 @@
 import Image from 'next/image';
-import { Button } from './ui/button';
-import { Play, ArrowRight, Shield, Zap, TrendingUp, Building2, Users, CheckCircle } from "lucide-react";
+import { Shield, Zap, TrendingUp, Building2, Users, CheckCircle } from "lucide-react";
 import heroCityscape from "@/assets/hero-cityscape.jpg";
 
 const HeroSection = () => {
@@ -16,7 +15,7 @@ const HeroSection = () => {
                     quality={90}
                 />
 
-                {/* Standardized Overlays */}
+                {/* Overlays */}
                 <div className="absolute inset-0 bg-neutral-900/95" />
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
@@ -35,7 +34,7 @@ const HeroSection = () => {
             {/* Content */}
             <div className="relative z-20 container mx-auto px-4 py-20 lg:py-32">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+                    <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center pb-12">
                         {/* Left Column - Text Content */}
                         <div className="space-y-8 lg:space-y-10">
                             {/* Main Headline */}
@@ -79,29 +78,9 @@ const HeroSection = () => {
                                     </div>
                                 ))}
                             </div>
-
-                            {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center gap-4">
-                                <Button
-                                    size="lg"
-                                    className="font-inter text-lg px-8 py-6 bg-gradient-primary hover:from-blue-700 hover:to-cyan-700 text-white shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group relative overflow-hidden"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                                    <span className="relative">Start Free Trial</span>
-                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform relative" />
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    className="font-inter text-lg px-8 py-6 bg-white/10 backdrop-blur-lg border-2 border-white/30 text-white hover:bg-white/20 hover:border-white/40 hover:scale-105 transition-all duration-300 group"
-                                >
-                                    <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    Watch Demo
-                                </Button>
-                            </div>
                         </div>
 
-                        {/* Right Column - Dashboard */}
+                        {/* Right Column - Dashboad */}
                         <div className="relative">
                             {/* Main Dashboard Card */}
                             <div className="relative bg-white/15 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-[1.02]">
