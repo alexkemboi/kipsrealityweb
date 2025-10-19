@@ -252,7 +252,7 @@ const FeaturesSection = () => {
                                         {/* Feature Header */}
                                         <div className="flex items-start gap-4 mb-8">
                                             <div className="flex-1">
-                                                <h3 className="font-poppins font-bold text-2xl lg:text-3xl text-neutral-900 dark:text-white mb-3 mb-3">
+                                                <h3 className="font-poppins font-bold text-2xl lg:text-3xl text-neutral-900 dark:text-white mb-3">
                                                     {features[activeFeature].name}
                                                 </h3>
                                                 <p className="font-inter text-neutral-600 dark:text-neutral-300 text-lg leading-relaxed">
