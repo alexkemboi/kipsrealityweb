@@ -88,17 +88,27 @@ const Navbar = () => {
                                 : "text-white dark:text-white hover:text-white dark:hover:text-white hover:bg-white/20 dark:hover:bg-white/20"
                                 }`}
                         >
-                            Login
+                        Login
                         </Button>
+                    </Link>
+
+                    {/* Signup Button */}
+                    <Link href="/signup">
                         <Button
-                            className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${isScrolled ? "px-6 py-2" : "px-8 py-3"
-                                }`}
+                        className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${
+                            isScrolled ? "px-6 py-2" : "px-8 py-3"
+                        }`}
                         >
-                            Start Free Trial
-                            <Calendar className={`ml-2 group-hover:scale-110 transition-transform ${isScrolled ? "w-4 h-4" : "w-5 h-5"
-                                }`} />
+                        Start Free Trial
+                        <Calendar
+                            className={`ml-2 group-hover:scale-110 transition-transform ${
+                            isScrolled ? "w-4 h-4" : "w-5 h-5"
+                            }`}
+                        />
                         </Button>
+                    </Link>
                     </div>
+
                     {/* Mobile Menu Drawer Trigger */}
                     <div className="flex items-center gap-2 lg:hidden">
                         <ThemeToggle />
