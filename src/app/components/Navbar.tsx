@@ -30,8 +30,6 @@ const Navbar = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-
-
     return (
         <nav
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${isScrolled
@@ -81,32 +79,33 @@ const Navbar = () => {
                     {/* Desktop CTA Buttons */}
                     <div className="hidden lg:flex items-center space-x-3">
                         <ThemeToggle />
-                        <Button
-                            variant="ghost"
-                            className={`font-inter transition-all duration-200 ${isScrolled
-                                ? "text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                : "text-white dark:text-white hover:text-white dark:hover:text-white hover:bg-white/20 dark:hover:bg-white/20"
-                                }`}
-                        >
-                        Login
-                        </Button>
-                    </Link>
 
-                    {/* Signup Button */}
-                    <Link href="/signup">
-                        <Button
-                        className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${
-                            isScrolled ? "px-6 py-2" : "px-8 py-3"
-                        }`}
-                        >
-                        Start Free Trial
-                        <Calendar
-                            className={`ml-2 group-hover:scale-110 transition-transform ${
-                            isScrolled ? "w-4 h-4" : "w-5 h-5"
-                            }`}
-                        />
-                        </Button>
-                    </Link>
+                        {/* Login Button */}
+                        <Link href="/login">
+                            <Button
+                                variant="ghost"
+                                className={`font-inter transition-all duration-200 ${isScrolled
+                                    ? "text-neutral-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                    : "text-white dark:text-white hover:text-white dark:hover:text-white hover:bg-white/20 dark:hover:bg-white/20"
+                                    }`}
+                            >
+                                Login
+                            </Button>
+                        </Link>
+
+                        {/* Signup Button */}
+                        <Link href="/signup">
+                            <Button
+                                className={`font-inter bg-gradient-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 group ${isScrolled ? "px-6 py-2" : "px-8 py-3"
+                                    }`}
+                            >
+                                Start Free Trial
+                                <Calendar
+                                    className={`ml-2 group-hover:scale-110 transition-transform ${isScrolled ? "w-4 h-4" : "w-5 h-5"
+                                        }`}
+                                />
+                            </Button>
+                        </Link>
                     </div>
 
                     {/* Mobile Menu Drawer Trigger */}
@@ -115,7 +114,7 @@ const Navbar = () => {
                         <Drawer direction="right">
                             <DrawerTrigger asChild>
                                 <button
-                                    className={`lg:hidden p-2 rounded-lg transition-all duration-200 active:scale-95 ${isScrolled
+                                    className={`p-2 rounded-lg transition-all duration-200 active:scale-95 ${isScrolled
                                         ? "hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
                                         : "hover:bg-white/20 dark:hover:bg-white/20 text-white dark:text-white"
                                         }`}
@@ -126,7 +125,7 @@ const Navbar = () => {
                             <DrawerContent className="h-screen top-0 right-0 left-auto mt-0 w-80 rounded-none bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800">
                                 <div className="h-full flex flex-col">
                                     {/* Header */}
-                                    <DrawerHeader className="flex flex-row items-center justify-between border-b border-neutral-200 px-6 py-4">
+                                    <DrawerHeader className="flex flex-row items-center justify-between border-b border-neutral-200 dark:border-neutral-800 px-6 py-4">
                                         <div className="flex items-center space-x-3">
                                             <Image
                                                 src={Logo}
@@ -136,7 +135,7 @@ const Navbar = () => {
                                                 className="w-8 h-8 object-contain"
                                             />
                                             <div>
-                                                <DrawerTitle className="font-poppins font-bold text-lg text-neutral-900">
+                                                <DrawerTitle className="font-poppins font-bold text-lg text-neutral-900 dark:text-white">
                                                     RentFlow360
                                                 </DrawerTitle>
                                             </div>
