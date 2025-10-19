@@ -13,9 +13,9 @@ export const theme = {
 export const servicesData = {
   hero: {
     badge: 'Comprehensive Service Suite',
-    title: 'Everything You Need to',
-    highlight: 'Manage Properties',
-    subtitle: 'Brilliantly',
+    title: 'Built for Landlords, ',
+    highlight: ' Managers,',
+    subtitle: 'and Tenants Alike',
     description: 'From tenant screening to financial reporting, our platform delivers every service you need to run a modern, efficient property management business.'
   },
   stats: [

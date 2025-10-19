@@ -5,8 +5,8 @@ import { QuickStats } from '../components/services/QuickStats'
 import { CategorySection } from '../components/services/CategorySection'
 import { CTASection } from '../components/services/CTASection'
 import { servicesData } from '../data/servicesData'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import Navbar from '../components/LandingPage/Navbar'
+import Footer from '../components/LandingPage/Footer'
 
 export default function ServicesPage() {
   return (
