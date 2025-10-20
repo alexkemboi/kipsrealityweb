@@ -3,8 +3,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "../Navbar/Navbar";
 import Footer from "../Footer/Footer";
 import TopCards from "../TopCards";
-// import ColumnChart from "../ApexCharts/ColumnChart";
-// import PieChart from "../ApexCharts/PieChart";
+
 import { AreaChart } from "lucide-react";
 import dynamic from "next/dynamic";
 
