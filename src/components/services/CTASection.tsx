@@ -1,9 +1,9 @@
 import { ChevronRight } from 'lucide-react'
-import { theme } from '../../data/servicesData'
+import { theme } from '../../app/data/servicesData'
 
 export const CTASection = () => {
   return (
-    <div 
+    <div
       className="relative overflow-hidden"
       style={{ background: theme.gradients.hero }}
     >
@@ -13,15 +13,15 @@ export const CTASection = () => {
           <br />
           <span style={{ color: theme.accent }}>All These Services?</span>
         </h2>
-        
+
         <p className="text-base sm:text-lg md:text-xl mb-8 sm:mb-10 px-4" style={{ color: `${theme.white}70` }}>
           Start your free trial and unlock the complete service suite today
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 px-4">
-          <button 
+          <button
             className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-base sm:text-lg flex items-center justify-center gap-2 transition-all duration-300 hover:scale-105"
-            style={{ 
+            style={{
               background: theme.accent,
               color: theme.primary,
               boxShadow: `0 10px 40px ${theme.accent}40`
