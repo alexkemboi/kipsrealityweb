@@ -10,7 +10,7 @@ const testimonials = [
   {
     name: "John Doe",
     role: "Tenant",
-    image: "/lady.jpg", 
+    image: "/man.jpeg", 
     text: "RentFlow360 made managing my property effortless. Rent payments are automated and communication is seamless.",
   },
   {
@@ -22,7 +22,7 @@ const testimonials = [
   {
     name: "Jane Brown",
     role: "Agent",
-    image: "/lady.jpg",
+    image: "/smile.jpeg",
     text: "I love how sleek and easy-to-use the system is. RentFlow360 has saved me hours every week.",
   },
 ];
