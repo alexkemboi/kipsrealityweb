@@ -1,3 +1,4 @@
+import { Link } from "lucide-react";
 import React from "react";
 
 const LoginPage: React.FC = () => {
@@ -43,12 +44,16 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all duration-300"
-            >
+            <a href="/dashboard" className="text-indigo-600 hover:underline">
+              {/* <button
+
+                className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all duration-300"
+              >
+                Sign In
+              </button> */}
               Sign In
-            </button>
+            </a>
+
 
             <p className="text-center text-sm text-gray-500 mt-4">
               Don’t have an account?{" "}
