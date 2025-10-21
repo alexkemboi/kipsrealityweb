@@ -22,7 +22,7 @@ interface TestimonialsCardProps {
         </div>
 
         {/* Quote Icon */}
-        <Quote className="w-10 h-10 text-blue-400/60 mb-4" />
+        <Quote className="w-10 h-10 text-[#2c7cd6]  mb-4" />
 
         {/* Testimonial Text */}
         <p className="max-w-2xl text-lg md:text-xl font-inter text-white/80 leading-relaxed mb-6">
