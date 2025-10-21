@@ -3,6 +3,23 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* globals.css */
+html {
+  background: #0f172a; /* Or your dark background color */
+}
+
+body {
+  background: white; /* Your main content background */
+  min-height: 100vh;
+}
+
+/* Prevent white flash on overscroll */
+@media (prefers-color-scheme: light) {
+  html {
+    background: #0f172a;
+  }
+}
+
 @layer base {
   :root {
     /* existing shadcn variables */
