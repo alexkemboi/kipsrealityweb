@@ -2,14 +2,14 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "../Navbar/Navbar";
 import Footer from "../Footer/Footer";
-import TopCards from "../TopCards";
+import TopCards from "./TopCards";
 
 import { AreaChart } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Disable SSR for ApexCharts
-const ColumnChart = dynamic(() => import("../ApexCharts/ColumnChart"), { ssr: false });
-const PieChart = dynamic(() => import("../ApexCharts/PieChart"), { ssr: false });
+const ColumnChart = dynamic(() => import("../../ApexCharts/ColumnChart"), { ssr: false });
+const PieChart = dynamic(() => import("../../ApexCharts/PieChart"), { ssr: false });
 
 const Dashboard = () => {
 
@@ -33,7 +33,7 @@ const Dashboard = () => {
 			{/* Background Layers */}
 			<div className="absolute inset-0 z-0">
 				{/* Base Background */}
-				<div className="absolute inset-0 bg-neutral-900" />
+				<div className="absolute inset-0 bg-[#0f172a]" />
 
 				{/* Gradient Overlays */}
 				<div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />

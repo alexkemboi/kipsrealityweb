@@ -1,7 +1,7 @@
 "use client"
 import React from "react";
-import Dashboard from "@/components/Dashboard/dashboard";
-import Layout from "@/components/layout";
+import Dashboard from "@/components/Dashboard/tenantsdash/dashboard";
+import Layout from "@/components/Dashboard/tenantsdash/layout";
 
 const DashboardPage = () => {
   return (

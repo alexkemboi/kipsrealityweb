@@ -1,11 +1,11 @@
-import { BlogPost } from "@/app/data/blogData";
-import { Clock, Calendar, ArrowUpRight } from "lucide-react";
+import { BlogPost } from "../../app/data/blogData";
+import { Clock, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from 'next/link';
 
 
 interface BlogCardProps {
-    post: BlogPost;
+  post: BlogPost;
 }
 
 export const BlogCard = ({ post }: BlogCardProps) => {
