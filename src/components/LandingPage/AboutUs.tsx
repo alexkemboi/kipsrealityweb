@@ -1,7 +1,11 @@
+import React from "react";
+import { FlipWords } from "../ui/flip-words";
 import Image from "next/image";
 import aboutBg from "@/assets/hero-cityscape.jpg";
 
 export default function About() {
+    const words = ["Empowering Landlords", "Supporting Tenants", "Streamlining Rentals"];
+
   return (
     <section
       id="about"
@@ -33,17 +37,22 @@ export default function About() {
       <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32 text-center">
         <div className="max-w-5xl mx-auto space-y-12">
           {/* Intro */}
-          <div className="space-y-4">
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
             <h3 className="text-4xl md:text-5xl font-bold text-white">
               About{" "}
               <span className="text-gradient-primary animate-gradient">
                 Us
               </span>
             </h3>
-            <p className="text-lg text-white/80 max-w-3xl mx-auto">
-              Empowering Landlords. Supporting Tenants. Simplifying Property
-              Management.
-            </p>
+
+             <div className=" flex  px-4">
+                  <div className="text-4xl mx-auto font-normal text-white ">
+                    <FlipWords words={words} /> <br />
+                  </div>
+                </div>
+           
             <p className="text-white/70 max-w-4xl mx-auto leading-relaxed">
               At{" "}
               <span className="font-semibold text-white">
@@ -54,10 +63,12 @@ export default function About() {
               challenges landlords and tenants face—and replace them with a
               single, seamless solution.
             </p>
+           
           </div>
 
           {/* Our Story */}
-          <div className="space-y-4 text-left bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
+          <div className="flex flex-col gap-4">
+          <div className="space-y-4  bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
             <h4 className="text-2xl font-bold text-white">Our Story</h4>
             <p className="text-white/70">
               Kips Reality was born out of a simple idea: property management
@@ -73,7 +84,7 @@ export default function About() {
           </div>
 
           {/* Mission */}
-          <div className="bg-gradient-to-r from-blue-500/20 to-cyan-400/20 p-8 rounded-2xl shadow-2xl backdrop-blur-lg border border-white/10 max-w-3xl mx-auto">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
             <h4 className="text-2xl font-bold text-white">Our Mission</h4>
             <p className="text-white/80 leading-relaxed">
               To simplify property management by providing a seamless,
@@ -81,6 +92,8 @@ export default function About() {
               while ensuring transparency, efficiency, and trust.
             </p>
           </div>
+          </div>
+        </div>
         </div>
       </div>
     </section>
