@@ -6,12 +6,12 @@ import { Button } from "../ui/button";
 import Link from "next/link";
 
 export default function About() {
-    const words = ["Empowering Landlords", "Supporting Tenants", "Streamlining Rentals"];
+    const words = ["platform", "experience", "solution"];
 
   return (
     <section
       id="about"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex  justify-center overflow-hidden"
     >
       {/* Background Image & Overlays */}
       <div className="absolute inset-0 z-0">
@@ -37,25 +37,21 @@ export default function About() {
 
       {/* Content */}
       <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32 text-center">
-        <div className="max-w-5xl mx-auto space-y-12">
+        <div className="max-w-6xl mx-auto space-y-12">
           {/* Intro */}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
-            <h3 className="text-4xl md:text-5xl font-bold text-white">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl ">
+            <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">
               About{" "}
               <span className="text-gradient-primary animate-gradient">
                 Us
               </span>
             </h3>
 
-             <div className=" flex  px-4">
-                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
-                    <FlipWords words={words} /> <br />
-                  </div>
-                </div>
+            
            
-            <p className="text-white/70 max-w-4xl mx-auto leading-relaxed">
+            <p className="text-white/70 max-w-4xl mx-auto leading-relaxed ">
               At{" "}
               <span className="font-semibold text-white">
                 Kips Reality LLC
@@ -67,40 +63,52 @@ export default function About() {
             </p>
            
 
-           <Button asChild variant="link" className= "bg-gradient-primary text-white hover:opacity-90 whitespace-nowrap">
-              < Link href="/about">Go to About</Link>
-                </Button>
+           
                           
           </div>
 
           {/* Our Story */}
-          <div className="flex flex-col gap-4">
           <div className="space-y-4  bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
-            <h4 className="text-2xl font-bold text-white">Our Story</h4>
-            <p className="text-white/70">
+            <h4 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">Our {""}
+             <span className="text-gradient-primary animate-gradient">
+
+              Story
+              </span>
+              </h4>
+            <p className="text-white/70 ">
               Kips Reality was born out of a simple idea: property management
               shouldn’t be complicated. Our founders, with deep roots in
               finance, compliance, and real estate, saw firsthand how landlords
               struggled with disconnected systems—and how tenants often felt left
               in the dark.
             </p>
-            <p className="text-white/70">
-              We set out to build a smarter way. One platform. One experience.
-              One solution.
-            </p>
+          
           </div>
 
           {/* Mission */}
-          <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
-            <h4 className="text-2xl font-bold text-white">Our Mission</h4>
+          <div className="space-y-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl max-w-3xl mx-auto">
+            <h4 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white">Our {""}
+               <span className="text-gradient-primary animate-gradient">
+
+              Mission
+              </span>
+              </h4>
             <p className="text-white/80 leading-relaxed">
               To simplify property management by providing a seamless,
               technology-driven platform that connects landlords and tenants
               while ensuring transparency, efficiency, and trust.
             </p>
           </div>
-          </div>
         </div>
+
+           <div className=" flex  px-4">
+                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
+                    One{" "}
+                    <FlipWords words={words} /> <br />
+                  </div>
+                </div>
+        
+
         </div>
       </div>
     </section>
