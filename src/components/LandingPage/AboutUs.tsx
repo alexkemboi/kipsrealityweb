@@ -2,6 +2,8 @@ import React from "react";
 import { FlipWords } from "../ui/flip-words";
 import Image from "next/image";
 import aboutBg from "@/assets/hero-cityscape.jpg";
+import { Button } from "../ui/button";
+import Link from "next/link";
 
 export default function About() {
     const words = ["Empowering Landlords", "Supporting Tenants", "Streamlining Rentals"];
@@ -48,7 +50,7 @@ export default function About() {
             </h3>
 
              <div className=" flex  px-4">
-                  <div className="text-4xl mx-auto font-normal text-white ">
+                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
                     <FlipWords words={words} /> <br />
                   </div>
                 </div>
@@ -64,6 +66,11 @@ export default function About() {
               single, seamless solution.
             </p>
            
+
+           <Button asChild variant="link" className= "bg-gradient-primary text-white hover:opacity-90 whitespace-nowrap">
+              < Link href="/about">Go to About</Link>
+                </Button>
+                          
           </div>
 
           {/* Our Story */}
