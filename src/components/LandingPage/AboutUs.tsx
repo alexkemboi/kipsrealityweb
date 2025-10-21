@@ -11,7 +11,7 @@ export default function About() {
   return (
     <section
       id="about"
-      className="relative min-h-screen flex  justify-center overflow-hidden"
+      className="relative min-h-[80vh] flex  justify-center overflow-hidden"
     >
       {/* Background Image & Overlays */}
       <div className="absolute inset-0 z-0">
@@ -36,8 +36,14 @@ export default function About() {
       </div>
 
       {/* Content */}
-      <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32 text-center">
-        <div className="max-w-6xl mx-auto space-y-12">
+      <div className="relative z-20 container mx-auto px-6 py-20 lg:py-20 text-center">
+        <div className="max-w-6xl mx-auto space-y-4">
+           <div className=" flex  px-4">
+                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
+                    One{" "}
+                    <FlipWords words={words} /> <br />
+                  </div>
+                </div>
           {/* Intro */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -101,12 +107,7 @@ export default function About() {
           </div>
         </div>
 
-           <div className=" flex  px-4">
-                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
-                    One{" "}
-                    <FlipWords words={words} /> <br />
-                  </div>
-                </div>
+          
         
 
         </div>
