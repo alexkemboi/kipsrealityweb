@@ -9,6 +9,9 @@ import BrandPromise from "../components/LandingPage/BrandPromise";
 import Services from "../components/LandingPage/ServicesSection";
 import Plans from "../components/LandingPage/Plans";
 import Contact from "../components/LandingPage/ContactUs";
+import {Testimonials} from "../components/Testimonial/TestimonialClient";
+import { testimonials } from "./data/TestimonialData";
+
 
 export default function Home() {
 
@@ -21,6 +24,7 @@ export default function Home() {
       {/* About Us Section */}
       <About />
       <WhatMakes />
+      <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
       <BrandPromise />
       <Services />
