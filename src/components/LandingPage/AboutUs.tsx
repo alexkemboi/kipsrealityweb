@@ -39,8 +39,8 @@ export default function About() {
       <div className="relative z-20 container mx-auto px-6 py-20 lg:py-20 text-center">
         <div className="max-w-6xl mx-auto space-y-4">
            <div className=" flex  px-4">
-                  <div className="text-2xl  mx-auto font-bold text-[#0089bf] ">
-                    One{" "}
+                  <div className="text-3xl lg:text-5xl pb-6  mx-auto font-bold text-[#0089bf] ">
+                    <span className="text-white">One</span>
                     <FlipWords words={words} /> <br />
                   </div>
                 </div>
