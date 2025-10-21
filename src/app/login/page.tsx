@@ -1,15 +1,41 @@
-import { Link } from "lucide-react";
-import React from "react";
+"use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const LoginPage: React.FC = () => {
+  const router = useRouter();
+  const [role, setRole] = useState("propertymanager");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Redirect based on selected role
+    switch (role) {
+      case "propertymanager":
+        router.push("/dashboards/propertymanagerdashboard");
+        break;
+      case "landlord":
+        router.push("/dashboards/landlorddashboard");
+        break;
+      case "tenant":
+        router.push("/dashboards/tenantdashboard");
+        break;
+      case "vendor":
+        router.push("/dashboards/vendordashboard");
+        break;
+      default:
+        router.push("/");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#021526] p-4">
       <div className="bg-white shadow-2xl rounded-2xl flex flex-col md:flex-row w-full max-w-4xl overflow-hidden">
         {/* Left side illustration */}
-        <div className="md:w-1/2 flex items-center justify-center  p-8">
+        <div className="md:w-1/2 flex items-center justify-center p-8">
           <img
             src="/loginillustrations.svg"
-            alt="login Illustration"
+            alt="Login Illustration"
             className="w-3/4 max-w-sm"
           />
         </div>
@@ -21,7 +47,7 @@ const LoginPage: React.FC = () => {
             Login to continue managing your properties efficiently.
           </p>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">
                 Email
@@ -44,16 +70,29 @@ const LoginPage: React.FC = () => {
               />
             </div>
 
-            <a href="/dashboard" className="text-indigo-600 hover:underline">
-              {/* <button
-
-                className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all duration-300"
+            {/* Role Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Sign in as
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
               >
-                Sign In
-              </button> */}
-              Sign In
-            </a>
+                <option value="propertymanager">Property Manager</option>
+                <option value="landlord">Landlord</option>
+                <option value="tenant">Tenant</option>
+                <option value="vendor">Vendor</option>
+              </select>
+            </div>
 
+            <button
+              type="submit"
+              className="w-full py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all duration-300"
+            >
+              Sign In
+            </button>
 
             <p className="text-center text-sm text-gray-500 mt-4">
               Don’t have an account?{" "}
