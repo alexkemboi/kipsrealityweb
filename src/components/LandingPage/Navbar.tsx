@@ -61,7 +61,7 @@ const Navbar = () => {
         >
             <div className="container mx-auto px-4">
                 <div className={`flex items-center justify-between transition-all duration-200 h-14`}>
-                    <a href="/" className="flex items-center space-x-3 group">
+                    <Link href="/" className="flex items-center space-x-3 group">
                         <div className="relative">
                             <Image
                                 src={Logo}
@@ -82,7 +82,7 @@ const Navbar = () => {
                                 RentFlow360
                             </span>
                         </div>
-                    </a>
+                    </Link>
 
                     <div className="hidden lg:flex items-center space-x-8">
                         {navLinks.map((link) => (
@@ -124,7 +124,7 @@ const Navbar = () => {
 
                     <Drawer direction="right">
                         <DrawerTrigger asChild>
-                            <Button variant="ghost" size="icon" className={`lg:hidden transition-all duration-200 ${scrollProgress > 0.1 ? "text-neutral-700" : "text-white"}`}>
+                            <Button variant="ghost" size="icon" className={`lg:hidden transition-all duration-200 ${scrollProgress > 0.1 ? "text-neutral-700 hover:bg-neutral-200" : "text-white hover:bg-white/20"}`}>
                                 <Menu className="h-6 w-6" />
                             </Button>
                         </DrawerTrigger>
@@ -150,17 +150,19 @@ const Navbar = () => {
                                     </button>
                                 </DrawerClose>
                             </DrawerHeader>
-                            <div className="flex flex-col space-y-4 p-4">
-                                {navLinks.map((link) => (
-                                    <DrawerClose asChild key={link.name}>
-                                        <a
-                                            href={link.href}
-                                            className="font-inter font-medium text-neutral-700 hover:text-blue-600 py-2"
-                                        >
-                                            {link.name}
-                                        </a>
-                                    </DrawerClose>
-                                ))}
+                            <div className="flex-1 overflow-y-auto px-6 py-4">
+                                <div className="space-y-1">
+                                    {navLinks.map((link) => (
+                                        <DrawerClose asChild key={link.name}>
+                                            <Link
+                                                href={link.href}
+                                                className="block p-4 rounded-xl hover:bg-blue-50 transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-blue-600 font-inter font-medium"
+                                            >
+                                                {link.name}
+                                            </Link>
+                                        </DrawerClose>
+                                    ))}
+                                </div>
                             </div>
                             <DrawerFooter className="flex flex-row gap-2">
                                 <DrawerClose asChild>
