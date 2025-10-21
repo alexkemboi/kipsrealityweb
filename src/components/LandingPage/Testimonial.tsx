@@ -37,9 +37,10 @@ const Testimonials = () => {
   const { name, role, image, text } = testimonials[index];
 
   return (
+    
    <section
       id="about"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-8 py-12"
     >
       {/* Background Image & Overlays */}
       <div className="absolute inset-0 z-0">
@@ -63,15 +64,18 @@ const Testimonials = () => {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float-medium delay-2000" />
       </div>
 
-      {/* Main Container */}
-      <div className="relative z-10 w-[90%] -w-4xl bg-white/10 border border-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/20">
         {/* Heading */}
-        <h2 className="font-poppins font-bold text-3xl md:text-4xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-white animate-gradient">
-          What Do Our Customers Say?
+        <h2 className="relative z-10 font-poppins font-bold text-4xl md:text-5xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-white animate-gradient">
+          What Do Our <span className="text-gradient-primary animate-gradient"> Customers Say?</span>
         </h2>
 
+      {/* Main Container */}
+      
+<div className="relative z-10 container mx-auto px-6 md:px-8 max-w-6xl bg-white/10 border border-white/20 backdrop-blur-2xl rounded-2xl shadow-2xl p-10 md:p-14 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/30">
+      
+
         {/* Avatar */}
-        <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-blue-400 shadow-lg mb-6">
+        <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-[#0984cb]  shadow-lg mb-6">
           <Image src={image} alt={name} fill className="object-cover" />
         </div>
 
