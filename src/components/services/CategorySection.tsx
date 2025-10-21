@@ -1,6 +1,6 @@
 import * as Icons from 'lucide-react'
 import { ServiceCard } from './ServiceCard'
-import { theme } from '../../data/servicesData'
+import { theme } from '../../app/data/servicesData'
 
 interface CategorySectionProps {
   category: any
@@ -12,14 +12,14 @@ export const CategorySection = ({ category, index }: CategorySectionProps) => {
   const isEven = index % 2 === 0
 
   return (
-    <div 
+    <div
       className="relative py-16 sm:py-20 md:py-24"
       style={{ background: isEven ? theme.white : '#F8FBFF' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Category Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-12 sm:mb-16">
-          <div 
+          <div
             className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: theme.gradients.accent }}
           >
@@ -38,9 +38,9 @@ export const CategorySection = ({ category, index }: CategorySectionProps) => {
         {/* Services Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {category.services.map((service: any, idx: number) => (
-            <ServiceCard 
-              key={idx} 
-              service={service} 
+            <ServiceCard
+              key={idx}
+              service={service}
               categoryColor={category.color}
             />
           ))}

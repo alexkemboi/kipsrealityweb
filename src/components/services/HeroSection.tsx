@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react'
-import { theme, servicesData } from '../../data/servicesData'
+import { theme, servicesData } from '../../app/data/servicesData'
 
 export const HeroSection = () => {
   return (
@@ -76,10 +76,10 @@ export const HeroSection = () => {
       </div>
 
       {/* Right Section – Image cards */}
-     <div className="relative w-full md:w-1/2 px-6 md:px-16 py-10 md:py-0">
+      <div className="relative w-full md:w-1/2 px-6 md:px-16 py-10 md:py-0">
         <div className="relative">
           <img
-            src ="https://willstonehomes.ke/wp-content/uploads/2025/02/exterior-01.png"
+            src="https://willstonehomes.ke/wp-content/uploads/2025/02/exterior-01.png"
             alt="Modern home"
             className="rounded-3xl shadow-2xl w-full object-cover"
           />
@@ -91,7 +91,7 @@ export const HeroSection = () => {
             <p className="text-sm text-gray-500">2 bed • 1 bath • from $120</p>
           </div>
         </div>
-        
+
       </div>
 
       <style jsx>{`
