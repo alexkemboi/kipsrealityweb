@@ -29,7 +29,7 @@ export default function Footer() {
               </a>
             </li>
           ))}
-          
+
           <li>
             <a
               href="/privacypolicy"

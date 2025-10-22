@@ -2,24 +2,73 @@
 export default function Services() {
   const services = [
     {
-      title: "Find Properties",
-      desc: "Discover verified listings tailored to your budget and preferences in just a few clicks.",
-      icon: "🏠",
+      title: "Property Management",
+      desc: "Centrally register, categorize, and manage properties, leases, maintenance, and documentation in one unified dashboard.",
+      icon: "🏢",
       color: "text-[#FACC15]",
     },
     {
-      title: "Manage Rentals",
-      desc: "Easily handle lease agreements, rent payments, and maintenance requests — all in one platform.",
-      icon: "📋",
+      title: "Invoicing & Rent Collection",
+      desc: "Automate rent billing, payments, and reconciliation with integrated ledgers and multi-method payment support.",
+      icon: "💳",
       color: "text-[#1E293B]",
     },
     {
-      title: "Trusted Support",
-      desc: "Get 24/7 assistance from our dedicated support team to ensure seamless property management.",
+      title: "Tenant Screening & Onboarding",
+      desc: "Digitally process tenant applications, perform credit checks, and manage compliant onboarding workflows securely.",
+      icon: "🧾",
+      color: "text-[#3B82F6]",
+    },
+    {
+      title: "Utility Management",
+      desc: "Track, allocate, and invoice utilities accurately with options for API integration and tenant transparency.",
+      icon: "💡",
+      color: "text-[#F97316]",
+    },
+    {
+      title: "Marketplace",
+      desc: "Connect buyers, sellers, and renters in a verified real estate marketplace for properties and home essentials.",
+      icon: "🛒",
+      color: "text-[#10B981]",
+    },
+    {
+      title: "Support & Communication",
+      desc: "Access 24/7 assistance, ticketing, and in-app chat with a centralized help desk and self-service knowledge base.",
       icon: "🤝",
       color: "text-gray-700",
     },
+    {
+      title: "User Account & Access Management",
+      desc: "Securely manage user accounts, permissions, and authentication with full audit trails and role-based access.",
+      icon: "👥",
+      color: "text-[#8B5CF6]",
+    },
+    {
+      title: "Reporting & Analytics",
+      desc: "Visualize KPIs and trends with customizable dashboards, data exports, and scheduled performance reports.",
+      icon: "📊",
+      color: "text-[#2563EB]",
+    },
+    {
+      title: "Notifications & Alerts",
+      desc: "Deliver real-time alerts and reminders via email, SMS, or in-app channels for payments, renewals, and updates.",
+      icon: "🔔",
+      color: "text-[#EAB308]",
+    },
+    {
+      title: "Security & Compliance",
+      desc: "Protect user data through encryption, monitoring, backups, and adherence to international data protection standards.",
+      icon: "🔒",
+      color: "text-[#DC2626]",
+    },
+    {
+      title: "System Administration",
+      desc: "Enable admins to manage platform settings, integrations, performance, and global configuration parameters.",
+      icon: "⚙️",
+      color: "text-[#64748B]",
+    },
   ];
+
 
   return (
     <section id="services" className="px-8 py-20 md:px-20 bg-gradient-to-b from-white to-gray-50">
