@@ -47,7 +47,7 @@ export function Testimonials({ initialTestimonials }: TestimonialsProps) {
 
 
       {/* Title */}
-      <h2 className="relative z-10 font-poppins font-bold text-4xl md:text-5xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-white animate-gradient">
+      <h2 className="relative z-10 font-poppins font-bold text-4xl lg:text-5xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-white animate-gradient">
         What Do Our <span className="text-gradient-primary animate-gradient">Customers Say?</span>
       </h2>
 
