@@ -1,0 +1,495 @@
+{
+  "config": {
+    "companyName": "RentFlow360",
+    "lastUpdated": "October 2025",
+    "contactEmail": "careers@rentflow360.com",
+    "privacyEmail": "privacy@rentflow360.com",
+    "website": "www.rentflow360.com",
+    "mailingAddress": {
+      "name": "RentFlow360 Privacy Team",
+      "location": "Washington State, USA"
+    },
+    "responseTime": "30-45 days",
+    "inactiveAccountThreshold": "24 consecutive months",
+    "colors": {
+      "primary": "blue",
+      "accent": "gray",
+      "warning": "yellow"
+    }
+  },
+  "policyMetadata": {
+    "title": "Privacy Policy",
+    "subtitle": "Welcome to RentFlow360. We are committed to protecting your privacy and ensuring the security of your personal information.",
+    "consentNotice": "By using RentFlow360, you acknowledge that you have read, understood, and agree to this Privacy Policy. If you do not agree with any part of this policy, please discontinue use of our Services immediately."
+  },
+  "complianceFrameworks": [
+    {
+      "name": "Fair Credit Reporting Act (FCRA)",
+      "description": "Consumer reporting and tenant screening"
+    },
+    {
+      "name": "Washington State RCW 59.18",
+      "description": "Residential Landlord-Tenant Act"
+    },
+    {
+      "name": "E-SIGN Act (15 U.S.C. § 7001)",
+      "description": "Electronic signatures and records"
+    },
+    {
+      "name": "PCI-DSS",
+      "description": "Payment card industry security standards"
+    }
+  ],
+  "dataCollectionCategories": [
+    {
+      "title": "Personal and Account Information",
+      "items": [
+        "Full legal name",
+        "Email address and phone number",
+        "Physical and mailing addresses",
+        "Date of birth (for identity verification and screening purposes)",
+        "Government-issued identification (where required by law)",
+        "Employment information and income verification documents",
+        "Account credentials and security settings"
+      ]
+    },
+    {
+      "title": "Property and Lease Information",
+      "items": [
+        "Property ownership documentation and management authorization",
+        "Lease agreements, terms, and rental payment schedules",
+        "Move-in/move-out inspection reports",
+        "Maintenance requests and service records",
+        "Vendor and contractor information",
+        "Insurance enrollment status and policy details"
+      ]
+    },
+    {
+      "title": "Financial Information",
+      "items": [
+        "Bank account information (for ACH payments and disbursements)",
+        "Payment card information (securely processed via our payment partners)",
+        "Transaction history and payment records",
+        "Accounting ledgers and financial statements",
+        "Utility billing and payment data",
+        "Tax documentation (e.g., W-9 forms, 1099 reports)"
+      ],
+      "note": "Payment card data is handled by PCI-DSS compliant processors (Stripe, Plaid) and is not stored directly on our servers.",
+      "noteType": "info"
+    },
+    {
+      "title": "Tenant Screening and Credit Data",
+      "intro": "With your explicit consent, we collect and process:",
+      "items": [
+        "Credit reports and scores",
+        "Rental history and eviction records",
+        "Criminal background check results",
+        "Identity verification data"
+      ],
+      "additionalInfo": "Screening Partners: TransUnion SmartMove, Experian Connect, CoreLogic SafeRent, Equifax Tenant Screening"
+    },
+    {
+      "title": "Technical and Usage Data",
+      "items": [
+        "Device information (type, operating system, browser)",
+        "IP address and geolocation data",
+        "Log files and error reports",
+        "Platform usage analytics and feature engagement",
+        "Multi-factor authentication (MFA) events",
+        "Security audit logs and access records"
+      ]
+    },
+    {
+      "title": "Communication Data",
+      "items": [
+        "Messages between users within the platform",
+        "Maintenance requests and support tickets",
+        "Email and SMS communications (processed via SendGrid and Twilio)",
+        "Phone call recordings (when announced and with consent)",
+        "Feedback and survey responses"
+      ]
+    }
+  ],
+  "platformModules": [
+    {
+      "name": "Property Management Module",
+      "dataUsed": "Property details, unit information, lease agreements, occupancy records, maintenance requests, vendor contacts, inspection reports",
+      "useCases": [
+        "Registering and cataloging properties and individual units",
+        "Tracking lease terms, renewal dates, and occupancy status",
+        "Managing and routing maintenance requests to appropriate vendors",
+        "Scheduling and documenting property inspections",
+        "Coordinating move-in/move-out processes",
+        "Generating lease documents and amendments"
+      ]
+    },
+    {
+      "name": "Tenant Screening Module",
+      "dataUsed": "Full name, date of birth, SSN (encrypted), addresses, employment information, income documentation, rental history, credit reports, criminal background checks",
+      "useCases": [
+        "Conducting FCRA-compliant background and credit checks through authorized bureaus",
+        "Verifying employment status and income sufficiency",
+        "Reviewing rental history and previous landlord references",
+        "Assessing creditworthiness and payment reliability",
+        "Generating risk scores and screening reports for property managers"
+      ]
+    },
+    {
+      "name": "Rent Collection Module",
+      "dataUsed": "Bank account information, payment card details, lease payment schedules, transaction history, late payment records, payment preferences",
+      "useCases": [
+        "Automating monthly rent invoicing based on lease terms",
+        "Processing ACH, card, and digital wallet payments securely",
+        "Sending payment reminders and overdue notices",
+        "Reconciling payments with ledger accounts",
+        "Generating receipts and payment confirmations"
+      ]
+    },
+    {
+      "name": "Utility Management Module",
+      "dataUsed": "Utility account numbers, meter readings, usage data, billing rates, payment allocations, tenant responsibility agreements",
+      "useCases": [
+        "Integrating with utility meters for automated reading collection",
+        "Tracking electricity, water, gas, and other utility consumption",
+        "Calculating individual tenant charges based on usage or allocation formulas",
+        "Generating utility invoices and adding charges to rent statements"
+      ]
+    },
+    {
+      "name": "Renters Insurance Module",
+      "dataUsed": "Policy numbers, insurance provider details, coverage amounts, policy effective dates, renewal dates, proof of insurance documents",
+      "useCases": [
+        "Enrolling tenants in renters insurance programs",
+        "Verifying active insurance coverage and adequate liability limits",
+        "Tracking policy status and expiration dates",
+        "Sending renewal reminders before policy lapses"
+      ]
+    },
+    {
+      "name": "Analytics & Reporting Module",
+      "dataUsed": "All platform data (aggregated and anonymized where possible)",
+      "useCases": [
+        "Creating KPI dashboards showing property performance metrics",
+        "Analyzing occupancy trends, turnover rates, and vacancy periods",
+        "Tracking financial performance, revenue, and expense patterns",
+        "Generating predictive insights for rent optimization"
+      ]
+    }
+  ],
+  "legalBases": [
+    {
+      "title": "Contractual Necessity",
+      "description": "Processing required to fulfill lease agreements, payment obligations, and service delivery."
+    },
+    {
+      "title": "Legal Compliance",
+      "description": "Processing mandated by FCRA, RCW 59.18, E-SIGN Act, tax laws, and other applicable regulations."
+    },
+    {
+      "title": "Legitimate Interests",
+      "description": "Improving our Services, ensuring platform security, preventing fraud, and conducting business analytics (balanced against your privacy rights)."
+    },
+    {
+      "title": "Consent",
+      "description": "Processing that requires your explicit permission, such as background checks, marketing communications, and optional data sharing. You may withdraw consent at any time through your account settings."
+    }
+  ],
+  "serviceProviders": [
+    {
+      "category": "Payment Processing",
+      "providers": "Stripe, Plaid, ZellePay Business"
+    },
+    {
+      "category": "Cloud Hosting",
+      "providers": "GoDaddy, AWS"
+    },
+    {
+      "category": "Communications",
+      "providers": "Twilio (SMS), SendGrid (email)"
+    },
+    {
+      "category": "Tenant Screening",
+      "providers": "TransUnion, Experian, CoreLogic, Equifax"
+    },
+    {
+      "category": "Insurance Providers",
+      "providers": "Lemonade, State Farm, Allstate"
+    },
+    {
+      "category": "Analytics",
+      "providers": "Google Analytics (anonymized where possible)"
+    }
+  ],
+  "securityMeasures": {
+    "technical": [
+      {
+        "name": "Encryption in Transit",
+        "description": "TLS 1.2+ for all data transmission"
+      },
+      {
+        "name": "Encryption at Rest",
+        "description": "AES-256 encryption for stored data"
+      },
+      {
+        "name": "Secure Authentication",
+        "description": "Multi-factor authentication (MFA) and single sign-on (SSO) options"
+      },
+      {
+        "name": "Access Controls",
+        "description": "Role-based permissions and principle of least privilege"
+      },
+      {
+        "name": "Network Security",
+        "description": "Firewalls, intrusion detection systems, and DDoS protection"
+      }
+    ],
+    "operational": [
+      "Regular security audits and vulnerability assessments",
+      "Penetration testing by third-party security firms",
+      "Comprehensive audit logging and monitoring",
+      "Incident response and breach notification procedures",
+      "Employee security training and background checks",
+      "Secure development practices and code reviews"
+    ],
+    "payment": [
+      "PCI-DSS compliant payment processing",
+      "Tokenization of payment card data",
+      "No storage of full card numbers on our servers"
+    ]
+  },
+  "retentionPeriods": [
+    {
+      "category": "Tax Records",
+      "period": "7 years",
+      "reason": "IRS requirement"
+    },
+    {
+      "category": "Lease Documents",
+      "period": "3-6 years after lease termination",
+      "reason": "State law requirement"
+    },
+    {
+      "category": "Tenant Screening Data",
+      "period": "7 years for adverse information",
+      "reason": "FCRA guidelines"
+    },
+    {
+      "category": "Financial Records",
+      "period": "As required",
+      "reason": "Audit and regulatory purposes"
+    }
+  ],
+  "privacyRights": [
+    {
+      "title": "Access and Portability",
+      "rights": [
+        "Request access to your personal information",
+        "Receive a copy of your data in a commonly used format",
+        "Obtain copies of credit reports or screening results"
+      ]
+    },
+    {
+      "title": "Correction and Accuracy",
+      "rights": [
+        "Correct inaccurate or incomplete information",
+        "Update your account details and preferences"
+      ]
+    },
+    {
+      "title": "Deletion",
+      "rights": [
+        "Request deletion of your personal information (subject to legal exceptions)",
+        "Close your account permanently"
+      ]
+    },
+    {
+      "title": "Consent Management",
+      "rights": [
+        "Withdraw consent for optional processing",
+        "Opt out of non-essential communications"
+      ]
+    }
+  ],
+  "cookieTypes": [
+    {
+      "name": "Essential Cookies",
+      "description": "Required for platform operation, authentication, and security. These cannot be disabled without affecting core functionality."
+    },
+    {
+      "name": "Functional Cookies",
+      "description": "Remember your preferences, settings, and session information to improve usability."
+    },
+    {
+      "name": "Analytics Cookies",
+      "description": "Help us understand how users interact with our Services, identify popular features, and detect issues."
+    },
+    {
+      "name": "Performance Cookies",
+      "description": "Monitor system performance, load times, and technical metrics."
+    }
+  ],
+  "sectionContent": {
+    "scope": {
+      "intro": "This Privacy Policy applies to all users of {companyName}, including:",
+      "userTypes": [
+        "Property managers and landlords",
+        "Tenants and rental applicants",
+        "Vendors and service providers",
+        "Administrative users"
+      ],
+      "geographicCoverage": {
+        "title": "Geographic Coverage",
+        "content": "This policy primarily applies to users located in the United States, with initial operations focused on Washington State (including Seattle, Bellevue, Tacoma, and Spokane)."
+      },
+      "regulatoryCompliance": {
+        "title": "Regulatory Compliance",
+        "intro": "{companyName} complies with:",
+        "items": [
+          "Fair Credit Reporting Act (FCRA)",
+          "Washington State Residential Landlord-Tenant Act (RCW 59.18)",
+          "Electronic Signatures in Global and National Commerce Act (E-SIGN Act, 15 U.S.C. § 7001)",
+          "Applicable federal and state data protection and financial regulations"
+        ]
+      }
+    },
+    "legal": {
+      "intro": "We process your personal information based on the following legal grounds:"
+    },
+    "sharing": {
+      "noSellNotice": "We do not sell, rent, or trade your personal information to third parties for their marketing purposes.",
+      "intro": "We may share limited information in the following circumstances:",
+      "subsections": [
+        {
+          "title": "Service Providers and Business Partners",
+          "content": "We share data with trusted third-party vendors who assist in delivering our Services:"
+        },
+        {
+          "title": "Credit Bureaus and Screening Agencies",
+          "content": "With your written consent, we share applicant information with consumer reporting agencies for credit reports, rental history verification, and background screening."
+        },
+        {
+          "title": "Property Owners and Managers",
+          "content": "Tenant information is shared with authorized property owners and managers as necessary for lease application evaluation, rent collection, maintenance coordination, and lease enforcement."
+        },
+        {
+          "title": "Legal and Regulatory Authorities",
+          "content": "We may disclose information when required by law or to comply with court orders, subpoenas, legal processes, government requests, enforce our Terms of Service, investigate fraud, or protect the safety of users."
+        }
+      ]
+    },
+    "security": {
+      "intro": "We implement comprehensive security controls to protect your information:",
+      "technicalTitle": "Technical Safeguards",
+      "operationalTitle": "Operational Safeguards",
+      "paymentTitle": "Payment Security",
+      "limitation": "While we employ industry-leading security measures, no system can guarantee absolute security. We cannot fully eliminate risks such as unauthorized access, hardware failures, or sophisticated cyberattacks. You should also take precautions to protect your account credentials."
+    },
+    "retention": {
+      "intro": "We retain your information only as long as necessary for legitimate business, legal, and operational purposes:",
+      "activeAccounts": {
+        "title": "Active Accounts and Leases",
+        "content": "Data is retained throughout the duration of active leases and account relationships, plus a reasonable period after termination to fulfill obligations."
+      },
+      "legalCompliance": {
+        "title": "Legal and Compliance Requirements"
+      },
+      "inactiveAccounts": {
+        "title": "Inactive Accounts",
+        "content": "Accounts inactive for more than {inactiveAccountThreshold} may be archived or deleted after appropriate notice, except where retention is required by law."
+      }
+    },
+    "rights": {
+      "intro": "Subject to applicable law and verification of your identity, you have the following rights:",
+      "exerciseRights": {
+        "title": "How to Exercise Your Rights",
+        "steps": [
+          {
+            "label": "Email",
+            "content": "{privacyEmail} (preferred method)"
+          },
+          {
+            "label": "Subject Line",
+            "content": "Include \"Privacy Request\" or \"Data Subject Request\""
+          },
+          {
+            "label": "Include",
+            "content": "Your full name, email address, and description of your request"
+          },
+          {
+            "label": "Verification",
+            "content": "We may require additional information to verify your identity"
+          }
+        ],
+        "responseTime": "We will respond to verified requests within {responseTime}, or as required by applicable law."
+      }
+    },
+    "cookies": {
+      "intro": "{companyName} uses cookies, web beacons, and similar technologies to enhance functionality and analyze usage.",
+      "typesTitle": "Types of Cookies We Use",
+      "choicesTitle": "Your Cookie Choices",
+      "choicesContent": "You can manage cookie preferences through your browser settings, our cookie consent banner, or account privacy settings."
+    },
+    "thirdParty": {
+      "intro": "Our platform may contain links to third-party websites, services, or resources (such as insurance provider portals, payment processors, or utility company sites).",
+      "warning": {
+        "title": "Important:",
+        "content": "We are not responsible for the privacy practices, content, or security of third-party services. We encourage you to review their privacy policies before providing any personal information."
+      }
+    },
+    "children": {
+      "intro": "{companyName} is intended for users 18 years of age or older. We do not knowingly collect, maintain, or use personal information from individuals under 18.",
+      "discovery": "If we discover that we have inadvertently collected information from a minor, we will promptly delete it from our records.",
+      "contact": "If you believe a minor has provided information to us, please contact us immediately at {contactEmail}."
+    },
+    "changes": {
+      "intro": "We may update this Privacy Policy periodically to reflect changes in our Services, business practices, new legal or regulatory requirements, enhanced security measures, or user feedback.",
+      "notification": {
+        "title": "Notification of Changes",
+        "material": {
+          "title": "Material Changes",
+          "content": "For significant changes affecting your rights, we will provide prominent notice through email, in-platform announcements, and updated effective date."
+        },
+        "nonMaterial": {
+          "title": "Non-Material Changes",
+          "content": "Minor updates and clarifications will be posted with an updated \"Last Reviewed\" date."
+        }
+      },
+      "continuedUse": "Continued use of our Services after changes take effect constitutes acceptance of the updated policy."
+    },
+    "contact": {
+      "intro": "For questions, concerns, or requests regarding this Privacy Policy or your personal data:"
+    },
+    "state": {
+      "washington": {
+        "title": "Washington State Residents",
+        "content": "Under the Washington My Health My Data Act and other state laws, Washington residents may have additional rights regarding their personal information. Please contact us to exercise these rights."
+      },
+      "california": {
+        "title": "California Residents (Future Expansion)",
+        "content": "When we expand operations to California, residents will have rights under the California Consumer Privacy Act (CCPA) and California Privacy Rights Act (CPRA)."
+      },
+      "other": {
+        "title": "Other States",
+        "content": "As additional state privacy laws take effect, we will update this section accordingly."
+      }
+    }
+  },
+  "footer": {
+    "thankYou": "Thank you for trusting {companyName} with your personal information.",
+    "commitment": "We are committed to protecting your privacy while delivering exceptional property management services."
+  },
+  "compliance": {
+    "title": "Compliance Statement",
+    "intro": "{companyName} is committed to full compliance with:",
+    "outro": "We conduct regular compliance audits and update our practices as regulations evolve."
+  },
+  "buttons": {
+    "contactPrivacy": "Contact Privacy Team",
+    "downloadPdf": "Download Policy (PDF)",
+    "exerciseRights": "Exercise Your Rights"
+  },
+  "navigation": {
+    "searchPlaceholder": "Search privacy policy...",
+    "quickNavTitle": "Quick Navigation"
+  }
+}
