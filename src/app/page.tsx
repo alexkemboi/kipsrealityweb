@@ -12,6 +12,7 @@ import Contact from "../components/LandingPage/ContactUs";
 import { Testimonials } from "../components/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
 import ServicesPage from "./services/page";
+import {TypewriterEffectDemo} from "../components/LandingPage/BrandWords"
 
 
 export default function Home() {
@@ -27,8 +28,7 @@ export default function Home() {
       <WhatMakes />
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
-      <BrandPromise />
-
+<TypewriterEffectDemo />
       <ServicesPage />
       <Plans />
       <Contact />
