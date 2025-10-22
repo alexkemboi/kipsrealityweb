@@ -9,8 +9,9 @@ import BrandPromise from "../components/LandingPage/BrandPromise";
 import Services from "../components/LandingPage/ServicesSection";
 import Plans from "../components/LandingPage/Plans";
 import Contact from "../components/LandingPage/ContactUs";
-import {Testimonials} from "../components/Testimonial/TestimonialClient";
+import { Testimonials } from "../components/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
+import ServicesPage from "./services/page";
 
 
 export default function Home() {
@@ -27,7 +28,8 @@ export default function Home() {
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
       <BrandPromise />
-      <Services />
+
+      <ServicesPage />
       <Plans />
       <Contact />
       <Footer />
