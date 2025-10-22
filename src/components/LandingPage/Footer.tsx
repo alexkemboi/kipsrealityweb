@@ -10,6 +10,7 @@ const navLinks = [
 
 export default function Footer() {
   return (
+<<<<<<< Updated upstream
     <footer className="bg-[#041126] text-gray-600 py-8 border-t border-gray-200">
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
         {/* Left section - logo or copyright */}
@@ -43,3 +44,10 @@ export default function Footer() {
     </footer>
   );
 }
+=======
+    <footer className="bg-gray-100 text-gray-600 py-6 text-center border-t border-gray-200">
+      <p>© {new Date().getFullYear()} Rentflow360. All rights reserved.</p>
+    </footer>
+  )
+}
+>>>>>>> Stashed changes

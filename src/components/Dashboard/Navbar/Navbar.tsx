@@ -3,8 +3,8 @@ import * as React from "react";
 import { useRouter } from 'next/navigation';
 import { HelpCircle, Phone, FileText, Lock, Menu, User, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
-import profilepivc from "../../../../public/favicon.ico";
-import insure from "../../../../public/image/free-insurance-1817174-1538042.png";
+import profilepivc from "../../../../public/favicon/favicon.ico";
+import insure from "../../../../public/favicon/favicon.ico";
 
 export default function Navbar() {
 	const router = useRouter();
@@ -34,14 +34,14 @@ export default function Navbar() {
 	}, [menuOpen]);
 
 	const navItems = [
-		{ title: "Help", icon: <HelpCircle className="w-5 h-5" />, action: () => {} },
-		{ title: "Contact", icon: <Phone className="w-5 h-5" />, action: () => {} },
-		{ title: "About", icon: <FileText className="w-5 h-5" />, action: () => {} },
-		{ title: "Security", icon: <Lock className="w-5 h-5" />, action: () => {} },
+		{ title: "Help", icon: <HelpCircle className="w-5 h-5" />, action: () => { } },
+		{ title: "Contact", icon: <Phone className="w-5 h-5" />, action: () => { } },
+		{ title: "About", icon: <FileText className="w-5 h-5" />, action: () => { } },
+		{ title: "Security", icon: <Lock className="w-5 h-5" />, action: () => { } },
 	];
 
 	return (
-		<nav className="fixed top-0 left-0 right-0 z-50 bg-neutral-900/95 backdrop-blur-lg border-b border-neutral-800">
+		<nav className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a] backdrop-blur-lg border-b border-[#0f172a]">
 			<div className="mx-auto px-6 h-16">
 				<div className="flex items-center justify-between h-full">
 					{/* Logo Section */}
