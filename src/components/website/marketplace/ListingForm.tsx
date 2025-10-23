@@ -135,7 +135,7 @@ return(
 
           {/* Submit */}
           <div className="text-center pt-4">
-            <Button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+            <Button type="submit" className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-lg text-white rounded-xl">
               Submit Listing
             </Button>
           </div>
