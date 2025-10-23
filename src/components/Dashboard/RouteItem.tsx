@@ -17,8 +17,8 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
   const { setSelected } = useDashboard()
 
   const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault() // 👈 Prevent page navigation
-    setSelected(route.label) // 👈 Update context (show related content)
+    e.preventDefault() 
+    setSelected(route.label) 
     window.history.replaceState(null, '', '/dashboard/vendor') 
     // optional: ensures URL stays the same (optional)
   }
@@ -38,7 +38,7 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
             ? "bg-gradient-to-r from-blue-50 to-cyan-50/50 text-blue-700 border-blue-500 shadow-sm"
             : "text-neutral-700 hover:text-blue-600 hover:bg-blue-50 border-transparent hover:border-blue-200"
       )}
-      onClick={handleClick} // 👈 handle click here
+      onClick={handleClick} 
     >
       <route.icon className={cn(
         "w-5 h-5 flex-shrink-0 transition-colors duration-300",
