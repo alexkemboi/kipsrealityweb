@@ -1,7 +1,7 @@
 'use client'
 
 // import { HeroSection } from '../../components/services/HeroSection'
-import HeroSection from "../../../components/website/HeroSection"
+import {HeroSection} from "../../../components/website/services/HeroSection"
 import { QuickStats } from '../../../components/website/services/QuickStats'
 import { CategorySection } from '../../../components/website/services/CategorySection'
 import { CTASection } from '../../../components/website/services/CTASection'

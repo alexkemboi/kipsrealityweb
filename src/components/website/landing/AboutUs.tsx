@@ -1,10 +1,10 @@
 import React from "react";
-import { FlipWords } from "../ui/flip-words";
+import { FlipWords } from "../../ui/flip-words";
 import Image from "next/image";
 import aboutBg from "@/assets/hero-cityscape.jpg";
-import { aboutUsData, ourStoryData, ourMissionData } from "../../app/data/AboutUsData";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 import Link from "next/link";
+import { aboutUsData, ourMissionData, ourStoryData } from "@/app/data/AboutUsData";
 
 export default function About() {
     const words = ["platform", "experience", "solution"];

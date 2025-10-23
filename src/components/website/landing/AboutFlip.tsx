@@ -1,5 +1,5 @@
 import React from "react";
-import { FlipWords } from "../ui/flip-words";
+import { FlipWords } from "../../ui/flip-words";
 
 export function FlipWordsDemo() {
   const words = ["better", "cute", "beautiful", "modern"];
