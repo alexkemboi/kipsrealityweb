@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { ArrowUpRight, Zap, CheckCircle2, Sparkles } from 'lucide-react'
 import * as Icons from 'lucide-react'
-import { theme } from '../../app/data/servicesData'
+import { theme } from '@/app/data/servicesData'
 
 interface ServiceCardProps {
   service: any

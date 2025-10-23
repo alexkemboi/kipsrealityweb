@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react'
-import { theme } from '../../app/data/servicesData'
+import { theme } from '@/app/data/servicesData'
 
 export const CTASection = () => {
   return (

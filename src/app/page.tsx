@@ -1,21 +1,21 @@
 import Image from "next/image";
-import Navbar from "../components/LandingPage/Navbar";
-import HeroSection from "../components/LandingPage/HeroSection";
-import About from "../components/LandingPage/AboutUs";
-import Footer from "../components/LandingPage/Footer";
-import WhatMakes from "../components/LandingPage/WhatMakes";
-import OurTeam from "../components/LandingPage/OurTeam";
-import BrandPromise from "../components/LandingPage/BrandPromise";
-import Services from "../components/LandingPage/ServicesSection";
-import Plans from "../components/LandingPage/Plans";
-import Contact from "../components/LandingPage/ContactUs";
-import { Testimonials } from "../components/Testimonial/TestimonialClient";
+import Navbar from "../components/website/Navbar";
+import HeroSection from "../components/website/HeroSection";
+import About from "../components/website/AboutUs";
+import Footer from "../components/website/Footer";
+import WhatMakes from "../components/website/WhatMakes";
+import OurTeam from "../components/website/OurTeam";
+import BrandPromise from "../components/website/BrandPromise";
+import Services from "../components/website/ServicesSection";
+import Plans from "../components/website/Plans";
+import Contact from "../components/website/ContactUs";
+import {Testimonials} from "../components/website/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
-import ServicesPage from "./services/page";
-import PlansClientPage from "@/components/plans/PlansClientPage";
-import { CTASection } from "@/components/services/CTASection";
-import { CategorySection } from "@/components/services/CategorySection";
-import { QuickStats } from "@/components/services/QuickStats";
+import ServicePage from "@/app/(website)/services/page"
+import PlansClientPage from "@/components/website/plans/PlansClientPage";
+import { CTASection } from "@/components/website/services/CTASection";
+import { CategorySection } from "@/components/website/services/CategorySection";
+import { QuickStats } from "@/components/website/services/QuickStats";
 import { servicesData } from "./data/servicesData";
 
 
@@ -34,7 +34,7 @@ export default function Home() {
       <OurTeam />
 
 
-      <ServicesPage />
+      <ServicePage />
 
       <PlansClientPage />
       <Contact />
