@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:is(.dark *)); */
 
 /* globals.css */
 html {
@@ -193,4 +193,3 @@ body {
     background-clip: text;
   }
 }
-

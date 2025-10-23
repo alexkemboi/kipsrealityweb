@@ -11,6 +11,11 @@ import Contact from "../components/LandingPage/ContactUs";
 import { Testimonials } from "../components/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
 import ServicesPage from "./services/page";
+import PlansClientPage from "@/components/plans/PlansClientPage";
+import { CTASection } from "@/components/services/CTASection";
+import { CategorySection } from "@/components/services/CategorySection";
+import { QuickStats } from "@/components/services/QuickStats";
+import { servicesData } from "./data/servicesData";
 import Services from "../components/LandingPage/ServicesSection";
 import {TypewriterEffectDemo} from "../components/LandingPage/BrandWords"
 
@@ -28,8 +33,10 @@ export default function Home() {
       <WhatMakes />
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
-<TypewriterEffectDemo />
-<Services />
+      <BrandPromise />
+
+      <ServicesPage />
+      <Plans />
       <Contact />
       <Footer />
     </main>

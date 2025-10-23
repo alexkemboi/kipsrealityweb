@@ -129,7 +129,7 @@ const SideBarComponent = () => {
             },
           }}
         >
-          <div className="h-full overflow-y-auto py-6 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-transparent">
+          <div className="h-full overflow-y-auto py-6 scrollbar-thin scrollbar-thumb-blue-400 scrollbar-track-transparent bg-[#0f172a]">
             <Menu
               menuItemStyles={{
                 button: ({ active }) => ({
