@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import PlansClientPage from '@/components/plans/PlansClientPage';
-import Navbar from '@/components/LandingPage/Navbar';
+import PlansClientPage from '@/components/website/plans/PlansClientPage';
+import Navbar from '@/components/website/Navbar';
 
 export const metadata: Metadata = {
   title: 'Our Plans - RentFlow360',

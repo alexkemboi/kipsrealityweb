@@ -1,6 +1,6 @@
 import * as Icons from 'lucide-react'
 import { ServiceCard } from './ServiceCard'
-import { theme } from '../../app/data/servicesData'
+import { theme } from '@/app/data/servicesData'
 
 interface CategorySectionProps {
   category: any
