@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react'
-import { theme, servicesData } from '../../app/data/servicesData'
+import { theme, servicesData } from "@/app/data/servicesData"
 
 export const HeroSection = () => {
   return (
