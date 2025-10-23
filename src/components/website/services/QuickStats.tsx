@@ -1,4 +1,4 @@
-import { theme, servicesData } from '../../app/data/servicesData'
+import { theme, servicesData } from '@/app/data/servicesData'
 
 export const QuickStats = () => {
   return (

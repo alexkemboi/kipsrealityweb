@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { BlogClientPage } from '@/components/blog/BlogClientPage';
-import Navbar from '@/components/LandingPage/Navbar';
-import { blogPosts } from '../data/blogData';
+import { BlogClientPage } from '@/components/website/blog/BlogClientPage';
+import Navbar from '@/components/website/Navbar';
+import { blogPosts } from "@/app/data/blogData"
 
 export const metadata: Metadata = {
   title: 'Latest Articles - Kips Reality',
