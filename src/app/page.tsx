@@ -13,6 +13,8 @@ import {Testimonials} from "../components/website/Testimonial/TestimonialClient"
 import { testimonials } from "./data/TestimonialData";
 import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
+import {TypewriterEffectDemo} from "@/components/website/landing/BrandWords";
+
 import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
 import { QuickStats } from "@/components/website/services/QuickStats";
@@ -32,7 +34,7 @@ export default function Home() {
       <WhatMakes />
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
-
+<TypewriterEffectDemo/>
 
       <Services />
 
