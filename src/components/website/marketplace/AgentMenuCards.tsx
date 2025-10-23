@@ -22,7 +22,7 @@ export default function AgentMenuCards() {
           </div>
         </Link>
 
-        <Link href="/marketplace/agent/create" className="group">
+        <Link href="/marketplace/agent/myListings" className="group">
           <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             <div className="flex flex-col items-center text-center">
               <ClipboardList className="w-12 h-12 text-blue-600 mb-4 group-hover:scale-110 transition-transform" />
