@@ -6,13 +6,15 @@ import Footer from "../components/website/Footer";
 import WhatMakes from "../components/website/WhatMakes";
 import OurTeam from "../components/website/OurTeam";
 import BrandPromise from "../components/website/BrandPromise";
-import Services from "../components/website/ServicesSection";
+import Services from "../components/website/Services";
 import Plans from "../components/website/Plans";
 import Contact from "../components/website/ContactUs";
 import {Testimonials} from "../components/website/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
 import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
+import {TypewriterEffectDemo} from "@/components/website/BrandWords";
+
 import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
 import { QuickStats } from "@/components/website/services/QuickStats";
@@ -32,9 +34,9 @@ export default function Home() {
       <WhatMakes />
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
+<TypewriterEffectDemo/>
 
-
-      <ServicePage />
+      <Services />
 
       <PlansClientPage />
       <Contact />

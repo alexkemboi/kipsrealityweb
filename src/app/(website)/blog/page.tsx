@@ -13,6 +13,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
       <BlogClientPage initialPosts={blogPosts} />
     </div>
   );

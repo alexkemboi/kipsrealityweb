@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
-export default function WhatMakes() {
+export default function Services() {
   return (
     <section
       id="what-makes"
