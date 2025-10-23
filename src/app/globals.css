@@ -1,16 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
-
-/* Your custom global styles go below */
-html,
-body {
-  height: 100%;
-  background-color: #f9fafb;
-}
-
-
 
 /* @custom-variant dark (&:is(.dark *)); */
 
@@ -204,4 +193,3 @@ body {
     background-clip: text;
   }
 }
-
