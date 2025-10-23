@@ -53,7 +53,7 @@ return(
               value={formData.title}
               onChange={handleChange}
               placeholder="e.g. Modern 2-Bedroom Apartment"
-              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 placeholder:text-gray-400 focus:outline-none"
               required
             />
           </div>
@@ -67,7 +67,7 @@ return(
               value={formData.price}
               onChange={handleChange}
               placeholder="e.g. 45000"
-              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500  placeholder:text-gray-400 focus:outline-none"
               required
             />
           </div>
@@ -81,7 +81,8 @@ return(
               value={formData.location}
               onChange={handleChange}
               placeholder="e.g. Westlands, Nairobi"
-              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none placeholder:text-gray-400 
+"
               required
             />
           </div>
@@ -93,7 +94,7 @@ return(
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none placeholder:text-gray-400"
               required
             >
               <option value="Residential">Property</option>
@@ -113,7 +114,7 @@ return(
               onChange={handleChange}
               placeholder="Describe your property..."
               rows={4}
-              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
+              className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none placeholder:text-gray-400"
               required
             ></textarea>
           </div>
