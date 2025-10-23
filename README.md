@@ -1,5 +1,5 @@
 ﻿
-# <img src="/public/favicon.ico" alt="RentFlow360 Logo" width="120" height="40"> RentFlow360
+# <img src="/public/favicon/favicon.ico" alt="RentFlow360 Logo" width="120" height="40"> RentFlow360
 
 **RentFlow360** is a full-stack property rental management platform designed to help property owners, tenants, and agents streamline rental operations. It provides tools for lease management, rent payments, tenant communication, analytics, vendor management, and a property marketplace — all from one unified dashboard.
 
@@ -158,4 +158,5 @@ npm run test
 ## 📜 License
 
 This project is licensed under the **Kipsreality License**.
+
 
