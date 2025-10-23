@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Shield, Lock, FileText, Users, Bell, Settings } from 'lucide-react';
-import privacyData from '../data/privacypolicydata.json';
-import Navbar from '@/components/LandingPage/Navbar';
-import Footer from '@/components/LandingPage/Footer';
+import privacyData from "../../data/privacypolicydata.json"
+import Navbar from "@/components/website/Navbar"
+import Footer from '@/components/website/Footer';
 
 const {
   config,
