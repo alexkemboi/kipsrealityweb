@@ -22,27 +22,8 @@ const Dashboard = () => {
 	return (
 		<section
 			id="dashboard"
-			className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300"
+			className="relative min-h-screen flex items-center justify-center overflow-hidden  text-[var(--foreground)] transition-colors duration-300 bg-[#0f172a]"
 		>
-			{/* Background Layers */}
-			<div className="absolute inset-0 z-0">
-				{/* Base Background */}
-				<div className="absolute inset-0 bg-[var(--color-blue-50)]" />
-
-				{/* Gradient Overlays */}
-				<div className="absolute inset-0 bg-gradient-to-t from-[var(--color-blue-100)]/80 via-transparent to-[var(--color-cyan-50)]/60" />
-				<div className="absolute inset-0 bg-gradient-to-r from-[var(--color-blue-100)]/40 via-transparent to-[var(--color-cyan-100)]/40" />
-
-				{/* Grid Overlay */}
-				<div className="absolute inset-0 opacity-[0.03]">
-					<div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
-				</div>
-
-				{/* Floating Orbs */}
-				<div className="absolute top-20 left-10 w-72 h-72 bg-blue-300/15 rounded-full blur-3xl animate-float-slow" />
-				<div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-300/10 rounded-full blur-3xl animate-float-medium delay-2000" />
-				<div className="absolute top-1/2 left-1/3 w-64 h-64 bg-blue-200/8 rounded-full blur-3xl animate-float-slow delay-1000" />
-			</div>
 
 			{/* Main Content */}
 			<div className="relative z-20 container mx-auto px-6 py-24 lg:py-32">
