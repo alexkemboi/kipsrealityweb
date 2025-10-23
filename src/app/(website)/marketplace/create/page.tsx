@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import {Input} from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import Navbar from "@/components/website/Navbar";
 import CreateListingPage from "@/components/website/marketplace/ListingForm";
+import Footer from "@/components/website/Footer";
 
 export default function CreateListingClient() {
   
@@ -24,7 +23,9 @@ export default function CreateListingClient() {
         </div>
     
     </section>
-<CreateListingPage/>    
+<CreateListingPage/>   
+          <Footer />
+
       </div>
 
   );
