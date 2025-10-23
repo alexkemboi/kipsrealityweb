@@ -33,10 +33,11 @@ export default function Home() {
       <WhatMakes />
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
-      <BrandPromise />
+<TypewriterEffectDemo/>
 
-      <ServicesPage />
-      <Plans />
+      <Services />
+
+      <PlansClientPage />
       <Contact />
       <Footer />
     </main>
