@@ -35,8 +35,7 @@ export const marketplaceListings: MarketplaceItem[] = [
     title: "3-Seater Leather Sofa Set",
     description:
       "Premium brown leather sofa set in great condition. Ideal for apartments or home offices.",
-    image:
-      "https://images.unsplash.com/photo-1616627985494-4d62d7db61d8?w=800&h=500&fit=crop",
+    image:"https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&h=500&fit=crop",
     category: "furniture",
     price: 35000,
     location: "Westlands, Nairobi",
@@ -78,7 +77,7 @@ export const marketplaceListings: MarketplaceItem[] = [
     description:
       "Newly built studio apartment ideal for short-term stays or Airbnb investment. Located near Yaya Center.",
     image:
-      "https://images.unsplash.com/photo-1600585153837-0c1b9f64c9cc?w=800&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1702014862053-946a122b920d?w=800&h=500&fit=crop",
     category: "property",
     price: 5200000,
     location: "Yaya, Nairobi",
