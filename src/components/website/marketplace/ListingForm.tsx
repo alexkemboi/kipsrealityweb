@@ -96,11 +96,11 @@ return(
               className="w-full p-3 rounded-lg bg-white text-black font-semibold border-neutral-700 focus:border-blue-500 focus:outline-none"
               required
             >
-              <option value="Residential">Residential</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Land">Land</option>
-              <option value="Office Space">Office Space</option>
-              <option value="Other">Other</option>
+              <option value="Residential">Property</option>
+              <option value="Commercial">Furniture</option>
+              <option value="Appliance">Amenity</option>
+              <option value="Decor">Office Space</option>
+              <option value="Services">Other</option>
             </select>
           </div>
 
