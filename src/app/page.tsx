@@ -6,12 +6,12 @@ import Footer from "../components/LandingPage/Footer";
 import WhatMakes from "../components/LandingPage/WhatMakes";
 import OurTeam from "../components/LandingPage/OurTeam";
 import BrandPromise from "../components/LandingPage/BrandPromise";
-import Services from "../components/LandingPage/ServicesSection";
 import Plans from "../components/LandingPage/Plans";
 import Contact from "../components/LandingPage/ContactUs";
 import { Testimonials } from "../components/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
 import ServicesPage from "./services/page";
+import Services from "../components/LandingPage/ServicesSection";
 import {TypewriterEffectDemo} from "../components/LandingPage/BrandWords"
 
 
@@ -29,8 +29,7 @@ export default function Home() {
       <Testimonials initialTestimonials={testimonials} />
       <OurTeam />
 <TypewriterEffectDemo />
-      <ServicesPage />
-      <Plans />
+<Services />
       <Contact />
       <Footer />
     </main>

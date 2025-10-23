@@ -1,97 +1,81 @@
-// Services Section
-export default function Services() {
-  const services = [
-    {
-      title: "Property Management",
-      desc: "Centrally register, categorize, and manage properties, leases, maintenance, and documentation in one unified dashboard.",
-      icon: "🏢",
-      color: "text-[#FACC15]",
-    },
-    {
-      title: "Invoicing & Rent Collection",
-      desc: "Automate rent billing, payments, and reconciliation with integrated ledgers and multi-method payment support.",
-      icon: "💳",
-      color: "text-[#1E293B]",
-    },
-    {
-      title: "Tenant Screening & Onboarding",
-      desc: "Digitally process tenant applications, perform credit checks, and manage compliant onboarding workflows securely.",
-      icon: "🧾",
-      color: "text-[#3B82F6]",
-    },
-    {
-      title: "Utility Management",
-      desc: "Track, allocate, and invoice utilities accurately with options for API integration and tenant transparency.",
-      icon: "💡",
-      color: "text-[#F97316]",
-    },
-    {
-      title: "Marketplace",
-      desc: "Connect buyers, sellers, and renters in a verified real estate marketplace for properties and home essentials.",
-      icon: "🛒",
-      color: "text-[#10B981]",
-    },
-    {
-      title: "Support & Communication",
-      desc: "Access 24/7 assistance, ticketing, and in-app chat with a centralized help desk and self-service knowledge base.",
-      icon: "🤝",
-      color: "text-gray-700",
-    },
-    {
-      title: "User Account & Access Management",
-      desc: "Securely manage user accounts, permissions, and authentication with full audit trails and role-based access.",
-      icon: "👥",
-      color: "text-[#8B5CF6]",
-    },
-    {
-      title: "Reporting & Analytics",
-      desc: "Visualize KPIs and trends with customizable dashboards, data exports, and scheduled performance reports.",
-      icon: "📊",
-      color: "text-[#2563EB]",
-    },
-    {
-      title: "Notifications & Alerts",
-      desc: "Deliver real-time alerts and reminders via email, SMS, or in-app channels for payments, renewals, and updates.",
-      icon: "🔔",
-      color: "text-[#EAB308]",
-    },
-    {
-      title: "Security & Compliance",
-      desc: "Protect user data through encryption, monitoring, backups, and adherence to international data protection standards.",
-      icon: "🔒",
-      color: "text-[#DC2626]",
-    },
-    {
-      title: "System Administration",
-      desc: "Enable admins to manage platform settings, integrations, performance, and global configuration parameters.",
-      icon: "⚙️",
-      color: "text-[#64748B]",
-    },
-  ];
+"use client";
 
+import Image from "next/image";
+import bgImage from "@/assets/hero-cityscape.jpg";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
+export default function WhatMakes() {
   return (
-    <section id="services" className="px-8 py-20 md:px-20 bg-gradient-to-b from-white to-gray-50">
-      <div className="max-w-6xl mx-auto text-center">
-        <h3 className="text-3xl md:text-4xl font-extrabold text-[#1E293B] mb-4">
-          Our Services
-        </h3>
-        <p className="text-gray-600 max-w-2xl mx-auto mb-12">
-          We provide a comprehensive suite of services designed to make property ownership and management effortless.
-        </p>
-
-        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3">
-          {services.map((service, i) => (
-            <div
-              key={i}
-              className="bg-white border border-gray-200 rounded-2xl p-8 text-left shadow-sm hover:shadow-lg hover:border-[#FACC15] transition-all duration-300"
-            >
-              <div className={`text-5xl mb-4 ${service.color}`}>{service.icon}</div>
-              <h4 className="text-xl font-semibold text-[#1E293B] mb-2">{service.title}</h4>
-              <p className="text-gray-600 text-sm leading-relaxed">{service.desc}</p>
-            </div>
-          ))}
+    <section
+      id="what-makes"
+      className="relative min-h-[95vh] flex justify-center items-center overflow-hidden"
+    >
+      {/* --- Background --- */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={bgImage}
+          alt="Background image for What Makes Us Different"
+          fill
+          className="object-cover"
+          quality={90}
+          priority
+        />
+        <div className="absolute inset-0 bg-neutral-900/95" />
+        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
         </div>
+
+        {/* Floating Orbs */}
+        <div className="absolute top-24 left-16 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float-medium delay-1000" />
+      </div>
+
+      {/* --- Content --- */}
+      <div className="relative z-20 container mx-auto px-6 py-24 text-center">
+        <h3 className="text-white mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.4)] pb-4">
+          Our{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 animate-gradient-x">
+            Services
+          </span>
+        </h3>
+
+        {/* --- Adjusted Card Width --- */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 30 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
+          className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl 
+                     shadow-2xl w-full max-w-6xl mx-auto flex flex-col items-center 
+                     justify-center space-y-10 p-10 md:p-14 
+                     hover:bg-white/15 hover:border-white/30 
+                     hover:shadow-blue-500/30 transition-all duration-500 group"
+        >
+          {/* Card Glow */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
+
+          <div className="relative z-10 space-y-6 max-w-3xl mx-auto">
+            <p className="text-white/90 text-lg md:text-xl leading-relaxed font-light tracking-wide">
+              At <span className="text-blue-300 font-medium">RentFlow360</span>, 
+              we offer a comprehensive range of real estate services — from property 
+              management and tenant placement to investment advisory and digital listings. 
+              Whatever your goal, we’re here to help you achieve it with confidence.
+            </p>
+
+            <Link href="/services">
+              <Button
+                size="lg"
+                className="font-inter text-lg px-8 py-6 bg-gradient-primary hover:from-blue-700 hover:to-cyan-700 text-white shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <span className="relative">Go To Services</span>
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -60,7 +60,7 @@ export default function About() {
             <p className="text-white/70 max-w-4xl mx-auto leading-relaxed ">
               At{" "}
               <span className="font-semibold text-white">
-                Kips Reality LLC
+                RentFlow360
               </span>
               , we’re redefining the rental experience with a modern,
               tech-driven approach. Our platform was built to solve everyday
@@ -82,11 +82,10 @@ export default function About() {
               </span>
               </h4>
             <p className="text-white/70 ">
-              Kips Reality was born out of a simple idea: property management
+             RentFlow360 was born out of a simple idea: property management
               shouldn’t be complicated. Our founders, with deep roots in
-              finance, compliance, and real estate, saw firsthand how landlords
-              struggled with disconnected systems—and how tenants often felt left
-              in the dark.
+              finance, compliance, and real estate, saw firsthand how people
+              struggled with disconnected systems.            
             </p>
           
           </div>
