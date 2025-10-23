@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Navbar from '@/components/LandingPage/Navbar';
+import Navbar from '@/components/website/Navbar';
 import { JobsClientPage } from '@/components/Career/JobClient';
 import { jobPositions } from '@/app/data/jobData';
 
