@@ -1,6 +1,6 @@
 "use client";
 
-import { TypewriterEffect } from "../ui/typewriter-effect";
+import { TypewriterEffect } from "../../ui/typewriter-effect";
 import Image from "next/image";
 import aboutBg from "@/assets/hero-cityscape.jpg";
 import { motion } from "framer-motion";

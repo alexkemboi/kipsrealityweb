@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { Button } from '../ui/button';
+import { Button } from '../../ui/button';
 import { Play, ArrowRight, Shield, Zap, TrendingUp, Building2, Users, CheckCircle } from "lucide-react";
 import heroCityscape from "@/assets/hero-cityscape.jpg";
 
