@@ -15,7 +15,6 @@ export default function JobsPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* --- HERO HEADER SECTION --- */}
       <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
         <div className="max-w-3xl mx-auto px-6">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
@@ -28,7 +27,6 @@ export default function JobsPage() {
         </div>
       </section>
 
-      {/* --- JOB LIST SECTION --- */}
       <div className="container mx-auto px-6 py-16">
         <JobsClientPage initialJobs={jobPositions} />
       </div>
