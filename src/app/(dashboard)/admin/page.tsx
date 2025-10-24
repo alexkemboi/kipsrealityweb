@@ -8,7 +8,6 @@ export default function AdminDashboard() {
           <h3 className="font-semibold text-lg">User Management</h3>
           <p className="text-gray-600 mt-2">Manage all users in the system</p>
         </div>
-        {/* More admin-specific content */}
       </div>
     </div>
   )
