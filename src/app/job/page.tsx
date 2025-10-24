@@ -3,6 +3,7 @@ import Navbar from '@/components/website/Navbar';
 import { JobsClientPage } from '@/components/Career/JobClient';
 import { jobPositions } from '@/app/data/jobData';
 
+
 export const metadata: Metadata = {
   title: 'Job Listings - Kips Reality',
   description:
