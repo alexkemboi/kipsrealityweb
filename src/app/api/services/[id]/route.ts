@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 // GET service by ID
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -18,12 +18,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const id = parseInt(params.id);
   try {
     const body = await req.json();
-    const { categoryId, name, description, features, impact, icon } = body;
+    const { category_id, name, description, features, impact, icon } = body;
 
     const updated = await prisma.service.update({
       where: { id },
-      data: { categoryId, name, description, features, impact, icon },
+      data: { category_id, name, description, features, impact, icon },
     });
+
     return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });

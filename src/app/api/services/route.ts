@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db"; // make sure this is your Prisma client
 
 // GET all services or by category_id
 export async function GET(req: NextRequest) {
   const categoryId = req.nextUrl.searchParams.get("category_id");
   try {
     const services = await prisma.service.findMany({
-      where: categoryId ? { categoryId: parseInt(categoryId) } : {},
+      where: categoryId ? { category_id: parseInt(categoryId) } : {},
     });
     return NextResponse.json(services);
   } catch (err) {
@@ -18,11 +18,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { categoryId, name, description, features, impact, icon } = body;
+    const { category_id, name, description, features, impact, icon } = body;
 
     const service = await prisma.service.create({
       data: {
-        categoryId,
+        category_id,
         name,
         description,
         features,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(service);
+    return NextResponse.json(service, { status: 201 });
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
