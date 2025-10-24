@@ -1,35 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "../../../../lib/db";
+import { prisma } from "@/lib/prisma";
 
+// GET service by ID
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = parseInt(params.id);
   try {
-    const [result]: any = await db.query("SELECT * FROM categories WHERE id=?", [id]);
-    if (result.length === 0) return NextResponse.json({ message: "Category not found" }, { status: 404 });
-    return NextResponse.json(result[0]);
+    const service = await prisma.service.findUnique({ where: { id } });
+    if (!service) return NextResponse.json({ message: "Service not found" }, { status: 404 });
+    return NextResponse.json(service);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
 }
 
+// PUT to update service
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
-  const body = await req.json();
-  const { name, tagline, color } = body;
-
+  const id = parseInt(params.id);
   try {
-    await db.query("UPDATE categories SET name=?, tagline=?, color=? WHERE id=?", [name, tagline, color, id]);
-    return NextResponse.json({ message: "Category updated successfully" });
+    const body = await req.json();
+    const { categoryId, name, description, features, impact, icon } = body;
+
+    const updated = await prisma.service.update({
+      where: { id },
+      data: { categoryId, name, description, features, impact, icon },
+    });
+    return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
 }
 
+// DELETE a service
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = parseInt(params.id);
   try {
-    await db.query("DELETE FROM categories WHERE id=?", [id]);
-    return NextResponse.json({ message: "Category deleted successfully" });
+    await prisma.service.delete({ where: { id } });
+    return NextResponse.json({ message: "Service deleted successfully" });
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }

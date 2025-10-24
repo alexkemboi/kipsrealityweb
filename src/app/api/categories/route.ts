@@ -1,25 +1,28 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import db from "../../../lib/db";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(req: NextRequest) {
+// GET all categories with services
+export async function GET() {
   try {
-    const [categories] = await db.query("SELECT * FROM categories");
+    const categories = await prisma.category.findMany({
+      include: { services: true },
+    });
     return NextResponse.json(categories);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
 }
 
+// POST a new category
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, tagline, color } = body;
-    const [result]: any = await db.query(
-      "INSERT INTO categories (name, tagline, color) VALUES (?, ?, ?)",
-      [name, tagline, color]
-    );
-    return NextResponse.json({ id: result.insertId });
+
+    const category = await prisma.category.create({
+      data: { name, tagline, color },
+    });
+    return NextResponse.json(category);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }

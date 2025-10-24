@@ -1,34 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import db from "../../../../lib/db";
+import { prisma } from "@/lib/prisma";
 
+// GET a single category by ID
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = parseInt(params.id);
   try {
-    const [result]: any = await db.query("SELECT * FROM categories WHERE id=?", [id]);
-    if (result.length === 0) return NextResponse.json({ message: "Category not found" }, { status: 404 });
-    return NextResponse.json(result[0]);
+    const category = await prisma.category.findUnique({
+      where: { id },
+      include: { services: true },
+    });
+    if (!category) return NextResponse.json({ message: "Category not found" }, { status: 404 });
+    return NextResponse.json(category);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
 }
 
+// PUT to update a category
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
-  const body = await req.json();
-  const { name, tagline, color } = body;
-
+  const id = parseInt(params.id);
   try {
-    await db.query("UPDATE categories SET name=?, tagline=?, color=? WHERE id=?", [name, tagline, color, id]);
-    return NextResponse.json({ message: "Category updated successfully" });
+    const body = await req.json();
+    const { name, tagline, color } = body;
+
+    const updated = await prisma.category.update({
+      where: { id },
+      data: { name, tagline, color },
+    });
+    return NextResponse.json(updated);
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
   }
 }
 
+// DELETE a category
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = parseInt(params.id);
   try {
-    await db.query("DELETE FROM categories WHERE id=?", [id]);
+    await prisma.category.delete({ where: { id } });
     return NextResponse.json({ message: "Category deleted successfully" });
   } catch (err) {
     return NextResponse.json({ error: "Database error", details: err }, { status: 500 });
