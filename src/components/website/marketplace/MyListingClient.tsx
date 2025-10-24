@@ -36,26 +36,28 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
           />
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200 flex">
-          {["view", "edit", "inquiries"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as "view" | "edit" | "inquiries")}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors ${
-                activeTab === tab
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab === "view"
-                ? "Overview"
-                : tab === "edit"
-                ? "Edit Listing"
-                : "Inquiries"}
-            </button>
-          ))}
-        </div>
+    {/* Tabs */}
+<div className="mt-8 border-b border-gray-200 flex divide-x divide-gray-300 rounded-t-xl overflow-hidden">
+  {["view", "edit", "inquiries"].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab as "view" | "edit" | "inquiries")}
+      className={`flex-1 py-3 text-sm font-semibold transition-colors
+        ${
+          activeTab === tab
+            ? "text-blue-600 border-b-2 border-blue-600 bg-gray-50"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+    >
+      {tab === "view"
+        ? "Overview"
+        : tab === "edit"
+        ? "Edit Listing"
+        : "Inquiries"}
+    </button>
+  ))}
+</div>
+
 
         {/* Content Area */}
         <div className="p-6 md:p-10">
@@ -75,7 +77,7 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                     {editableListing.title}
                   </h1>
                   <p className="text-blue-600 font-semibold text-lg">
-                    Ksh {editableListing.price.toLocaleString()}
+                    $ {editableListing.price.toLocaleString()}
                   </p>
                 </div>
 
@@ -101,19 +103,9 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                   </p>
                 </div>
 
-                {/* Contact Info */}
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Contact Information
-                  </h2>
-                  <div className="flex items-center gap-2 text-gray-700 text-sm">
-                    <Phone className="w-4 h-4 text-blue-500" />
-                    {editableListing.contact}
-                  </div>
-                </div>
 
                 <p className="text-sm text-gray-500 mt-4">
-                  <strong>Posted by:</strong> {editableListing.postedBy}
+                  <strong>You Posted as:</strong> {editableListing.postedBy}
                 </p>
               </motion.div>
             )}
@@ -135,6 +127,8 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                     value={editableListing.title}
                     onChange={(e) => handleChange("title", e.target.value)}
                     className="text-2xl md:text-3xl font-bold text-gray-900 border-b border-gray-300 focus:outline-none focus:border-blue-500"
+                      style={{ width: `${editableListing.title.length + 2}ch` }}
+
                   />
                   <input
                     type="number"
@@ -158,17 +152,7 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                   className="w-full text-gray-900 border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 />
 
-                <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Contact Information
-                  </h2>
-                  <input
-                    type="text"
-                    value={editableListing.contact || ""}
-                    onChange={(e) => handleChange("contact", e.target.value)}
-                    className="bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 w-full py-2"
-                  />
-                </div>
+             
 
                 <button
                   type="submit"
