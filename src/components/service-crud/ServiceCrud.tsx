@@ -10,11 +10,17 @@ import {
   Button,
   CircularProgress,
   Paper,
-  Grid,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import { Grid } from "@mui/material";
 
-import { Category, Service, CategoryFormData, ServiceFormData } from "./type";
+
+import {
+  Category,
+  Service,
+  CategoryFormData,
+  ServiceFormData,
+} from "./type";
 import CategoryModal from "./CategoryModal";
 import ServiceModal from "./ServiceModal";
 import CategoryCard from "./CatergoryCard";
@@ -163,7 +169,10 @@ export default function ServicesCRUD() {
     setServiceModalOpen(true);
   };
 
-  const handleServiceChange = (field: keyof ServiceFormData, value: string | number | string[]) => {
+  const handleServiceChange = (
+    field: keyof ServiceFormData,
+    value: string | number | string[]
+  ) => {
     setServiceForm({ ...serviceForm, [field]: value });
   };
 
@@ -229,7 +238,17 @@ export default function ServicesCRUD() {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <ToastContainer position="top-right" autoClose={3000} />
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, pb: 2, borderBottom: 2, borderColor: "divider" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 4,
+          pb: 2,
+          borderBottom: 2,
+          borderColor: "divider",
+        }}
+      >
         <Box>
           <Typography variant="h3" component="h1" fontWeight={700} gutterBottom>
             Categories & Services Management
@@ -238,7 +257,12 @@ export default function ServicesCRUD() {
             Manage your service categories and offerings
           </Typography>
         </Box>
-        <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={() => openCategoryModal()}>
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<AddIcon />}
+          onClick={() => openCategoryModal()}
+        >
           Add Category
         </Button>
       </Box>
@@ -248,37 +272,74 @@ export default function ServicesCRUD() {
           <CircularProgress size={60} />
         </Box>
       ) : categories.length === 0 ? (
-        <Paper elevation={0} sx={{ textAlign: "center", py: 8, px: 4, bgcolor: "grey.50", border: 2, borderColor: "grey.200", borderStyle: "dashed", borderRadius: 2 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            textAlign: "center",
+            py: 8,
+            px: 4,
+            bgcolor: "grey.50",
+            border: 2,
+            borderColor: "grey.200",
+            borderStyle: "dashed",
+            borderRadius: 2,
+          }}
+        >
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No categories yet
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Create your first category to get started!
           </Typography>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => openCategoryModal()}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => openCategoryModal()}
+          >
             Create Category
           </Button>
         </Paper>
       ) : (
-        <Grid container spacing={3}>
-          {categories.map((cat) => (
-            <Grid item xs={12} md={6} lg={4} key={cat.id}>
-              <CategoryCard
-                category={cat}
-                onEditCategory={openCategoryModal}
-                onDeleteCategory={deleteCategory}
-                onAddService={openServiceModal}
-                onEditService={openServiceModal}
-                onDeleteService={deleteService}
-              />
-            </Grid>
-          ))}
-        </Grid>
+       <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "24px",
+        }}
+      >
+        {categories.map((cat) => (
+          <div key={cat.id}>
+            <CategoryCard
+              category={cat}
+              onEditCategory={openCategoryModal}
+              onDeleteCategory={deleteCategory}
+              onAddService={openServiceModal}
+              onEditService={openServiceModal}
+              onDeleteService={deleteService}
+            />
+          </div>
+        ))}
+      </div>
+
+
       )}
 
-      <CategoryModal isOpen={categoryModalOpen} categoryForm={categoryForm} onClose={() => setCategoryModalOpen(false)} onSave={saveCategory} onChange={handleCategoryChange} />
+      <CategoryModal
+        isOpen={categoryModalOpen}
+        categoryForm={categoryForm}
+        onClose={() => setCategoryModalOpen(false)}
+        onSave={saveCategory}
+        onChange={handleCategoryChange}
+      />
 
-      <ServiceModal isOpen={serviceModalOpen} serviceForm={serviceForm} categories={categories} onClose={() => setServiceModalOpen(false)} onSave={saveService} onChange={handleServiceChange} />
+      <ServiceModal
+        isOpen={serviceModalOpen}
+        serviceForm={serviceForm}
+        categories={categories}
+        onClose={() => setServiceModalOpen(false)}
+        onSave={saveService}
+        onChange={handleServiceChange}
+      />
     </Container>
   );
 }

@@ -121,17 +121,24 @@ export default function CategoryCard({
             </Typography>
           </Box>
         ) : (
-          <Grid container spacing={2}>
-            {category.services.map((service: any) => (
-                <Grid item xs={12} key={service.id} component="div">
-                <ServiceCard
-                    service={service}
-                    onEdit={(srv: any) => onEditService(category, srv)}
-                    onDelete={onDeleteService}
-                />
-                </Grid>
-            ))}
-            </Grid>
+          <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr",
+            gap: "16px", // same as spacing={2}
+          }}
+        >
+          {category.services.map((service: any) => (
+            <div key={service.id}>
+              <ServiceCard
+                service={service}
+                onEdit={(srv: any) => onEditService(category, srv)}
+                onDelete={onDeleteService}
+              />
+            </div>
+          ))}
+        </div>
+
         )}
       </CardContent>
     </Card>
