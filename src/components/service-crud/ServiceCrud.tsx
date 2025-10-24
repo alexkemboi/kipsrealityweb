@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -9,12 +10,11 @@ import {
   Button,
   CircularProgress,
   Paper,
+  Grid,
 } from "@mui/material";
-import { Grid } from "@mui/material";
-
 import AddIcon from "@mui/icons-material/Add";
+
 import { Category, Service, CategoryFormData, ServiceFormData } from "./type";
-import { api } from "../../lib/service-api";
 import CategoryModal from "./CategoryModal";
 import ServiceModal from "./ServiceModal";
 import CategoryCard from "./CatergoryCard";
@@ -38,21 +38,25 @@ export default function ServicesCRUD() {
     category_id: 0,
     name: "",
     description: "",
-    features: [], // ✅ changed to array
+    features: [],
     impact: "",
     icon: "",
   });
 
-  // Fetch categories with services
+  // ------------------------
+  // FETCH CATEGORIES & SERVICES
+  // ------------------------
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const cats = await api.getCategories();
+      const catsRes = await fetch("/api/categories");
+      const catsData = await catsRes.json();
 
       const catsWithServices = await Promise.all(
-        cats.map(async (cat) => {
-          const services = await api.getServices(cat.id);
-          return { ...cat, services };
+        catsData.map(async (cat: Category) => {
+          const servicesRes = await fetch(`/api/services?category_id=${cat.id}`);
+          const servicesData = await servicesRes.json();
+          return { ...cat, services: servicesData };
         })
       );
 
@@ -69,7 +73,9 @@ export default function ServicesCRUD() {
     fetchCategories();
   }, []);
 
-  // Category handlers
+  // ------------------------
+  // CATEGORY HANDLERS
+  // ------------------------
   const openCategoryModal = (category?: Category) => {
     if (category) {
       setCategoryForm({
@@ -96,10 +102,18 @@ export default function ServicesCRUD() {
 
     try {
       if (categoryForm.id) {
-        await api.updateCategory(categoryForm.id, categoryForm);
+        await fetch(`/api/categories/${categoryForm.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(categoryForm),
+        });
         toast.success("Category updated successfully");
       } else {
-        await api.createCategory(categoryForm);
+        await fetch("/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(categoryForm),
+        });
         toast.success("Category created successfully");
       }
       setCategoryModalOpen(false);
@@ -111,12 +125,10 @@ export default function ServicesCRUD() {
   };
 
   const deleteCategory = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this category? All associated services will be lost.")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete this category? All associated services will be lost.")) return;
 
     try {
-      await api.deleteCategory(id);
+      await fetch(`/api/categories/${id}`, { method: "DELETE" });
       toast.success("Category deleted successfully");
       fetchCategories();
     } catch (err) {
@@ -125,7 +137,9 @@ export default function ServicesCRUD() {
     }
   };
 
-  // ✅ Service handlers
+  // ------------------------
+  // SERVICE HANDLERS
+  // ------------------------
   const openServiceModal = (category: Category, service?: Service) => {
     setSelectedCategory(category);
 
@@ -133,7 +147,6 @@ export default function ServicesCRUD() {
       setServiceForm({
         ...service,
         category_id: category.id,
-        // convert array → comma string for form field input
         features: service.features || [],
       });
     } else {
@@ -165,23 +178,27 @@ export default function ServicesCRUD() {
       return;
     }
 
-    // ✅ Ensure `features` is always an array of strings
     const featuresArray =
       typeof serviceForm.features === "string"
-        ? serviceForm.features.split(",").map((f) => f.trim()).filter((f) => f.length > 0)
+        ? serviceForm.features.split(",").map((f) => f.trim()).filter(Boolean)
         : serviceForm.features;
 
-    const body = {
-      ...serviceForm,
-      features: featuresArray,
-    };
+    const body = { ...serviceForm, features: featuresArray };
 
     try {
       if (serviceForm.id) {
-        await api.updateService(serviceForm.id, body);
+        await fetch(`/api/services/${serviceForm.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
         toast.success("Service updated successfully");
       } else {
-        await api.createService(body);
+        await fetch("/api/services", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
         toast.success("Service created successfully");
       }
       setServiceModalOpen(false);
@@ -193,12 +210,10 @@ export default function ServicesCRUD() {
   };
 
   const deleteService = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this service?")) {
-      return;
-    }
+    if (!confirm("Are you sure you want to delete this service?")) return;
 
     try {
-      await api.deleteService(id);
+      await fetch(`/api/services/${id}`, { method: "DELETE" });
       toast.success("Service deleted successfully");
       fetchCategories();
     } catch (err) {
@@ -207,21 +222,14 @@ export default function ServicesCRUD() {
     }
   };
 
+  // ------------------------
+  // RENDER
+  // ------------------------
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <ToastContainer position="top-right" autoClose={3000} />
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-          pb: 2,
-          borderBottom: 2,
-          borderColor: "divider",
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, pb: 2, borderBottom: 2, borderColor: "divider" }}>
         <Box>
           <Typography variant="h3" component="h1" fontWeight={700} gutterBottom>
             Categories & Services Management
@@ -230,12 +238,7 @@ export default function ServicesCRUD() {
             Manage your service categories and offerings
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<AddIcon />}
-          onClick={() => openCategoryModal()}
-        >
+        <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={() => openCategoryModal()}>
           Add Category
         </Button>
       </Box>
@@ -245,74 +248,37 @@ export default function ServicesCRUD() {
           <CircularProgress size={60} />
         </Box>
       ) : categories.length === 0 ? (
-        <Paper
-          elevation={0}
-          sx={{
-            textAlign: "center",
-            py: 8,
-            px: 4,
-            bgcolor: "grey.50",
-            border: 2,
-            borderColor: "grey.200",
-            borderStyle: "dashed",
-            borderRadius: 2,
-          }}
-        >
+        <Paper elevation={0} sx={{ textAlign: "center", py: 8, px: 4, bgcolor: "grey.50", border: 2, borderColor: "grey.200", borderStyle: "dashed", borderRadius: 2 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No categories yet
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Create your first category to get started!
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => openCategoryModal()}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => openCategoryModal()}>
             Create Category
           </Button>
         </Paper>
       ) : (
         <Grid container spacing={3}>
-        {categories.map((cat) => (
-            <Grid
-            item
-            xs={12}
-            md={6}
-            lg={4}
-            key={cat.id}
-            >
-            <CategoryCard
+          {categories.map((cat) => (
+            <Grid item xs={12} md={6} lg={4} key={cat.id}>
+              <CategoryCard
                 category={cat}
                 onEditCategory={openCategoryModal}
                 onDeleteCategory={deleteCategory}
                 onAddService={openServiceModal}
                 onEditService={openServiceModal}
                 onDeleteService={deleteService}
-            />
+              />
             </Grid>
-        ))}
+          ))}
         </Grid>
-
-
       )}
 
-      <CategoryModal
-        isOpen={categoryModalOpen}
-        categoryForm={categoryForm}
-        onClose={() => setCategoryModalOpen(false)}
-        onSave={saveCategory}
-        onChange={handleCategoryChange}
-      />
+      <CategoryModal isOpen={categoryModalOpen} categoryForm={categoryForm} onClose={() => setCategoryModalOpen(false)} onSave={saveCategory} onChange={handleCategoryChange} />
 
-      <ServiceModal
-        isOpen={serviceModalOpen}
-        serviceForm={serviceForm}
-        categories={categories}
-        onClose={() => setServiceModalOpen(false)}
-        onSave={saveService}
-        onChange={handleServiceChange}
-      />
+      <ServiceModal isOpen={serviceModalOpen} serviceForm={serviceForm} categories={categories} onClose={() => setServiceModalOpen(false)} onSave={saveService} onChange={handleServiceChange} />
     </Container>
   );
 }
