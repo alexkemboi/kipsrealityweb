@@ -105,3 +105,31 @@ model Vendor {
   @@unique([organizationId, userId])
   @@map("vendors")
 }
+
+// ========================
+// SERVICE CATEGORIES & SERVICES
+// ========================
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  tagline  String
+  color    String
+  services Service[]
+
+  @@map("categories")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  category_id Int
+  name        String
+  description String
+  features    Json     // store array of strings
+  impact      String
+  icon        String
+
+  category Category @relation(fields: [category_id], references: [id])
+
+  @@map("services")
+}

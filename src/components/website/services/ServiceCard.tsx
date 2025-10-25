@@ -1,17 +1,22 @@
-"use client"
-import { useState } from 'react'
-import { ArrowUpRight, Zap, CheckCircle2, Sparkles } from 'lucide-react'
-import * as Icons from 'lucide-react'
-import { theme } from '@/app/data/servicesData'
+"use client";
+import { useState } from "react";
+import { ArrowUpRight, Zap, CheckCircle2, Sparkles, HelpCircle } from "lucide-react";
+import * as Icons from "lucide-react";
+import { theme } from "@/app/data/servicesData";
 
 interface ServiceCardProps {
-  service: any
-  categoryColor: string
+  service: any;
+  categoryColor: string;
 }
 
 export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
-  const [isHovered, setIsHovered] = useState(false)
-  const Icon = (Icons as any)[service.icon]
+  const [isHovered, setIsHovered] = useState(false);
+
+  // ✅ Safe icon fallback — prevents crashes if icon name is invalid
+  const Icon =
+    service.icon && (Icons as any)[service.icon]
+      ? (Icons as any)[service.icon]
+      : HelpCircle;
 
   return (
     <div
@@ -25,7 +30,7 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
         style={{
           background: `linear-gradient(135deg, ${categoryColor}, ${theme.accent})`,
           opacity: isHovered ? 0.6 : 0,
-          transform: isHovered ? 'scale(1.05)' : 'scale(0.95)'
+          transform: isHovered ? "scale(1.05)" : "scale(0.95)",
         }}
       />
 
@@ -33,11 +38,11 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
         className="relative h-full rounded-2xl border-2 transition-all duration-500 overflow-hidden"
         style={{
           background: theme.white,
-          borderColor: isHovered ? categoryColor : '#E5E7EB',
-          transform: isHovered ? 'translateY(-12px)' : 'translateY(0)',
+          borderColor: isHovered ? categoryColor : "#E5E7EB",
+          transform: isHovered ? "translateY(-12px)" : "translateY(0)",
           boxShadow: isHovered
             ? `0 25px 60px -12px ${categoryColor}40, 0 0 0 1px ${categoryColor}20`
-            : '0 4px 6px -1px rgba(0,0,0,0.1)'
+            : "0 4px 6px -1px rgba(0,0,0,0.1)",
         }}
       >
         {/* Top Accent Bar */}
@@ -45,8 +50,8 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
           className="absolute top-0 left-0 right-0 h-1 transition-all duration-500"
           style={{
             background: `linear-gradient(90deg, ${categoryColor}, ${theme.accent})`,
-            transform: isHovered ? 'scaleX(1)' : 'scaleX(0)',
-            transformOrigin: 'left'
+            transform: isHovered ? "scaleX(1)" : "scaleX(0)",
+            transformOrigin: "left",
           }}
         />
 
@@ -55,8 +60,8 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
           className="absolute inset-0 opacity-0 transition-opacity duration-500"
           style={{
             backgroundImage: `radial-gradient(circle at 2px 2px, ${categoryColor} 1px, transparent 0)`,
-            backgroundSize: '24px 24px',
-            opacity: isHovered ? 0.03 : 0
+            backgroundSize: "24px 24px",
+            opacity: isHovered ? 0.03 : 0,
           }}
         />
 
@@ -70,17 +75,20 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
                   background: isHovered
                     ? `linear-gradient(135deg, ${categoryColor}, ${theme.accent})`
                     : `${categoryColor}10`,
-                  transform: isHovered ? 'rotate(-5deg) scale(1.1)' : 'rotate(0) scale(1)',
-                  boxShadow: isHovered ? `0 8px 24px ${categoryColor}30` : 'none'
+                  transform: isHovered
+                    ? "rotate(-5deg) scale(1.1)"
+                    : "rotate(0) scale(1)",
+                  boxShadow: isHovered ? `0 8px 24px ${categoryColor}30` : "none",
                 }}
               >
                 {/* Shine effect */}
                 <div
                   className="absolute inset-0 transition-opacity duration-500"
                   style={{
-                    background: 'linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)',
-                    transform: 'translateX(-100%)',
-                    animation: isHovered ? 'shine 1.5s ease-in-out infinite' : 'none'
+                    background:
+                      "linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent)",
+                    transform: "translateX(-100%)",
+                    animation: isHovered ? "shine 1.5s ease-in-out infinite" : "none",
                   }}
                 />
                 <Icon
@@ -104,9 +112,11 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500"
               style={{
-                background: isHovered ? `${categoryColor}10` : 'transparent',
-                transform: isHovered ? 'rotate(45deg) scale(1)' : 'rotate(0deg) scale(0.8)',
-                opacity: isHovered ? 1 : 0
+                background: isHovered ? `${categoryColor}10` : "transparent",
+                transform: isHovered
+                  ? "rotate(45deg) scale(1)"
+                  : "rotate(0deg) scale(0.8)",
+                opacity: isHovered ? 1 : 0,
               }}
             >
               <ArrowUpRight
@@ -114,7 +124,7 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
                 strokeWidth={3}
                 style={{
                   color: categoryColor,
-                  transform: 'rotate(-45deg)'
+                  transform: "rotate(-45deg)",
                 }}
               />
             </div>
@@ -131,7 +141,7 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
 
             <p
               className="text-sm sm:text-base leading-relaxed"
-              style={{ color: '#64748B' }}
+              style={{ color: "#64748B" }}
             >
               {service.description}
             </p>
@@ -139,13 +149,13 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
 
           {/* Features List */}
           <div className="space-y-3 mb-6">
-            {service.features.map((feature: string, idx: number) => (
+            {service.features?.map((feature: string, idx: number) => (
               <div
                 key={idx}
                 className="flex items-start gap-3 transition-all duration-300"
                 style={{
-                  transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
-                  transitionDelay: `${idx * 50}ms`
+                  transform: isHovered ? "translateX(4px)" : "translateX(0)",
+                  transitionDelay: `${idx * 50}ms`,
                 }}
               >
                 <CheckCircle2
@@ -156,7 +166,7 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
                 />
                 <span
                   className="text-sm font-medium"
-                  style={{ color: '#475569' }}
+                  style={{ color: "#475569" }}
                 >
                   {feature}
                 </span>
@@ -172,13 +182,13 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
                 ? `linear-gradient(135deg, ${categoryColor}, ${theme.accent})`
                 : `${categoryColor}08`,
               color: isHovered ? theme.white : categoryColor,
-              transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-              boxShadow: isHovered ? `0 4px 12px ${categoryColor}30` : 'none'
+              transform: isHovered ? "scale(1.05)" : "scale(1)",
+              boxShadow: isHovered ? `0 4px 12px ${categoryColor}30` : "none",
             }}
           >
             <Zap
               size={16}
-              fill={isHovered ? theme.white : 'none'}
+              fill={isHovered ? theme.white : "none"}
               strokeWidth={2.5}
             />
             <span>{service.impact}</span>
@@ -188,10 +198,14 @@ export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
 
       <style jsx>{`
         @keyframes shine {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(300%); }
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(300%);
+          }
         }
       `}</style>
     </div>
-  )
-}
+  );
+};
