@@ -20,7 +20,7 @@ export default function WhatMakes() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
       </div>
       {/* Content */}
-      <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32">
+      <div className="relative z-20 container mx-auto px-6 py-20 lg:py-24">
         <div className="max-w-6xl mx-auto text-center space-y-12">
           {/* Title */}
           <div className="space-y-4">
@@ -67,7 +67,7 @@ export default function WhatMakes() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="group bg-[#1d3d67] shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.03] cursor-pointer"
+                className="group bg-[#1d3d67] p-6 shadow-2xl rounded-2xl  hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.03] cursor-pointer"
               >
                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-6 bg-gradient-to-r from-blue-500/40 to-cyan-400/40 rounded-xl group-hover:from-blue-500/60 group-hover:to-cyan-400/60 transition-all">
                   <item.icon className="w-6 h-6 text-white" />
@@ -75,7 +75,7 @@ export default function WhatMakes() {
                 <h5 className="text-xl font-semibold text-white mb-3">
                   {item.title}
                 </h5>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-white/70 text-lg leading-relaxed">
                   {item.desc}
                 </p>
               </div>
