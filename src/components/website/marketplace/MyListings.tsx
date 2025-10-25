@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { MarketplaceItem } from "@/app/data/marketplaceData";
 import { MoreHorizontal, MapPin, Edit, Trash } from "lucide-react";
 
@@ -13,8 +14,6 @@ export function MyListings({ listings }: MarketplaceClientPageProps) {
 
   return (
     <section className="container mx-auto px-4 py-16">
-     
-
       {listings.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
           {/* Table Header */}
@@ -29,9 +28,10 @@ export function MyListings({ listings }: MarketplaceClientPageProps) {
           {/* Table Rows */}
           <div className="divide-y divide-gray-200">
             {listings.map((item) => (
-              <div
+              <Link
                 key={item.id}
-                className="grid grid-cols-5 items-center px-6 py-4 hover:bg-gray-50 transition-all duration-200"
+                href={`/marketplace/agent/myListings/${item.id}`} 
+                className="grid grid-cols-5 items-center px-6 py-4 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
               >
                 {/* Image */}
                 <div className="flex items-center">
@@ -63,17 +63,26 @@ export function MyListings({ listings }: MarketplaceClientPageProps) {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
-                  <button className="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition">
+                  <button
+                    onClick={(e) => e.preventDefault()} // prevent link click
+                    className="p-2 rounded-lg hover:bg-blue-100 text-blue-600 transition"
+                  >
                     <Edit className="w-5 h-5" />
                   </button>
-                  <button className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition">
+                  <button
+                    onClick={(e) => e.preventDefault()}
+                    className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition"
+                  >
                     <Trash className="w-5 h-5" />
                   </button>
-                  <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition">
+                  <button
+                    onClick={(e) => e.preventDefault()}
+                    className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition"
+                  >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
