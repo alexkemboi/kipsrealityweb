@@ -1,52 +1,38 @@
 import Image from "next/image";
-import bgImage from "@/assets/hero-cityscape.jpg";
+import aboutBg from "@/assets/hero-cityscape.jpg";
 import { Shield, Zap, BarChart3, Layers, Lock } from "lucide-react";
 
 export default function WhatMakes() {
   return (
     <section
       id="what-makes"
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative min-h-screen flex items-center bg-linear-to-b from-gray-50 to-white justify-center overflow-hidden"
     >
-      {/* Background */}
+     
+  {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src={bgImage}
-          alt="Background image for What Makes Us Different"
-          fill
-          className="object-cover"
-          quality={90}
+          src={aboutBg}
+          alt="Cityscape Background"
+          className="w-full h-full object-cover opacity-15"
           priority
         />
-        <div className="absolute inset-0 bg-neutral-900/95" />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
-
-        {/* Grid Overlay */}
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
-        </div>
-
-        {/* Floating Orbs */}
-        <div className="absolute top-24 left-16 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float-medium delay-1000" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
       </div>
-
       {/* Content */}
       <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32">
         <div className="max-w-6xl mx-auto text-center space-y-12">
           {/* Title */}
           <div className="space-y-4">
-            <h3 className="text-4xl md:text-5xl font-bold text-white">
+            <h3 className="text-4xl md:text-5xl font-bold text-[#151b1f]">
               What Makes{" "}
               <span className="text-gradient-primary animate-gradient">
                 Us Different
               </span>
             </h3>
-            <p className="text-white/70 text-lg max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed">
               We don’t just manage properties — we elevate them. Discover why
-              thousands of landlords and tenants choose{" "}
-              <span className="text-white font-semibold">Kips Reality LLC</span>.
+              thousands of landlords and tenants choose Kips Reality LLC
             </p>
           </div>
 
@@ -81,7 +67,7 @@ export default function WhatMakes() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="group bg-white/10 border border-white/20 rounded-2xl p-8 backdrop-blur-lg shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.03] cursor-pointer"
+                className="group bg-[#1d3d67] shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.03] cursor-pointer"
               >
                 <div className="flex items-center justify-center w-12 h-12 mx-auto mb-6 bg-gradient-to-r from-blue-500/40 to-cyan-400/40 rounded-xl group-hover:from-blue-500/60 group-hover:to-cyan-400/60 transition-all">
                   <item.icon className="w-6 h-6 text-white" />
