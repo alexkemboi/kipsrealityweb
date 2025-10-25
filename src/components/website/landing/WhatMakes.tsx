@@ -59,7 +59,7 @@ export default function WhatMakes() {
           </span>
         </h3>
 
-        <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed mb-16 max-w-3xl mx-auto">
+        <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed mb-16 max-w-5xl mx-auto">
           We don’t just manage properties  we elevate them. Discover why thousands of landlords and tenants choose{" "}
           <span className="text-blue-600 font-semibold">Kips Reality LLC</span>.
         </p>
