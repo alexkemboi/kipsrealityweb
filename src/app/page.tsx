@@ -33,12 +33,13 @@ export default function Home() {
       <About />
       <WhatMakes />
       <TypewriterEffectDemo/>
+        <Services />
 
       <OurTeam />
+
      <Testimonials initialTestimonials={testimonials} />
 
 
-      <Services />
 
       <PlansClientPage />
       <Contact />
