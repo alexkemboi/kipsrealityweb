@@ -15,7 +15,7 @@ export function TypewriterEffectDemo() {
   ];
 
   return (
-    <section className="relative min-h-[95vh] flex justify-center items-center overflow-hidden">
+    <section className="relative min-h-[15vh] flex justify-center items-center overflow-hidden">
       {/* --- Background --- */}
       <div className="absolute inset-0 z-0">
         <Image
@@ -39,7 +39,7 @@ export function TypewriterEffectDemo() {
       </div>
 
       {/* --- Content --- */}
-      <div className="relative z-20 container mx-auto px-6 py-24 text-center">
+      <div className="relative z-20 container mx-auto px-6 py-18 text-center">
         {/* Section Heading */}
         <h3 className="text-white mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.4)] pb-4">
           Our Brand{" "}
@@ -56,10 +56,10 @@ export function TypewriterEffectDemo() {
           className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl 
                      p-10 md:p-14 shadow-2xl w-full max-w-6xl mx-auto flex flex-col items-center 
                      justify-center space-y-10 hover:bg-white/15 hover:border-white/30 
-                     hover:shadow-blue-500/30 transition-all duration-500 group"
+                      transition-all duration-500 group"
         >
           {/* Card Glow */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
+          <div className="absolute inset-0 rounded-2xl  opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
 
           {/* Typewriter Text */}
           <div className="relative z-10">
@@ -91,21 +91,7 @@ export function TypewriterEffectDemo() {
           </motion.div>
         </motion.div>
 
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 2 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1 h-3 bg-white/50 rounded-full mt-2"
-            />
-          </div>
-        </motion.div>
+        
       </div>
     </section>
   );

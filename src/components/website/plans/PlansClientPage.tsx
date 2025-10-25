@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import aboutBg from "@/assets/hero-cityscape.jpg";
 import { Check } from "lucide-react";
 import { Plans, Features } from "@/app/data/plansData";
 
@@ -20,7 +22,18 @@ export default function PlansClientPage() {
 
     return (
         <>
-            <section className="relative overflow-hidden bg-neutral-900 pt-32 pb-72 text-white">
+
+        
+            <section className="relative overflow-hidden  pt-32 pb-72 text-black">
+                <div className="absolute inset-0 z-0">
+                        <Image
+                          src={aboutBg}
+                          alt="Cityscape Background"
+                          className="w-full h-full object-cover opacity-15"
+                          priority
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
+                      </div>
                 <div className="relative mx-auto max-w-6xl text-center">
                     <h1 className="mb-6 text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
                         Scale Your Property
@@ -28,7 +41,7 @@ export default function PlansClientPage() {
                             Business
                         </span>
                     </h1>
-                    <p className="mb-8 text-xl text-blue-100 md:text-2xl max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed mb-16 max-w-5xl mx-auto">
                         Join thousands of property managers who use RentFlow360 to save 10+ hours weekly and grow their portfolios faster.
                     </p>
                 </div>
