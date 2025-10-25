@@ -49,9 +49,9 @@ export default function ServicesCRUD() {
     icon: "",
   });
 
-  // ------------------------
+
   // FETCH CATEGORIES & SERVICES
-  // ------------------------
+ 
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -79,9 +79,9 @@ export default function ServicesCRUD() {
     fetchCategories();
   }, []);
 
-  // ------------------------
+
   // CATEGORY HANDLERS
-  // ------------------------
+
   const openCategoryModal = (category?: Category) => {
     if (category) {
       setCategoryForm({
@@ -143,9 +143,9 @@ export default function ServicesCRUD() {
     }
   };
 
-  // ------------------------
+ 
   // SERVICE HANDLERS
-  // ------------------------
+ 
   const openServiceModal = (category: Category, service?: Service) => {
     setSelectedCategory(category);
 
@@ -231,9 +231,9 @@ export default function ServicesCRUD() {
     }
   };
 
-  // ------------------------
+
   // RENDER
-  // ------------------------
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <ToastContainer position="top-right" autoClose={3000} />

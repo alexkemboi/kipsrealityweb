@@ -10,7 +10,7 @@ interface CategorySectionProps {
 }
 
 export const CategorySection = ({ category, index }: CategorySectionProps) => {
-  // ✅ Safe lookup + fallback
+  // Safe lookup + fallback
   const IconName = category.icon;
   const Icon =
     IconName && (Icons as any)[IconName] && typeof (Icons as any)[IconName] === "function"
@@ -31,7 +31,7 @@ export const CategorySection = ({ category, index }: CategorySectionProps) => {
             className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: theme.gradients.accent }}
           >
-            {/* ✅ Renders a valid Lucide icon or HelpCircle */}
+            {/*  Renders a valid Lucide icon or HelpCircle */}
             <Icon
               size={32}
               className="sm:w-9 sm:h-9"

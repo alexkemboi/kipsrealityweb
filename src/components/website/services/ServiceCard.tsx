@@ -12,7 +12,7 @@ interface ServiceCardProps {
 export const ServiceCard = ({ service, categoryColor }: ServiceCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // ✅ Safe icon fallback — prevents crashes if icon name is invalid
+  // Safe icon fallback — prevents crashes if icon name is invalid
   const Icon =
     service.icon && (Icons as any)[service.icon]
       ? (Icons as any)[service.icon]
