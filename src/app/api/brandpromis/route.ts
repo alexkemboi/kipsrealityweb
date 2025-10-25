@@ -6,10 +6,10 @@ const app = express();
 app.use(bodyParser.json());
 
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "your_password",
-  database: "kipsreality",
+  host: "184.168.21.114",
+  user: "kipsreality",
+  password: "K@m@1@2o2o",
+  database: "rentflow360",
 });
 
 // Get all
