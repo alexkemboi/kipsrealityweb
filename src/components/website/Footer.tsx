@@ -10,7 +10,7 @@ const navLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#041126] text-gray-600 py-8 border-t border-gray-200">
+    <footer className="bg-[#041126] text-gray-400 py-8 border-t border-gray-200">
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
         {/* Left section - logo or copyright */}
         <p className="text-sm text-center md:text-left mb-4 md:mb-0">
