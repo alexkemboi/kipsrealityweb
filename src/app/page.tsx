@@ -32,10 +32,11 @@ export default function Home() {
       {/* About Us Section */}
       <About />
       <WhatMakes />
+      <TypewriterEffectDemo/>
+
       <OurTeam />
      <Testimonials initialTestimonials={testimonials} />
 
-<TypewriterEffectDemo/>
 
       <Services />
 
