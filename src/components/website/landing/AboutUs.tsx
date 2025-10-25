@@ -38,7 +38,7 @@ export default function About() {
         {/* Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* About Us */}
-          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl transition-transform hover:scale-105 duration-300">
+          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl ">
             <h3 className="text-3xl lg:text-4xl font-bold text-white mb-4">
               About <span className="text-gradient-primary animate-gradient">Us</span>
             </h3>
@@ -48,7 +48,7 @@ export default function About() {
           </div>
 
           {/* Our Story */}
-          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl transition-transform hover:scale-105 duration-300">
+          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl ">
             <h3 className="text-3xl lg:text-4xl font-bold text-white mb-4">
               Our <span className="text-gradient-primary animate-gradient">Story</span>
             </h3>
@@ -58,7 +58,7 @@ export default function About() {
           </div>
 
           {/* Our Mission */}
-          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl transition-transform hover:scale-105 duration-300">
+          <div className="bg-[#1d3d67] backdrop-blur-lg border border-white/10 rounded-2xl p-8 shadow-2xl ">
             <h3 className="text-3xl lg:text-4xl font-bold text-white mb-4">
               Our <span className="text-gradient-primary animate-gradient">Mission</span>
             </h3>
