@@ -1,272 +1,249 @@
 'use client'
-import React, { useState } from "react";
-import { User, Building2, Home, Wrench } from "lucide-react";
+import { useState } from "react";
+import { Logo } from "@/components/Logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner"
 
-const SignupPage: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<string>("");
+const SignupPage = () => {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    organizationName: "",
+    phone: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const roles = [
-    {
-      id: "admin",
-      title: "Admin / Property Manager",
-      description: "Full access to manage all properties, tenants, and operations",
-      icon: Building2,
-      color: "bg-[#021526]",
-      hoverColor: "hover:bg-[#03346E]",
-    },
-    {
-      id: "landlord",
-      title: "Landlord",
-      description: "Manage your owned properties and view tenant information",
-      icon: Home,
-      color: "bg-[#03346E]",
-      hoverColor: "hover:bg-[#021526]",
-    },
-    {
-      id: "tenant",
-      title: "Tenant",
-      description: "View your lease and submit maintenance requests",
-      icon: User,
-      color: "bg-[#6EACDA]",
-      hoverColor: "hover:bg-[#03346E]",
-    },
-    {
-      id: "vendor",
-      title: "Vendor / Contractor",
-      description: "Access and manage assigned maintenance tickets",
-      icon: Wrench,
-      color: "bg-[#03346E]",
-      hoverColor: "hover:bg-[#021526]",
-    },
-  ];
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (error) setError("");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (formData.password !== formData.confirmPassword) {
+      const errorMsg = "Passwords do not match";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+
+    if (!formData.organizationName) {
+      const errorMsg = "Company name is required";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      const errorMsg = "Password must be at least 8 characters long";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          organizationName: formData.organizationName,
+          phone: formData.phone
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Registration failed');
+      }
+
+      // Success toast
+      toast.success("Account created successfully! Redirecting...");
+      setTimeout(() => {
+        router.push('/property-manager');
+      }, 1500);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
+      toast.error("Registration failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#021526] via-[#03346E] to-[#021526] p-4">
-      <div className="bg-white shadow-2xl rounded-2xl flex flex-col md:flex-row w-full max-w-5xl overflow-hidden">
-        {/* Left side illustration */}
-        <div className="md:w-2/5 bg-gradient-to-br from-[#6EACDA] to-[#03346E] flex items-center justify-center p-8">
-          <div className="text-center">
-            <img
-              src="/signupillustration.svg"
-              alt="Signup Illustration"
-              className="w-full max-w-xs mx-auto mb-6"
+    <div className="w-full p-6 lg:p-8">
+      <Logo />
+
+      <div className="text-center mb-8">
+        <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+          Create Your Account
+        </h2>
+        <p className="text-gray-600 text-sm lg:text-base">
+          Join thousands of property managers
+        </p>
+      </div>
+
+      {/* Registration Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Company Name */}
+        <div>
+          <Input
+            type="text"
+            name="organizationName"
+            placeholder="Company Name *"
+            value={formData.organizationName}
+            onChange={handleInputChange}
+            required
+            className="h-12 text-base"
+          />
+        </div>
+
+        {/* Personal Information */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Input
+              type="text"
+              name="firstName"
+              placeholder="First Name *"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base"
             />
-            <h3 className="text-white text-2xl font-bold mb-2">
-              Welcome to PropertyPro
-            </h3>
-            <p className="text-white/90 text-sm">
-              Streamline your property management experience
-            </p>
+          </div>
+          <div>
+            <Input
+              type="text"
+              name="lastName"
+              placeholder="Last Name *"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base"
+            />
           </div>
         </div>
 
-        {/* Right side form */}
-        <div className="md:w-3/5 flex flex-col justify-center p-8 md:p-10">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
-            Create Your Account
-          </h2>
-          <p className="text-gray-500 mb-6">
-            Choose your role and start managing properties efficiently
-          </p>
-
-          <form className="space-y-5">
-            {/* Role Selection */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                I am a...
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {roles.map((role) => {
-                  const Icon = role.icon;
-                  return (
-                    <button
-                      key={role.id}
-                      type="button"
-                      onClick={() => setSelectedRole(role.id)}
-                      className={`p-4 border-2 rounded-lg transition-all duration-200 text-left ${
-                        selectedRole === role.id
-                          ? "border-[#03346E] bg-[#6EACDA]/10"
-                          : "border-gray-200 hover:border-[#6EACDA]"
-                      }`}
-                    >
-                      <Icon
-                        className={`w-6 h-6 mb-2 ${
-                          selectedRole === role.id
-                            ? "text-[#03346E]"
-                            : "text-gray-400"
-                        }`}
-                      />
-                      <div className="text-sm font-semibold text-gray-800">
-                        {role.title}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {role.description}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Conditional fields based on role */}
-            {selectedRole && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Jane"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Doe"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                  />
-                </div>
-
-                {/* Conditional fields for specific roles */}
-                {selectedRole === "landlord" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Number of Properties
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="e.g., 5"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                    />
-                  </div>
-                )}
-
-                {selectedRole === "vendor" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Company Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Your Company LLC"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                    />
-                  </div>
-                )}
-
-                {selectedRole === "vendor" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Service Type
-                    </label>
-                    <select className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none">
-                      <option value="">Select service type</option>
-                      <option value="plumbing">Plumbing</option>
-                      <option value="electrical">Electrical</option>
-                      <option value="hvac">HVAC</option>
-                      <option value="general">General Maintenance</option>
-                      <option value="landscaping">Landscaping</option>
-                      <option value="cleaning">Cleaning</option>
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#6EACDA] focus:border-[#03346E] outline-none"
-                  />
-                </div>
-
-                <div className="flex items-start">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    className="mt-1 w-4 h-4 text-[#03346E] focus:ring-[#6EACDA] border-gray-300 rounded"
-                  />
-                  <label
-                    htmlFor="terms"
-                    className="ml-2 text-sm text-gray-600"
-                  >
-                    I agree to the{" "}
-                    <a href="#" className="text-[#03346E] hover:underline">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-[#03346E] hover:underline">
-                      Privacy Policy
-                    </a>
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-[#03346E] hover:bg-[#021526] text-white font-semibold rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-                >
-                  Create Account
-                </button>
-              </>
-            )}
-
-            {!selectedRole && (
-              <div className="text-center py-8 text-gray-400">
-                Please select your role to continue
-              </div>
-            )}
-
-            <p className="text-center text-sm text-gray-500 mt-4">
-              Already have an account?{" "}
-              <a href="/login" className="text-[#03346E] hover:underline font-semibold">
-                Sign in
-              </a>
-            </p>
-          </form>
+        {/* Contact Information */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email Address *"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base"
+            />
+          </div>
+          <div>
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="h-12 text-base"
+            />
+          </div>
         </div>
-      </div>
+
+        {/* Passwords */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password *"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="relative">
+            <Input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              placeholder="Confirm Password *"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm text-center">{error}</p>
+          </div>
+        )}
+
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold"
+        >
+          {isLoading ? (
+            "Creating Account..."
+          ) : (
+            <>
+              Create Account
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
+        </Button>
+      </form>
+
+      {/* Sign In Link */}
+      <p className="text-center text-sm text-gray-600 mt-6">
+        Already have an account?{" "}
+        <a href="/login" className="text-blue-600 hover:underline font-semibold">
+          Sign in
+        </a>
+      </p>
     </div>
   );
 };
