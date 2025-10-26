@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db"; // make sure this is your Prisma client
+import { prisma } from "@/lib/db"; 
 
 // GET all services or by category_id
 export async function GET(req: NextRequest) {

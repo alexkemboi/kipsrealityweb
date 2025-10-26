@@ -173,3 +173,34 @@ model ContactMessage {
   message   String
   createdAt DateTime @default(now())
 }
+
+model Policy {
+  id                     Int       @id @default(autoincrement())
+  title                  String
+  companyName            String
+  contactEmail           String
+  privacyEmail           String
+  website                String?
+  mailingAddress         String?   
+  responseTime           String?
+  inactiveAccountThreshold String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+
+  sections Section[]
+}
+
+model Section {
+  id          Int      @id @default(autoincrement())
+  key         String   
+  title       String
+  intro       String?  
+  content     Json?   
+  order       Int?     
+  policy      Policy   @relation(fields: [policyId], references: [id])
+  policyId    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
