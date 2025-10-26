@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
+  const { login } = useAuth()
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
@@ -47,40 +49,38 @@ const LoginPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        const userRole = data.user.role;
+
+        login(data.user, data.token);
 
         toast.success("Login successful! Redirecting...");
 
-        // Wait a moment for user to see success message
-        setTimeout(() => {
-          switch (userRole) {
-            case "admin":
-              router.push("/admin");
-              break;
-            case "property-manager":
-              router.push("/property-manager");
-              break;
-            case "tenant":
-              router.push("/tenant");
-              break;
-            case "vendor":
-              router.push("/vendor");
-              break;
-            default:
-              router.push("/");
-          }
-        }, 1500);
+        switch (data.user.role) {
+          case "SYSTEM_ADMIN":
+            router.push("/admin");
+            break;
+          case "PROPERTY_MANAGER":
+            router.push("/property-manager");
+            break;
+          case "TENANT":
+            router.push("/tenant");
+            break;
+          case "VENDOR":
+            router.push("/vendor");
+            break;
+          default:
+            router.push("/");
+        }
 
       } else {
         const err = await response.json();
         const errorMsg = err.error || "Invalid credentials";
         setError(errorMsg);
-        toast.error(errorMsg);
+        toast.error(errorMsg, { duration: 4000 });
       }
     } catch (error) {
       const errorMsg = "Network error. Please try again.";
       setError(errorMsg);
-      toast.error(errorMsg);
+      toast.error(errorMsg, { duration: 4000 });
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +110,7 @@ const LoginPage = () => {
             value={formData.email}
             onChange={handleInputChange}
             required
-            className="h-12 pl-11 pr-4 text-base border-2 border-gray-200 focus:border-blue-500 transition-colors rounded-xl"
+            className="h-12 pl-11 pr-4 text-base focus:border-blue-500 transition-colors"
           />
         </div>
 
@@ -126,7 +126,7 @@ const LoginPage = () => {
             value={formData.password}
             onChange={handleInputChange}
             required
-            className="h-12 pl-11 pr-12 text-base border-2 border-gray-200 focus:border-blue-500 transition-colors rounded-xl"
+            className="h-12 pl-11 pr-12 text-base focus:border-blue-500 transition-colors"
           />
           <button
             type="button"

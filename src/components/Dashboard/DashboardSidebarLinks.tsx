@@ -6,7 +6,7 @@ import { systemRoutes, routeConfig } from './SidebarLinks'
 import { LogOut } from 'lucide-react'
 
 interface DashboardSidebarLinksProps {
-  user: { id: string, name: string, role: string, email: string }
+  user: { id: string, firstName: string, role: string, email: string }
   open?: boolean
   isCollapsed?: boolean
   darkMode?: boolean
@@ -16,8 +16,7 @@ export function DashboardSidebarLinks({ user, open = true, isCollapsed = false, 
   const userRoutes = routeConfig[user.role as keyof typeof routeConfig]
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' })
-    window.location.href = '/login'
+    // TODO: Handle Logout 
   }
 
   return (

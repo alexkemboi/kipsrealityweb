@@ -1,97 +1,78 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { DashboardSidebar } from '@/components/Dashboard/DashboardSidebar'
 import { DashboardNavbar } from '@/components/Dashboard/DashboardNavbar'
 import { DashboardProvider, useDashboard } from '@/context/DashboardContext'
+import { useAuth } from '@/context/AuthContext'
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { Loader2 } from 'lucide-react'
 
 interface User {
   id: string
   email: string
-  name: string
-  role: 'admin' | 'property-manager' | 'tenant' | 'vendor'
-  avatar?: string
-  business?: {
+  firstName: string
+  lastName: string
+  role: 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR'
+  avatarUrl?: string
+  organization?: {
     id: string
     name: string
+    slug: string
   }
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <DashboardProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      <ProtectedRoute>
+        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+      </ProtectedRoute>
     </DashboardProvider>
   )
 }
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const { user, isLoading } = useAuth()
   const { isSidebarCollapsed } = useDashboard()
 
-  useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find((row) => row.startsWith('token='))?.split('=')[1]
-
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setUser(data.user)
-        } else {
-          router.push('/login')
-        }
-      } catch (error) {
-        router.push('/login')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUser()
-  }, [router])
-
-  if (loading) {
+  // Show loading while auth is being checked
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-lg font-medium">Loading your dashboard...</div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
       </div>
     )
   }
 
-  if (!user) return null
+  // User is guaranteed to be on the correct dashboard thanks to middleware
+  const transformedUser: User = {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role as 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR',
+    avatarUrl: user.avatarUrl,
+    organization: user.organization
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
       <aside
-        className={`transition-all duration-300 ease-in-out bg-white border-r h-screen sticky top-0 ${
-          isSidebarCollapsed ? 'w-20' : 'w-64'
-        }`}
+        className={`transition-all duration-300 ease-in-out bg-white border-r h-screen sticky top-0 ${isSidebarCollapsed ? 'w-20' : 'w-64'
+          }`}
       >
-        <DashboardSidebar user={user} />
+        <DashboardSidebar user={transformedUser} />
       </aside>
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <header className="flex-shrink-0 z-10 bg-white border-b">
-          <DashboardNavbar user={user} />
+          <DashboardNavbar user={transformedUser} />
         </header>
 
         <motion.main

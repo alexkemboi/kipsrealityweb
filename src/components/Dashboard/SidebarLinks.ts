@@ -33,7 +33,7 @@ export const systemRoutes = [
 
 // Role-based route configuration
 export const routeConfig = {
-  admin: {
+  'SYSTEM_ADMIN': {
     main: [
       { path: '/dashboard/admin', label: 'Overview', icon: Home, badge: null },
       { path: '/dashboard/admin/users', label: 'User Management', icon: Users, badge: null },
@@ -47,7 +47,7 @@ export const routeConfig = {
     ]
   },
 
-  'property-manager': {
+  'PROPERTY_MANAGER': {
     main: [
       { path: '/dashboard/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
@@ -88,7 +88,7 @@ export const routeConfig = {
     ],
   },
 
-  tenant: {
+  TENANT: {
     main: [
       { path: '/dashboard/tenant', label: 'Overview', icon: LayoutDashboard },
     ],
@@ -128,7 +128,7 @@ export const routeConfig = {
     ],
   },
 
-  vendor: {
+  VENDOR: {
     main: [
       { path: '/dashboard/vendor', label: 'Overview', icon: Home, badge: null },
     ],

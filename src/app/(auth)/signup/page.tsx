@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner"
+import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 const SignupPage = () => {
   const router = useRouter();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -81,11 +83,18 @@ const SignupPage = () => {
         throw new Error(result.error || 'Registration failed');
       }
 
-      // Success toast
-      toast.success("Account created successfully! Redirecting...");
-      setTimeout(() => {
-        router.push('/property-manager');
-      }, 1500);
+      if (result.user && result.tokens) {
+        login(result.user, result.tokens);
+
+        toast.success("Account created successfully! Redirecting...");
+
+        // Give a small delay for the AuthContext to update
+        setTimeout(() => {
+          router.push('/property-manager');
+        }, 500);
+      } else {
+        throw new Error('Invalid response from server');
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -96,7 +105,7 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="w-full p-6 lg:p-8">
+    <div className="w-full p-6 lg:px-8 lg:py-6">
       <Logo />
 
       <div className="text-center mb-8">
@@ -108,7 +117,6 @@ const SignupPage = () => {
         </p>
       </div>
 
-      {/* Registration Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Company Name */}
         <div>
@@ -119,7 +127,7 @@ const SignupPage = () => {
             value={formData.organizationName}
             onChange={handleInputChange}
             required
-            className="h-12 text-base"
+            className="h-12 text-base focus:border-blue-500 transition-colors"
           />
         </div>
 
@@ -227,7 +235,10 @@ const SignupPage = () => {
           className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold"
         >
           {isLoading ? (
-            "Creating Account..."
+            <div className="flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Creating Account...
+            </div>
           ) : (
             <>
               Create Account
@@ -237,7 +248,6 @@ const SignupPage = () => {
         </Button>
       </form>
 
-      {/* Sign In Link */}
       <p className="text-center text-sm text-gray-600 mt-6">
         Already have an account?{" "}
         <a href="/login" className="text-blue-600 hover:underline font-semibold">

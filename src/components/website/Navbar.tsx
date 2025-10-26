@@ -2,21 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import {
-    Drawer, DrawerClose,
-    DrawerContent,
-    DrawerFooter,
-    DrawerHeader,
-    DrawerTitle,
-    DrawerTrigger,
-} from "../ui/drawer";
-import { Menu, X } from "lucide-react";
+import { Bell } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
+import { UserDropdown } from "./UserDropdown";
+import { MobileMenu } from "./ MobileMenu";
 
 const Navbar = () => {
     const [scrollProgress, setScrollProgress] = useState(0);
+    const { user, logout, isLoading } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -28,6 +27,41 @@ const Navbar = () => {
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/');
+    };
+
+    const getDashboardPath = () => {
+        if (!user) return '/login';
+        const roleDashboards = {
+            SYSTEM_ADMIN: '/admin',
+            PROPERTY_MANAGER: '/property-manager',
+            TENANT: '/tenant',
+            VENDOR: '/vendor'
+        };
+        return roleDashboards[user.role as keyof typeof roleDashboards] || '/dashboard';
+    };
+
+    const getUserInitials = () => {
+        if (!user) return 'U';
+        return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
+    };
+
+    const getRoleBadgeColor = (role: string) => {
+        const colors = {
+            SYSTEM_ADMIN: 'bg-red-100 text-red-800 border-red-200',
+            PROPERTY_MANAGER: 'bg-blue-100 text-blue-800 border-blue-200',
+            TENANT: 'bg-green-100 text-green-800 border-green-200',
+            VENDOR: 'bg-purple-100 text-purple-800 border-purple-200'
+        };
+        return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
+    };
+
+    const formatRoleName = (role: string) => {
+        return role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
 
     const backgroundOpacity = 0.95 * scrollProgress;
     const backdropBlur = `blur(${8 * scrollProgress}px)`;
@@ -62,6 +96,7 @@ const Navbar = () => {
         >
             <div className="container mx-auto px-4">
                 <div className={`flex items-center justify-between transition-all duration-200 h-14`}>
+                    {/* Logo */}
                     <Link href="/" className="flex items-center space-x-3 group">
                         <div className="relative">
                             <Image
@@ -85,6 +120,7 @@ const Navbar = () => {
                         </div>
                     </Link>
 
+                    {/* Navigation Links */}
                     <div className="hidden lg:flex items-center space-x-8">
                         {navLinks.map((link) => (
                             <a
@@ -100,89 +136,72 @@ const Navbar = () => {
                         ))}
                     </div>
 
+                    {/* User Actions */}
                     <div className="hidden lg:flex items-center space-x-4">
-                        <Link href="/login">
-                            <Button
-                                variant={scrollProgress > 0.1 ? "ghost" : "outline"}
-                                className={`font-inter transition-all duration-200 ${scrollProgress > 0.1
-                                    ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                                    : "text-white border-white/30 hover:bg-white/20 hover:text-white"
-                                    }`}
-                            >
-                                Login
-                            </Button>
-                        </Link>
+                        {user ? (
+                            <div className="flex items-center space-x-4">
+                                {/* Notifications */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={`relative transition-all duration-200 ${scrollProgress > 0.1
+                                        ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
+                                        : "text-white hover:bg-white/20 hover:text-white"
+                                        }`}
+                                >
+                                    <Bell className="h-5 w-5" />
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                                </Button>
+                                <UserDropdown
+                                    user={user}
+                                    scrollProgress={scrollProgress}
+                                    textColor={textColor}
+                                    hoverColor={hoverColor}
+                                    getDashboardPath={getDashboardPath}
+                                    getUserInitials={getUserInitials}
+                                    getRoleBadgeColor={getRoleBadgeColor}
+                                    formatRoleName={formatRoleName}
+                                    handleLogout={handleLogout}
+                                />
+                            </div>
+                        ) : (
+                            /* Login/Get Started for non-authenticated users */
+                            <>
+                                <Link href="/login">
+                                    <Button
+                                        variant={scrollProgress > 0.1 ? "ghost" : "outline"}
+                                        className={`font-inter transition-all duration-200 ${scrollProgress > 0.1
+                                            ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
+                                            : "text-white border-white/30 hover:bg-white/20 hover:text-white"
+                                            }`}
+                                    >
+                                        Login
+                                    </Button>
+                                </Link>
 
-                        <Link href="/signup">
-                            <Button className={`transition-all duration-200 ${scrollProgress > 0.1
-                                ? "bg-blue-500 text-white hover:opacity-90"
-                                : "bg-white text-neutral-900 hover:bg-white/90"
-                                }`}>
-                                Get Started
-                            </Button>
-                        </Link>
+                                <Link href="/signup">
+                                    <Button className={`transition-all duration-200 ${scrollProgress > 0.1
+                                        ? "bg-blue-500 text-white hover:opacity-90"
+                                        : "bg-white text-neutral-900 hover:bg-white/90"
+                                        }`}>
+                                        Get Started
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
 
-                    <Drawer direction="right">
-                        <DrawerTrigger asChild>
-                            <Button variant="ghost" size="icon" className={`lg:hidden transition-all duration-200 ${scrollProgress > 0.1 ? "text-neutral-700 hover:bg-neutral-200" : "text-white hover:bg-white/20"}`}>
-                                <Menu className="h-6 w-6" />
-                            </Button>
-                        </DrawerTrigger>
-                        <DrawerContent className="h-full top-0 right-0 left-auto mt-0 w-80 rounded-none bg-white border-l border-neutral-200">
-                            <DrawerHeader className="flex flex-row items-center justify-between border-b border-neutral-200 px-6 py-4">
-                                <div className="flex items-center space-x-3">
-                                    <Image
-                                        src={Logo}
-                                        alt="RentFlow360"
-                                        width={32}
-                                        height={32}
-                                        className="w-8 h-8 object-contain"
-                                    />
-                                    <div>
-                                        <DrawerTitle className="font-bold text-lg text-neutral-900">
-                                            RentFlow360
-                                        </DrawerTitle>
-                                    </div>
-                                </div>
-                                <DrawerClose asChild>
-                                    <button className="p-2 rounded-lg hover:bg-neutral-100">
-                                        <X className="w-5 h-5 text-neutral-600" />
-                                    </button>
-                                </DrawerClose>
-                            </DrawerHeader>
-                            <div className="flex-1 overflow-y-auto px-6 py-4">
-                                <div className="space-y-1">
-                                    {navLinks.map((link) => (
-                                        <DrawerClose asChild key={link.name}>
-                                            <Link
-                                                href={link.href}
-                                                className="block p-4 rounded-xl hover:bg-blue-50 transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-blue-600 font-inter font-medium"
-                                            >
-                                                {link.name}
-                                            </Link>
-                                        </DrawerClose>
-                                    ))}
-                                </div>
-                            </div>
-                            <DrawerFooter className="flex flex-row gap-2">
-                                <DrawerClose asChild>
-                                    <Link href="/login" className="flex-1">
-                                        <Button variant="outline" className="w-full">
-                                            Login
-                                        </Button>
-                                    </Link>
-                                </DrawerClose>
-                                <DrawerClose asChild>
-                                    <Link href="/signup" className="flex-1">
-                                        <Button className="w-full bg-blue-500 text-white">
-                                            Get Started
-                                        </Button>
-                                    </Link>
-                                </DrawerClose>
-                            </DrawerFooter>
-                        </DrawerContent>
-                    </Drawer>
+                    <MobileMenu
+                        user={user}
+                        scrollProgress={scrollProgress}
+                        getDashboardPath={getDashboardPath}
+                        getUserInitials={getUserInitials}
+                        getRoleBadgeColor={getRoleBadgeColor}
+                        formatRoleName={formatRoleName}
+                        handleLogout={handleLogout}
+                        navLinks={navLinks}
+                    />
+
                 </div>
             </div>
         </nav>
