@@ -2,13 +2,12 @@
 
 import { useRouter } from 'next/navigation'
 import { Bell, Search, Settings, Menu } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 
 interface DashboardNavbarProps {
     user: {
         id: string
-        name: string
+        firstName: string
         role: string
         email: string
     }
@@ -51,7 +50,7 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
 
                     <div>
                         <h1 className="text-lg md:text-xl font-semibold text-white">
-                            Welcome back, {user.name}!
+                            Welcome back, {user.firstName}!
                         </h1>
                         <p className="text-xs md:text-sm text-neutral-400 capitalize">
                             {user.role.replace('-', ' ')} Dashboard
@@ -86,13 +85,13 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
                     <div className="flex items-center gap-2 md:gap-3">
                         {!isMobile && (
                             <div className="text-right">
-                                <p className="text-sm font-medium text-white">{user.name}</p>
+                                <p className="text-sm font-medium text-white">{user.firstName}</p>
                                 <p className="text-xs text-neutral-400">{user.email}</p>
                             </div>
                         )}
 
                         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                            {user.name.charAt(0).toUpperCase()}
+                            {user.firstName.charAt(0).toUpperCase()}
                         </div>
 
                         {!isMobile && (

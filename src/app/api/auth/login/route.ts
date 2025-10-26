@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { generateJWT } from '@/lib/auth'
+import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
@@ -7,15 +7,13 @@ export async function POST(request: Request) {
     try {
         const { email, password } = await request.json()
 
-        // Input validation
         if (!email || !password) {
             return NextResponse.json(
                 { error: 'Email and password are required' },
                 { status: 400 }
             )
         }
-
-        // Find user in database
+        // find user in db
         const user = await prisma.user.findUnique({
             where: { email },
             include: {
@@ -29,55 +27,87 @@ export async function POST(request: Request) {
 
         if (!user) {
             return NextResponse.json(
-                { error: 'Invalid credentials' },
+                { error: 'Invalid email or password' },
                 { status: 401 }
             )
         }
 
-        // Verify password
+        if (user.status !== 'ACTIVE') {
+            return NextResponse.json(
+                { error: 'Account is suspended. Please contact support.' },
+                { status: 403 }
+            )
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash)
 
         if (!isPasswordValid) {
             return NextResponse.json(
-                { error: 'Invalid credentials' },
+                { error: 'Invalid email or password' },
                 { status: 401 }
             )
         }
 
-        // Get user's primary organization and role
-        const primaryOrgUser = user.organizationUsers[0]
-        const role = primaryOrgUser?.role || 'TENANT'
 
-        // Generate JWT token
-        const token = generateJWT({
+        const primaryOrgUser = user.organizationUsers[0]
+        const role = primaryOrgUser?.role || 'PROPERTY_MANAGER'
+
+        const accessToken = generateAccessToken({
             userId: user.id,
             email: user.email,
-            role: role
+            role: role,
+            organizationId: primaryOrgUser.organizationId
+        });
+
+        const refreshToken = generateRefreshToken({
+            userId: user.id
         })
 
-        // Prepare user response (remove sensitive data)
+        // token expires after 1 hour
+        const expiresAt = Date.now() + (60 * 60 * 1000)
+
+        // Update last login timestamp
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() }
+        })
+
         const userResponse = {
             id: user.id,
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
+            phone: user.phone,
+            avatarUrl: user.avatarUrl,
             role: role,
-            organization: primaryOrgUser?.organization
+            organization: {
+                id: primaryOrgUser.organization.id,
+                name: primaryOrgUser.organization.name,
+                slug: primaryOrgUser.organization.slug
+            }
         }
 
         const response = NextResponse.json({
             user: userResponse,
-            token
-        })
+            tokens: {
+                accessToken,
+                refreshToken,
+                expiresAt
+            }
+        }, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
 
-        // Set HTTP-only cookie
-        response.cookies.set('token', token, {
-            httpOnly: false,
+        // Set HTTP-only cookie for middleware
+        response.cookies.set('token', accessToken, {
+            httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 86400,
-            path: '/',
-        })
+            maxAge: 60 * 60,
+        });
 
         return response
 

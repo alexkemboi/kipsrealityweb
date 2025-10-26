@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
-import { generateJWT } from '@/lib/auth'
+import bcrypt from 'bcryptjs';
+import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
+
+// 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR'
+
+const defaultRole = 'SYSTEM_ADMIN';
 
 export async function POST(request: Request) {
     try {
         const { email, password, firstName, lastName, organizationName } = await request.json()
 
-        // Input validation
         if (!email || !password || !organizationName) {
             return NextResponse.json(
                 { error: 'Email, password and organization name are required' },
@@ -15,7 +18,6 @@ export async function POST(request: Request) {
             )
         }
 
-        // Check if user already exists
         const existingUser = await prisma.user.findUnique({
             where: { email }
         })
@@ -27,10 +29,8 @@ export async function POST(request: Request) {
             )
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 12)
 
-        // Create the organization first
         const organization = await prisma.organization.create({
             data: {
                 name: organizationName,
@@ -49,22 +49,30 @@ export async function POST(request: Request) {
             }
         });
 
-        // Link user to organization as PROPERTY_MANAGER
+        // Link user to organization as with a role
         await prisma.organizationUser.create({
             data: {
                 userId: user.id,
                 organizationId: organization.id,
-                role: 'PROPERTY_MANAGER'
+                role: defaultRole
             }
         })
 
 
-        // Generate JWT token
-        const token = generateJWT({
+        // Generate tokens
+        const accessToken = generateAccessToken({
             userId: user.id,
             email: user.email,
-            role: 'PROPERTY_MANAGER'
+            role: defaultRole,
+            organizationId: organization.id
         })
+
+        const refreshToken = generateRefreshToken({
+            userId: user.id
+        });
+
+        const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
+
 
         // Prepare response
         const userResponse = {
@@ -72,21 +80,31 @@ export async function POST(request: Request) {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            role: 'PROPERTY_MANAGER',
-            organization: organization
+            phone: user.phone,
+            avatarUrl: user.avatarUrl,
+            role: defaultRole,
+            organization: {
+                id: organization.id,
+                name: organization.name,
+                slug: organization.slug
+            }
         }
 
         const response = NextResponse.json({
             user: userResponse,
-            token
+            tokens: {
+                accessToken,
+                refreshToken,
+                expiresAt
+            }
         })
 
         // Set HTTP-only cookie
-        response.cookies.set('token', token, {
-            httpOnly: false,
+        response.cookies.set('token', accessToken, {
+            httpOnly: true, // Changed to true for security
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 86400,
+            maxAge: 60 * 60, // 1 hour
             path: '/',
         })
 
