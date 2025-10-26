@@ -106,7 +106,6 @@ export const routeConfig = {
     ],
     system: [
       { path: '/dashboard/admin/users', label: 'User Management', icon: Users, badge: null },
-      { path: '/dashboard/admin/analytics', label: 'Website Analytics', icon: BarChart3, badge: null },
       { path: '/dashboard/admin/settings', label: 'System Settings', icon: Settings, badge: null },
     ]
   },
