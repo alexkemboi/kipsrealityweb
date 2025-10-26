@@ -9,7 +9,7 @@ import {
   MenuItem,
   FormHelperText,
 } from '@mui/material';
-import { ServiceFormData, Category } from '@/components/service-crud/type';
+import { ServiceFormData, Category } from '@/components/Dashboard/SystemadminDash/service-crud/type';
 
 interface ServiceModalProps {
   isOpen: boolean;

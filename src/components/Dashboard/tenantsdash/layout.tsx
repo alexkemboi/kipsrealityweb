@@ -1,5 +1,5 @@
 import React, { ReactNode } from "react";
-import SideBarComponent from "../tenantsdash/SideBarContainer";
+import SideBarComponent from "./SideBarContainer";
 import Footer from "../Footer/Footer";
 import Navbar from "../Navbar/Navbar";
 

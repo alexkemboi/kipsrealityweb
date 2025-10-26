@@ -50,10 +50,17 @@ export const routeConfig = {
       },
       {
         path: '/dashboard/admin/content/services',
-        label: 'Services Section',
+        label: 'Services Page',
         icon: Wrench,
         badge: null,
         description: 'Manage services list and descriptions'
+      },
+      {
+        path: '/dashboard/admin/content/policy',
+        label: 'Policy Page',
+        icon: Wrench,
+        badge: null,
+        description: 'Manage policy sections and Content'
       },
       {
         path: '/dashboard/admin/content/pricing',
