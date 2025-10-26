@@ -33,7 +33,7 @@ export default function DashboardContent({ selected }: DashboardContentProps) {
     <div className="flex-1 w-full min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <div className="w-full h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
-          {/* ✅ Suspense fallback handled here */}
+          {/* Suspense fallback handled here */}
           <Suspense fallback={<div className="text-gray-500">Loading...</div>}>
             <div className="animate-fadeIn">{getContent()}</div>
           </Suspense>

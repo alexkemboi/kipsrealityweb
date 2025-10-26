@@ -1,4 +1,3 @@
-//api/policies/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -36,7 +35,7 @@ export async function POST(req: NextRequest) {
         mailingAddress,
         responseTime,
         inactiveAccountThreshold,
-        // `updatedAt` is automatically managed by Prisma because of @updatedAt
+       
       },
     });
 

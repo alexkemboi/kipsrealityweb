@@ -1,4 +1,3 @@
-//api/policysections/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
@@ -8,7 +7,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const sections = await prisma.section.findMany({
-      include: { policy: true }, // optional if you want to see related policy
+      include: { policy: true }, 
     });
     return NextResponse.json(sections);
   } catch (error) {

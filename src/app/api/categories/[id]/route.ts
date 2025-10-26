@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// ✅ Define correct context type — must be async-compatible
+// Define correct context type — must be async-compatible
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// ✅ GET service by ID
+//  GET service by ID
 export async function GET(req: NextRequest, context: RouteContext) {
-  const { id } = await context.params; // must await because Next expects Promise
+  const { id } = await context.params;
   const serviceId = parseInt(id);
 
   try {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
   }
 }
 
-// ✅ PUT to update service
+//  PUT to update service
 export async function PUT(req: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   const serviceId = parseInt(id);
@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
   }
 }
 
-// ✅ DELETE a service
+//  DELETE a service
 export async function DELETE(req: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   const serviceId = parseInt(id);
