@@ -30,7 +30,7 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         await logout();
-        router.push('/');
+        router.push('/login');
     };
 
     const getDashboardPath = () => {
@@ -47,16 +47,6 @@ const Navbar = () => {
     const getUserInitials = () => {
         if (!user) return 'U';
         return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
-    };
-
-    const getRoleBadgeColor = (role: string) => {
-        const colors = {
-            SYSTEM_ADMIN: 'bg-red-100 text-red-800 border-red-200',
-            PROPERTY_MANAGER: 'bg-blue-100 text-blue-800 border-blue-200',
-            TENANT: 'bg-green-100 text-green-800 border-green-200',
-            VENDOR: 'bg-purple-100 text-purple-800 border-purple-200'
-        };
-        return colors[role as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
     };
 
     const formatRoleName = (role: string) => {
@@ -159,7 +149,6 @@ const Navbar = () => {
                                     hoverColor={hoverColor}
                                     getDashboardPath={getDashboardPath}
                                     getUserInitials={getUserInitials}
-                                    getRoleBadgeColor={getRoleBadgeColor}
                                     formatRoleName={formatRoleName}
                                     handleLogout={handleLogout}
                                 />
@@ -196,7 +185,6 @@ const Navbar = () => {
                         scrollProgress={scrollProgress}
                         getDashboardPath={getDashboardPath}
                         getUserInitials={getUserInitials}
-                        getRoleBadgeColor={getRoleBadgeColor}
                         formatRoleName={formatRoleName}
                         handleLogout={handleLogout}
                         navLinks={navLinks}

@@ -19,7 +19,6 @@ interface UserDropdownProps {
     hoverColor: string;
     getDashboardPath: () => string;
     getUserInitials: () => string;
-    getRoleBadgeColor: (role: string) => string;
     formatRoleName: (role: string) => string;
     handleLogout: () => void;
 }
@@ -29,7 +28,6 @@ export const UserDropdown = ({
     scrollProgress,
     getDashboardPath,
     getUserInitials,
-    getRoleBadgeColor,
     formatRoleName,
     handleLogout
 }: UserDropdownProps) => {
@@ -75,7 +73,7 @@ export const UserDropdown = ({
                             <span className="text-sm text-gray-500">{user.email}</span>
                             <Badge
                                 variant="outline"
-                                className={`mt-1 text-xs ${getRoleBadgeColor(user.role)}`}
+                                className={`mt-1 text-xs bg-blue-100 text-blue-800 border-blue-200`}
                             >
                                 {formatRoleName(user.role)}
                             </Badge>

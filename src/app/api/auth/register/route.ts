@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
 
+// 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR'
+
+const defaultRole = 'SYSTEM_ADMIN';
 
 export async function POST(request: Request) {
     try {
@@ -46,21 +49,21 @@ export async function POST(request: Request) {
             }
         });
 
-        // Link user to organization as PROPERTY_MANAGER
+        // Link user to organization as with a role
         await prisma.organizationUser.create({
             data: {
                 userId: user.id,
                 organizationId: organization.id,
-                role: 'PROPERTY_MANAGER'
+                role: defaultRole
             }
         })
 
 
-        // Generate tokens (consistent with your auth library)
+        // Generate tokens
         const accessToken = generateAccessToken({
             userId: user.id,
             email: user.email,
-            role: 'PROPERTY_MANAGER',
+            role: defaultRole,
             organizationId: organization.id
         })
 
@@ -79,7 +82,7 @@ export async function POST(request: Request) {
             lastName: user.lastName,
             phone: user.phone,
             avatarUrl: user.avatarUrl,
-            role: 'PROPERTY_MANAGER' as const,
+            role: defaultRole,
             organization: {
                 id: organization.id,
                 name: organization.name,

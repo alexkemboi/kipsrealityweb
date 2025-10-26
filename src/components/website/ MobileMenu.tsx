@@ -19,7 +19,6 @@ interface MobileMenuProps {
     scrollProgress: number;
     getDashboardPath: () => string;
     getUserInitials: () => string;
-    getRoleBadgeColor: (role: string) => string;
     formatRoleName: (role: string) => string;
     handleLogout: () => void;
     navLinks: readonly { name: string; href: string; }[];
@@ -30,7 +29,6 @@ export const MobileMenu = ({
     scrollProgress,
     getDashboardPath,
     getUserInitials,
-    getRoleBadgeColor,
     formatRoleName,
     handleLogout,
     navLinks
@@ -78,7 +76,6 @@ export const MobileMenu = ({
                             user={user}
                             getDashboardPath={getDashboardPath}
                             getUserInitials={getUserInitials}
-                            getRoleBadgeColor={getRoleBadgeColor}
                             formatRoleName={formatRoleName}
                             handleLogout={handleLogout}
                             navLinks={navLinks}
@@ -101,7 +98,6 @@ const AuthenticatedMobileContent = ({
     user,
     getDashboardPath,
     getUserInitials,
-    getRoleBadgeColor,
     formatRoleName,
     handleLogout,
     navLinks
@@ -109,7 +105,6 @@ const AuthenticatedMobileContent = ({
     user: any;
     getDashboardPath: () => string;
     getUserInitials: () => string;
-    getRoleBadgeColor: (role: string) => string;
     formatRoleName: (role: string) => string;
     handleLogout: () => void;
     navLinks: readonly { name: string; href: string; }[];
@@ -130,7 +125,7 @@ const AuthenticatedMobileContent = ({
                 <div className="text-sm text-neutral-600">{user.email}</div>
                 <Badge
                     variant="outline"
-                    className={`mt-1 text-xs ${getRoleBadgeColor(user.role)}`}
+                    className={`mt-1 text-xs bg-blue-100 text-blue-800 border-blue-200`}
                 >
                     {formatRoleName(user.role)}
                 </Badge>
