@@ -133,11 +133,14 @@ export default function PlansClientPage() {
             <section className="bg-slate-50/50 px-6 py-20">
                 <div className="mx-auto max-w-6xl">
                     <div className="text-center mb-16">
-                        <h2 className="text-4xl font-normal text-slate-900 md:text-5xl mb-6 tracking-tight">
-                            Complete Property Management
-                            <span className="block text-slate-700 font-light mt-2">Suite</span>
-                        </h2>
-                        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+
+                        <h2 className="text-black mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.4)] pb-4">
+          Complete Property{" "}
+          <span className="text-transparent bg-clip-text text-gradient-primary animate-gradient">
+            Management
+          </span>
+        </h2>
+                        <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed mb-16 max-w-5xl mx-auto">
                             Every tool meticulously designed to work together, eliminating complexity and saving you valuable time.
                         </p>
                     </div>
@@ -146,12 +149,15 @@ export default function PlansClientPage() {
                         {Features.map((feature) => (
                             <div
                                 key={feature.title}
-                                className="group bg-white rounded-xl p-6 border border-slate-100 hover:border-slate-300 transition-all duration-300"
+                                className=" bg-[#1d3d67] backdrop-blur-2xl border border-white/20 rounded-2xl 
+                         p-8 shadow-2xl flex flex-col items-center text-center 
+                         hover:border-white/30 hover:shadow-blue-500/30 transition-all duration-500 
+                         group cursor-pointer"
                             >
-                                <h3 className="text-lg font-semibold text-slate-800 mb-3 group-hover:text-slate-900">
+                                <h3 className="text-xl font-bold text-white mb-3 ">
                                     {feature.title}
                                 </h3>
-                                <p className="text-slate-600 text-sm leading-relaxed">
+                                <p className="text-white text-lg leading-relaxed">
                                     {feature.description}
                                 </p>
 

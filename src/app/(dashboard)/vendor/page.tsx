@@ -6,5 +6,7 @@ import DashboardContent from '../../../components/Dashboard/vendordash/Dashboard
 export default function VendorDashboardPage() {
   const { selected } = useDashboard()
 
-  return <DashboardContent selected={selected} />
+  return (
+    <DashboardContent selected={selected} />
+  )
 }

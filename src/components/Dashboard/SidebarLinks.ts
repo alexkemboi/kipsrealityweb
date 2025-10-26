@@ -1,29 +1,25 @@
 
 import { 
+  LayoutDashboard,
+  FileText,
+  Image,
+  Navigation,
+  Settings,
+  User,
   Home,
-  Building,
+  ClipboardList,
+  Bell,
+  BarChart2,
+  BarChart3,
+  MessageSquare,
+  DollarSign,
   Users,
   Wrench,
-  FileText,
-  BarChart3,
-  Settings,
-  Bell,
-  User,
-  LogOut,
-  DollarSign,
-  Calendar,
-  ClipboardList,
-  Shield,
-  Cog,
-  PieChart,
-  MessageSquare,
-  Mail,
-  LayoutDashboard,
   Building2,
   Calculator,
-  Zap,
-  BarChart2
+  Zap
 } from 'lucide-react'
+
 
 // System routes (common for all roles)
 export const systemRoutes = [
@@ -33,21 +29,89 @@ export const systemRoutes = [
 
 // Role-based route configuration
 export const routeConfig = {
-  admin: {
+  'SYSTEM_ADMIN': {
     main: [
-      { path: '/dashboard/admin', label: 'Overview', icon: Home, badge: null },
-      { path: '/dashboard/admin/users', label: 'User Management', icon: Users, badge: null },
-      { path: '/dashboard/admin/properties', label: 'All Properties', icon: Building, badge: null },
-      { path: '/dashboard/admin/analytics', label: 'Analytics', icon: BarChart3, badge: 'New' },
+      { path: '/dashboard/admin', label: 'Dashboard Overview', icon: LayoutDashboard, badge: null },
+    ],
+    content: [
+      {
+        path: '/dashboard/admin/content/hero',
+        label: 'Hero Section',
+        icon: Zap,
+        badge: null,
+        description: 'Update background image and hero text'
+      },
+      {
+        path: '/dashboard/admin/content/about',
+        label: 'About Section',
+        icon: Users,
+        badge: null,
+        description: 'Edit company story and team info'
+      },
+      {
+        path: '/dashboard/admin/content/services',
+        label: 'Services Section',
+        icon: Wrench,
+        badge: null,
+        description: 'Manage services list and descriptions'
+      },
+      {
+        path: '/dashboard/admin/content/pricing',
+        label: 'Pricing Section',
+        icon: DollarSign,
+        badge: null,
+        description: 'Update pricing plans and features'
+      },
+      {
+        path: '/dashboard/admin/content/testimonials',
+        label: 'Testimonials',
+        icon: MessageSquare,
+        badge: null,
+        description: 'Manage customer reviews and ratings'
+      },
+    ],
+    blog: [
+      {
+        path: '/dashboard/admin/content/blog',
+        label: 'Blog Posts',
+        icon: FileText,
+        badge: null,
+        description: 'Create and edit blog articles'
+      },
+      {
+        path: '/dashboard/admin/content/blog/categories',
+        label: 'Blog Categories',
+        icon: FileText,
+        badge: null,
+        description: 'Organize blog posts by categories'
+      },
+    ],
+    media: [
+      {
+        path: '/dashboard/admin/content/media',
+        label: 'Media Library',
+        icon: Image,
+        badge: null,
+        description: 'Upload and manage images'
+      },
+    ],
+    navigation: [
+      {
+        path: '/dashboard/admin/content/navigation',
+        label: 'Site Navigation',
+        icon: Navigation,
+        badge: null,
+        description: 'Manage menu items and links'
+      },
     ],
     system: [
-      { path: '/dashboard/admin/security', label: 'Security', icon: Shield, badge: null },
-      { path: '/dashboard/admin/system', label: 'System Settings', icon: Cog, badge: null },
-      { path: '/dashboard/admin/reports', label: 'Reports', icon: FileText, badge: null },
+      { path: '/dashboard/admin/users', label: 'User Management', icon: Users, badge: null },
+      { path: '/dashboard/admin/settings', label: 'System Settings', icon: Settings, badge: null },
     ]
   },
 
-  'property-manager': {
+
+  'PROPERTY_MANAGER': {
     main: [
       { path: '/dashboard/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
@@ -88,7 +152,7 @@ export const routeConfig = {
     ],
   },
 
-  tenant: {
+  TENANT: {
     main: [
       { path: '/dashboard/tenant', label: 'Overview', icon: LayoutDashboard },
     ],
@@ -128,7 +192,7 @@ export const routeConfig = {
     ],
   },
 
-  vendor: {
+  VENDOR: {
     main: [
       { path: '/dashboard/vendor', label: 'Overview', icon: Home, badge: null },
     ],
