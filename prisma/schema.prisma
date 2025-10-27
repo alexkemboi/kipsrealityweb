@@ -100,26 +100,14 @@ model Service {
   @@map("services")
 }
 
-enum UserRole {
-  SYSTEM_ADMIN
-  PROPERTY_MANAGER
-  TENANT
-  VENDOR
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
 model AboutUs {
   id          Int      @id @default(autoincrement())
-  section     String   // e.g. "About Us", "Our Story", "Our Vision"
+  section     String
   description String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 
 
 model Testimonial {
@@ -132,39 +120,38 @@ model Testimonial {
   updatedAt DateTime @updatedAt
 }
 
-
 model Job {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String
-  image       String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  applications Application[] // Relation to Applications
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  image        String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  applications Application[]
 }
 
-
 model Applicant {
-  id        Int         @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String      @unique
-  resume    String?     // URL or path to uploaded resume
-  createdAt DateTime    @default(now())
-  applications Application[] // Relation to Applications
+  id           Int           @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String        @unique
+  resume       String?
+  createdAt    DateTime      @default(now())
+  applications Application[]
 }
 
 model Application {
-  id          Int      @id @default(autoincrement())
-  job         Job      @relation(fields: [jobId], references: [id])
+  id          Int       @id @default(autoincrement())
   jobId       Int
-  applicant   Applicant @relation(fields: [applicantId], references: [id])
   applicantId Int
-  status      String   @default("Pending") // e.g., Pending, Reviewed, Accepted, Rejected
-  appliedAt   DateTime @default(now())
+  status      String    @default("Pending")
+  appliedAt   DateTime  @default(now())
+  applicant   Applicant @relation(fields: [applicantId], references: [id])
+  job         Job       @relation(fields: [jobId], references: [id])
+
+  @@index([applicantId], map: "Application_applicantId_fkey")
+  @@index([jobId], map: "Application_jobId_fkey")
 }
-
-
 
 model ContactMessage {
   id        Int      @id @default(autoincrement())
@@ -175,32 +162,44 @@ model ContactMessage {
 }
 
 model Policy {
-  id                     Int       @id @default(autoincrement())
-  title                  String
-  companyName            String
-  contactEmail           String
-  privacyEmail           String
-  website                String?
-  mailingAddress         String?   
-  responseTime           String?
+  id                       Int       @id @default(autoincrement())
+  title                    String
+  companyName              String
+  contactEmail             String
+  privacyEmail             String
+  website                  String?
+  mailingAddress           String?
+  responseTime             String?
   inactiveAccountThreshold String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-
-
-  sections Section[]
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  sections                 Section[]
 }
 
 model Section {
-  id          Int      @id @default(autoincrement())
-  key         String   
-  title       String
-  intro       String?  
-  content     Json?   
-  order       Int?     
-  policy      Policy   @relation(fields: [policyId], references: [id])
-  policyId    Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  key       String
+  title     String
+  intro     String?
+  content   Json?
+  order     Int?
+  policyId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  policy    Policy   @relation(fields: [policyId], references: [id])
+
+  @@index([policyId], map: "Section_policyId_fkey")
 }
 
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
