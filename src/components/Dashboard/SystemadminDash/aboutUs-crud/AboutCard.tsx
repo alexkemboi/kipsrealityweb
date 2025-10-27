@@ -1,5 +1,4 @@
-"use client";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { AboutUs } from "@/app/data/AboutUsData";
 
 interface AboutSectionCardProps {
@@ -13,11 +12,28 @@ export default function AboutSectionCard({
   onChange,
   onSave,
 }: AboutSectionCardProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const allTextareas = document.querySelectorAll<HTMLTextAreaElement>("textarea.about-textarea");
+
+    let maxHeight = 0;
+    allTextareas.forEach((ta) => {
+      ta.style.height = "auto";
+      maxHeight = Math.max(maxHeight, ta.scrollHeight);
+    });
+
+    allTextareas.forEach((ta) => {
+      ta.style.height = `${maxHeight}px`;
+    });
+  }, [section.description]); 
+
   return (
     <div className="p-4 bg-white shadow rounded-md">
       <h2 className="text-xl font-bold">{section.section}</h2>
       <textarea
-        className="w-full border p-2 mt-2 rounded resize-none"
+        ref={textareaRef}
+        className="about-textarea w-full border p-2 mt-2 rounded resize-none overflow-hidden"
         value={section.description}
         onChange={(e) => onChange(section.id, e.target.value)}
       />
