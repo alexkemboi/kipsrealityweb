@@ -1,5 +1,11 @@
 "use client";
-import { useState } from "react";
+
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
+
+// Import editor dynamically to prevent SSR errors
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const Markdown = dynamic(() => import("@uiw/react-markdown-preview"), { ssr: false });
 
 interface Props {
   section?: any;
@@ -15,8 +21,10 @@ export default function SectionForm({ section, policyId, onSaved, onClose }: Pro
     content: section?.content || "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const [isPreview, setIsPreview] = useState(false);
+
+  const handleChange = (name: string, value: string) => {
+    setForm({ ...form, [name]: value });
   };
 
   const handleSubmit = async () => {
@@ -36,42 +44,65 @@ export default function SectionForm({ section, policyId, onSaved, onClose }: Pro
   };
 
   return (
-    <div className="p-3 bg-gray-50 rounded-md border space-y-2">
-      <h5 className="font-medium">
-        {section ? "Edit Section" : "Add Section"}
+    <div className="p-4 bg-white rounded-md border space-y-4 shadow-sm">
+      <h5 className="text-lg font-semibold text-gray-800">
+        {section ? "✏️ Edit Section" : "➕ Add New Section"}
       </h5>
 
       <input
         name="title"
         value={form.title}
-        onChange={handleChange}
-        placeholder="Title"
-        className="w-full border p-2 rounded"
+        onChange={(e) => handleChange("title", e.target.value)}
+        placeholder="Section Title"
+        className="w-full border p-2 rounded-md focus:ring focus:ring-green-200"
       />
 
       <input
         name="intro"
         value={form.intro}
-        onChange={handleChange}
-        placeholder="Intro"
-        className="w-full border p-2 rounded"
+        onChange={(e) => handleChange("intro", e.target.value)}
+        placeholder="Short Introduction"
+        className="w-full border p-2 rounded-md focus:ring focus:ring-green-200"
       />
 
-      <textarea
-        name="content"
-        value={form.content}
-        onChange={handleChange}
-        placeholder="Content (JSON or Text)"
-        className="w-full border p-2 rounded"
-      />
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label className="font-medium text-gray-700">Section Content</label>
+          <button
+            onClick={() => setIsPreview(!isPreview)}
+            type="button"
+            className="text-sm text-green-700 border border-green-600 px-2 py-1 rounded hover:bg-green-50"
+          >
+            {isPreview ? "📝 Edit" : "👀 Preview"}
+          </button>
+        </div>
 
-      <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="px-2 py-1 border rounded">
+        {isPreview ? (
+          <div
+            data-color-mode="light"
+            className="border p-3 rounded-md bg-gray-50 prose max-w-none"
+          >
+            <Markdown source={form.content} />
+          </div>
+        ) : (
+          <MDEditor
+            value={form.content}
+            onChange={(value = "") => handleChange("content", value)}
+            height={300}
+          />
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          onClick={onClose}
+          className="px-3 py-1 border border-gray-400 text-gray-600 rounded hover:bg-gray-100"
+        >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
-          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+          className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
         >
           Save
         </button>
