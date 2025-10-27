@@ -43,7 +43,7 @@ export const routeConfig = {
       },
       {
         path: '/dashboard/admin/content/about',
-        label: 'About Section',
+        label: 'About Us Page',
         icon: Users,
         badge: null,
         description: 'Edit company story and team info'
