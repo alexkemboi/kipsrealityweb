@@ -5,6 +5,8 @@ import dynamic from "next/dynamic"
 
 const ServiceCRUD = dynamic(() => import("./service-crud/ServiceCrud"))
 const PolicyCRUD = dynamic(() => import("./policy-crud/PolicyList"))
+const AboutUsCRUD = dynamic(() => import("./aboutUs-crud/AboutCard"))
+
 
 interface DashboardContentProps {
   selected: string
@@ -17,6 +19,8 @@ export default function DashboardContent({ selected }: DashboardContentProps) {
         return <ServiceCRUD />
       case "Policy Page":
         return <PolicyCRUD />
+        case "About Us Page":
+        return <AboutUsCRUD />
       default:
         return (
           <div className="flex flex-col items-center justify-center text-center py-12 text-gray-600">

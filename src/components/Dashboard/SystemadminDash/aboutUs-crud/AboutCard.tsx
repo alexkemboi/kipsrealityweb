@@ -3,63 +3,53 @@ import { useEffect, useState } from "react";
 
 import {AboutUs} from "@/app/data/AboutUsData";
 
-export interface Section {
-  id: number;
-  title: string;
-  intro?: string;
-  content?: string;
-}
 
-export interface Policy {
-  id: number;
-  title: string;
-  companyName: string;
-  contactEmail: string;
-  privacyEmail: string;
-  website?: string;
-  mailingAddress?: string;
-  responseTime?: string;
-  inactiveAccountThreshold?: string;
-  sections: Section[];
-}
+export default function AboutSectionDashboard() {
+  const [sections, setSections] = useState<AboutUs[]>([]);
+ 
 
-export default function PolicyList() {
-  const [policies, setPolicies] = useState<Policy[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingPolicy, setEditingPolicy] = useState<Policy | null>(null);
-
-  const fetchPolicies = async () => {
-    const res = await fetch("/api/policies");
+  const fetchSections = async () => {
+    const res = await fetch("/api/aboutsection");
     const data = await res.json();
-    setPolicies(data);
+    setSections(data);
   };
 
   useEffect(() => {
-    fetchPolicies();
+    fetchSections();
   }, []);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this policy?")) return;
-    await fetch(`/api/policies/${id}`, { method: "DELETE" });
-    fetchPolicies();
+  const handleUpdate = async (section: AboutUs) => {
+    await fetch(`/api/aboutsection/${section.id}`, {
+     method: "PUT",
+     headers: {"Content-Type": "application/json"},
+     body: JSON.stringify(section),});
+    fetchSections();
   };
 
-  return (
-    <div className="p-6 space-y-4">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Policies</h1>
-        <button
-          onClick={() => {
-            setEditingPolicy(null);
-            setShowForm(true);
-          }}
-          className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700"
-        >
-          + New Policy
-        </button>
-      </div>
-
-     
+   return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+      {sections.map((section) => (
+        <div key={section.id} className="p-4 bg-white shadow rounded-md">
+          <h2 className="text-xl font-bold">{section.section}</h2>
+          <textarea
+            className="w-full border p-2 mt-2 rounded"
+            value={section.description}
+            onChange={(e) =>
+              setSections((prev) =>
+                prev.map((s) =>
+                  s.id === section.id ? { ...s, description: e.target.value } : s
+                )
+              )
+            }
+          />
+          <button
+            onClick={() => handleUpdate(section)}
+            className="mt-3 bg-blue-600 text-white px-3 py-1 rounded"
+          >
+            Save Changes
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
