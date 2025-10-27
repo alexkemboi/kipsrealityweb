@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
 import SectionForm from "./SectionForm";
+
+// Use the same markdown renderer as preview
+const Markdown = dynamic(() => import("@uiw/react-markdown-preview"), { ssr: false });
 
 interface Props {
   section: any;
@@ -73,10 +75,11 @@ export default function SectionItem({ section, refresh, policyId }: Props) {
 
       {/* View Mode */}
       {!editing && expanded && section.content && (
-        <div className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 text-gray-800 overflow-auto prose max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {section.content}
-          </ReactMarkdown>
+        <div 
+          data-color-mode="light"
+          className="mt-4 bg-gray-50 border border-gray-100 rounded-xl p-5 text-gray-800 overflow-auto"
+        >
+          <Markdown source={section.content} />
         </div>
       )}
     </div>

@@ -19,17 +19,13 @@ interface Props {
 
 export default function SectionList({ policyId, sections, refresh }: Props) {
   const [showForm, setShowForm] = useState(false);
-  const [editingSection, setEditingSection] = useState<Section | null>(null);
 
   return (
     <div className="mt-6">
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-lg font-semibold text-gray-800">Sections</h4>
         <button
-          onClick={() => {
-            setEditingSection(null);
-            setShowForm(true);
-          }}
+          onClick={() => setShowForm(true)}
           className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
         >
           + Add Section
@@ -39,7 +35,6 @@ export default function SectionList({ policyId, sections, refresh }: Props) {
       {showForm && (
         <div className="mb-4">
           <SectionForm
-            section={editingSection}
             policyId={policyId}
             onClose={() => setShowForm(false)}
             onSaved={refresh}
@@ -55,10 +50,7 @@ export default function SectionList({ policyId, sections, refresh }: Props) {
             <SectionItem
               key={section.id}
               section={section}
-              onEdit={() => {
-                setEditingSection(section);
-                setShowForm(true);
-              }}
+              policyId={policyId}
               refresh={refresh}
             />
           ))}
