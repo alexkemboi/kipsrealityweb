@@ -4,8 +4,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import aboutBg from "@/assets/hero-cityscape.jpg";
 import { Testimonial } from "@/app/data/TestimonialData";
-import { TestimonialCard } from "./TestimonialCard";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface TestimonialsProps {
   initialTestimonials: Testimonial[];
@@ -13,10 +12,23 @@ interface TestimonialsProps {
 
 export function Testimonials({ initialTestimonials }: TestimonialsProps) {
   const [index, setIndex] = useState(0);
-
+  const [testimonials, setTestimonials] =useState<Testimonial[]>([]);
   const nextSlide = () => setIndex((prev) => (prev + 1) % initialTestimonials.length);
   const prevSlide = () => setIndex((prev) => (prev - 1 + initialTestimonials.length) % initialTestimonials.length);
+    const [loading, setLoading] = useState(false);
 
+useEffect(() => {
+  if(initialTestimonials.length >0){
+    setTestimonials(initialTestimonials);
+  }
+}, [initialTestimonials, setTestimonials]
+
+)
+if(loading && testimonials.length ===0)
+    return <p className="p-6 text-gray-500">Loading...</p>;
+
+  if (!testimonials || testimonials.length === 0)
+    return <p className="p-6 text-gray-500">No testimonials found.</p>;
   const testimonial = initialTestimonials[index];
 
   return (
