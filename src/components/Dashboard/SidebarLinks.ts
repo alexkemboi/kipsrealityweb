@@ -63,7 +63,7 @@ export const routeConfig = {
         description: 'Manage policy sections and Content'
       },
       {
-        path: '/admin/content/pricing',
+        path: '/admin/content/Pricing-Crud',
         label: 'Pricing Section',
         icon: DollarSign,
         badge: null,

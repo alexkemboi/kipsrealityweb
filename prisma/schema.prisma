@@ -194,7 +194,7 @@ model Feature {
   title       String
   description String
   planId      Int
-  plan        Plan   @relation(fields: [planId], references: [id])
+  plan        Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
 
   @@index([planId], map: "Feature_planId_fkey")
 }
@@ -210,6 +210,7 @@ model Plan {
   createdAt    DateTime  @default(now())
   features     Feature[]
 }
+
 
 enum UserRole {
   SYSTEM_ADMIN
