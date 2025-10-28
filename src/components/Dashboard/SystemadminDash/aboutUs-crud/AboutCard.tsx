@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { AboutUs } from "@/app/data/AboutUsData";
+import { toast } from "sonner";
+
 
 interface AboutSectionCardProps {
   section: AboutUs;
@@ -28,6 +30,16 @@ export default function AboutSectionCard({
     });
   }, [section.description]); 
 
+  
+  const handleSave = () => {
+    try {
+      onSave(section);
+      toast.success("Section saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save section.");
+    }
+  };
+
   return (
     <div className="p-4 bg-white shadow rounded-md">
       <h2 className="text-xl font-bold">{section.section}</h2>
@@ -38,7 +50,7 @@ export default function AboutSectionCard({
         onChange={(e) => onChange(section.id, e.target.value)}
       />
       <button
-        onClick={() => onSave(section)}
+          onClick={handleSave}
         className="mt-3 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
       >
         Save Changes

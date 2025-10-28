@@ -15,15 +15,14 @@ export default function TestimonialCard({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const handleSave = () => {
   try {
-    onSave(section)  // your existing save logic
-    toast.success("Testimonial saved successfully!") // success feedback
+    onSave(section)  
+    toast.success("Testimonial saved successfully!") 
   } catch (error) {
-    toast.error("Failed to save testimonial") // optional error handling
+    toast.error("Failed to save testimonial") 
   }
 }
 
 
-  // Auto-resize textareas to match tallest one
   useEffect(() => {
     const allTextareas = document.querySelectorAll<HTMLTextAreaElement>(
       "textarea.about-textarea"
@@ -40,7 +39,6 @@ export default function TestimonialCard({
 
   return (
     <div className="p-6 bg-white shadow-md rounded-xl border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-      {/* Top row: avatar + name + role */}
       <div className="flex items-center gap-4 mb-4">
         <img
           src={section.image || "https://via.placeholder.com/80"}
