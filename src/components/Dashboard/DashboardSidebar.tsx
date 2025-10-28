@@ -1,42 +1,46 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { ChevronLeft, Building2, Menu, X } from 'lucide-react'
-import { DashboardSidebarLinks } from './DashboardSidebarLinks'
-import { cn } from '@/lib/utils'
-import { useDashboard } from '@/context/DashboardContext'
+import { useState, useEffect } from "react";
+import { ChevronLeft, Building2, Menu, X } from "lucide-react";
+import { DashboardSidebarLinks } from "./DashboardSidebarLinks";
+import { cn } from "@/lib/utils";
+import { useDashboard } from "@/context/DashboardContext";
 
 interface DashboardSidebarProps {
   user: {
-    id: string
-    firstName: string
-    role: string
-    email: string
-    avatar?: string
-  }
+    id: string;
+    firstName: string;
+    role: string;
+    email: string;
+    avatar?: string;
+  };
+  isCollapsed: boolean;
+  toggleSidebar: () => void;
 }
 
-export function DashboardSidebar({ user }: DashboardSidebarProps) {
-  const [isMobile, setIsMobile] = useState(false)
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false)
-  const { isSidebarCollapsed, toggleSidebar } = useDashboard()
+export function DashboardSidebar({
+  user,
+  isCollapsed,
+  toggleSidebar,
+}: DashboardSidebarProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Check if mobile
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
-  const open = !isSidebarCollapsed
+  const open = !isCollapsed;
 
   // Desktop Sidebar
   const DesktopSidebar = () => (
     <div
       className={cn(
-        'hidden md:flex flex-col bg-neutral-900 border-r border-neutral-800 transition-all duration-300 ease-in-out h-screen sticky top-0',
-        open ? 'w-64' : 'w-20'
+        "hidden md:flex flex-col bg-neutral-900 border-r border-neutral-800 transition-all duration-300 ease-in-out h-screen sticky top-0",
+        open ? "w-64" : "w-20"
       )}
     >
       {/* Header */}
@@ -46,7 +50,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
             <div>
               <h1 className="font-bold text-white text-lg">RentFlow360</h1>
               <p className="text-xs text-neutral-400 capitalize">
-                {user.role.replace('-', ' ')}
+                {user.role.replace("-", " ")}
               </p>
             </div>
           </div>
@@ -56,7 +60,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
           className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800"
         >
           <ChevronLeft
-            className={cn('w-4 h-4 transition-transform', !open && 'rotate-180')}
+            className={cn("w-4 h-4 transition-transform", !open && "rotate-180")}
           />
         </button>
       </div>
@@ -74,7 +78,9 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
               {user.firstName.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user.firstName}</p>
+              <p className="text-sm font-medium text-white truncate">
+                {user.firstName}
+              </p>
               <p className="text-xs text-neutral-400 truncate">{user.email}</p>
             </div>
           </div>
@@ -85,7 +91,7 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         )}
       </div>
     </div>
-  )
+  );
 
   // Mobile Drawer
   const MobileDrawer = () => (
@@ -106,13 +112,13 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
           <div className="fixed left-0 top-0 h-full w-80 z-50 flex flex-col bg-neutral-950 border-r border-neutral-800">
             <div className="flex items-center justify-between p-4 border-b border-neutral-800">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-500rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <h1 className="font-bold text-white text-lg">RentFlow360</h1>
                   <p className="text-xs text-neutral-400 capitalize">
-                    {user.role.replace('-', ' ')}
+                    {user.role.replace("-", " ")}
                   </p>
                 </div>
               </div>
@@ -134,7 +140,9 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
                   {user.firstName.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.firstName}</p>
+                  <p className="text-sm font-medium text-white truncate">
+                    {user.firstName}
+                  </p>
                   <p className="text-xs text-neutral-400 truncate">{user.email}</p>
                 </div>
               </div>
@@ -143,12 +151,12 @@ export function DashboardSidebar({ user }: DashboardSidebarProps) {
         </>
       )}
     </>
-  )
+  );
 
   return (
     <>
       <DesktopSidebar />
       <MobileDrawer />
     </>
-  )
+  );
 }

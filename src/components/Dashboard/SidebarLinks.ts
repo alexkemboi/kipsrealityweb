@@ -31,7 +31,7 @@ export const systemRoutes = [
 export const routeConfig = {
   'SYSTEM_ADMIN': {
     main: [
-      { path: '/dashboard/admin', label: 'Dashboard Overview', icon: LayoutDashboard, badge: null },
+      { path: '/admin', label: 'Dashboard Overview', icon: LayoutDashboard, badge: null },
     ],
     content: [
       {
@@ -42,35 +42,35 @@ export const routeConfig = {
         description: 'Update background image and hero text'
       },
       {
-        path: '/dashboard/admin/content/about',
-        label: 'About Section',
+        path: '/admin/content/AboutUs-crud',
+        label: 'About Us Page',
         icon: Users,
         badge: null,
         description: 'Edit company story and team info'
       },
       {
-        path: '/dashboard/admin/content/services',
+        path: '/admin/content/service-crud',
         label: 'Services Page',
         icon: Wrench,
         badge: null,
         description: 'Manage services list and descriptions'
       },
       {
-        path: '/dashboard/admin/content/policy',
+        path: '/admin/content/policy-crud',
         label: 'Policy Page',
         icon: Wrench,
         badge: null,
         description: 'Manage policy sections and Content'
       },
       {
-        path: '/dashboard/admin/content/pricing',
+        path: '/admin/content/pricing',
         label: 'Pricing Section',
         icon: DollarSign,
         badge: null,
         description: 'Update pricing plans and features'
       },
       {
-        path: '/dashboard/admin/content/testimonials',
+        path: '/admin/content/testimonials',
         label: 'Testimonials',
         icon: MessageSquare,
         badge: null,
@@ -79,14 +79,14 @@ export const routeConfig = {
     ],
     blog: [
       {
-        path: '/dashboard/admin/content/blog',
+        path: '/admin/content/blog',
         label: 'Blog Posts',
         icon: FileText,
         badge: null,
         description: 'Create and edit blog articles'
       },
       {
-        path: '/dashboard/admin/content/blog/categories',
+        path: '/admin/content/blog/categories',
         label: 'Blog Categories',
         icon: FileText,
         badge: null,
@@ -95,7 +95,7 @@ export const routeConfig = {
     ],
     media: [
       {
-        path: '/dashboard/admin/content/media',
+        path: '/admin/content/media',
         label: 'Media Library',
         icon: Image,
         badge: null,
@@ -104,7 +104,7 @@ export const routeConfig = {
     ],
     navigation: [
       {
-        path: '/dashboard/admin/content/navigation',
+        path: '/admin/content/navigation',
         label: 'Site Navigation',
         icon: Navigation,
         badge: null,
@@ -112,8 +112,8 @@ export const routeConfig = {
       },
     ],
     system: [
-      { path: '/dashboard/admin/users', label: 'User Management', icon: Users, badge: null },
-      { path: '/dashboard/admin/settings', label: 'System Settings', icon: Settings, badge: null },
+      { path: '/admin/users', label: 'User Management', icon: Users, badge: null },
+      { path: '/admin/settings', label: 'System Settings', icon: Settings, badge: null },
     ]
   },
 
