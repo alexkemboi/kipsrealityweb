@@ -102,10 +102,10 @@ model Service {
 
 model AboutUs {
   id          Int      @id @default(autoincrement())
-  section     String
+  section     String   
   description String   @db.Text
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  updatedAt   DateTime @default(now())
 }
 
 model Testimonial {
