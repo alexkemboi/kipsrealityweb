@@ -102,7 +102,7 @@ model Service {
 
 model AboutUs {
   id          Int      @id @default(autoincrement())
-  section     String   
+  section     String
   description String   @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
@@ -189,6 +189,28 @@ model Section {
   @@index([policyId], map: "Section_policyId_fkey")
 }
 
+model Feature {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  planId      Int
+  plan        Plan   @relation(fields: [planId], references: [id])
+
+  @@index([planId], map: "Feature_planId_fkey")
+}
+
+model Plan {
+  id           Int       @id @default(autoincrement())
+  name         String
+  badge        String?
+  monthlyPrice Float
+  yearlyPrice  Float
+  description  String?
+  gradient     String?
+  createdAt    DateTime  @default(now())
+  features     Feature[]
+}
+
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -201,24 +223,3 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
 }
-
-model Plan {
-  id            Int       @id @default(autoincrement())
-  name          String
-  badge         String?
-  monthlyPrice  Float
-  yearlyPrice   Float
-  description   String?
-  features      Feature[]
-  gradient      String?
-  createdAt     DateTime  @default(now())
-}
-
-model Feature {
-  id          Int     @id @default(autoincrement())
-  title       String
-  description String
-  planId      Int
-  plan        Plan    @relation(fields: [planId], references: [id])
-}
-
