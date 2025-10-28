@@ -60,8 +60,13 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
   const categoryId = parseInt(id, 10);
 
   try {
+    // Delete all services linked to this category
+    await prisma.service.deleteMany({ where: { category_id: categoryId } });
+
+    // Delete the category
     await prisma.category.delete({ where: { id: categoryId } });
-    return NextResponse.json({ message: "Category deleted successfully" });
+
+    return NextResponse.json({ message: "Category and its services deleted successfully" });
   } catch (err: any) {
     console.error("DELETE /api/categories/[id] error:", err);
     return NextResponse.json(
