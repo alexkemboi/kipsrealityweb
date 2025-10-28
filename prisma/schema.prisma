@@ -194,7 +194,7 @@ model Feature {
   title       String
   description String
   planId      Int
-  Plan        Plan   @relation(fields: [planId], references: [id])
+  plan        Plan   @relation(fields: [planId], references: [id])
 
   @@index([planId], map: "Feature_planId_fkey")
 }
@@ -208,7 +208,7 @@ model Plan {
   description  String?
   gradient     String?
   createdAt    DateTime  @default(now())
-  Feature      Feature[]
+  features     Feature[]
 }
 
 enum UserRole {
