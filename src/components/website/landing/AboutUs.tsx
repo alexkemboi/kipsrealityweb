@@ -2,6 +2,8 @@ import Image from "next/image";
 import { FlipWords } from "../../ui/flip-words";
 import aboutBg from "@/assets/hero-cityscape.jpg";
 import { AboutUs as AboutUsType } from "@/app/data/AboutUsData";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface AboutProps {
   aboutData: AboutUsType[];
@@ -17,8 +19,9 @@ export default function About({ aboutData }: AboutProps) {
   return (
     <section
       id="about"
-      className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-gray-50 to-white"
+      className="relative min-h-[80vh]  overflow-hidden bg-gradient-to-b from-gray-50 to-white"
     >
+      <div className="flex items-center justify-cente">
       <div className="absolute inset-0 z-0">
         <Image
           src={aboutBg}
@@ -76,6 +79,21 @@ export default function About({ aboutData }: AboutProps) {
           )}
         </div>
       </div>
+ 
+</div>
+ <div className="flex justify-center mb-6">
+  <Link href="/about">
+    <Button
+      size="lg"
+      className="font-inter text-lg px-8 py-6 bg-gradient-primary hover:from-blue-700 hover:to-cyan-700 text-white shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 group relative overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+      <span className="relative">Learn More</span>
+    </Button>
+  </Link>
+</div>
+
     </section>
+    
   );
 }
