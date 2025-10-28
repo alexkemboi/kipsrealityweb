@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE `users` (
+CREATE TABLE  `users` (
     `id` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `password_hash` VARCHAR(191) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE `users` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `organizations` (
+CREATE TABLE  `organizations` (
     `id` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
@@ -35,7 +35,7 @@ CREATE TABLE `organizations` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `organization_users` (
+CREATE TABLE  `organization_users` (
     `id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NOT NULL,
     `organization_id` VARCHAR(191) NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE `organization_users` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `vendors` (
+CREATE TABLE  `vendors` (
     `id` VARCHAR(191) NOT NULL,
     `organization_id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NOT NULL,
@@ -66,7 +66,7 @@ CREATE TABLE `vendors` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `categories` (
+CREATE TABLE  `categories` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `tagline` VARCHAR(191) NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE `categories` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `services` (
+CREATE TABLE  `services` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `category_id` INTEGER NOT NULL,
     `name` VARCHAR(191) NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE `services` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `AboutUs` (
+CREATE TABLE  `AboutUs` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `section` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
@@ -101,7 +101,7 @@ CREATE TABLE `AboutUs` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Testimonial` (
+CREATE TABLE  `Testimonial` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `role` VARCHAR(191) NOT NULL,
@@ -114,7 +114,7 @@ CREATE TABLE `Testimonial` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Job` (
+CREATE TABLE  `Job` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE `Job` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Applicant` (
+CREATE TABLE  `Applicant` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `firstName` VARCHAR(191) NOT NULL,
     `lastName` VARCHAR(191) NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE `Applicant` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Application` (
+CREATE TABLE  `Application` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `jobId` INTEGER NOT NULL,
     `applicantId` INTEGER NOT NULL,
@@ -150,7 +150,7 @@ CREATE TABLE `Application` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `ContactMessage` (
+CREATE TABLE  `ContactMessage` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
@@ -161,7 +161,7 @@ CREATE TABLE `ContactMessage` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Policy` (
+CREATE TABLE  `Policy` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(191) NOT NULL,
     `companyName` VARCHAR(191) NOT NULL,

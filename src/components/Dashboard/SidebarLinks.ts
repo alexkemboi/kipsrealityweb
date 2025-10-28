@@ -49,14 +49,14 @@ export const routeConfig = {
         description: 'Edit company story and team info'
       },
       {
-        path: '/dashboard/admin/content/services',
+        path: '/admin/content/service-crud',
         label: 'Services Page',
         icon: Wrench,
         badge: null,
         description: 'Manage services list and descriptions'
       },
       {
-        path: '/dashboard/admin/content/policy',
+        path: '/admin/content/policy-crud',
         label: 'Policy Page',
         icon: Wrench,
         badge: null,
