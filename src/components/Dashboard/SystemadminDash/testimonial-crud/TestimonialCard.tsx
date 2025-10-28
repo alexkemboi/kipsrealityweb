@@ -10,7 +10,7 @@ interface TestimonialSectionCardProps {
   ) => void;  onSave: (section: Testimonial) => void;
 }
 
-export default function AboutSectionCard({
+export default function TestimonialCard({
   section,
   onChange,
   onSave,
