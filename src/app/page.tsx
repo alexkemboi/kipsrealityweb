@@ -15,6 +15,7 @@ import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
 import {TypewriterEffectDemo} from "@/components/website/landing/BrandWords";
 import {fetchTestimonials} from "@/lib/testimonial"
+import { fetchAboutUs } from "@/lib/aboutUs";
 
 import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
@@ -24,6 +25,7 @@ import { servicesData } from "./data/servicesData";
 
 export default async function Home() {
   const testimonials = await fetchTestimonials();
+  const about = await fetchAboutUs();
 
 
   return (
@@ -32,7 +34,7 @@ export default async function Home() {
       {/* Hero Section */}
       <HeroSection />
       {/* About Us Section */}
-      <About />
+      <About aboutData={about} />
       <WhatMakes />
       <TypewriterEffectDemo/>
         <Services />
