@@ -53,27 +53,31 @@ export default function ServicesCRUD() {
   // FETCH CATEGORIES & SERVICES
  
   const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const catsRes = await fetch("/api/categories");
-      const catsData = await catsRes.json();
+  try {
+    setLoading(true);
+    const catsRes = await fetch("/api/categories");
+    const catsData = await catsRes.json();
 
-      const catsWithServices = await Promise.all(
-        catsData.map(async (cat: Category) => {
-          const servicesRes = await fetch(`/api/services?category_id=${cat.id}`);
-          const servicesData = await servicesRes.json();
-          return { ...cat, services: servicesData };
-        })
-      );
+    // ✅ Ensure catsData is an array
+    const categoriesArray = Array.isArray(catsData) ? catsData : [];
 
-      setCategories(catsWithServices);
-    } catch (err) {
-      toast.error("Failed to fetch categories");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const catsWithServices = await Promise.all(
+      categoriesArray.map(async (cat: Category) => {
+        const servicesRes = await fetch(`/api/services?category_id=${cat.id}`);
+        const servicesData = await servicesRes.json();
+        return { ...cat, services: Array.isArray(servicesData) ? servicesData : [] };
+      })
+    );
+
+    setCategories(catsWithServices);
+  } catch (err) {
+    toast.error("Failed to fetch categories");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchCategories();
