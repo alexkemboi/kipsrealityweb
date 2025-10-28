@@ -70,7 +70,7 @@ export const routeConfig = {
         description: 'Update pricing plans and features'
       },
       {
-        path: '/admin/content/testimonials',
+        path: '/admin/content/testimonial-crud',
         label: 'Testimonials',
         icon: MessageSquare,
         badge: null,

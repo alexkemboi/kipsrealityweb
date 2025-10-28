@@ -14,7 +14,8 @@ import { testimonials } from "./data/TestimonialData";
 import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
 import {TypewriterEffectDemo} from "@/components/website/landing/BrandWords";
-
+import {fetchTestimonials} from "@/lib/testimonial"
+import { fetchAboutUs } from "@/lib/aboutUs";
 
 import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
@@ -22,7 +23,9 @@ import { QuickStats } from "@/components/website/services/QuickStats";
 import { servicesData } from "./data/servicesData";
 
 
-export default function Home() {
+export default async function Home() {
+  const testimonials = await fetchTestimonials();
+  const about = await fetchAboutUs();
 
 
   return (
@@ -31,7 +34,7 @@ export default function Home() {
       {/* Hero Section */}
       <HeroSection />
       {/* About Us Section */}
-      <About />
+      <About aboutData={about} />
       <WhatMakes />
       <TypewriterEffectDemo/>
         <Services />
