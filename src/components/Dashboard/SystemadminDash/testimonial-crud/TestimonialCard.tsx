@@ -50,7 +50,7 @@ export default function TestimonialCard({
       <textarea
         ref={textareaRef}
         className="about-textarea w-full border p-2 mt-2 rounded resize-none overflow-hidden"
-        value={section.name}
+        value={section.role}
         onChange={(e) => onChange(section.id, "role", e.target.value)}
       />
 
@@ -61,7 +61,7 @@ export default function TestimonialCard({
       <textarea
         ref={textareaRef}
         className="about-textarea w-full border p-2 mt-2 rounded resize-none overflow-hidden"
-        value={section.name}
+        value={section.image}
         onChange={(e) => onChange(section.id, "image", e.target.value)}
       />
 
@@ -72,7 +72,7 @@ export default function TestimonialCard({
       <textarea
         ref={textareaRef}
         className="about-textarea w-full border p-2 mt-2 rounded resize-none overflow-hidden"
-        value={section.name}
+        value={section.text}
         onChange={(e) => onChange(section.id, "text", e.target.value)}
       />
 
