@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 5️⃣ Return success response
     return NextResponse.json(
       {
         message: "Message sent successfully",
@@ -50,6 +49,22 @@ export async function POST(req: NextRequest) {
     console.error(" Error submitting contact form:", error);
     return NextResponse.json(
       { error: "Server error while submitting message" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const contacts = await prisma.contactMessage.findMany({
+      orderBy: { createdAt: "desc" }, 
+    });
+
+    return NextResponse.json(contacts, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch messages" },
       { status: 500 }
     );
   }
