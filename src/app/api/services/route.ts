@@ -14,7 +14,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST a new service
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

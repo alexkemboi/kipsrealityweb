@@ -1,3 +1,4 @@
+// ServiceModal.tsx
 import {
   Dialog,
   DialogTitle,
@@ -8,8 +9,10 @@ import {
   Box,
   MenuItem,
   FormHelperText,
+  IconButton,
 } from '@mui/material';
-import { ServiceFormData, Category } from '@/components/Dashboard/SystemadminDash/service-crud/type';
+import CloseIcon from '@mui/icons-material/Close';
+import { ServiceFormData, Category } from './type';
 
 interface ServiceModalProps {
   isOpen: boolean;
@@ -29,9 +32,24 @@ export default function ServiceModal({
   onChange,
 }: ServiceModalProps) {
   return (
-    <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <Dialog 
+      open={isOpen} 
+      onClose={onClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2 } }}
+    >
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        pb: 2,
+        fontWeight: 700,
+      }}>
         {serviceForm.id ? "Edit Service" : "Add Service"}
+        <IconButton size="small" onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
       
       <DialogContent>
@@ -55,15 +73,30 @@ export default function ServiceModal({
             rows={3}
           />
 
-          <Box>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' }, 
+            gap: 2 
+          }}>
+            <Box>
+              <TextField
+                label="Features"
+                placeholder="Enter features (comma separated)"
+                value={serviceForm.features}
+                onChange={(e) => onChange('features', e.target.value)}
+                fullWidth
+              />
+              <FormHelperText>Separate multiple features with commas</FormHelperText>
+            </Box>
+
             <TextField
-              label="Features"
-              placeholder="Enter features (comma separated)"
-              value={serviceForm.features}
-              onChange={(e) => onChange('features', e.target.value)}
+              label="Icon"
+              placeholder="Enter icon name or emoji"
+              value={serviceForm.icon}
+              onChange={(e) => onChange('icon', e.target.value)}
               fullWidth
+              inputProps={{ style: { fontSize: '1.5rem', textAlign: 'center' } }}
             />
-            <FormHelperText>Separate multiple features with commas</FormHelperText>
           </Box>
 
           <TextField
@@ -72,14 +105,8 @@ export default function ServiceModal({
             value={serviceForm.impact}
             onChange={(e) => onChange('impact', e.target.value)}
             fullWidth
-          />
-
-          <TextField
-            label="Icon"
-            placeholder="Enter icon name or emoji"
-            value={serviceForm.icon}
-            onChange={(e) => onChange('icon', e.target.value)}
-            fullWidth
+            multiline
+            rows={2}
           />
 
           <TextField
@@ -95,18 +122,21 @@ export default function ServiceModal({
             </MenuItem>
             {categories.map((c) => (
               <MenuItem key={c.id} value={c.id}>
-                {c.name}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: c.color }} />
+                  {c.name}
+                </Box>
               </MenuItem>
             ))}
           </TextField>
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit">
+      <DialogActions sx={{ px: 3, pb: 2.5, pt: 2, gap: 1 }}>
+        <Button onClick={onClose} color="inherit" size="large">
           Cancel
         </Button>
-        <Button onClick={onSave} variant="contained" color="primary">
+        <Button onClick={onSave} variant="contained" color="primary" size="large">
           Save Service
         </Button>
       </DialogActions>

@@ -25,9 +25,8 @@ export default function DashboardLayout({
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const { isSidebarCollapsed, toggleSidebar } = useDashboard();
+  const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } = useDashboard();
 
-  // Loading UI
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -39,7 +38,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  //  Role-based redirection logic
   const allowedPaths = {
     SYSTEM_ADMIN: "/admin",
     PROPERTY_MANAGER: "/dashboard/manager",
@@ -47,8 +45,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     VENDOR: "/dashboard/vendor",
   } as const;
 
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname : "";
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
   const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
 
   if (expectedPath && !currentPath.startsWith(expectedPath)) {
@@ -58,22 +55,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       {/* Sidebar */}
-      <aside
-        className={`transition-all duration-300 ease-in-out bg-white border-r h-screen sticky top-0 ${
-          isSidebarCollapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <DashboardSidebar
-          user={user}
-          isCollapsed={isSidebarCollapsed}
-          toggleSidebar={toggleSidebar}
-        />
-      </aside>
+      <DashboardSidebar
+        user={user}
+        isCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+      />
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <header className="flex-shrink-0 z-10 bg-white border-b">
-          <DashboardNavbar user={user} />
+          <DashboardNavbar
+            user={user}
+            onMenuClick={() => setMobileDrawerOpen(true)}
+          />
         </header>
 
         <motion.main

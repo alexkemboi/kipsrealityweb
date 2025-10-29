@@ -77,6 +77,13 @@ export const routeConfig = {
         description: 'Update pricing plans and features'
       },
       {
+        path: '/admin/content/CTA-crud',
+        label: 'CTA Section',
+        icon: DollarSign,
+        badge: null,
+        description: 'Update call-to-action content'
+      },
+      {
         path: '/admin/content/testimonial-crud',
         label: 'Testimonials',
         icon: MessageSquare,
