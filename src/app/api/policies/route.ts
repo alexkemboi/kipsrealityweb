@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const policies = await prisma.policy.findMany({
-      include: { sections: true },
+      include: { Section: true },
     });
     return NextResponse.json(policies);
   } catch (error) {
