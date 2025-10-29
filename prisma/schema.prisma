@@ -86,6 +86,7 @@ model Category {
   @@map("categories")
 }
 
+
 model Service {
   id          Int      @id @default(autoincrement())
   category_id Int
