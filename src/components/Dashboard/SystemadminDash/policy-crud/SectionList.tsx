@@ -13,11 +13,15 @@ interface Section {
 
 interface Props {
   policyId: number;
-  sections: Section[];
+  sections?: Section[]; // make it optional
   refresh: () => void;
 }
 
-export default function SectionList({ policyId, sections, refresh }: Props) {
+export default function SectionList({
+  policyId,
+  sections = [], // ✅ default to empty array
+  refresh,
+}: Props) {
   const [showForm, setShowForm] = useState(false);
 
   return (
