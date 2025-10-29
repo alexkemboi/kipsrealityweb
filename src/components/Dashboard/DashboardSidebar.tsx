@@ -23,16 +23,7 @@ export function DashboardSidebar({
   isCollapsed,
   toggleSidebar,
 }: DashboardSidebarProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
+  const { mobileDrawerOpen, setMobileDrawerOpen } = useDashboard();
   const open = !isCollapsed;
 
   // Desktop Sidebar
@@ -96,20 +87,16 @@ export function DashboardSidebar({
   // Mobile Drawer
   const MobileDrawer = () => (
     <>
-      <button
-        onClick={() => setMobileDrawerOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-3 rounded-lg bg-neutral-800 border border-neutral-700 text-white hover:bg-neutral-700"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
-
       {mobileDrawerOpen && (
         <>
+          {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
             onClick={() => setMobileDrawerOpen(false)}
           />
-          <div className="fixed left-0 top-0 h-full w-80 z-50 flex flex-col bg-neutral-950 border-r border-neutral-800">
+
+          {/* Drawer */}
+          <div className="fixed left-0 top-0 h-full w-72 z-50 flex flex-col bg-neutral-950 border-r border-neutral-800 md:hidden">
             <div className="flex items-center justify-between p-4 border-b border-neutral-800">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -140,9 +127,7 @@ export function DashboardSidebar({
                   {user.firstName.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {user.firstName}
-                  </p>
+                  <p className="text-sm font-medium text-white truncate">{user.firstName}</p>
                   <p className="text-xs text-neutral-400 truncate">{user.email}</p>
                 </div>
               </div>

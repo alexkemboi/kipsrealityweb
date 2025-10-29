@@ -5,9 +5,7 @@ import {
   Box,
   Button,
   IconButton,
-  Divider,
   Stack,
-  Grid,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -36,43 +34,76 @@ export default function CategoryCard({
     <Card 
       sx={{ 
         height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         border: 2,
         borderColor: category.color,
+        borderRadius: 2,
         transition: 'all 0.2s',
+        mx: { xs: 2, sm: 0 }, // Mobile margin
         '&:hover': {
           transform: 'translateY(-4px)',
-          boxShadow: 4,
+          boxShadow: 6,
         }
       }}
     >
       <Box
         sx={{
-          bgcolor: `${category.color}10`,
+          bgcolor: `${category.color}15`,
           borderBottom: 3,
           borderColor: category.color,
-          p: 2.5,
+          p: { xs: 2, sm: 2.5 },
         }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box sx={{ flex: 1 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'flex-start' }, 
+          gap: { xs: 1.5, sm: 2 }
+        }}>
+          <Box sx={{ flex: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}>
             <Typography 
               variant="h5" 
               component="h2" 
               fontWeight={700}
-              sx={{ color: category.color, mb: 1 }}
+              sx={{ 
+                color: category.color, 
+                mb: 0.5,
+                fontSize: { xs: '1.1rem', sm: '1.5rem' },
+                wordBreak: 'break-word',
+              }}
             >
               {category.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                lineHeight: 1.5,
+                fontSize: { xs: '0.813rem', sm: '0.875rem' },
+                wordBreak: 'break-word',
+              }}
+            >
               {category.tagline}
             </Typography>
           </Box>
           
-          <Stack direction="row" spacing={0.5}>
+          <Stack 
+            direction="row" 
+            spacing={0.5} 
+            sx={{ 
+              flexShrink: 0,
+              alignSelf: { xs: 'flex-end', sm: 'flex-start' }
+            }}
+          >
             <IconButton 
               size="small" 
               onClick={() => onEditCategory(category)}
-              sx={{ color: category.color }}
+              sx={{ 
+                color: category.color,
+                '&:hover': { bgcolor: `${category.color}20` }
+              }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -80,6 +111,7 @@ export default function CategoryCard({
               size="small" 
               onClick={() => onDeleteCategory(category.id)}
               color="error"
+              sx={{ '&:hover': { bgcolor: 'error.light' } }}
             >
               <DeleteIcon fontSize="small" />
             </IconButton>
@@ -87,9 +119,27 @@ export default function CategoryCard({
         </Box>
       </Box>
 
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" fontWeight={600}>
+      <CardContent sx={{ 
+        p: { xs: 2, sm: 2.5 }, 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column' 
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'stretch', sm: 'center' }, 
+          mb: 2, 
+          gap: { xs: 1.5, sm: 1 }
+        }}>
+          <Typography 
+            variant="h6" 
+            fontWeight={600} 
+            sx={{ 
+              fontSize: { xs: '0.95rem', sm: '1.25rem' }
+            }}
+          >
             Services ({category.services.length})
           </Typography>
           <Button
@@ -97,7 +147,20 @@ export default function CategoryCard({
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => onAddService(category)}
-            sx={{ bgcolor: category.color, '&:hover': { bgcolor: category.color, opacity: 0.9 } }}
+            fullWidth={false}
+            sx={{ 
+              bgcolor: category.color, 
+              fontWeight: 600,
+              fontSize: { xs: '0.813rem', sm: '0.875rem' },
+              px: { xs: 2, sm: 2 },
+              py: { xs: 1, sm: 0.5 },
+              minWidth: { xs: '100%', sm: 'auto' },
+              '&:hover': { 
+                bgcolor: category.color, 
+                opacity: 0.9,
+                transform: 'scale(1.02)',
+              } 
+            }}
           >
             Add Service
           </Button>
@@ -107,7 +170,7 @@ export default function CategoryCard({
           <Box
             sx={{
               textAlign: 'center',
-              py: 4,
+              py: { xs: 3, sm: 4 },
               px: 2,
               bgcolor: 'grey.50',
               borderRadius: 2,
@@ -116,29 +179,31 @@ export default function CategoryCard({
               borderStyle: 'dashed',
             }}
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.813rem', sm: '0.875rem' } }}
+            >
               No services yet. Add your first service!
             </Typography>
           </Box>
         ) : (
-          <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr",
-            gap: "16px", // same as spacing={2}
-          }}
-        >
-          {category.services.map((service: any) => (
-            <div key={service.id}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: { xs: 1.5, sm: 2 },
+            }}
+          >
+            {category.services.map((service: any) => (
               <ServiceCard
+                key={service.id}
                 service={service}
                 onEdit={(srv: any) => onEditService(category, srv)}
                 onDelete={onDeleteService}
               />
-            </div>
-          ))}
-        </div>
-
+            ))}
+          </Box>
         )}
       </CardContent>
     </Card>

@@ -46,6 +46,7 @@ export default function ServiceCrud({ initialCategories }: Props) {
     icon: "",
   });
 
+  // ✅ Handlers for modals
   const openCategoryModal = (category?: Category) => {
     if (category) {
       setCategoryForm({
@@ -88,7 +89,7 @@ export default function ServiceCrud({ initialCategories }: Props) {
         toast.success("Category created successfully");
       }
       setCategoryModalOpen(false);
-      window.location.reload(); 
+      window.location.reload(); // ✅ Refresh server data
     } catch (err) {
       toast.error("Error saving category");
       console.error(err);
@@ -199,6 +200,7 @@ export default function ServiceCrud({ initialCategories }: Props) {
     }
   };
 
+  // ✅ Render UI
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <ToastContainer position="top-right" autoClose={3000} />
