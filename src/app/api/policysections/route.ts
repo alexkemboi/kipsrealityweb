@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 export async function GET() {
   try {
     const sections = await prisma.section.findMany({
-      include: { policy: true }, 
+      include: { Policy: true }, 
     });
     return NextResponse.json(sections);
   } catch (error) {

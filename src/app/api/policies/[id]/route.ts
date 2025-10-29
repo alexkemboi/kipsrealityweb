@@ -11,7 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   try {
     const policy = await prisma.policy.findUnique({
       where: { id: Number(params.id) },
-      include: { sections: true },
+      include: { Section: true },
     });
     if (!policy) return NextResponse.json({ error: "Policy not found" }, { status: 404 });
     return NextResponse.json(policy);

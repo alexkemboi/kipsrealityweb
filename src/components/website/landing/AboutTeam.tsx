@@ -23,8 +23,8 @@ export default function AboutMakes() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
       </div>
 
-      <About/>
-      <WhatMakes/>
+      <About aboutData={aboutUsData} />
+      <WhatMakes />
     </section>
   );
 }
