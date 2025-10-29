@@ -9,18 +9,19 @@ import BrandPromise from "../components/website/landing/BrandPromise";
 import Services from "../components/website/landing/ServicesSection";
 import Plans from "../components/website/landing/Plans";
 import Contact from "../components/website/landing/ContactUs";
-import {Testimonials} from "../components/website/Testimonial/TestimonialClient";
+import { Testimonials } from "../components/website/Testimonial/TestimonialClient";
 import { testimonials } from "./data/TestimonialData";
 import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
-import {TypewriterEffectDemo} from "@/components/website/landing/BrandWords";
-import {fetchTestimonials} from "@/lib/testimonial"
+import { TypewriterEffectDemo } from "@/components/website/landing/BrandWords";
+import { fetchTestimonials } from "@/lib/testimonial"
 import { fetchAboutUs } from "@/lib/aboutUs";
 
 import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
 import { QuickStats } from "@/components/website/services/QuickStats";
 import { servicesData } from "./data/servicesData";
+export const dynamic = "force-dynamic";
 
 
 export default async function Home() {
@@ -36,12 +37,12 @@ export default async function Home() {
       {/* About Us Section */}
       <About aboutData={about} />
       <WhatMakes />
-      <TypewriterEffectDemo/>
-        <Services />
+      <TypewriterEffectDemo />
+      <Services />
 
       <OurTeam />
 
-     <Testimonials initialTestimonials={testimonials} />
+      <Testimonials initialTestimonials={testimonials} />
 
 
 
