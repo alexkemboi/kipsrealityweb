@@ -10,7 +10,6 @@ import Services from "../components/website/landing/ServicesSection";
 import Plans from "../components/website/landing/Plans";
 import Contact from "../components/website/landing/ContactUs";
 import { Testimonials } from "../components/website/Testimonial/TestimonialClient";
-import { testimonials } from "./data/TestimonialData";
 import ServicePage from "@/app/(website)/services/page"
 import PlansClientPage from "@/components/website/plans/PlansClientPage";
 import { TypewriterEffectDemo } from "@/components/website/landing/BrandWords";
