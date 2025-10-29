@@ -1,36 +1,51 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import aboutBg from "@/assets/hero-cityscape.jpg";
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters long"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+?[1-9]\d{1,14}$/, "Enter a valid international phone number (e.g. +14155552671)"),
-  message: z.string().min(5, "Message must be at least 5 characters long"),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { contactSchema, ContactData } from "@/app/data/ContactData";
+import { useState } from "react";
 
 export default function Contact() {
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<ContactFormData>({
+  } = useForm<ContactData>({
     resolver: zodResolver(contactSchema),
   });
 
-  const onSubmit = (data: ContactFormData) => {
-    console.log("Form Data:", data);
-    reset(); // Clear form after submit (you can remove this if posting to API)
+  const onSubmit = async (data: ContactData) => {
+    setServerMessage(null);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const resData = await response.json();
+        setErrorMessage(
+          resData.error || "Something went wrong while sending your message."
+        );
+        return;
+      }
+
+      const resData = await response.json();
+      setServerMessage(resData.message || "Message sent successfully!");
+      reset();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setErrorMessage("Network error. Please try again later.");
+    }
   };
 
   return (
@@ -82,22 +97,38 @@ export default function Contact() {
               className="w-full p-4 rounded-md bg-gray-50 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#FACC15] focus:outline-none"
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
-          {/* Phone */}
-          <div>
+          {/* Country Code + Phone */}
+          <div className="flex gap-2">
+            <select
+              {...register("countryCode")}
+              className="w-1/4 p-4 rounded-md bg-gray-50 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#FACC15] focus:outline-none"
+            >
+              <option value="">Code</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+254">🇰🇪 +254</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+61">🇦🇺 +61</option>
+            </select>
+
             <input
               type="tel"
-              placeholder="Your Phone (e.g. +14155552671)"
+              placeholder="Phone Number"
               {...register("phone")}
-              className="w-full p-4 rounded-md bg-gray-50 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#FACC15] focus:outline-none"
+              className="flex-1 p-4 rounded-md bg-gray-50 border border-gray-300 text-gray-900 focus:ring-2 focus:ring-[#FACC15] focus:outline-none"
             />
-            {errors.phone && (
-              <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
-            )}
           </div>
+          {(errors.countryCode || errors.phone) && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.countryCode?.message || errors.phone?.message}
+            </p>
+          )}
 
           {/* Message */}
           <div>
@@ -114,7 +145,7 @@ export default function Contact() {
             )}
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -122,6 +153,14 @@ export default function Contact() {
           >
             {isSubmitting ? "Sending..." : "Send Message"}
           </button>
+
+          {/* Feedback */}
+          {serverMessage && (
+            <p className="text-green-600 text-center mt-3">{serverMessage}</p>
+          )}
+          {errorMessage && (
+            <p className="text-red-600 text-center mt-3">{errorMessage}</p>
+          )}
         </form>
       </div>
     </section>
