@@ -370,11 +370,11 @@ model Property {
   organizationId      String
   propertyTypeId      String?
   locationId          String?
-  city                String?
-  address             String?
-  bedrooms            Int?
-  bathrooms           Int?
-  size                Float?
+  city                String
+  address             String
+  bedrooms            Int
+  bathrooms           Int
+  size                Float
   amenities           String?
   isFurnished         Boolean           @default(false)
   availabilityStatus  String?           // e.g., Available, Occupied, Maintenance

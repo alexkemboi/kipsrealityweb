@@ -3,10 +3,15 @@ import PropertyForm from "@/components/website/marketplace/CategoryForms/Propert
 import ServiceForm from "@/components/website/marketplace/CategoryForms/ServiceForm";
 import ApplianceForm from "@/components/website/marketplace/CategoryForms/ApplianceForm";
 
-export default function CreateListingPage({ params }: { params: { category: string } }) {
-  const { category } = params;
+interface PageProps {
+  params: Promise<{ category: string }>;
+}
 
-  switch (category.toLowerCase()) {
+export default async function CreateListingPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const categoryId = resolvedParams.category;
+
+  switch (categoryId.toLowerCase()) {
     case "property":
       return <PropertyForm />;
     case "service":
