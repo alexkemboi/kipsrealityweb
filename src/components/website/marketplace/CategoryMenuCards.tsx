@@ -19,7 +19,7 @@ export default function CategoryCards({ categories }: CategoryCardsProps) {
         return (
           <Link
             key={category.id}
-            href={`/marketplace/${category.name.toLowerCase()}`}
+            href={`/marketplace/agent/${category.name.toLowerCase()}/create`}
             className="group"
           >
             <div className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
