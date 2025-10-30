@@ -1,10 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
 
-export const HeroSection = () => {
-  const [hero, setHero] = useState<any>(null);
+interface HeroData {
+  id: number;
+  page: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  imageUrl?: string;
+  gradient?: string;
+}
+
+export const HeroSection = ({ page }: { page: string }) => {
+  const [hero, setHero] = useState<HeroData | null>(null);
 
   const theme = {
     accent: "#00a8e8",
@@ -15,27 +27,29 @@ export const HeroSection = () => {
   useEffect(() => {
     const fetchHero = async () => {
       try {
-        const res = await fetch("/api/hero");
+        const res = await fetch(`/api/hero?page=${page}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
-        setHero(data[0]);
+        setHero(Array.isArray(data) ? data[0] : data);
       } catch (error) {
         console.error("Error fetching hero:", error);
       }
     };
 
     fetchHero();
-  }, []);
+  }, [page]);
 
   if (!hero)
     return (
-      <section className="min-h-screen flex items-center justify-center bg-[#02051c] text-white">
+      <section className="min-h-[60vh] flex items-center justify-center bg-[#02051c] text-white">
         <p>Loading hero section...</p>
       </section>
     );
 
   return (
     <section
-      className="relative overflow-hidden flex flex-col md:flex-row items-center justify-between"
+      className="relative flex flex-col items-center justify-center text-center overflow-hidden"
       style={{
         background: hero.gradient || "#02051c",
         minHeight: "100vh",
@@ -64,9 +78,8 @@ export const HeroSection = () => {
         />
       </div>
 
-      {/* Left Section - Dynamic Text */}
-      <div className="relative z-10 w-full md:w-1/2 px-6 md:px-16 py-24">
-        {/* Badge */}
+      {/* Hero Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 md:px-12 py-24 max-w-4xl">
         <div
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6"
           style={{
@@ -75,22 +88,20 @@ export const HeroSection = () => {
           }}
         >
           <Sparkles size={16} style={{ color: theme.accent }} />
-          <span className="text-sm font-semibold text-white uppercase">
-            {hero.page || "SERVICES"}
+          <span className="text-sm font-semibold text-white uppercase tracking-wide">
+            {hero.page || "HERO"}
           </span>
         </div>
 
-        {/* Title */}
         {hero.title && (
-          <h1 className="text-4xl sm:text-6xl font-black leading-tight mb-4 text-white">
+          <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight mb-4 text-white max-w-3xl">
             {hero.title}
           </h1>
         )}
 
-        {/* Subtitle (smaller + gradient shimmer) */}
         {hero.subtitle && (
           <h2
-            className="text-xl sm:text-2xl font-medium mb-8"
+            className="text-lg sm:text-2xl font-medium mb-6 max-w-2xl"
             style={{
               color: `${theme.white}cc`,
               backgroundImage: `linear-gradient(90deg, ${theme.accent}, ${theme.white}, ${theme.accent})`,
@@ -104,50 +115,40 @@ export const HeroSection = () => {
           </h2>
         )}
 
-        {/* Description */}
-        {hero.description && hero.description.trim() !== "" && (
+        {hero.description && (
           <p
-            className="text-lg max-w-md mb-8"
+            className="text-base sm:text-lg max-w-2xl mb-8"
             style={{ color: `${theme.white}B3` }}
           >
             {hero.description}
           </p>
         )}
 
-        {/* Button */}
         {hero.buttonText && hero.buttonUrl && (
           <a
             href={hero.buttonUrl}
-            className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-3 rounded-full font-semibold hover:opacity-90 transition"
+            className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-8 py-3 rounded-full font-semibold hover:opacity-90 transition"
           >
             {hero.buttonText}
           </a>
         )}
       </div>
 
-      {/* Right Section – Image */}
+      {/* Hero Image */}
       {hero.imageUrl && (
-        <div className="relative w-full md:w-1/2 px-6 md:px-16 py-10 md:py-0">
-          <div className="relative">
-            <img
-              src={hero.imageUrl}
-              alt={hero.title || "Hero Image"}
-              className="rounded-3xl shadow-2xl w-full object-cover"
-            />
-            <div
-              className="absolute bottom-6 left-6 bg-white rounded-xl shadow-lg p-4 w-64"
-              style={{ color: theme.secondary }}
-            >
-              <h3 className="font-semibold text-lg">Stylish home near the city</h3>
-              <p className="text-sm text-gray-500">2 bed • 1 bath • from $120</p>
-            </div>
-          </div>
+        <div className="relative z-10 mt-10">
+          <img
+            src={hero.imageUrl}
+            alt={hero.title || "Hero Image"}
+            className="rounded-3xl shadow-2xl max-w-md md:max-w-xl w-full object-cover"
+          />
         </div>
       )}
 
       <style jsx>{`
         @keyframes float {
-          0%, 100% {
+          0%,
+          100% {
             transform: translate(0, 0) scale(1);
           }
           50% {

@@ -11,7 +11,6 @@ import Plans from "../components/website/landing/Plans";
 import Contact from "../components/website/landing/ContactUs";
 import { Testimonials } from "../components/website/Testimonial/TestimonialClient";
 import ServicePage from "@/app/(website)/services/page"
-import PlansClientPage from "@/components/website/plans/PlansClientPage";
 import { TypewriterEffectDemo } from "@/components/website/landing/BrandWords";
 import { fetchTestimonials } from "@/lib/testimonial"
 import { fetchAboutUs } from "@/lib/aboutUs";
@@ -20,6 +19,7 @@ import { CTASection } from "@/components/website/services/CTASection";
 import { CategorySection } from "@/components/website/services/CategorySection";
 import { QuickStats } from "@/components/website/services/QuickStats";
 import { servicesData } from "./data/servicesData";
+import PlansPage from "./(website)/plans/page";
 export const dynamic = "force-dynamic";
 
 
@@ -32,7 +32,7 @@ export default async function Home() {
     <main className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
       <Navbar />
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection  />
       {/* About Us Section */}
       <About aboutData={about} />
       <WhatMakes />
@@ -45,7 +45,7 @@ export default async function Home() {
 
 
 
-      <PlansClientPage />
+      <PlansPage />
       <Contact />
       <Footer />
     </main>
