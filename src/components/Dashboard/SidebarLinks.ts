@@ -35,7 +35,7 @@ export const routeConfig = {
     ],
     content: [
       {
-        path: '/dashboard/admin/content/hero',
+        path: '/admin/content/Hero-crud',
         label: 'Hero Section',
         icon: Zap,
         badge: null,
@@ -76,6 +76,7 @@ export const routeConfig = {
         badge: null,
         description: 'Update call-to-action content'
       },
+      
       {
         path: '/admin/content/testimonial-crud',
         label: 'Testimonials',

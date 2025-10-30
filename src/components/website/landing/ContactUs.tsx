@@ -55,12 +55,12 @@ export default function Contact() {
     >
       {/* Background */}
       <div className="absolute inset-0 z-0">
-        <Image
+        {/* <Image
           src={aboutBg}
           alt="Cityscape Background"
           className="w-full h-full object-cover opacity-15"
           priority
-        />
+        /> */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
       </div>
 

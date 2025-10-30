@@ -2,15 +2,13 @@
 
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
-import aboutBg from "@/assets/hero-cityscape.jpg";
-
 import { useState } from "react";
 
 const testimonials = [
   {
     name: "John Doe",
     role: "Tenant",
-    image: "/man.jpeg", 
+    image: "/man.jpeg",
     text: "RentFlow360 made managing my property effortless. Rent payments are automated and communication is seamless.",
   },
   {
@@ -37,45 +35,24 @@ const Testimonials = () => {
   const { name, role, image, text } = testimonials[index];
 
   return (
-    
-   <section
+    <section
       id="about"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-8 py-12"
+      className="relative min-h-screen flex flex-col items-center justify-center px-8 py-16 bg-[#0b1f3a] text-white transition-all duration-500"
     >
-      {/* Background Image & Overlays */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={aboutBg}
-          alt="City skyline background for About section"
-          fill
-          className="object-cover"
-          quality={90}
-          priority
-        />
-        <div className="absolute inset-0 bg-neutral-900/95" />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
-        </div>
+      {/* Background Accent Blur Elements */}
+      <div className="absolute top-20 left-10 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-10 w-72 h-72 bg-cyan-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
 
-        {/* Floating Orbs */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/15 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-float-medium delay-2000" />
-      </div>
+      {/* Heading */}
+      <h2 className="relative z-10 font-poppins font-bold text-4xl md:text-5xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
+        What Do Our{" "}
+        <span className="text-cyan-400">Customers Say?</span>
+      </h2>
 
-        {/* Heading */}
-        <h2 className="relative z-10 font-poppins font-bold text-4xl md:text-5xl mb-10 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-white animate-gradient">
-          What Do Our <span className="text-gradient-primary animate-gradient"> Customers Say?</span>
-        </h2>
-
-      {/* Main Container */}
-      
-<div className="relative z-10 container mx-auto px-6 md:px-8 max-w-6xl bg-white/10 border border-white/20 backdrop-blur-2xl rounded-2xl shadow-2xl p-10 md:p-14 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/30">
-      
-
+      {/* Testimonial Card */}
+      <div className="relative z-10 container mx-auto px-6 md:px-8 max-w-6xl bg-white/10 border border-white/20 backdrop-blur-2xl rounded-2xl shadow-2xl p-10 md:p-14 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/30">
         {/* Avatar */}
-        <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-[#0984cb]  shadow-lg mb-6">
+        <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-[#0984cb] shadow-lg mb-6">
           <Image src={image} alt={name} fill className="object-cover" />
         </div>
 
@@ -93,7 +70,7 @@ const Testimonials = () => {
           <div className="text-sm text-white/60">{role}</div>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation Buttons */}
         <div className="absolute inset-y-0 left-4 flex items-center">
           <button
             onClick={prevSlide}
