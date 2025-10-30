@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       listing: {
   create: {
     organizationId,
-    createdBy: managerId || "default-user-id", // replace with actual logged-in user ID
+createdBy: "466bcb9a-6454-4c61-aace-c87855d89ce4" ,
     categoryId: propertyCategory.id,
     title: `${city} Property Listing`,
     description: amenities || "No description provided",
