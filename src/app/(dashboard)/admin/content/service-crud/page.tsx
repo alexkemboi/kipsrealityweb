@@ -1,5 +1,9 @@
-import ServicesCRUD from "@/components/Dashboard/SystemadminDash/service-crud/ServiceCrud";
+import ServiceCrudWrapper from "@/components/Dashboard/SystemadminDash/service-crud/ServiceCrudWrapper";
 
-export default function ServiceCRUDPage() {
-    return <div><ServicesCRUD/></div>
+export default function ServicePage() {
+  return (
+    <main className="p-6">
+      <ServiceCrudWrapper />
+    </main>
+  );
 }

@@ -51,7 +51,15 @@ const PolicyListPage = () => {
   const fetchPolicies = async () => {
     const res = await fetch("/api/policies");
     const data = await res.json();
-    setPolicies(data.map((p: Policy) => ({ ...p, updatedAt: new Date(p.updatedAt).toISOString() })));
+
+    // Ensure sections is always an array
+    setPolicies(
+      data.map((p: Policy) => ({
+        ...p,
+        sections: p.sections || [], // ✅ default empty array if undefined
+        updatedAt: new Date(p.updatedAt).toISOString(),
+      }))
+    );
   };
 
   const toggleSection = (policyId: number, sectionId: number) => {
@@ -71,14 +79,14 @@ const PolicyListPage = () => {
     (policy) =>
       policy.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       policy.sections.some((s) =>
-        (s.title + s.intro + s.content).toLowerCase().includes(searchTerm.toLowerCase())
+        (s.title + (s.intro || "") + (s.content || "")).toLowerCase().includes(searchTerm.toLowerCase())
       )
   );
 
   return (
     <div className="min-h-screen bg-[#041126]">
       <Navbar />
-      
+
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
@@ -139,7 +147,7 @@ const PolicyListPage = () => {
               {policy.sections.map((section) => {
                 const key = `${policy.id}-${section.id}`;
                 const isExpanded = expandedSections[key];
-                
+
                 return (
                   <div key={section.id} id={`policy-${policy.id}-section-${section.id}`} className="border-b last:border-b-0">
                     <button
@@ -189,7 +197,7 @@ const PolicyListPage = () => {
           </div>
         )}
       </div>
-      
+
       <Footer />
     </div>
   );
