@@ -125,6 +125,8 @@ export default function HeroSectionForm({ hero, onSave }: HeroSectionFormProps) 
             <option value="blog">Blog</option>
             <option value="services">Services</option>
             <option value="contact">Contact</option>
+            <option value="Plans">Plans</option>
+            <option value="About">About</option>
           </select>
         </div>
 
