@@ -36,8 +36,8 @@ export default function PropertyForm() {
       <h2 className="text-2xl font-semibold mb-6 text-gray-800">Create Property Listing</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input {...register("city")} placeholder="City" className="border p-2 rounded w-full" />
-        <input {...register("address")} placeholder="Address" className="border p-2 rounded w-full" />
+        <input {...register("city")} placeholder="City" className="border p-2 rounded w-full placeholder:text-gray-400" />
+        <input {...register("address")} placeholder="Address" className="border p-2 rounded w-full placeholder:text-gray-400" />
 
         <select {...register("propertyTypeId")} className="border p-2 rounded w-full">
           <option value="">Select Property Type</option>
@@ -52,22 +52,22 @@ export default function PropertyForm() {
           {...register("bedrooms")}
           type="number"
           placeholder="Bedrooms"
-          className="border p-2 rounded w-full"
+          className="border p-2 rounded w-full placeholder:text-gray-400"
         />
         <input
           {...register("bathrooms")}
           type="number"
           placeholder="Bathrooms"
-          className="border p-2 rounded w-full"
+          className="border p-2 rounded w-full placeholder:text-gray-400"
         />
-        <input {...register("size")} type="number" placeholder="Size (sqft)" className="border p-2 rounded w-full" />
-        <input {...register("price")} type="number" placeholder="Price" className="border p-2 rounded w-full" />
+        <input {...register("size")} type="number" placeholder="Size (sqft)" className="border p-2 rounded w-full placeholder:text-gray-400" />
+        <input {...register("price")} type="number" placeholder="Price" className="border p-2 rounded w-full placeholder:text-gray-400" />
       </div>
 
       <textarea
         {...register("amenities")}
         placeholder="Amenities (comma-separated)"
-        className="border p-2 rounded w-full mt-4"
+        className="border p-2 rounded w-full mt- placeholder:text-gray-400"
       />
 
       <label className="flex items-center gap-2 mt-4">
