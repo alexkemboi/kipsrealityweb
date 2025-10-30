@@ -48,6 +48,13 @@ export const routeConfig = {
         badge: null,
         description: 'Edit company story and team info'
       },
+       {
+        path: '/admin/content/ContactUs-crud',
+        label: 'Contact Us Page',
+        icon: Users,
+        badge: null,
+        description: 'View customer messages'
+      },
       {
         path: '/admin/content/service-crud',
         label: 'Services Page',
