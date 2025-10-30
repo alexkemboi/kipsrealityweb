@@ -239,3 +239,21 @@ model CTA {
   updatedAt  DateTime @updatedAt
 }
 
+model HeroSection {
+  id          Int       @id @default(autoincrement())
+  page        String    // which page this hero belongs to, e.g., "home", "blog"
+  title       String?
+  subtitle    String?
+  description String?
+  buttonText  String?
+  buttonUrl   String?
+  imageUrl    String?   // hero image
+  iconUrl     String?   // optional icon
+  searchBar   Boolean   @default(false) // whether to show search bar
+  gradient    String?   // background gradient
+  layout      String?   // optional layout type
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+
