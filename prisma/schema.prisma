@@ -440,3 +440,15 @@ model AdminAction {
   listing            Listing?           @relation(fields: [listingId], references: [id])
   actionType         ActionType         @relation(fields: [actionTypeId], references: [id])
 }
+
+
+model NavbarItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  href        String
+  order       Int       @default(0)
+  isVisible   Boolean   @default(true)
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

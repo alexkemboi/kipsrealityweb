@@ -91,6 +91,13 @@ export const routeConfig = {
         badge: null,
         description: 'Manage customer reviews and ratings'
       },
+      {
+        path: '/admin/content/navbar',
+        label: 'Navbar',
+        icon: MessageSquare,
+        badge: null,
+        description: 'Manage navigation links for the website'
+      },
     ],
     blog: [
       {
