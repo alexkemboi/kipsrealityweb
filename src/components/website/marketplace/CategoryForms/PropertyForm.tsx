@@ -27,7 +27,7 @@ export default function PropertyForm() {
     try {
       const payload = {
         ...data,
-        organizationId: "org-123", // optional
+        organizationId: "org-123", 
         listingId: "listing-123",
       };
 
