@@ -11,7 +11,6 @@ export default function PlansPage() {
       <HeroSection page="Plans" />
       <PricingPlans />
       <FeatureGrid />
-      <Footer />
     </>
   );
 }
