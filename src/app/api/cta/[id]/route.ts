@@ -1,38 +1,50 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
 
-interface Params {
+interface Context {
   params: { id: string };
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(req: Request, context: Context) {
   try {
-    const cta = await prisma.cTA.findUnique({ where: { id: Number(params.id) } });
-    if (!cta) return NextResponse.json({ error: "CTA not found" }, { status: 404 });
+    const params = await context.params; 
+    const id = Number(params.id);
+
+    const cta = await prisma.cTA.findUnique({ where: { id } });
+
+    if (!cta) {
+      return NextResponse.json({ error: "CTA not found" }, { status: 404 });
+    }
+
     return NextResponse.json(cta);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch CTA" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
   try {
-    const { page, title, subtitle, buttonText, buttonUrl, gradient } = await req.json();
+    const id = Number(context.params.id)
+    const { page, title, subtitle, buttonText, buttonUrl, gradient } = await req.json()
     const updatedCTA = await prisma.cTA.update({
-      where: { id: Number(params.id) },
+      where: { id },
       data: { page, title, subtitle, buttonText, buttonUrl, gradient },
-    });
-    return NextResponse.json(updatedCTA);
+    })
+    return NextResponse.json(updatedCTA)
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update CTA" }, { status: 500 });
+    console.error(error)
+    return NextResponse.json({ error: 'Failed to update CTA' }, { status: 500 })
   }
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(req: Request, context: { params: { id: string } }) {
   try {
-    await prisma.cTA.delete({ where: { id: Number(params.id) } });
-    return NextResponse.json({ message: "CTA deleted successfully" });
+    const id = Number(context.params.id)
+    await prisma.cTA.delete({ where: { id } })
+    return NextResponse.json({ message: 'CTA deleted successfully' })
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete CTA" }, { status: 500 });
+    console.error(error)
+    return NextResponse.json({ error: 'Failed to delete CTA' }, { status: 500 })
   }
 }
