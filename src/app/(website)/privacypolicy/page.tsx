@@ -56,7 +56,7 @@ const PolicyListPage = () => {
     setPolicies(
       data.map((p: Policy) => ({
         ...p,
-        sections: p.sections || [], // ✅ default empty array if undefined
+        sections: p.sections || [], //  default empty array if undefined
         updatedAt: new Date(p.updatedAt).toISOString(),
       }))
     );

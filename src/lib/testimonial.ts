@@ -3,7 +3,7 @@ import { Testimonial } from "@/app/data/TestimonialData";
 export const fetchTestimonials = async (): Promise<Testimonial[]> => {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/testimonials`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
     });
 
     if (!response.ok) {

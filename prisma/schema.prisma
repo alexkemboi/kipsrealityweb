@@ -57,7 +57,6 @@ model OrganizationUser {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
    managedProperties Property[]
-  postedAppliances  Appliance[]
   postedServices    ServiceMarketplace[]
   adminActions      AdminAction[]      @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]      @relation("AdminActionsTarget")
@@ -354,7 +353,6 @@ model Listing {
   location       Location?      @relation(fields: [locationId], references: [id])
 
   property       Property?
-  appliance      Appliance?
  serviceMarketplace        ServiceMarketplace?
   images         ListingImage[]
   adminActions   AdminAction[]
@@ -385,22 +383,17 @@ organizationId String?
   organization       Organization? @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
   location            Location?         @relation(fields: [locationId], references: [id])
+    appliances          Appliance[]       @relation("PropertyAppliances")
+
+  
 }
 
 model Appliance {
-  id          String            @id @default(uuid())
-  listingId   String            @unique
-  vendorId    String?
-  brand       String
-  model       String
-  condition   String
-  category    String            // e.g., Kitchen, Laundry (can later become a lookup)
-  warrantyPeriod String?
-  price       Float
-  createdAt   DateTime          @default(now())
-
-  listing     Listing           @relation(fields: [listingId], references: [id])
-  vendor      OrganizationUser? @relation(fields: [vendorId], references: [id])
+ id          String   @id @default(uuid())
+  name        String          
+  description String?
+  createdAt   DateTime @default(now())
+  properties  Property[]  @relation("PropertyAppliances")
 }
 
 model ServiceMarketplace {
@@ -446,4 +439,16 @@ model AdminAction {
   target             OrganizationUser?  @relation("AdminActionsTarget", fields: [targetOrgUserId], references: [id])
   listing            Listing?           @relation(fields: [listingId], references: [id])
   actionType         ActionType         @relation(fields: [actionTypeId], references: [id])
+}
+
+
+model NavbarItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  href        String
+  order       Int       @default(0)
+  isVisible   Boolean   @default(true)
+  isAvailable Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

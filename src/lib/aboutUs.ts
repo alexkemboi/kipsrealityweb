@@ -3,7 +3,7 @@ import { AboutUs } from "@/app/data/AboutUsData";
 export const fetchAboutUs = async (): Promise<AboutUs[]> => {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/aboutsection`, {
-    cache: "no-store",
+   next: { revalidate: 60 },
     });
 
     if (!response.ok) {

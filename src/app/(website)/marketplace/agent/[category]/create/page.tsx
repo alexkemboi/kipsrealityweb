@@ -14,9 +14,9 @@ export default async function CreateListingPage({ params }: PageProps) {
   switch (categoryId.toLowerCase()) {
     case "property":
       return <PropertyForm />;
-    case "service":
+    case "services":
       return <ServiceForm />;
-    case "appliance":
+    case "appliances":
       return <ApplianceForm />;
     default:
       return notFound();

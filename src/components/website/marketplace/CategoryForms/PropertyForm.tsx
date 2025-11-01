@@ -3,23 +3,31 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { PropertyType } from "@/app/data/PropertTypeData";
+import { Appliance } from "@/app/data/ApplianceData";
 import { fetchPropertyTypes } from "@/lib/property-type";
+import { fetchAppliances } from "@/lib/appliance";
 import { postProperty } from "@/lib/property-post";
 import Navbar from "@/components/website/Navbar";
 import Footer from "@/components/website/Footer";
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, Refrigerator, WashingMachine, Plug, Wind } from "lucide-react";
 
 export default function PropertyForm() {
   const { register, handleSubmit, reset } = useForm();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Fetch property types & appliances
   useEffect(() => {
-    const getPropertyTypes = async () => {
-      const data = await fetchPropertyTypes();
-      setPropertyTypes(data);
+    const getData = async () => {
+      const [types, apps] = await Promise.all([
+        fetchPropertyTypes(),
+        fetchAppliances(),
+      ]);
+      setPropertyTypes(types);
+      setAppliances(apps);
     };
-    getPropertyTypes();
+    getData();
   }, []);
 
   const onSubmit = async (data: any) => {
@@ -27,8 +35,11 @@ export default function PropertyForm() {
     try {
       const payload = {
         ...data,
-        organizationId: "org-123", // optional
+        organizationId: "org-123",
         listingId: "listing-123",
+        applianceIds: Array.isArray(data.applianceIds)
+          ? data.applianceIds
+          : [data.applianceIds],
       };
 
       const newProperty = await postProperty(payload);
@@ -72,11 +83,8 @@ export default function PropertyForm() {
             </h2>
           </div>
 
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="grid grid-cols-1 gap-6"
-          >
-            {/* Inputs */}
+          <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-8">
+            {/* Basic Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <input
                 {...register("city")}
@@ -136,6 +144,36 @@ export default function PropertyForm() {
               />
             </div>
 
+            {/* Appliances Section */}
+            <div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+                Select Appliances
+              </h3>
+
+              {appliances.length === 0 ? (
+                <p className="text-gray-500 text-sm">Loading appliances...</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {appliances.map((appliance) => (
+                    <label
+                      key={appliance.id}
+                      className="flex items-center gap-3 border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer bg-white"
+                    >
+                      <input
+                        type="checkbox"
+                        value={appliance.id}
+                        {...register("applianceIds")}
+                        className="h-5 w-5 accent-blue-600"
+                      />
+                      <span className="text-gray-700 font-medium">
+                        {appliance.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Furnished Checkbox */}
             <label className="flex items-center gap-3 mt-4 text-gray-700">
               <input
@@ -150,7 +188,7 @@ export default function PropertyForm() {
             <button
               type="submit"
               disabled={loading}
-              className={`mt-8 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all ${
+              className={`mt-8 w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all ${
                 loading ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >

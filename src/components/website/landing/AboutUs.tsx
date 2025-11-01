@@ -26,7 +26,7 @@ export default function About({ aboutData }: AboutProps) {
       {/* Soft Background Image Layer */}
       <div className="absolute inset-0 z-0">
         {/* Gentle fade to white for clean transition */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/90 to-white"></div>
+        <div className="absolute inset-0 bg-linear-to-b from-white/80 via-white/90 to-white"></div>
       </div>
 
       {/* Content */}

@@ -4,7 +4,7 @@ import {Categories} from "@/app/data/CategoriesData";
 export const fetchCategories = async (): Promise<Categories[]> => {
     try{
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/categoriesmarket`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
     });
 if(!response.ok){
     console.error(`API Error: ${response.status} ${response.statusText} for ${response.url}`)

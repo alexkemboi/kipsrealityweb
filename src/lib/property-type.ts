@@ -4,7 +4,7 @@ import {PropertyType} from "@/app/data/PropertTypeData";
 export const fetchPropertyTypes = async (): Promise<PropertyType[]> => {
     try{
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertytypes`, {
-    cache: "no-store",
+    next: { revalidate: 60 },
     });
 if(!response.ok){
     console.error(`API Error: ${response.status} ${response.statusText} for ${response.url}`)
