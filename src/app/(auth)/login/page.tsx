@@ -53,7 +53,7 @@ const LoginPage = () => {
         login(data.user, data.token);
 
         toast.success("Login successful! Redirecting...");
-
+        
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");
