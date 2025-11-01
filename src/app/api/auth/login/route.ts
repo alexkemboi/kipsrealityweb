@@ -50,7 +50,9 @@ export async function POST(request: Request) {
 
 
         const primaryOrgUser = user.organizationUsers[0]
-        const role = primaryOrgUser?.role || 'PROPERTY_MANAGER'
+        // const role = primaryOrgUser?.role || 'PROPERTY_MANAGER'
+        const role = 'PROPERTY_MANAGER'
+
 
         const accessToken = generateAccessToken({
             userId: user.id,
