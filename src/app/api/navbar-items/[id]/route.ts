@@ -8,7 +8,9 @@ type UpdateBody = {
   order?: number;
   isVisible?: boolean;
   isAvailable?: boolean;
+  parentId?: number | null; 
 };
+
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
+
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -37,17 +40,31 @@ export async function PUT(
 
     const body = (await req.json()) as UpdateBody;
 
-    const allowed = ["name", "href", "order", "isVisible", "isAvailable"];
+    const allowed = ["name", "href", "order", "isVisible", "isAvailable", "parentId"];
     const updateData: any = {};
     for (const k of allowed) {
       if ((body as any)[k] !== undefined) updateData[k] = (body as any)[k];
     }
 
-    // Fix: ensure order is a number
     if (updateData.order !== undefined) {
       updateData.order = Number(updateData.order);
       if (Number.isNaN(updateData.order)) {
         return NextResponse.json({ error: "Invalid order value" }, { status: 400 });
+      }
+    }
+
+    // Prevent self-referencing or circular references
+    if (updateData.parentId !== undefined) {
+      if (updateData.parentId === numericId) {
+        return NextResponse.json({ error: "Item cannot be its own parent" }, { status: 400 });
+      }
+      if (updateData.parentId) {
+        const parentExists = await prisma.navbarItem.findUnique({
+          where: { id: updateData.parentId },
+        });
+        if (!parentExists) {
+          return NextResponse.json({ error: "Parent item not found" }, { status: 404 });
+        }
       }
     }
 
@@ -66,7 +83,6 @@ export async function PUT(
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
   }
 }
-
 
 
 export async function DELETE(

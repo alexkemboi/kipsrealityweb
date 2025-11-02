@@ -1,4 +1,3 @@
-// app/api/invites/accept/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
@@ -6,30 +5,64 @@ import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
 
 export async function POST(request: Request) {
   try {
-    const { email, token, password, firstName, lastName, phone } = await request.json()
+    const body = await request.json()
+    console.log(' Received request body:', JSON.stringify(body, null, 2))
+    
+    const { email, token, password, firstName, lastName, phone } = body
 
+    // Check 1: Required fields
     if (!email || !token || !password) {
+      console.log(' Missing required fields:', { 
+        hasEmail: !!email, 
+        hasToken: !!token, 
+        hasPassword: !!password 
+      })
       return NextResponse.json({ error: 'Email, token and password are required' }, { status: 400 })
     }
 
     const normalizedEmail = email.toLowerCase()
+    console.log(' Searching for invite - Token:', token, 'Email:', normalizedEmail)
 
     // Find invite by token
     const invite = await prisma.invite.findUnique({
       where: { token }
     })
 
+    console.log(' Invite found:', invite ? {
+      id: invite.id,
+      email: invite.email,
+      accepted: invite.accepted,
+      expiresAt: invite.expiresAt,
+      organizationId: invite.organizationId
+    } : 'null')
+
+    // Check 2: Invite exists and email matches
     if (!invite || invite.email !== normalizedEmail) {
+      console.log(' Invite validation failed:', {
+        inviteExists: !!invite,
+        inviteEmail: invite?.email,
+        providedEmail: normalizedEmail,
+        emailsMatch: invite?.email === normalizedEmail
+      })
       return NextResponse.json({ error: 'Invalid invite token or email' }, { status: 400 })
     }
 
+    // Check 3: Not already accepted
     if (invite.accepted) {
+      console.log(' Invite already accepted')
       return NextResponse.json({ error: 'Invite already used' }, { status: 400 })
     }
 
+    // Check 4: Not expired
     if (invite.expiresAt < new Date()) {
+      console.log(' Invite expired:', {
+        expiresAt: invite.expiresAt,
+        now: new Date()
+      })
       return NextResponse.json({ error: 'Invite has expired' }, { status: 400 })
     }
+
+    console.log(' All validations passed, creating/updating user...')
 
     // If a user already exists with that email:
     // - if active -> block (should not happen because invite should not be created)
@@ -52,9 +85,9 @@ export async function POST(request: Request) {
         where: { id: existingUser.id },
         data: {
           passwordHash: hashedPassword,
-          firstName: firstName ?? existingUser.firstName,
-          lastName: lastName ?? existingUser.lastName,
-          phone: phone ?? existingUser.phone,
+          firstName: firstName?.trim() || existingUser.firstName,
+          lastName: lastName?.trim() || existingUser.lastName,
+          phone: phone?.trim() || existingUser.phone,
           status: 'ACTIVE',
           emailVerified: true,
         }
@@ -65,9 +98,9 @@ export async function POST(request: Request) {
         data: {
           email: normalizedEmail,
           passwordHash: hashedPassword,
-          firstName: firstName ?? null,
-          lastName: lastName ?? null,
-          phone: phone ?? null,
+          firstName: firstName?.trim() || null,
+          lastName: lastName?.trim() || null,
+          phone: phone?.trim() || null,
           status: 'ACTIVE',
           emailVerified: true,
         }
@@ -132,10 +165,11 @@ export async function POST(request: Request) {
       path: '/'
     })
 
+    console.log(' User created and logged in successfully')
     return response
 
   } catch (error) {
-    console.error('Accept invite error:', error)
+    console.error(' Accept invite error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

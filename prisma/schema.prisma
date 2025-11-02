@@ -449,16 +449,23 @@ model AdminAction {
 
 
 model NavbarItem {
-  id          Int      @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   href        String
-  order       Int       @default(0)
-  isVisible   Boolean   @default(true)
-  isAvailable Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  order       Int          @default(0)
+  isVisible   Boolean      @default(true)
+  isAvailable Boolean      @default(true)
+  parentId    Int?         // New: nullable parent reference
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  // Relations
+  parent      NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
+  children    NavbarItem[] @relation("NavbarSubmenu")
+  
+  @@index([parentId])
+  @@index([order])
 }
-
 
 model Invite {
   id             String       @id @default(cuid())
