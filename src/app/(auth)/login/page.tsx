@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
 const LoginPage = () => {
-  const { login } = useAuth()
+  const { login } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
@@ -21,10 +21,7 @@ const LoginPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError("");
   };
 
@@ -33,8 +30,7 @@ const LoginPage = () => {
     setError("");
 
     if (!formData.email || !formData.password) {
-      const errorMsg = "Please fill in all fields";
-      setError(errorMsg);
+      setError("Please fill in all fields");
       return;
     }
 
@@ -50,10 +46,12 @@ const LoginPage = () => {
       if (response.ok) {
         const data = await response.json();
 
-        login(data.user, data.token);
+        // ✅ FIX: Correct token property
+        login(data.user, data.tokens.accessToken);
 
         toast.success("Login successful! Redirecting...");
-        
+
+        // ✅ Redirect based on user role
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");
@@ -137,7 +135,7 @@ const LoginPage = () => {
           </button>
         </div>
 
-        {/* Forgot Password Link */}
+        {/* Forgot Password */}
         <div className="text-right">
           <a
             href="/forgot-password"

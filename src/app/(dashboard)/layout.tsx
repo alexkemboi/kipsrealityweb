@@ -41,7 +41,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const allowedPaths = {
     SYSTEM_ADMIN: "/admin",
     PROPERTY_MANAGER: "/property-manager",
-    TENANT: "/dashboard/tenant",
+    TENANT: "/tenant",
     VENDOR: "/dashboard/vendor",
   } as const;
 
