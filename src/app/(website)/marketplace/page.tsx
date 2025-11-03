@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { MarketplaceClientPage } from '@/components/website/marketplace/ListingClientPage';
 import Navbar from '@/components/website/Navbar';
-import { marketplaceListings } from "@/app/data/marketplaceData"
+import { marketplaceListings } from "@/app/data/marketplaceData";
+import Loading from './loading';
 
 export const metadata: Metadata = {
   title: 'Marketplace - Rentflow360',
@@ -27,7 +29,9 @@ export default function MarketListingsPage() {
                         </div>
         
       </section>
-      <MarketplaceClientPage listings={marketplaceListings} />
+      <Suspense fallback={<Loading />}>
+        <MarketplaceClientPage listings={marketplaceListings} />
+      </Suspense>
     </div>
   );
 }

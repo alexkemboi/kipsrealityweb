@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { RouteGroup } from './RouteGroup'
 import { systemRoutes, routeConfig } from './SidebarLinks'
 import { LogOut } from 'lucide-react'
-
+   
 interface DashboardSidebarLinksProps {
   user: { id: string, firstName: string, role: string, email: string }
   open?: boolean
