@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Bell } from "lucide-react";
+import { Bell, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import Logo from "@/assets/Logo.png";
 import Link from "next/link";
@@ -18,6 +18,8 @@ interface NavbarItem {
   order: number;
   isVisible: boolean;
   isAvailable: boolean;
+  parentId?: number | null;
+  children?: NavbarItem[];
 }
 
 interface NavbarClientProps {
@@ -26,10 +28,10 @@ interface NavbarClientProps {
 
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  // 🧭 Scroll animation effects
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -110,16 +112,55 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
           {/* Navigation Links */}
           <div className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
-              <Link
+              <div
                 key={link.id}
-                href={link.href}
-                className={`font-medium transition-all duration-200 ${textColor} ${hoverColor}`}
-                style={{
-                  opacity: scrollProgress > 0.1 ? 1 : 0.9,
-                }}
+                className="relative group"
+                onMouseEnter={() => link.children?.length && setOpenSubmenu(link.id)}
+                onMouseLeave={() => setOpenSubmenu(null)}
               >
-                {link.name}
-              </Link>
+                {link.children && link.children.length > 0 ? (
+                  <>
+                    <button
+                      className={`font-medium transition-all duration-200 flex items-center gap-1 ${textColor} ${hoverColor}`}
+                      style={{
+                        opacity: scrollProgress > 0.1 ? 1 : 0.9,
+                      }}
+                    >
+                      {link.name}
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+
+                    {/* Submenu Dropdown */}
+                    <div
+                      className={`absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 transition-all duration-200 ${
+                        openSubmenu === link.id
+                          ? "opacity-100 visible translate-y-0"
+                          : "opacity-0 invisible -translate-y-2"
+                      }`}
+                    >
+                      {link.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={child.href}
+                          className="block px-4 py-2 text-sm text-neutral-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <Link
+                    href={link.href}
+                    className={`font-medium transition-all duration-200 ${textColor} ${hoverColor}`}
+                    style={{
+                      opacity: scrollProgress > 0.1 ? 1 : 0.9,
+                    }}
+                  >
+                    {link.name}
+                  </Link>
+                )}
+              </div>
             ))}
           </div>
 
@@ -127,7 +168,6 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
           <div className="hidden lg:flex items-center space-x-4">
             {user ? (
               <div className="flex items-center space-x-4">
-                {/* Notifications */}
                 <Button
                   variant="ghost"
                   size="icon"

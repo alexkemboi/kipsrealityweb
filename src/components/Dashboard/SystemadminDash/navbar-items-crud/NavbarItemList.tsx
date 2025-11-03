@@ -1,93 +1,232 @@
 "use client";
 
+import { JSX, useState } from "react";
+import { ChevronDown, ChevronRight, Edit2, Trash2, Plus } from "lucide-react";
+import { NavbarItem } from "@prisma/client";
+
 interface NavbarItemListProps {
   items: any[];
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
+  onAddSubmenu: (parentId: number) => void;
 }
 
-export default function NavbarItemList({ items, onEdit, onDelete }: NavbarItemListProps) {
-  return (
-    <div className="mt-6">
-      {/* --- Desktop Table --- */}
-      <div className="hidden md:block overflow-x-auto rounded-lg border border-[#30D5C8]/30 shadow-sm bg-[#0b1f3a] text-white">
-        <table className="w-full border-collapse">
-          <thead className="bg-[#15386a]">
-            <tr className="text-left text-[#30D5C8] uppercase text-sm">
-              <th className="p-3 border-b border-[#30D5C8]/30">ID</th>
-              <th className="p-3 border-b border-[#30D5C8]/30">Name</th>
-              <th className="p-3 border-b border-[#30D5C8]/30">Href</th>
-              <th className="p-3 border-b border-[#30D5C8]/30">Order</th>
-              <th className="p-3 border-b border-[#30D5C8]/30">Visible</th>
-              <th className="p-3 border-b border-[#30D5C8]/30">Available</th>
-              <th className="p-3 border-b border-[#30D5C8]/30 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-[#15386a]/60 text-center border-b border-[#30D5C8]/20 transition-colors"
+export default function NavbarItemList({ 
+  items, 
+  onEdit, 
+  onDelete,
+  onAddSubmenu 
+}: NavbarItemListProps) {
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (id: number) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedItems(newExpanded);
+  };
+
+  const flattenItems = (itemsList: NavbarItem[]): NavbarItem[] => {
+    const flattened: NavbarItem[] = [];
+    itemsList.forEach(item => {
+      const { children, ...itemWithoutChildren } = item as any;
+      flattened.push(itemWithoutChildren);
+      if (children && children.length > 0) {
+        flattened.push(...flattenItems(children));
+      }
+    });
+    return flattened;
+  };
+
+  const flatItems = flattenItems(items);
+
+  // Organize items into parent-child structure
+  const topLevelItems = flatItems.filter(item => !item.parentId);
+  const childrenMap = flatItems.reduce((acc, item) => {
+    if (item.parentId) {
+      if (!acc[item.parentId]) acc[item.parentId] = [];
+      acc[item.parentId].push(item);
+    }
+    return acc;
+  }, {} as Record<number, NavbarItem[]>);
+
+  const renderItemRow = (item: any, isChild: boolean = false): JSX.Element => {
+    const hasChildren = childrenMap[item.id]?.length > 0;
+    const isExpanded = expandedItems.has(item.id);
+
+    return (
+      <div key={item.id}>
+    
+        <div className="hidden md:grid md:grid-cols-[40px_50px_200px_250px_80px_80px_100px_150px] gap-2 items-center p-3 hover:bg-[#15386a]/60 border-b border-[#30D5C8]/20 transition-colors">
+    
+          <div>
+            {hasChildren ? (
+              <button
+                onClick={() => toggleExpand(item.id)}
+                className="p-1 hover:bg-[#30D5C8]/20 rounded transition"
               >
-                <td className="p-3">{item.id}</td>
-                <td className="p-3">{item.name}</td>
-                <td className="p-3 break-words">{item.href}</td>
-                <td className="p-3">{item.order}</td>
-                <td className="p-3">{item.isVisible ? "✅" : "❌"}</td>
-                <td className="p-3">{item.isAvailable ? "✅" : "❌"}</td>
-                <td className="p-3 space-x-2">
-                  <button
-                    onClick={() => onEdit(item)}
-                    className="px-3 py-1 bg-[#30D5C8] text-[#0b1f3a] rounded-md hover:bg-[#25b9ad] transition"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => onDelete(item.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-[#30D5C8]" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-[#30D5C8]" />
+                )}
+              </button>
+            ) : null}
+          </div>
 
-      {/* --- Mobile Cards --- */}
-      <div className="grid gap-4 md:hidden">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="p-4 bg-[#0b1f3a] text-white rounded-lg shadow border border-[#30D5C8]/30"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-[#30D5C8]">{item.name}</h3>
-              <div className="flex gap-2">
+          <div className="text-center">{item.id}</div>
+          
+          <div className={`${isChild ? 'pl-6 text-gray-300' : 'font-semibold'} truncate`}>
+            {isChild && "↳ "}
+            {item.name}
+          </div>
+          
+          <div className="text-sm break-all text-gray-300">{item.href}</div>
+          <div className="text-center">{item.order}</div>
+          <div className="text-center">{item.isVisible ? "✅" : "❌"}</div>
+          <div className="text-center">{item.isAvailable ? "✅" : "❌"}</div>
+          
+          <div className="flex gap-2 justify-center">
+            {!isChild && (
+              <button
+                onClick={() => onAddSubmenu(item.id)}
+                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+                title="Add Submenu"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => onEdit(item)}
+              className="p-1.5 bg-[#30D5C8] text-[#0b1f3a] rounded-md hover:bg-[#25b9ad] transition"
+              title="Edit"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                if (hasChildren) {
+                  if (confirm(`Delete "${item.name}" and all its submenus?`)) {
+                    onDelete(item.id);
+                  }
+                } else {
+                  onDelete(item.id);
+                }
+              }}
+              className="p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+              title="Delete"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Card */}
+        <div className="md:hidden p-4 bg-[#0b1f3a] text-white rounded-lg shadow border border-[#30D5C8]/30 mb-4">
+          <div className="flex justify-between items-start mb-3">
+            <div className="flex items-center gap-2">
+              {hasChildren && (
                 <button
-                  onClick={() => onEdit(item)}
-                  className="px-2 py-1 bg-[#30D5C8] text-[#0b1f3a] rounded text-sm hover:bg-[#25b9ad]"
+                  onClick={() => toggleExpand(item.id)}
+                  className="p-1 hover:bg-[#30D5C8]/20 rounded transition"
                 >
-                  Edit
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4 text-[#30D5C8]" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-[#30D5C8]" />
+                  )}
                 </button>
-                <button
-                  onClick={() => onDelete(item.id)}
-                  className="px-2 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </div>
+              )}
+              <h3 className={`${isChild ? 'text-gray-300' : 'font-semibold text-[#30D5C8]'}`}>
+                {isChild && "↳ "}
+                {item.name}
+              </h3>
             </div>
-
-            <div className="text-sm text-gray-200 space-y-1">
-              <p><span className="font-medium text-[#30D5C8]">Href:</span> {item.href}</p>
-              <p><span className="font-medium text-[#30D5C8]">Order:</span> {item.order}</p>
-              <p><span className="font-medium text-[#30D5C8]">Visible:</span> {item.isVisible ? "✅" : "❌"}</p>
-              <p><span className="font-medium text-[#30D5C8]">Available:</span> {item.isAvailable ? "✅" : "❌"}</p>
+            
+            <div className="flex gap-2">
+              {!isChild && (
+                <button
+                  onClick={() => onAddSubmenu(item.id)}
+                  className="p-1.5 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                  title="Add Submenu"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={() => onEdit(item)}
+                className="p-1.5 bg-[#30D5C8] text-[#0b1f3a] rounded text-sm hover:bg-[#25b9ad]"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(item.id)}
+                className="p-1.5 bg-red-500 text-white rounded text-sm hover:bg-red-600"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
-        ))}
+
+          <div className="text-sm text-gray-200 space-y-1">
+            <p><span className="font-medium text-[#30D5C8]">ID:</span> {item.id}</p>
+            <p><span className="font-medium text-[#30D5C8]">Href:</span> {item.href}</p>
+            <p><span className="font-medium text-[#30D5C8]">Order:</span> {item.order}</p>
+            <p><span className="font-medium text-[#30D5C8]">Visible:</span> {item.isVisible ? "✅" : "❌"}</p>
+            <p><span className="font-medium text-[#30D5C8]">Available:</span> {item.isAvailable ? "✅" : "❌"}</p>
+          </div>
+        </div>
+
+        {/* Render children if expanded */}
+        {hasChildren && isExpanded && (
+          <div className="bg-[#15386a]/30">
+            {childrenMap[item.id].map((child: any) => renderItemRow(child, true))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-6">
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-[#30D5C8]/30 shadow-sm bg-[#0b1f3a] text-white">
+        {/* Table Header */}
+        <div className="grid grid-cols-[40px_50px_200px_250px_80px_80px_100px_150px] gap-2 items-center p-3 bg-[#15386a] text-[#30D5C8] uppercase text-sm font-semibold border-b border-[#30D5C8]/30">
+          <div></div>
+          <div className="text-center">ID</div>
+          <div>Name</div>
+          <div>Href</div>
+          <div className="text-center">Order</div>
+          <div className="text-center">Visible</div>
+          <div className="text-center">Available</div>
+          <div className="text-center">Actions</div>
+        </div>
+
+        {/* Table Body */}
+        <div>
+          {topLevelItems.length === 0 ? (
+            <div className="p-8 text-center text-gray-400">
+              No navbar items yet. Add your first item above!
+            </div>
+          ) : (
+            topLevelItems.map(item => renderItemRow(item))
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden">
+        {topLevelItems.length === 0 ? (
+          <div className="p-8 text-center text-gray-400 bg-[#0b1f3a] rounded-lg border border-[#30D5C8]/30">
+            No navbar items yet. Add your first item above!
+          </div>
+        ) : (
+          topLevelItems.map(item => renderItemRow(item))
+        )}
       </div>
     </div>
   );

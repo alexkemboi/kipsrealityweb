@@ -142,15 +142,15 @@ export const routeConfig = {
 
   'PROPERTY_MANAGER': {
     main: [
-      { path: '/dashboard/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
+      { path: '/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
     properties: [
       { path: '/dashboard/property-manager/properties/register', label: 'Register Property', icon: Building2 },
       { path: '/dashboard/property-manager/properties/manage', label: 'Manage Units & Leases', icon: Building2 },
       { path: '/dashboard/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
     ],
-    tenants: [
-      { path: '/dashboard/property-manager/tenants/applications', label: 'Applications', icon: Users },
+    tenants : [
+      { path: '/property-manager/content/invites', label: 'Invites', icon: Users },
       { path: '/dashboard/property-manager/tenants/moves', label: 'Move-ins / Move-outs', icon: Users },
       { path: '/dashboard/property-manager/tenants/communication', label: 'Communication', icon: Users },
     ],
