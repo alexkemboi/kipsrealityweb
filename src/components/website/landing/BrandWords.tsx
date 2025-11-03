@@ -3,8 +3,6 @@
 "use client";
 
 import { TypewriterEffect } from "../../ui/typewriter-effect";
-import Image from "next/image";
-import aboutBg from "@/assets/hero-cityscape.jpg";
 import { motion } from "framer-motion";
 
 export function TypewriterEffectDemo() {
@@ -15,28 +13,8 @@ export function TypewriterEffectDemo() {
   ];
 
   return (
-    <section className="relative min-h-[15vh] flex justify-center items-center overflow-hidden">
-      {/* --- Background --- */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={aboutBg}
-          alt="City skyline background for About section"
-          fill
-          className="object-cover"
-          quality={90}
-          priority
-        />
-        <div className="absolute inset-0 bg-neutral-900/95" />
-        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-transparent to-neutral-900/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/40 via-transparent to-neutral-900/40" />
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
-        </div>
-
-        {/* Floating glow orbs */}
-        <div className="absolute top-32 left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px] animate-float-slow" />
-        <div className="absolute bottom-32 right-20 w-96 h-96 bg-cyan-400/15 rounded-full blur-[120px] animate-float-medium delay-1000" />
-      </div>
+    <section className="relative min-h-[15vh] flex justify-center bg-[#0b1f3a] items-center overflow-hidden">
+      
 
       {/* --- Content --- */}
       <div className="relative z-20 container mx-auto px-6 py-18 text-center">

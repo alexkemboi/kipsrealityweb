@@ -15,7 +15,7 @@ export const TestimonialCard = ({ testimonial }: TestimonialsCardProps) => {
   const role = testimonial?.role ?? "";
   const text = testimonial?.text ?? "";
   return (
-    <div className="relative z-10 container mx-auto px-6 md:px-8 max-w-6xl bg-white/10 border border-white/20 backdrop-blur-2xl rounded-2xl shadow-2xl p-10 md:p-14 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/30">
+    <div className="relative z-10 container mx-auto px-6 md:px-8 max-w-6xlgroup bg-[#1d3d66] border-white/20 rounded-2xl p-10 md:p-14 flex flex-col items-center text-center transition-all duration-300 hover:shadow-blue-500/30">
 
 
       {/* Avatar */}
