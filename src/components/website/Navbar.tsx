@@ -10,13 +10,24 @@ interface NavbarItem {
   isAvailable: boolean;
 }
 
-// Server Component - Fetch navbar items on the server
 async function getNavbarItems(): Promise<NavbarItem[]> {
   try {
     const items = await prisma.navbarItem.findMany({
       where: {
         isVisible: true,
         isAvailable: true,
+        parentId: null, // Only fetch top-level items
+      },
+      include: {
+        children: {
+          where: {
+            isVisible: true,
+            isAvailable: true,
+          },
+          orderBy: {
+            order: 'asc',
+          },
+        },
       },
       orderBy: {
         order: 'asc',
