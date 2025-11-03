@@ -258,7 +258,7 @@ model SidebarItem {
 
   // many-to-many with Plan
   plans Plan[] @relation("SidebarItemPlans")
-
+  role      UserRole
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -268,6 +268,8 @@ enum UserRole {
   PROPERTY_MANAGER
   TENANT
   VENDOR
+  ALL
+
 }
 
 enum UserStatus {

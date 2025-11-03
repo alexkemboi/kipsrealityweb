@@ -98,6 +98,13 @@ export const routeConfig = {
         badge: null,
         description: 'Manage navigation links for the website'
       },
+      {
+        path: '/admin/content/SidebarItem-Crud',
+        label: 'sidebar menus',
+        icon: MessageSquare,
+        badge: null,
+        description: 'manage sidebar menu items for dashboard'
+      },
     ],
     blog: [
       {
