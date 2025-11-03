@@ -8,64 +8,65 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(uuid())
-  email             String             @unique
-  passwordHash      String             @map("password_hash")
-  emailVerified     Boolean            @default(false) @map("email_verified")
-  firstName         String?            @map("first_name")
-  lastName          String?            @map("last_name")
-  phone             String?
-  avatarUrl         String?            @map("avatar_url")
-  status            UserStatus         @default(ACTIVE)
-  lastLoginAt       DateTime?          @map("last_login_at")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String     @map("password_hash")
+  emailVerified Boolean    @default(false) @map("email_verified")
+  firstName     String?    @map("first_name")
+  lastName      String?    @map("last_name")
+  phone         String?
+  avatarUrl     String?    @map("avatar_url")
+  status        UserStatus @default(ACTIVE)
+  lastLoginAt   DateTime?  @map("last_login_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
   //  Relations
   organizationUsers OrganizationUser[]
   vendors           Vendor[]
-  sentInvites       Invite[] @relation("UserInvites")
+  sentInvites       Invite[]           @relation("UserInvites")
   listings          Listing[]
 
   @@map("users")
 }
 
-
 model Organization {
-  id          String             @id @default(uuid())
-  name        String
-  slug        String             @unique
-  logoUrl     String?            @map("logo_url")
-  website     String?
-  phone       String?
-  address     String?
-  isActive    Boolean            @default(true) @map("is_active")
-  createdAt   DateTime           @default(now()) @map("created_at")
-  updatedAt   DateTime           @updatedAt @map("updated_at")
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?  @map("logo_url")
+  website   String?
+  phone     String?
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  //  Relations
-  invites     Invite[]
-  users       OrganizationUser[]
-  listings    Listing[]
-  vendors     Vendor[]
-  properties  Property[]         @relation("OrganizationToProperty")
+  // Relations
+  invites    Invite[]
+  users      OrganizationUser[]
+  listings   Listing[]
+  vendors    Vendor[]
+  properties Property[]         @relation("OrganizationToProperty")
+
+  planId Int?
+  plan   Plan? @relation(fields: [planId], references: [id])
 
   @@map("organizations")
 }
 
-
 model OrganizationUser {
-  id             String       @id @default(uuid())
-  userId         String       @map("user_id")
-  organizationId String       @map("organization_id")
-  role           UserRole
-  createdAt      DateTime     @default(now()) @map("created_at")
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-   managedProperties Property[]
+  id                String               @id @default(uuid())
+  userId            String               @map("user_id")
+  organizationId    String               @map("organization_id")
+  role              UserRole
+  createdAt         DateTime             @default(now()) @map("created_at")
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  managedProperties Property[]
   postedServices    ServiceMarketplace[]
-  adminActions      AdminAction[]      @relation("AdminActionsByAdmin")
-  targetActions     AdminAction[]      @relation("AdminActionsTarget")
+  adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
+  targetActions     AdminAction[]        @relation("AdminActionsTarget")
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
@@ -100,7 +101,6 @@ model Category {
 
   @@map("categories")
 }
-
 
 model Service {
   id          Int      @id @default(autoincrement())
@@ -168,13 +168,13 @@ model Application {
 }
 
 model ContactMessage {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String
   countryCode String
-  phone     String
-  message   String
-  createdAt DateTime @default(now())
+  phone       String
+  message     String
+  createdAt   DateTime @default(now())
 }
 
 model Policy {
@@ -207,16 +207,6 @@ model Section {
   @@index([policyId], map: "Section_policyId_fkey")
 }
 
-model Feature {
-  id          Int    @id @default(autoincrement())
-  title       String
-  description String
-  planId      Int
-  plan        Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
-
-  @@index([planId], map: "Feature_planId_fkey")
-}
-
 model Plan {
   id           Int       @id @default(autoincrement())
   name         String
@@ -226,9 +216,52 @@ model Plan {
   description  String?
   gradient     String?
   createdAt    DateTime  @default(now())
-  features     Feature[]
+  updatedAt    DateTime? @default(now()) // temporarily optional
+
+  features      Feature[]      @relation("PlanFeatures")
+  sidebarItems  SidebarItem[]  @relation("SidebarItemPlans")
+  organizations Organization[]
 }
 
+model Feature {
+  id          Int       @id @default(autoincrement())
+  key         String?   @unique // temporarily optional
+  title       String
+  description String?
+  path        String?
+  icon        String?
+  category    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @default(now()) // temporarily optional
+
+  plans        Plan[]        @relation("PlanFeatures")
+  sidebarItems SidebarItem[]
+}
+
+model SidebarItem {
+  id          Int     @id @default(autoincrement())
+  label       String
+  path        String
+  icon        String? // icon name saved as string (e.g. "BarChart3")
+  section     String? // grouping like "content", "analytics"
+  order       Int? // ordering within the section
+  badge       String? // optional small badge (e.g. "4" or "new")
+  description String? // admin-only description
+  isActive    Boolean @default(true)
+  isExternal  Boolean @default(false) // if true, opens in new tab
+  target      String? // link target, e.g. "_blank"
+
+  // optional relation to a Feature (to show item only if a feature is active)
+  featureId Int?
+  feature   Feature? @relation(fields: [featureId], references: [id], onDelete: SetNull)
+
+  // many-to-many with Plan
+  plans Plan[] @relation("SidebarItemPlans")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 enum UserRole {
   SYSTEM_ADMIN
@@ -256,88 +289,86 @@ model CTA {
 }
 
 model HeroSection {
-  id          Int       @id @default(autoincrement())
-  page        String    // which page this hero belongs to, e.g., "home", "blog"
+  id          Int      @id @default(autoincrement())
+  page        String // which page this hero belongs to, e.g., "home", "blog"
   title       String?
   subtitle    String?
   description String?
   buttonText  String?
   buttonUrl   String?
-  imageUrl    String?   // hero image
-  iconUrl     String?   // optional icon
-  searchBar   Boolean   @default(false) // whether to show search bar
-  gradient    String?   // background gradient
-  layout      String?   // optional layout type
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  imageUrl    String? // hero image
+  iconUrl     String? // optional icon
+  searchBar   Boolean  @default(false) // whether to show search bar
+  gradient    String? // background gradient
+  layout      String? // optional layout type
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
-
 
 // ---------------------------------------
 // MARKETPLACE LISTINGS
 // ---------------------------------------
 
 model CategoryMarketplace {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., Property, Service, Appliance
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., Property, Service, Appliance
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   listings    Listing[]
 }
 
 model ListingType {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., For Sale, For Rent, For Hire
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., For Sale, For Rent, For Hire
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   listings    Listing[]
 }
 
 model ListingStatus {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., Pending, Approved, Active, Rejected, Deleted
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., Pending, Approved, Active, Rejected, Deleted
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   listings    Listing[]
 }
 
 model PropertyType {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., Apartment, House, Land, Commercial
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g., Apartment, House, Land, Commercial
   description String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime   @default(now())
   properties  Property[]
 }
 
 model ServiceType {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., Plumbing, Cleaning, Electrical
-  description String?
-  createdAt   DateTime @default(now())
- serviceMarketplace    ServiceMarketplace[]
+  id                 String               @id @default(uuid())
+  name               String               @unique // e.g., Plumbing, Cleaning, Electrical
+  description        String?
+  createdAt          DateTime             @default(now())
+  serviceMarketplace ServiceMarketplace[]
 }
 
 model ActionType {
-  id          String   @id @default(uuid())
-  name        String   @unique        // e.g., APPROVE_USER, DELETE_LISTING, FEATURE_LISTING
-  description String?
-  createdAt   DateTime @default(now())
+  id           String        @id @default(uuid())
+  name         String        @unique // e.g., APPROVE_USER, DELETE_LISTING, FEATURE_LISTING
+  description  String?
+  createdAt    DateTime      @default(now())
   adminActions AdminAction[]
 }
 
 model Location {
-  id          String   @id @default(uuid())
-  name        String   // e.g., Nairobi, Mombasa
-  city        String?
-  country     String?
-  createdAt   DateTime @default(now())
-  listings    Listing[]
-  properties  Property[]
+  id         String     @id @default(uuid())
+  name       String // e.g., Nairobi, Mombasa
+  city       String?
+  country    String?
+  createdAt  DateTime   @default(now())
+  listings   Listing[]
+  properties Property[]
 }
 
-
 model Listing {
-  id             String         @id @default(uuid())
+  id             String   @id @default(uuid())
   organizationId String
   createdBy      String
   categoryId     String
@@ -347,74 +378,70 @@ model Listing {
   title          String
   description    String
   price          Float
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  organization   Organization   @relation(fields: [organizationId], references: [id])
-  createdByUser  User           @relation(fields: [createdBy], references: [id])
-  categoryMarketPlace       CategoryMarketplace     @relation(fields: [categoryId], references: [id])
-  listingType    ListingType?   @relation(fields: [listingTypeId], references: [id])
-  status         ListingStatus? @relation(fields: [statusId], references: [id])
-  location       Location?      @relation(fields: [locationId], references: [id])
+  organization        Organization        @relation(fields: [organizationId], references: [id])
+  createdByUser       User                @relation(fields: [createdBy], references: [id])
+  categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
+  listingType         ListingType?        @relation(fields: [listingTypeId], references: [id])
+  status              ListingStatus?      @relation(fields: [statusId], references: [id])
+  location            Location?           @relation(fields: [locationId], references: [id])
 
-  property       Property?
- serviceMarketplace        ServiceMarketplace?
-  images         ListingImage[]
-  adminActions   AdminAction[]
+  property           Property?
+  serviceMarketplace ServiceMarketplace?
+  images             ListingImage[]
+  adminActions       AdminAction[]
 }
 
-
-
 model Property {
-  id                  String            @id @default(uuid())
-  listingId           String            @unique
-  managerId           String?
-organizationId String?
-  propertyTypeId      String?
-  locationId          String?
-  city                String
-  address             String
-  bedrooms            Int
-  bathrooms           Int
-  size                Float
-  amenities           String?
-  isFurnished         Boolean           @default(false)
-  availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
-  createdAt           DateTime          @default(now())
+  id                 String   @id @default(uuid())
+  listingId          String   @unique
+  managerId          String?
+  organizationId     String?
+  propertyTypeId     String?
+  locationId         String?
+  city               String
+  address            String
+  bedrooms           Int
+  bathrooms          Int
+  size               Float
+  amenities          String?
+  isFurnished        Boolean  @default(false)
+  availabilityStatus String? // e.g., Available, Occupied, Maintenance
+  createdAt          DateTime @default(now())
 
   // Relations
-  listing             Listing           @relation(fields: [listingId], references: [id])
-  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
-  organization       Organization? @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
-  location            Location?         @relation(fields: [locationId], references: [id])
-    appliances          Appliance[]       @relation("PropertyAppliances")
-
-  
+  listing      Listing           @relation(fields: [listingId], references: [id])
+  manager      OrganizationUser? @relation(fields: [managerId], references: [id])
+  organization Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType PropertyType?     @relation(fields: [propertyTypeId], references: [id])
+  location     Location?         @relation(fields: [locationId], references: [id])
+  appliances   Appliance[]       @relation("PropertyAppliances")
 }
 
 model Appliance {
- id          String   @id @default(uuid())
-  name        String          
+  id          String     @id @default(uuid())
+  name        String
   description String?
-  createdAt   DateTime @default(now())
-  properties  Property[]  @relation("PropertyAppliances")
+  createdAt   DateTime   @default(now())
+  properties  Property[] @relation("PropertyAppliances")
 }
 
 model ServiceMarketplace {
-  id            String            @id @default(uuid())
-  listingId     String            @unique
+  id            String   @id @default(uuid())
+  listingId     String   @unique
   vendorId      String?
   serviceTypeId String?
   description   String
   rate          Float
   availability  String?
-  createdAt     DateTime          @default(now())
+  createdAt     DateTime @default(now())
 
-  listing       Listing           @relation(fields: [listingId], references: [id])
-  vendor        OrganizationUser? @relation(fields: [vendorId], references: [id])
-  serviceType   ServiceType?      @relation(fields: [serviceTypeId], references: [id])
+  listing     Listing           @relation(fields: [listingId], references: [id])
+  vendor      OrganizationUser? @relation(fields: [vendorId], references: [id])
+  serviceType ServiceType?      @relation(fields: [serviceTypeId], references: [id])
 }
 
 // ---------------------------------------
@@ -422,47 +449,46 @@ model ServiceMarketplace {
 // ---------------------------------------
 
 model ListingImage {
-  id          String   @id @default(uuid())
-  listingId   String
-  imageUrl    String
-  isPrimary   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  listingId String
+  imageUrl  String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  listing     Listing  @relation(fields: [listingId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id])
 }
 
 model AdminAction {
-  id                 String             @id @default(uuid())
-  adminOrgUserId     String
-  targetOrgUserId    String?
-  listingId          String?
-  actionTypeId       String
-  reason             String?
-  details            Json?
-  createdAt          DateTime           @default(now())
+  id              String   @id @default(uuid())
+  adminOrgUserId  String
+  targetOrgUserId String?
+  listingId       String?
+  actionTypeId    String
+  reason          String?
+  details         Json?
+  createdAt       DateTime @default(now())
 
-  admin              OrganizationUser   @relation("AdminActionsByAdmin", fields: [adminOrgUserId], references: [id])
-  target             OrganizationUser?  @relation("AdminActionsTarget", fields: [targetOrgUserId], references: [id])
-  listing            Listing?           @relation(fields: [listingId], references: [id])
-  actionType         ActionType         @relation(fields: [actionTypeId], references: [id])
+  admin      OrganizationUser  @relation("AdminActionsByAdmin", fields: [adminOrgUserId], references: [id])
+  target     OrganizationUser? @relation("AdminActionsTarget", fields: [targetOrgUserId], references: [id])
+  listing    Listing?          @relation(fields: [listingId], references: [id])
+  actionType ActionType        @relation(fields: [actionTypeId], references: [id])
 }
 
-
 model NavbarItem {
-  id          Int          @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   href        String
-  order       Int          @default(0)
-  isVisible   Boolean      @default(true)
-  isAvailable Boolean      @default(true)
-  parentId    Int?         // New: nullable parent reference
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  parentId    Int? // New: nullable parent reference
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Relations
-  parent      NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
-  children    NavbarItem[] @relation("NavbarSubmenu")
-  
+  parent   NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavbarItem[] @relation("NavbarSubmenu")
+
   @@index([parentId])
   @@index([order])
 }

@@ -30,7 +30,7 @@ export function DashboardSidebar({
   const DesktopSidebar = () => (
     <div
       className={cn(
-        "hidden md:flex flex-col bg-neutral-900 border-r border-neutral-800 transition-all duration-300 ease-in-out h-screen sticky top-0",
+        "hidden md:flex flex-col bg-[#0a1628] border-r border-neutral-800 transition-all duration-300 ease-in-out h-screen sticky top-0",
         open ? "w-64" : "w-20"
       )}
     >
