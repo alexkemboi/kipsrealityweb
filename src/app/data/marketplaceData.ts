@@ -11,6 +11,9 @@ export interface MarketplaceItem {
   size?: number;
   amenities?: string | null;
   isFurnished?: boolean;
+  dateposted: string;
+  postedBy: string;
+  verified: boolean;
 }
 
 

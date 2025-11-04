@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { TenantApplication } from "@/components/Dashboard/type";
-import Navbar from "@/components/website/Navbar";
 
 export default function AdminTenantApplications() {
   const [applications, setApplications] = useState<TenantApplication[]>([]);
@@ -73,7 +72,7 @@ export default function AdminTenantApplications() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      
       <main className="max-w-7xl mx-auto py-16 px-6">
         <h1 className="text-3xl font-bold mb-6">Tenant Applications</h1>
 
