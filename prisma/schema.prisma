@@ -398,21 +398,22 @@ model Listing {
 }
 
 model Property {
-  id                 String   @id @default(uuid())
-  listingId          String   @unique
-  managerId          String?
-  organizationId     String?
-  propertyTypeId     String?
-  locationId         String?
-  city               String
-  address            String
-  bedrooms           Int
-  bathrooms          Int
-  size               Float
-  amenities          String?
-  isFurnished        Boolean  @default(false)
-  availabilityStatus String? // e.g., Available, Occupied, Maintenance
-  createdAt          DateTime @default(now())
+  id                  String            @id @default(uuid())
+  listingId           String            @unique
+  managerId           String?
+  name                String
+organizationId String?
+  propertyTypeId      String?
+  locationId          String?
+  city                String
+  address             String
+  bedrooms            Int
+  bathrooms           Int
+  size                Float
+  amenities           String?
+  isFurnished         Boolean           @default(false)
+  availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
+  createdAt           DateTime          @default(now())
 
   // Relations
   listing      Listing           @relation(fields: [listingId], references: [id])
