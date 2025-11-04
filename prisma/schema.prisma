@@ -401,7 +401,7 @@ model Listing {
 
 model Property {
   id                  String            @id @default(uuid())
-  listingId           String            @unique
+  listingId           String?            @unique
   managerId           String?
   name                String?
   organizationId String?
@@ -409,16 +409,16 @@ model Property {
   locationId          String?
   city                String
   address             String
-  bedrooms            Int
-  bathrooms           Int
-  size                Float
+  bedrooms            Int?
+  bathrooms           Int?
+  size                Float?
   amenities           String?
   isFurnished         Boolean           @default(false)
   availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
   createdAt           DateTime          @default(now())
 
   // Relations
-  listing      Listing           @relation(fields: [listingId], references: [id])
+  listing      Listing ?          @relation(fields: [listingId], references: [id])
   manager      OrganizationUser? @relation(fields: [managerId], references: [id])
   organization Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType PropertyType?     @relation(fields: [propertyTypeId], references: [id])

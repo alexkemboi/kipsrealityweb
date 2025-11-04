@@ -6,7 +6,7 @@ type PropertyPayload = Property & {
 
 export const postProperty = async (propertyData: PropertyPayload) => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/property-manager`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

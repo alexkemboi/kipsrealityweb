@@ -7,7 +7,7 @@ import { PropertyType } from "@/app/data/PropertTypeData";
 import { Appliance } from "@/app/data/ApplianceData";
 import { fetchPropertyTypes } from "@/lib/property-type";
 import { fetchAppliances } from "@/lib/appliance";
-import { postProperty } from "@/lib/property-post";
+import { postProperty } from "@/lib/property-manager";
 import Footer from "@/components/website/Footer";
 import { HomeIcon } from "lucide-react";
 
@@ -40,7 +40,7 @@ export default function PropertyForm() {
       const payload: Property = {
         ...data,
         organizationId: "org-123",
-        listingId: "listing-123",
+        propertyTypeId: "d0364b0e-b5c9-11f0-bcda-fa163eb3a8b7", 
         applianceIds: Array.isArray(data.applianceIds)
           ? data.applianceIds
           : data.applianceIds
