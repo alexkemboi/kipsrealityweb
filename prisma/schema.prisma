@@ -425,8 +425,28 @@ model Property {
   location     Location?         @relation(fields: [locationId], references: [id])
   appliances   Appliance[]       @relation("PropertyAppliances")
   tenantapplications     Tenantapplication[]
+   apartmentComplexDetail ApartmentComplexDetail?
+  houseDetail            HouseDetail?
 
 }
+
+model ApartmentComplexDetail {
+  id                String  @id @default(uuid())
+  propertyId        String  @unique
+  buildingName      String?
+  totalFloors       Int?        
+  totalUnits        Int?        
+  property          Property @relation(fields: [propertyId], references: [id])
+}
+model HouseDetail {
+  id           String   @id @default(uuid())
+  propertyId   String   @unique
+  numberOfFloors Int?     // In case it’s a maisonette or duplex
+  property     Property @relation(fields: [propertyId], references: [id])
+}
+
+
+
 
 model Appliance {
   id          String     @id @default(uuid())

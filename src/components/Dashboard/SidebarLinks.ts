@@ -152,7 +152,7 @@ export const routeConfig = {
       { path: '/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
     properties: [
-      { path: '/dashboard/property-manager/properties/register', label: 'Register Property', icon: Building2 },
+      { path: '/property-manager/add-property', label: 'Register Property', icon: Building2 },
       { path: '/dashboard/property-manager/properties/register', label: 'View Property', icon: Building2 },
 
       { path: '/dashboard/property-manager/properties/manage', label: 'Manage Units & Leases', icon: Building2 },
