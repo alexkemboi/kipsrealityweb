@@ -3,7 +3,7 @@ import { Sparkles } from "lucide-react";
 interface HeroData {
   id: number;
   page: string;
-  title: string;
+  title: string; 
   subtitle?: string;
   description?: string;
   buttonText?: string;
