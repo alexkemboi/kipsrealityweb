@@ -2,19 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Property } from "@/app/data/PropertyData";
 import { PropertyType } from "@/app/data/PropertTypeData";
 import { Appliance } from "@/app/data/ApplianceData";
 import { fetchPropertyTypes } from "@/lib/property-type";
 import { fetchAppliances } from "@/lib/appliance";
 import { postProperty } from "@/lib/property-post";
 import Footer from "@/components/website/Footer";
-import { HomeIcon, Refrigerator, WashingMachine, Plug, Wind } from "lucide-react";
+import { HomeIcon } from "lucide-react";
 
 export default function PropertyForm() {
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, watch, reset } = useForm<Property>();
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const selectedPropertyType = watch("propertyTypeId");
 
   // Fetch property types & appliances
   useEffect(() => {
@@ -29,20 +32,41 @@ export default function PropertyForm() {
     getData();
   }, []);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: Property) => {
     setLoading(true);
+
     try {
-      const payload = {
+      // Construct the correct payload
+      const payload: Property = {
         ...data,
         organizationId: "org-123",
         listingId: "listing-123",
         applianceIds: Array.isArray(data.applianceIds)
           ? data.applianceIds
-          : [data.applianceIds],
+          : data.applianceIds
+          ? [data.applianceIds]
+          : [],
+
+        apartmentComplexDetail:
+          selectedPropertyType === "apartment"
+            ? {
+                buildingName: data.apartmentComplexDetail?.buildingName,
+                totalFloors: data.apartmentComplexDetail?.totalFloors,
+                totalUnits: data.apartmentComplexDetail?.totalUnits,
+              }
+            : undefined,
+
+        houseDetail:
+          selectedPropertyType === "house"
+            ? {
+                numberOfFloors: data.houseDetail?.numberOfFloors,
+              }
+            : undefined,
       };
 
       const newProperty = await postProperty(payload);
       console.log("Property created:", newProperty);
+
       reset();
       alert("Property created successfully!");
     } catch (error) {
@@ -55,15 +79,15 @@ export default function PropertyForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200">
-
       {/* Banner */}
       <section className="relative w-full bg-[#18181a] text-white py-28 text-center overflow-hidden mb-24">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-700/60 to-indigo-600/60 mix-blend-overlay"></div>
         <div className="relative z-10">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 text-white">
-Register Your Property          </h1>
+            Register Your Property
+          </h1>
           <p className="text-white/80 text-lg max-w-2xl mx-auto">
-            Add your property.
+            Add your property to the marketplace.
           </p>
         </div>
       </section>
@@ -86,67 +110,90 @@ Register Your Property          </h1>
               <input
                 {...register("city")}
                 placeholder="City"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
+                required
+                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full"
               />
               <input
                 {...register("address")}
                 placeholder="Address"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
+                required
+                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full"
               />
 
+              {/* Property Type */}
               <select
                 {...register("propertyTypeId")}
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full text-gray-700"
+                required
+                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-3 w-full text-gray-700"
               >
                 <option value="">Select Property Type</option>
                 {propertyTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
+                  <option key={type.id} value={type.name.toLowerCase()}>
                     {type.name}
                   </option>
                 ))}
               </select>
 
               <input
-                {...register("bedrooms")}
+                {...register("bedrooms", { valueAsNumber: true })}
                 type="number"
                 placeholder="Bedrooms"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
+                className="border border-gray-300 rounded-xl p-3 w-full"
               />
               <input
-                {...register("bathrooms")}
+                {...register("bathrooms", { valueAsNumber: true })}
                 type="number"
                 placeholder="Bathrooms"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
+                className="border border-gray-300 rounded-xl p-3 w-full"
               />
               <input
-                {...register("size")}
+                {...register("size", { valueAsNumber: true })}
                 type="number"
                 placeholder="Size (sqft)"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
+                className="border border-gray-300 rounded-xl p-3 w-full"
               />
-              <input
-                {...register("price")}
-                type="number"
-                placeholder="Price"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400"
-              />
+             
             </div>
 
-            {/* Amenities */}
-            <div>
-              <textarea
-                {...register("amenities")}
-                placeholder="Amenities (comma-separated)"
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full placeholder-gray-400 h-32"
-              />
-            </div>
+            {/* Conditional Apartment/House Fields */}
+            {selectedPropertyType === "apartment" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <input
+                  {...register("apartmentComplexDetail.buildingName")}
+                  placeholder="Building Name"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+                <input
+                  {...register("apartmentComplexDetail.totalFloors", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Total Floors"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+                <input
+                  {...register("apartmentComplexDetail.totalUnits", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Total Units"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+              </div>
+            )}
 
-            {/* Appliances Section */}
+            {selectedPropertyType === "house" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input
+                  {...register("houseDetail.numberOfFloors", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Number of Floors"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+              </div>
+            )}
+
+            {/* Appliances */}
             <div>
               <h3 className="text-2xl font-semibold text-gray-800 mb-4">
                 Select Appliances
               </h3>
-
               {appliances.length === 0 ? (
                 <p className="text-gray-500 text-sm">Loading appliances...</p>
               ) : (
@@ -185,7 +232,7 @@ Register Your Property          </h1>
             <button
               type="submit"
               disabled={loading}
-              className={`mt-8 w-full bg-linear-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all ${
+              className={`mt-8 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.01] transition-all ${
                 loading ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
