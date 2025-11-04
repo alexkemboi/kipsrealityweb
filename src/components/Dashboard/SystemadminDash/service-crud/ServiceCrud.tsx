@@ -16,7 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CategoryCard from "./CatergoryCard";
 import CategoryModal from "./CategoryModal";
 import ServiceModal from "./ServiceModal";
-import { Category, CategoryFormData, ServiceFormData, Service } from "./type";
+import { Category, CategoryFormData, ServiceFormData, Service } from "../../type";
 
 interface Props {
   initialCategories: Category[];

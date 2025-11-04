@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Service } from './type';
+import { Service } from '../../type';
 
 interface ServiceCardProps {
   service: Service;

@@ -32,3 +32,20 @@ export interface ServiceFormData {
   impact: string;
   icon: string;
 }
+
+export interface TenantApplication {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  dob: string;
+  propertyId: string;
+  property?: {
+    id: string;
+    name?: string;
+    city: string;
+  };
+  userId?: string;
+  status?: "Pending" | "Approved" | "Rejected";
+  createdAt: string;
+}

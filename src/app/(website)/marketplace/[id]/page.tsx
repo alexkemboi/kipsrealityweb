@@ -1,4 +1,4 @@
-
+// This is the listing details page for individual marketplace items
 import React from "react";
 import {MarketplaceItem, marketplaceListings}  from "@/app/data/marketplaceData";
 import Navbar from '@/components/website/Navbar';
