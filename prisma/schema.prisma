@@ -370,6 +370,7 @@ model Property {
   id                  String            @id @default(uuid())
   listingId           String            @unique
   managerId           String?
+  name                String
 organizationId String?
   propertyTypeId      String?
   locationId          String?
