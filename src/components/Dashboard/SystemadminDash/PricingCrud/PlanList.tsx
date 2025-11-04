@@ -1,4 +1,3 @@
-//src/components/Dashboard/SystemadminDash/PricingCrud/PlanList.tsx
 "use client";
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
