@@ -32,7 +32,7 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
   }
 
   return (
-    <div className="bg-neutral-900 border-b border-neutral-800">
+    <div className="bg-[#0a1628] border-b border-neutral-800">
       {/* Top row: title + menu */}
       <div className="flex items-center justify-between px-4 md:px-6 py-3">
         <div className="flex items-center gap-4">

@@ -9,15 +9,22 @@ export default function PlansList() {
   const [editingPlan, setEditingPlan] = useState<any | null>(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
 
-  const fetchPlans = async () => {
-    try {
-      const res = await fetch("/api/plan");
-      const data = await res.json();
-      setPlans(data);
-    } catch {
-      toast.error("Failed to fetch plans");
-    }
-  };
+ const fetchPlans = async () => {
+  try {
+    const res = await fetch("/api/plan");
+    const data = await res.json();
+    
+    const plansWithFeatures = data.map((plan: any) => ({
+      ...plan,
+      features: plan.features || [],
+    }));
+
+    setPlans(plansWithFeatures);
+  } catch {
+    toast.error("Failed to fetch plans");
+  }
+};
+
 
   const deletePlan = async (id: number) => {
     if (!confirm("Are you sure you want to delete this plan?")) return;

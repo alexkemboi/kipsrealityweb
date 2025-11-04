@@ -98,6 +98,13 @@ export const routeConfig = {
         badge: null,
         description: 'Manage navigation links for the website'
       },
+      {
+        path: '/admin/content/SidebarItem-Crud',
+        label: 'sidebar menus',
+        icon: MessageSquare,
+        badge: null,
+        description: 'manage sidebar menu items for dashboard'
+      },
     ],
     blog: [
       {
@@ -146,6 +153,8 @@ export const routeConfig = {
     ],
     properties: [
       { path: '/dashboard/property-manager/properties/register', label: 'Register Property', icon: Building2 },
+      { path: '/dashboard/property-manager/properties/register', label: 'View Property', icon: Building2 },
+
       { path: '/dashboard/property-manager/properties/manage', label: 'Manage Units & Leases', icon: Building2 },
       { path: '/dashboard/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
     ],
