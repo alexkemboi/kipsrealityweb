@@ -10,6 +10,7 @@ import { fetchAppliances } from "@/lib/appliance";
 import { postProperty } from "@/lib/property-manager";
 import Footer from "@/components/website/Footer";
 import { HomeIcon } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function PropertyForm() {
   const { register, handleSubmit, watch, reset } = useForm<Property>();
@@ -40,7 +41,7 @@ export default function PropertyForm() {
       const payload: Property = {
         ...data,
         organizationId: "org-123",
-        propertyTypeId: "d0364b0e-b5c9-11f0-bcda-fa163eb3a8b7", 
+        propertyTypeId: "d0364b0e-b5c9-11f0-bcda-fa163eb3a8b7",
         applianceIds: Array.isArray(data.applianceIds)
           ? data.applianceIds
           : data.applianceIds
@@ -68,10 +69,10 @@ export default function PropertyForm() {
       console.log("Property created:", newProperty);
 
       reset();
-      alert("Property created successfully!");
+      toast.success("✅ Property created successfully!");
     } catch (error) {
       console.error("Error creating property:", error);
-      alert("Failed to create property.");
+      toast.error("❌ Failed to create property.");
     } finally {
       setLoading(false);
     }
@@ -79,6 +80,8 @@ export default function PropertyForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200">
+      <Toaster position="top-center" reverseOrder={false} />
+
       {/* Banner */}
       <section className="relative w-full bg-[#18181a] text-white py-28 text-center overflow-hidden mb-24">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-700/60 to-indigo-600/60 mix-blend-overlay"></div>
@@ -133,29 +136,33 @@ export default function PropertyForm() {
                   </option>
                 ))}
               </select>
-
-              <input
-                {...register("bedrooms", { valueAsNumber: true })}
-                type="number"
-                placeholder="Bedrooms"
-                className="border border-gray-300 rounded-xl p-3 w-full"
-              />
-              <input
-                {...register("bathrooms", { valueAsNumber: true })}
-                type="number"
-                placeholder="Bathrooms"
-                className="border border-gray-300 rounded-xl p-3 w-full"
-              />
-              <input
-                {...register("size", { valueAsNumber: true })}
-                type="number"
-                placeholder="Size (sqft)"
-                className="border border-gray-300 rounded-xl p-3 w-full"
-              />
-             
             </div>
 
-            {/* Conditional Apartment/House Fields */}
+            {/* Show bedrooms/bathrooms/size only for HOUSE */}
+            {selectedPropertyType === "house" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <input
+                  {...register("bedrooms", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Bedrooms"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+                <input
+                  {...register("bathrooms", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Bathrooms"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+                <input
+                  {...register("size", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Size (sqft)"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+              </div>
+            )}
+
+            {/* Conditional Apartment Fields */}
             {selectedPropertyType === "apartment" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input
@@ -173,17 +180,6 @@ export default function PropertyForm() {
                   {...register("apartmentComplexDetail.totalUnits", { valueAsNumber: true })}
                   type="number"
                   placeholder="Total Units"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-              </div>
-            )}
-
-            {selectedPropertyType === "house" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input
-                  {...register("houseDetail.numberOfFloors", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Number of Floors"
                   className="border border-gray-300 rounded-xl p-3 w-full"
                 />
               </div>
