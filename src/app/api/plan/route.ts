@@ -4,10 +4,13 @@ import { prisma } from "@/lib/db";
 export async function GET() {
   try {
     const plans = await prisma.plan.findMany({
-      include: { features: true }, // include features for each plan
+      include: {
+        features: true, // many-to-many relation
+      },
     });
     return NextResponse.json(plans);
   } catch (error) {
+    console.error("GET /api/plan error:", error);
     return NextResponse.json({ error: "Failed to fetch plans" }, { status: 500 });
   }
 }
@@ -15,8 +18,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
-    // Destructure and cast numeric values
     const {
       name,
       badge,
@@ -24,14 +25,9 @@ export async function POST(req: Request) {
       yearlyPrice,
       description,
       gradient,
-      features = [], // optional array of features
+      featureIds = [], // existing features to connect
+      newFeatures = [], // brand new ones to create
     } = body;
-
-    // Prepare features for nested creation
-    const featuresData = features.map((f: { title: string; description: string }) => ({
-      title: f.title,
-      description: f.description,
-    }));
 
     const plan = await prisma.plan.create({
       data: {
@@ -42,12 +38,14 @@ export async function POST(req: Request) {
         description,
         gradient,
         features: {
-          create: featuresData, // nested creation
+          connect: featureIds.map((id: number) => ({ id })), // connect existing
+          create: newFeatures.map((f: { title: string; description?: string }) => ({
+            title: f.title,
+            description: f.description,
+          })), // create new
         },
       },
-      include: {
-        features: true, // return features in the response
-      },
+      include: { features: true },
     });
 
     return NextResponse.json(plan);

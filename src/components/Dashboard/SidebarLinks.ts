@@ -98,6 +98,13 @@ export const routeConfig = {
         badge: null,
         description: 'Manage navigation links for the website'
       },
+      {
+        path: '/admin/content/SidebarItem-Crud',
+        label: 'sidebar menus',
+        icon: MessageSquare,
+        badge: null,
+        description: 'manage sidebar menu items for dashboard'
+      },
     ],
     blog: [
       {
@@ -145,6 +152,7 @@ export const routeConfig = {
       { path: '/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
     properties: [
+<<<<<<< HEAD
       { path: '/property-manager/properties/register', label: 'Register Property', icon: Building2 },
       { path: '/property-manager/properties/manage', label: 'Manage Units & Leases', icon: Building2 },
       { path: '/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
@@ -153,6 +161,19 @@ export const routeConfig = {
       { path: '/property-manager/content/invites', label: 'Invites', icon: Users },
       { path: '/property-manager/tenants/moves', label: 'Move-ins / Move-outs', icon: Users },
       { path: '/property-manager/tenants/communication', label: 'Communication', icon: Users },
+=======
+      { path: '/property-manager/add-property', label: 'Register Property', icon: Building2 },
+      { path: '/dashboard/property-manager/properties/register', label: 'View Property', icon: Building2 },
+
+      { path: '/dashboard/property-manager/properties/manage', label: 'Manage Units & Leases', icon: Building2 },
+      { path: '/dashboard/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
+    ],
+    tenants : [
+      { path: '/property-manager/content/invites', label: 'Invites', icon: Users },
+       { path: '/property-manager/content/tenantapplication', label: 'Applications', icon: Users },
+      { path: '/dashboard/property-manager/tenants/moves', label: 'Move-ins / Move-outs', icon: Users },
+      { path: '/dashboard/property-manager/tenants/communication', label: 'Communication', icon: Users },
+>>>>>>> 7109435b35318c9c45425541478c644f12202b94
     ],
     maintenance: [
       { path: '/property-manager/maintenance/requests', label: 'Requests', icon: Wrench },

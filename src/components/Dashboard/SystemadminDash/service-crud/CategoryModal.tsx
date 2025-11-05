@@ -11,7 +11,7 @@ import {
   Stack,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { CategoryFormData } from './type';
+import { CategoryFormData } from '../../type';
 
 interface CategoryModalProps {
   isOpen: boolean;

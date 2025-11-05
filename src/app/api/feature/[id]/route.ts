@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 // Allow async params handling
 interface RouteContext {
-  params: Promise<{ id: string }> | { id: string };
+  params: { id: string };
 }
 
 // GET /api/feature/[id]
@@ -18,7 +18,7 @@ export async function GET(req: Request, context: RouteContext) {
   try {
     const feature = await prisma.feature.findUnique({
       where: { id: featureId },
-      include: { plan: true },
+      include: { plans: true }, 
     });
 
     if (!feature) {
@@ -32,9 +32,8 @@ export async function GET(req: Request, context: RouteContext) {
   }
 }
 
-// PUT /api/feature/[id]
 export async function PUT(req: Request, context: RouteContext) {
-  const { id } = await context.params;
+  const { id } = context.params;
   const featureId = Number(id);
 
   if (isNaN(featureId)) {
@@ -43,14 +42,23 @@ export async function PUT(req: Request, context: RouteContext) {
 
   try {
     const data = await req.json();
+    const { title, description, planId } = data; // single planId from frontend
+
     const feature = await prisma.feature.update({
       where: { id: featureId },
-      data,
+      data: {
+        title,
+        description,
+        plans: planId
+          ? { set: [{ id: Number(planId) }] } 
+          : undefined, 
+      },
+      include: { plans: true },
     });
 
     return NextResponse.json(feature);
   } catch (error) {
-    console.error(error);
+    console.error("PUT /api/feature/[id] error:", error);
     return NextResponse.json({ error: "Failed to update feature" }, { status: 500 });
   }
 }

@@ -5,7 +5,16 @@ import FeatureForm from "./FeatureForm";
 import FeatureItem from "./FeatureItem";
 import toast from "react-hot-toast";
 
-interface Feature { id: number; title: string; description: string; }
+interface Feature {
+  id: number;
+  title: string;
+  description?: string;
+  key?: string;
+  category?: string;
+  path?: string;
+  icon?: string;
+  isActive?: boolean;
+}
 
 interface Plan {
   id: number;
@@ -43,6 +52,7 @@ export default function PlanItem({ plan, onEdit, onDelete, refreshPlans }: Props
 
   return (
     <li className="bg-white shadow-md rounded-xl p-6 mb-4 border border-gray-200 hover:shadow-lg transition duration-200">
+      {/* Plan Header */}
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-xl font-semibold">{plan.name}</h3>
         {plan.badge && (
@@ -52,6 +62,7 @@ export default function PlanItem({ plan, onEdit, onDelete, refreshPlans }: Props
         )}
       </div>
 
+      {/* Description & Pricing */}
       {plan.description && <p className="text-gray-600 mb-2">{plan.description}</p>}
       <p className="font-bold mb-2">${plan.monthlyPrice}/month • ${plan.yearlyPrice}/year</p>
 
@@ -60,18 +71,17 @@ export default function PlanItem({ plan, onEdit, onDelete, refreshPlans }: Props
         <h4 className="font-semibold mb-2">Features</h4>
         {plan.features.length > 0 ? (
           <ul>
-            {plan.features.map((f) => (
-            <FeatureItem
-                key={f.id}
-                feature={f}
-                onEdit={(feature) => {
-                setEditingFeature(feature);  // set feature to edit
-                setShowFeatureForm(true);    // OPEN the modal
+            {plan.features.map((feature) => (
+              <FeatureItem
+                key={feature.id}
+                feature={feature}
+                onEdit={(f) => {
+                  setEditingFeature(f);  
+                  setShowFeatureForm(true);
                 }}
                 onDelete={deleteFeature}
-            />
+              />
             ))}
-
           </ul>
         ) : (
           <p className="text-gray-500 text-sm mb-2">No features yet.</p>
@@ -81,8 +91,8 @@ export default function PlanItem({ plan, onEdit, onDelete, refreshPlans }: Props
         <button
           className="mt-2 text-blue-500 hover:underline"
           onClick={() => {
-            setEditingFeature(null);  // reset for creating
-            setShowFeatureForm(true);  // open modal
+            setEditingFeature(null);  
+            setShowFeatureForm(true);
           }}
         >
           Add Feature
@@ -100,7 +110,7 @@ export default function PlanItem({ plan, onEdit, onDelete, refreshPlans }: Props
               </button>
               <FeatureForm
                 feature={editingFeature}
-                planId={plan.id}
+                planId={plan.id} // Pass the current plan ID
                 onSaved={() => {
                   setShowFeatureForm(false);
                   refreshPlans();

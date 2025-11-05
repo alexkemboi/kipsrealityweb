@@ -25,7 +25,8 @@ export default function DashboardLayout({
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
-  const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } = useDashboard();
+  const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } =
+    useDashboard();
 
   if (isLoading || !user) {
     return (
@@ -45,7 +46,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     VENDOR: "/dashboard/vendor",
   } as const;
 
-  const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+  const currentPath =
+    typeof window !== "undefined" ? window.location.pathname : "";
   const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
 
   if (expectedPath && !currentPath.startsWith(expectedPath)) {
@@ -54,27 +56,31 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <DashboardSidebar
-        user={user}
-        isCollapsed={isSidebarCollapsed}
-        toggleSidebar={toggleSidebar}
-      />
+      {/* Sidebar with dark background */}
+      <div className="bg-[ #0c1b33] text-white">
+        <DashboardSidebar
+          user={user}
+          isCollapsed={isSidebarCollapsed}
+          toggleSidebar={toggleSidebar}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <header className="flex-shrink-0 z-10 bg-white border-b">
+        {/* Navbar with dark background */}
+        <header className="flex-shrink-0 z-10 bg-[ #0c1b33] border-b border-[#0f172a] text-white">
           <DashboardNavbar
             user={user}
             onMenuClick={() => setMobileDrawerOpen(true)}
           />
         </header>
 
+        {/* Main area - fills the whole content, no margins */}
         <motion.main
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="flex-1 overflow-y-auto p-6 bg-gray-50"
+          className="flex-1 overflow-y-auto bg-gray-50 m-0 p-0"
         >
           {children}
         </motion.main>

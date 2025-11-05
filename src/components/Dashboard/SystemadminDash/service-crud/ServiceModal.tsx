@@ -12,7 +12,7 @@ import {
   IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { ServiceFormData, Category } from './type';
+import { ServiceFormData, Category } from '../../type';
 
 interface ServiceModalProps {
   isOpen: boolean;
