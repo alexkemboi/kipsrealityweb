@@ -425,7 +425,7 @@ model Property {
   location     Location?         @relation(fields: [locationId], references: [id])
   appliances   Appliance[]       @relation("PropertyAppliances")
   tenantapplications     Tenantapplication[]
-   apartmentComplexDetail ApartmentComplexDetail?
+  apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
 
 }
