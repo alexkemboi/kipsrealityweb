@@ -32,7 +32,7 @@ export const getProperties = async (): Promise<PropertyPayload[]> => {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
       method: "GET",
-      cache: "no-store", // ensures fresh data on each request
+      cache: "no-store", 
     });
 
     if (!response.ok) {
@@ -45,6 +45,25 @@ export const getProperties = async (): Promise<PropertyPayload[]> => {
     return properties;
   } catch (error) {
     console.error("Error fetching properties:", error);
+    throw error;
+  }
+};
+
+
+export const getPropertyById = async (id: string) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch property");
+    }
+
+    const property = await response.json();
+    return property;
+  } catch (error) {
+    console.error("Error fetching property:", error);
     throw error;
   }
 };

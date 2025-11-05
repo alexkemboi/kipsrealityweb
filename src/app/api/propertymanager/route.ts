@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Fetch all properties with details
+// Fetching all properties with details
 export async function GET() {
   try {
     const properties = await prisma.property.findMany({
@@ -96,7 +96,7 @@ export async function GET() {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
-        units: true, // Include this if you’ve already created the Unit model
+        units: true, 
       },
       orderBy: {
         createdAt: "desc",
@@ -127,3 +127,4 @@ export async function GET() {
     );
   }
 }
+
