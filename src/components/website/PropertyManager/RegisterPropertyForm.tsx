@@ -69,10 +69,10 @@ export default function PropertyForm() {
       console.log("Property created:", newProperty);
 
       reset();
-      toast.success("✅ Property created successfully!");
+      toast.success(" Property created successfully!");
     } catch (error) {
       console.error("Error creating property:", error);
-      toast.error("❌ Failed to create property.");
+      toast.error(" Failed to create property.");
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,6 @@ export default function PropertyForm() {
               </select>
             </div>
 
-            {/* Show bedrooms/bathrooms/size only for HOUSE */}
             {selectedPropertyType === "house" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input
@@ -161,8 +160,6 @@ export default function PropertyForm() {
                 />
               </div>
             )}
-
-            {/* Conditional Apartment Fields */}
             {selectedPropertyType === "apartment" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input
