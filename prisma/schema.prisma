@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -5,6 +8,126 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+model MaintenanceRequest {
+  id             String        @id @default(uuid())
+  organizationId String
+  propertyId     String
+  requestedById  String        // The user who created the request (tenant or property manager)
+  title          String
+  description    String
+  priority       Priority      @default(NORMAL)
+  status         RequestStatus @default(OPEN)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+  property       Property         @relation(fields: [propertyId], references: [id])
+  requestedBy    OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([requestedById])
+}
+
+model Tenantapplication {
+  id                 String             @id @default(uuid())
+  fullName           String
+  email              String
+  phone              String
+  dob                DateTime
+  ssn                String?
+  address            String?
+  employerName       String?
+  jobTitle           String?
+  monthlyIncome      Float?
+  employmentDuration String?
+  leaseType          String
+  occupancyType      String
+  moveInDate         DateTime
+  leaseDuration      String
+  occupants          Int?
+  pets               String?
+  landlordName       String?
+  landlordContact    String?
+  reasonForMoving    String?
+  referenceName      String?
+  referenceContact   String?
+  consent            Boolean            @default(false)
+  propertyId         String
+  userId             String?
+  status             ApplicationStatus  @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  // Relations
+  property           Property           @relation(fields: [propertyId], references: [id])
+  user              User?              @relation(fields: [userId], references: [id])
+}
+
+model Organization {
+  id         String   @id @default(uuid())
+  name       String
+  slug       String   @unique
+  logoUrl    String?  @map("logo_url")
+  website    String?
+  phone      String?
+  address    String?
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  planId     Int?
+
+  // Relations
+  invites             Invite[]
+  users               OrganizationUser[]
+  listings            Listing[]
+  vendors             Vendor[]
+  properties          Property[]           @relation("OrganizationToProperty")
+  maintenanceRequests MaintenanceRequest[]
+  plan                Plan?                @relation(fields: [planId], references: [id])
+
+  @@index([planId], map: "organizations_planId_fkey")
+  @@map("organizations")
 }
 
 model User {
@@ -21,52 +144,14 @@ model User {
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
-  //  Relations
+  // Relations
   organizationUsers OrganizationUser[]
-  vendors           Vendor[]
-  sentInvites       Invite[]           @relation("UserInvites")
-  listings          Listing[]
-  tenantApplications  Tenantapplication[]
-
+  vendors          Vendor[]
+  sentInvites      Invite[]           @relation("UserInvites")
+  listings         Listing[]
+  tenantApplications Tenantapplication[]
 
   @@map("users")
-}
-
-model Organization {
-  id         String   @id @default(uuid())
-  name       String
-  slug       String   @unique
-  logoUrl    String?  @map("logo_url")
-  website    String?
-  phone      String?
-  address    String?
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  planId     Int?
-
-<<<<<<< HEAD
-  // Relations
-  invites     Invite[]
-  users       OrganizationUser[]
-  listings    Listing[]
-  vendors     Vendor[]
-  properties  Property[]         @relation("OrganizationToProperty")
-  maintenanceRequests MaintenanceRequest[]
-  plan        Plan?             @relation(fields: [planId], references: [id])
-=======
-  // Relations
-  invites    Invite[]
-  users      OrganizationUser[]
-  listings   Listing[]
-  vendors    Vendor[]
-  properties Property[]         @relation("OrganizationToProperty")
-
-  planId Int?
-  plan   Plan? @relation(fields: [planId], references: [id])
->>>>>>> 7109435b35318c9c45425541478c644f12202b94
-
-  @@map("organizations")
 }
 
 model OrganizationUser {
@@ -79,18 +164,49 @@ model OrganizationUser {
   user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
-<<<<<<< HEAD
-  adminActions      AdminAction[]      @relation("AdminActionsByAdmin")
-  targetActions     AdminAction[]      @relation("AdminActionsTarget")
-  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
-=======
   adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]        @relation("AdminActionsTarget")
->>>>>>> 7109435b35318c9c45425541478c644f12202b94
+  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
   @@map("organization_users")
+}
+
+model Property {
+  id                  String   @id @default(uuid())
+  listingId           String?  @unique
+  managerId           String?
+  name                String?
+  organizationId      String?
+  propertyTypeId      String?
+  locationId          String?
+  city                String
+  address             String
+  bedrooms            Int?
+  bathrooms           Int?
+  size                Float?
+  amenities           String?
+  isFurnished         Boolean  @default(false)
+  availabilityStatus  String?
+  createdAt           DateTime @default(now())
+
+  // Relations
+  listing             Listing?          @relation(fields: [listingId], references: [id])
+  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
+  organization        Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
+  location            Location?         @relation(fields: [locationId], references: [id])
+  appliances          Appliance[]       @relation("PropertyAppliances")
+  maintenanceRequests MaintenanceRequest[]
+  tenantApplications  Tenantapplication[]
+  apartmentComplexDetail ApartmentComplexDetail?
+  houseDetail         HouseDetail?
+
+  @@index([locationId])
+  @@index([managerId])
+  @@index([organizationId])
+  @@index([propertyTypeId])
 }
 
 model Vendor {
@@ -112,228 +228,9 @@ model Vendor {
   @@map("vendors")
 }
 
-model Category {
-  id       Int       @id @default(autoincrement())
-  name     String
-  tagline  String
-  color    String
-  services Service[]
-
-  @@map("categories")
-}
-
-model Service {
-  id          Int      @id @default(autoincrement())
-  category_id Int
-  name        String
-  description String
-  features    Json
-  impact      String
-  icon        String
-  category    Category @relation(fields: [category_id], references: [id])
-
-  @@index([category_id], map: "services_category_id_fkey")
-  @@map("services")
-}
-
-model AboutUs {
-  id          Int      @id @default(autoincrement())
-  section     String
-  description String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-}
-
-model Testimonial {
-  id        Int      @id @default(autoincrement())
-  name      String
-  role      String
-  image     String
-  text      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
-
-model Job {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String
-  image       String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  Application Application[]
-}
-
-model Applicant {
-  id          Int           @id @default(autoincrement())
-  firstName   String
-  lastName    String
-  email       String        @unique
-  resume      String?
-  createdAt   DateTime      @default(now())
-  Application Application[]
-}
-
-model Application {
-  id          Int       @id @default(autoincrement())
-  jobId       Int
-  applicantId Int
-  status      String    @default("Pending")
-  appliedAt   DateTime  @default(now())
-  Applicant   Applicant @relation(fields: [applicantId], references: [id])
-  Job         Job       @relation(fields: [jobId], references: [id])
-
-  @@index([applicantId], map: "Application_applicantId_fkey")
-  @@index([jobId], map: "Application_jobId_fkey")
-}
-
-model ContactMessage {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String
-  countryCode String
-  phone       String
-  message     String
-  createdAt   DateTime @default(now())
-}
-
-model Policy {
-  id                       Int       @id @default(autoincrement())
-  title                    String
-  companyName              String
-  contactEmail             String
-  privacyEmail             String
-  website                  String?
-  mailingAddress           String?
-  responseTime             String?
-  inactiveAccountThreshold String?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
-  Section                  Section[]
-}
-
-model Section {
-  id        Int      @id @default(autoincrement())
-  key       String
-  title     String
-  intro     String?
-  content   Json?
-  order     Int?
-  policyId  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  Policy    Policy   @relation(fields: [policyId], references: [id])
-
-  @@index([policyId], map: "Section_policyId_fkey")
-}
-
-model Plan {
-  id           Int       @id @default(autoincrement())
-  name         String
-  badge        String?
-  monthlyPrice Float
-  yearlyPrice  Float
-  description  String?
-  gradient     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime? @default(now()) // temporarily optional
-
-  features      Feature[]      @relation("PlanFeatures")
-  sidebarItems  SidebarItem[]  @relation("SidebarItemPlans")
-  organizations Organization[]
-}
-
-model Feature {
-  id          Int       @id @default(autoincrement())
-  key         String?   @unique // temporarily optional
-  title       String
-  description String?
-  path        String?
-  icon        String?
-  category    String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime? @default(now()) // temporarily optional
-
-  plans        Plan[]        @relation("PlanFeatures")
-  sidebarItems SidebarItem[]
-}
-
-model SidebarItem {
-  id          Int     @id @default(autoincrement())
-  label       String
-  path        String
-  icon        String? // icon name saved as string (e.g. "BarChart3")
-  section     String? // grouping like "content", "analytics"
-  order       Int? // ordering within the section
-  badge       String? // optional small badge (e.g. "4" or "new")
-  description String? // admin-only description
-  isActive    Boolean @default(true)
-  isExternal  Boolean @default(false) // if true, opens in new tab
-  target      String? // link target, e.g. "_blank"
-
-  // optional relation to a Feature (to show item only if a feature is active)
-  featureId Int?
-  feature   Feature? @relation(fields: [featureId], references: [id], onDelete: SetNull)
-
-  // many-to-many with Plan
-  plans Plan[] @relation("SidebarItemPlans")
-  role      UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-enum UserRole {
-  SYSTEM_ADMIN
-  PROPERTY_MANAGER
-  TENANT
-  VENDOR
-  ALL
-
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-model CTA {
-  id         Int      @id @default(autoincrement())
-  page       String
-  title      String
-  subtitle   String
-  buttonText String
-  buttonUrl  String
-  gradient   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
-model HeroSection {
-  id          Int      @id @default(autoincrement())
-  page        String // which page this hero belongs to, e.g., "home", "blog"
-  title       String?
-  subtitle    String?
-  description String?
-  buttonText  String?
-  buttonUrl   String?
-  imageUrl    String? // hero image
-  iconUrl     String? // optional icon
-  searchBar   Boolean  @default(false) // whether to show search bar
-  gradient    String? // background gradient
-  layout      String? // optional layout type
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// ---------------------------------------
-// MARKETPLACE LISTINGS
-// ---------------------------------------
-
 model CategoryMarketplace {
   id          String    @id @default(uuid())
-  name        String    @unique // e.g., Property, Service, Appliance
+  name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
   listings    Listing[]
@@ -341,7 +238,7 @@ model CategoryMarketplace {
 
 model ListingType {
   id          String    @id @default(uuid())
-  name        String    @unique // e.g., For Sale, For Rent, For Hire
+  name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
   listings    Listing[]
@@ -349,7 +246,7 @@ model ListingType {
 
 model ListingStatus {
   id          String    @id @default(uuid())
-  name        String    @unique // e.g., Pending, Approved, Active, Rejected, Deleted
+  name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
   listings    Listing[]
@@ -357,7 +254,7 @@ model ListingStatus {
 
 model PropertyType {
   id          String     @id @default(uuid())
-  name        String     @unique // e.g., Apartment, House, Land, Commercial
+  name        String     @unique
   description String?
   createdAt   DateTime   @default(now())
   properties  Property[]
@@ -365,23 +262,15 @@ model PropertyType {
 
 model ServiceType {
   id                 String               @id @default(uuid())
-  name               String               @unique // e.g., Plumbing, Cleaning, Electrical
+  name               String               @unique
   description        String?
   createdAt          DateTime             @default(now())
   serviceMarketplace ServiceMarketplace[]
 }
 
-model ActionType {
-  id           String        @id @default(uuid())
-  name         String        @unique // e.g., APPROVE_USER, DELETE_LISTING, FEATURE_LISTING
-  description  String?
-  createdAt    DateTime      @default(now())
-  adminActions AdminAction[]
-}
-
 model Location {
   id         String     @id @default(uuid())
-  name       String // e.g., Nairobi, Mombasa
+  name       String
   city       String?
   country    String?
   createdAt  DateTime   @default(now())
@@ -405,87 +294,15 @@ model Listing {
 
   // Relations
   organization        Organization        @relation(fields: [organizationId], references: [id])
-  createdByUser       User                @relation(fields: [createdBy], references: [id])
+  createdByUser       User               @relation(fields: [createdBy], references: [id])
   categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
-  listingType         ListingType?        @relation(fields: [listingTypeId], references: [id])
-  status              ListingStatus?      @relation(fields: [statusId], references: [id])
-  location            Location?           @relation(fields: [locationId], references: [id])
-
-  property           Property?
-  serviceMarketplace ServiceMarketplace?
-  images             ListingImage[]
-  adminActions       AdminAction[]
-}
-
-model Property {
-  id                  String            @id @default(uuid())
-  listingId           String?            @unique
-  managerId           String?
-<<<<<<< HEAD
-  organizationId      String?
-=======
-  name                String?
-  organizationId String?
->>>>>>> 7109435b35318c9c45425541478c644f12202b94
-  propertyTypeId      String?
-  locationId          String?
-  city                String
-  address             String
-  bedrooms            Int?
-  bathrooms           Int?
-  size                Float?
-  amenities           String?
-  isFurnished         Boolean           @default(false)
-  availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
-  createdAt           DateTime          @default(now())
-
-  // Relations
-<<<<<<< HEAD
-  listing             Listing           @relation(fields: [listingId], references: [id])
-  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
-  organization       Organization? @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  maintenanceRequests MaintenanceRequest[]
-  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
-  location            Location?         @relation(fields: [locationId], references: [id])
-    appliances          Appliance[]       @relation("PropertyAppliances")
-=======
-  listing      Listing ?          @relation(fields: [listingId], references: [id])
-  manager      OrganizationUser? @relation(fields: [managerId], references: [id])
-  organization Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType PropertyType?     @relation(fields: [propertyTypeId], references: [id])
-  location     Location?         @relation(fields: [locationId], references: [id])
-  appliances   Appliance[]       @relation("PropertyAppliances")
-  tenantapplications     Tenantapplication[]
-   apartmentComplexDetail ApartmentComplexDetail?
-  houseDetail            HouseDetail?
->>>>>>> 7109435b35318c9c45425541478c644f12202b94
-
-}
-
-model ApartmentComplexDetail {
-  id                String  @id @default(uuid())
-  propertyId        String  @unique
-  buildingName      String?
-  totalFloors       Int?        
-  totalUnits        Int?        
-  property          Property @relation(fields: [propertyId], references: [id])
-}
-model HouseDetail {
-  id           String   @id @default(uuid())
-  propertyId   String   @unique
-  numberOfFloors Int?     // In case it’s a maisonette or duplex
-  property     Property @relation(fields: [propertyId], references: [id])
-}
-
-
-
-
-model Appliance {
-  id          String     @id @default(uuid())
-  name        String
-  description String?
-  createdAt   DateTime   @default(now())
-  properties  Property[] @relation("PropertyAppliances")
+  listingType         ListingType?       @relation(fields: [listingTypeId], references: [id])
+  status              ListingStatus?     @relation(fields: [statusId], references: [id])
+  location            Location?          @relation(fields: [locationId], references: [id])
+  property            Property?
+  serviceMarketplace  ServiceMarketplace?
+  images              ListingImage[]
+  adminActions        AdminAction[]
 }
 
 model ServiceMarketplace {
@@ -503,10 +320,6 @@ model ServiceMarketplace {
   serviceType ServiceType?      @relation(fields: [serviceTypeId], references: [id])
 }
 
-// ---------------------------------------
-// SUPPORTING TABLES
-// ---------------------------------------
-
 model ListingImage {
   id        String   @id @default(uuid())
   listingId String
@@ -515,6 +328,14 @@ model ListingImage {
   createdAt DateTime @default(now())
 
   listing Listing @relation(fields: [listingId], references: [id])
+}
+
+model ActionType {
+  id           String        @id @default(uuid())
+  name         String        @unique
+  description  String?
+  createdAt    DateTime      @default(now())
+  adminActions AdminAction[]
 }
 
 model AdminAction {
@@ -533,23 +354,87 @@ model AdminAction {
   actionType ActionType        @relation(fields: [actionTypeId], references: [id])
 }
 
+model Plan {
+  id           Int           @id @default(autoincrement())
+  name         String
+  badge        String?
+  monthlyPrice Float
+  yearlyPrice  Float
+  description  String?
+  gradient     String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime?     @default(now())
+  features     Feature[]     @relation("PlanFeatures")
+  sidebarItems SidebarItem[] @relation("SidebarItemPlans")
+  organizations Organization[]
+}
+
+model Feature {
+  id          Int           @id @default(autoincrement())
+  key         String?       @unique
+  title       String
+  description String?
+  path        String?
+  icon        String?
+  category    String?
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime?     @default(now())
+  plans       Plan[]        @relation("PlanFeatures")
+  sidebarItems SidebarItem[]
+}
+
+model SidebarItem {
+  id          Int          @id @default(autoincrement())
+  label       String
+  path        String
+  icon        String?
+  section     String?
+  order       Int?
+  badge       String?
+  description String?
+  isActive    Boolean      @default(true)
+  isExternal  Boolean      @default(false)
+  target      String?
+  featureId   Int?
+  feature     Feature?     @relation(fields: [featureId], references: [id], onDelete: SetNull)
+  plans       Plan[]       @relation("SidebarItemPlans")
+  role        UserRole
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
 model NavbarItem {
-  id          Int      @id @default(autoincrement())
+  id          Int          @id @default(autoincrement())
   name        String
   href        String
-  order       Int      @default(0)
-  isVisible   Boolean  @default(true)
-  isAvailable Boolean  @default(true)
-  parentId    Int? // New: nullable parent reference
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  parent   NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
-  children NavbarItem[] @relation("NavbarSubmenu")
+  order       Int          @default(0)
+  isVisible   Boolean      @default(true)
+  isAvailable Boolean      @default(true)
+  parentId    Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  parent      NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
+  children    NavbarItem[] @relation("NavbarSubmenu")
 
   @@index([parentId])
   @@index([order])
+}
+
+model ApartmentComplexDetail {
+  id           String    @id @default(uuid())
+  propertyId   String    @unique
+  buildingName String?
+  totalFloors  Int?
+  totalUnits   Int?
+  property     Property  @relation(fields: [propertyId], references: [id])
+}
+
+model HouseDetail {
+  id             String   @id @default(uuid())
+  propertyId     String   @unique
+  numberOfFloors Int?
+  property       Property @relation(fields: [propertyId], references: [id])
 }
 
 model Invite {
@@ -558,115 +443,22 @@ model Invite {
   token          String       @unique
   role           UserRole
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id])
   invitedById    String?
-  invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
   expiresAt      DateTime
   accepted       Boolean      @default(false)
   createdAt      DateTime     @default(now())
 
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  invitedBy      User?       @relation("UserInvites", fields: [invitedById], references: [id])
+
   @@index([organizationId])
   @@index([email])
 }
-<<<<<<< HEAD
 
-
-enum Priority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
+model Appliance {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  properties  Property[] @relation("PropertyAppliances")
 }
-
-enum RequestStatus {
-  OPEN
-  IN_PROGRESS
-  ON_HOLD
-  COMPLETED
-  CANCELLED
-}
-
-model MaintenanceRequest {
-  id              String    @id @default(uuid())
-  organizationId  String
-  propertyId      String
-  requestedById   String    // The user who created the request (tenant or property manager)
-  title           String
-  description     String
-  priority        Priority  @default(NORMAL)
-  status          RequestStatus @default(OPEN)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Relations
-  organization    Organization     @relation(fields: [organizationId], references: [id])
-  property        Property         @relation(fields: [propertyId], references: [id])
-  requestedBy     OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
-
-  @@index([organizationId])
-  @@index([propertyId])
-  @@index([requestedById])
-}
-=======
-//-----------------------
-// tenant application 
-//------------------------
-
-model Tenantapplication {
-  id                 String             @id @default(uuid())
-
-  // Applicant Information
-  fullName           String
-  email              String
-  phone              String
-  dob                DateTime
-  ssn                String?
-  address            String?
-  employerName       String?
-  jobTitle           String?
-  monthlyIncome      Float?
-  employmentDuration String?
-
-  // Lease & Occupancy Details
-  leaseType          String
-  occupancyType      String
-  moveInDate         DateTime
-  leaseDuration      String
-  occupants          Int?
-  pets               String?
-
-  // Rental History
-  landlordName       String?
-  landlordContact    String?
-  reasonForMoving    String?
-
-  // References
-  referenceName      String?
-  referenceContact   String?
-
-  // Consent
-  consent            Boolean            @default(false)
-
-  // Relations
-  propertyId         String
-  property           Property           @relation(fields: [propertyId], references: [id])
-
-  // Optional link to user account if you have user auth
-  userId             String?
-  user               User?              @relation(fields: [userId], references: [id])
-
-  // Application status
-  status             ApplicationStatus  @default(PENDING)
-
-  // Metadata
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-}
-
-enum ApplicationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  UNDER_REVIEW
-}
->>>>>>> 7109435b35318c9c45425541478c644f12202b94
