@@ -50,20 +50,24 @@ export const getProperties = async (): Promise<PropertyPayload[]> => {
 };
 
 
-export const getPropertyById = async (id: string) => {
+export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`
-    );
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch property");
     }
 
     const property = await response.json();
-    return property;
+
+    const propertyPayload: PropertyPayload = {
+      ...property,
+      propertyDetails: property.details || undefined,
+    };
+
+    return propertyPayload;
   } catch (error) {
-    console.error("Error fetching property:", error);
+    console.error("Error fetching property by ID:", error);
     throw error;
   }
 };
