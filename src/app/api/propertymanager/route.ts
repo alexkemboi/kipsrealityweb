@@ -96,10 +96,29 @@ export async function GET() {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
+        units: true, // Include this if you’ve already created the Unit model
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    return NextResponse.json(properties, { status: 200 });
+    const formatted = properties.map((p) => ({
+      id: p.id,
+      name: p.name,
+      city: p.city,
+      address: p.address,
+      type: p.propertyType?.name,
+      isFurnished: p.isFurnished,
+      availabilityStatus: p.availabilityStatus,
+      details: p.propertyType?.name.toLowerCase() === "apartment"
+        ? p.apartmentComplexDetail
+        : p.houseDetail,
+      totalUnits: p.units?.length || 0,
+      createdAt: p.createdAt,
+    }));
+
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching properties:", error);
     return NextResponse.json(

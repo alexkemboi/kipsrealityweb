@@ -27,3 +27,24 @@ export const postProperty = async (propertyData: PropertyPayload) => {
     throw error;
   }
 };
+
+export const getProperties = async (): Promise<PropertyPayload[]> => {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
+      method: "GET",
+      cache: "no-store", // ensures fresh data on each request
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error("Failed to fetch properties");
+    }
+
+    const properties = await response.json();
+    return properties;
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    throw error;
+  }
+};
