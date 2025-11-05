@@ -1,6 +1,6 @@
 import { Property, ApartmentComplexDetail, HouseDetail } from "@/app/data/PropertyData";
 
-type PropertyPayload = Property & {
+export type PropertyPayload = Property & {
   propertyDetails?: ApartmentComplexDetail | HouseDetail;
 };
 
