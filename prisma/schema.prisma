@@ -49,6 +49,7 @@ model Organization {
   listings    Listing[]
   vendors     Vendor[]
   properties  Property[]         @relation("OrganizationToProperty")
+  maintenanceRequests MaintenanceRequest[]
 
   @@map("organizations")
 }
@@ -66,6 +67,7 @@ model OrganizationUser {
   postedServices    ServiceMarketplace[]
   adminActions      AdminAction[]      @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]      @relation("AdminActionsTarget")
+  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
@@ -370,7 +372,7 @@ model Property {
   id                  String            @id @default(uuid())
   listingId           String            @unique
   managerId           String?
-organizationId String?
+  organizationId      String?
   propertyTypeId      String?
   locationId          String?
   city                String
@@ -387,6 +389,7 @@ organizationId String?
   listing             Listing           @relation(fields: [listingId], references: [id])
   manager             OrganizationUser? @relation(fields: [managerId], references: [id])
   organization       Organization? @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  maintenanceRequests MaintenanceRequest[]
   propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
   location            Location?         @relation(fields: [locationId], references: [id])
     appliances          Appliance[]       @relation("PropertyAppliances")
@@ -482,4 +485,42 @@ model Invite {
 
   @@index([organizationId])
   @@index([email])
+}
+
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum RequestStatus {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+model MaintenanceRequest {
+  id              String    @id @default(uuid())
+  organizationId  String
+  propertyId      String
+  requestedById   String    // The user who created the request (tenant or property manager)
+  title           String
+  description     String
+  priority        Priority  @default(NORMAL)
+  status          RequestStatus @default(OPEN)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  property        Property         @relation(fields: [propertyId], references: [id])
+  requestedBy     OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
+
+  @@index([organizationId])
+  @@index([propertyId])
+  @@index([requestedById])
 }

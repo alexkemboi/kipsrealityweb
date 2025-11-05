@@ -1,6 +1,6 @@
 import { HeroSection } from "@/components/website/plans/HeroSection";
-import { PricingPlans } from "@/components/website/plans/PricingPlan";
-import { FeatureGrid } from "@/components/website/plans/FeatureGrid";
+// import { PricingPlans } from "@/components/website/plans/PricingPlan";
+// import { FeatureGrid } from "@/components/website/plans/FeatureGrid";
 import Footer from "@/components/website/Footer";
 import Navbar from "@/components/website/Navbar";
 
@@ -9,8 +9,8 @@ export default function PlansPage() {
     <>
       <Navbar/>
       <HeroSection page="Plans" />
-      <PricingPlans />
-      <FeatureGrid />
+      {/* <PricingPlans /> */}
+      {/* <FeatureGrid /> */}
     </>
   );
 }
