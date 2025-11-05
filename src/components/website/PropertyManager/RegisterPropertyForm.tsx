@@ -23,6 +23,7 @@ export default function PropertyForm() {
     (type) => type.id === selectedPropertyTypeId
   )?.name?.toLowerCase();
 
+  // 🔹 Load property types and appliances
   useEffect(() => {
     const getData = async () => {
       try {
@@ -40,22 +41,54 @@ export default function PropertyForm() {
     getData();
   }, []);
 
-  const onSubmit = async (data: Property) => {
-  setLoading(true);
+  // ✅ Helper function to decode JWT token
+  const decodeToken = (token: string) => {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  };
 
-  try {
-    const payload = {
-      managerId: data.managerId,
-      name: data.name,
-      organizationId: data.organizationId,
-      propertyTypeId: selectedPropertyTypeId,
-      locationId: data.locationId,
-      city: data.city,
-      address: data.address,
-      amenities: data.amenities,
-      isFurnished: data.isFurnished,
-      availabilityStatus: data.availabilityStatus,
-      propertyDetails:
+  // ✅ Submit form
+  const onSubmit = async (data: Property) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        toast.error("You must be logged in to register a property.");
+        setLoading(false);
+        return;
+      }
+
+      // Decode token to get organizationId
+      const decoded = decodeToken(token);
+      const organizationId = decoded?.organizationId;
+      
+      if (!organizationId) {
+        toast.error("Organization not found. Please ensure you're linked to an organization.");
+        setLoading(false);
+        return;
+      }
+
+      // Validate required fields
+      if (!data.name || !data.city || !data.address) {
+        toast.error("Please fill in all required fields.");
+        setLoading(false);
+        return;
+      }
+
+      // Build property details based on type
+      const propertyDetails =
         selectedPropertyTypeName === "apartment"
           ? {
               buildingName: data.apartmentComplexDetail?.buildingName,
@@ -69,21 +102,34 @@ export default function PropertyForm() {
               bathrooms: data.houseDetail?.bathrooms,
               size: data.houseDetail?.size,
             }
-          : {},
-    };
+          : undefined;
 
-    const newProperty = await postProperty(payload);
-    console.log("Property created:", newProperty);
-    toast.success("Property created successfully!");
-    reset();
-  } catch (error) {
-    console.error("Error creating property:", error);
-    toast.error("Failed to create property.");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Construct payload matching backend expectations
+      const payload = {
+        name: data.name,
+        propertyTypeId: selectedPropertyTypeId,
+        organizationId: organizationId,
+        ...(data.locationId && { locationId: data.locationId }),
+        city: data.city,
+        address: data.address,
+        amenities: Array.isArray(data.amenities) ? data.amenities : [],
+        isFurnished: data.isFurnished ?? false,
+        availabilityStatus: data.availabilityStatus || "AVAILABLE",
+        ...(propertyDetails && { propertyDetails }),
+      };
 
+      // 🔐 Pass token in request
+      const newProperty = await postProperty(payload, token);
+      console.log("Property created:", newProperty);
+      toast.success("Property created successfully!");
+      reset();
+    } catch (error: any) {
+      console.error("Error creating property:", error);
+      toast.error(error.message || "Failed to create property.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200">
@@ -120,12 +166,21 @@ export default function PropertyForm() {
           >
             {/* Basic Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Property Name - REQUIRED BY BACKEND */}
+              <input
+                {...register("name")}
+                placeholder="Property Name"
+                required
+                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full"
+              />
+              
               <input
                 {...register("city")}
                 placeholder="City"
                 required
                 className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full"
               />
+              
               <input
                 {...register("address")}
                 placeholder="Address"
@@ -218,7 +273,7 @@ export default function PropertyForm() {
                       <input
                         type="checkbox"
                         value={appliance.id}
-                        {...register("applianceIds")}
+                        {...register("amenities")}
                         className="h-5 w-5 accent-blue-600"
                       />
                       <span className="text-gray-700 font-medium">
