@@ -47,9 +47,6 @@ export async function POST(req: Request) {
         locationId,
         city,
         address,
-        bedrooms,
-        bathrooms,
-        size,
         amenities,
         isFurnished,
         availabilityStatus,
@@ -71,6 +68,9 @@ export async function POST(req: Request) {
         data: {
           propertyId: property.id,
           numberOfFloors: propertyDetails?.numberOfFloors || null,
+          bedrooms: propertyDetails?.bedrooms || null,
+          bathrooms: propertyDetails?.bathrooms || null,
+          size: propertyDetails?.size || null,
         },
       });
     }
