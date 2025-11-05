@@ -26,6 +26,8 @@ model User {
   vendors           Vendor[]
   sentInvites       Invite[]           @relation("UserInvites")
   listings          Listing[]
+  tenantApplications  Tenantapplication[]
+
 
   @@map("users")
 }
@@ -399,30 +401,52 @@ model Listing {
 
 model Property {
   id                  String            @id @default(uuid())
-  listingId           String            @unique
+  listingId           String?            @unique
   managerId           String?
-  name                String
-organizationId String?
+  name                String?
+  organizationId String?
   propertyTypeId      String?
   locationId          String?
   city                String
   address             String
-  bedrooms            Int
-  bathrooms           Int
-  size                Float
+  bedrooms            Int?
+  bathrooms           Int?
+  size                Float?
   amenities           String?
   isFurnished         Boolean           @default(false)
   availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
   createdAt           DateTime          @default(now())
 
   // Relations
-  listing      Listing           @relation(fields: [listingId], references: [id])
+  listing      Listing ?          @relation(fields: [listingId], references: [id])
   manager      OrganizationUser? @relation(fields: [managerId], references: [id])
   organization Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType PropertyType?     @relation(fields: [propertyTypeId], references: [id])
   location     Location?         @relation(fields: [locationId], references: [id])
   appliances   Appliance[]       @relation("PropertyAppliances")
+  tenantapplications     Tenantapplication[]
+  apartmentComplexDetail ApartmentComplexDetail?
+  houseDetail            HouseDetail?
+
 }
+
+model ApartmentComplexDetail {
+  id                String  @id @default(uuid())
+  propertyId        String  @unique
+  buildingName      String?
+  totalFloors       Int?        
+  totalUnits        Int?        
+  property          Property @relation(fields: [propertyId], references: [id])
+}
+model HouseDetail {
+  id           String   @id @default(uuid())
+  propertyId   String   @unique
+  numberOfFloors Int?     // In case it’s a maisonette or duplex
+  property     Property @relation(fields: [propertyId], references: [id])
+}
+
+
+
 
 model Appliance {
   id          String     @id @default(uuid())
@@ -511,4 +535,65 @@ model Invite {
 
   @@index([organizationId])
   @@index([email])
+}
+//-----------------------
+// tenant application 
+//------------------------
+
+model Tenantapplication {
+  id                 String             @id @default(uuid())
+
+  // Applicant Information
+  fullName           String
+  email              String
+  phone              String
+  dob                DateTime
+  ssn                String?
+  address            String?
+  employerName       String?
+  jobTitle           String?
+  monthlyIncome      Float?
+  employmentDuration String?
+
+  // Lease & Occupancy Details
+  leaseType          String
+  occupancyType      String
+  moveInDate         DateTime
+  leaseDuration      String
+  occupants          Int?
+  pets               String?
+
+  // Rental History
+  landlordName       String?
+  landlordContact    String?
+  reasonForMoving    String?
+
+  // References
+  referenceName      String?
+  referenceContact   String?
+
+  // Consent
+  consent            Boolean            @default(false)
+
+  // Relations
+  propertyId         String
+  property           Property           @relation(fields: [propertyId], references: [id])
+
+  // Optional link to user account if you have user auth
+  userId             String?
+  user               User?              @relation(fields: [userId], references: [id])
+
+  // Application status
+  status             ApplicationStatus  @default(PENDING)
+
+  // Metadata
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
 }
