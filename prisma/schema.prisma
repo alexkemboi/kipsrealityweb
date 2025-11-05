@@ -379,13 +379,15 @@ model Listing {
   listingTypeId  String?
   statusId       String?
   locationId     String?
+  propertyId     String?  // optional, FK lives in Property
+  unitId         String?  // optional, FK lives in Unit
   title          String
   description    String
   price          Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relations
+  //  Relations
   organization        Organization        @relation(fields: [organizationId], references: [id])
   createdByUser       User                @relation(fields: [createdBy], references: [id])
   categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
@@ -393,41 +395,41 @@ model Listing {
   status              ListingStatus?      @relation(fields: [statusId], references: [id])
   location            Location?           @relation(fields: [locationId], references: [id])
 
-  property           Property?
-  serviceMarketplace ServiceMarketplace?
-  images             ListingImage[]
-  adminActions       AdminAction[]
+  property            Property?           @relation("PropertyListing") 
+  unit                Unit?               @relation("UnitListing")     
+
+  serviceMarketplace  ServiceMarketplace?
+  images              ListingImage[]
+  adminActions        AdminAction[]
 }
+
 
 model Property {
   id                  String            @id @default(uuid())
-  listingId           String?            @unique
+  listingId           String?           @unique // FK defined here
   managerId           String?
   name                String?
-  organizationId String?
+  organizationId      String?
   propertyTypeId      String?
   locationId          String?
   city                String
   address             String
-  bedrooms            Int?
-  bathrooms           Int?
-  size                Float?
   amenities           String?
   isFurnished         Boolean           @default(false)
-  availabilityStatus  String?           // e.g., Available, Occupied, Maintenance
+  availabilityStatus  String?
   createdAt           DateTime          @default(now())
 
-  // Relations
-  listing      Listing ?          @relation(fields: [listingId], references: [id])
-  manager      OrganizationUser? @relation(fields: [managerId], references: [id])
-  organization Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType PropertyType?     @relation(fields: [propertyTypeId], references: [id])
-  location     Location?         @relation(fields: [locationId], references: [id])
-  appliances   Appliance[]       @relation("PropertyAppliances")
-  tenantapplications     Tenantapplication[]
+  // 🔗 Relations
+  listing             Listing?          @relation("PropertyListing", fields: [listingId], references: [id])
+  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
+  organization        Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
+  location            Location?         @relation(fields: [locationId], references: [id])
+  appliances          Appliance[]       @relation("PropertyAppliances")
+  tenantapplications  Tenantapplication[]
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
-
+  units               Unit[]            
 }
 
 model ApartmentComplexDetail {
@@ -437,14 +439,38 @@ model ApartmentComplexDetail {
   totalFloors       Int?        
   totalUnits        Int?        
   property          Property @relation(fields: [propertyId], references: [id])
+    units        Unit[]
+
 }
 model HouseDetail {
   id           String   @id @default(uuid())
   propertyId   String   @unique
-  numberOfFloors Int?     // In case it’s a maisonette or duplex
+  size                Float?
+  numberOfFloors Int?     
+  bedrooms            Int?
+  bathrooms           Int?
   property     Property @relation(fields: [propertyId], references: [id])
 }
 
+
+model Unit {
+  id              String   @id @default(uuid())
+  propertyId      String
+  complexDetailId String
+  listingId       String?   @unique
+  unitNumber      String
+  floorNumber     Int?
+  bedrooms        Int?
+  bathrooms       Int?
+  isOccupied      Boolean  @default(false)
+  rentAmount      Float?
+  tenantName      String?
+  createdAt       DateTime @default(now())
+
+  property          Property               @relation(fields: [propertyId], references: [id])
+  apartmentComplex  ApartmentComplexDetail  @relation(fields: [complexDetailId], references: [id])
+  listing           Listing?                @relation("UnitListing", fields: [listingId], references: [id])
+}
 
 
 
