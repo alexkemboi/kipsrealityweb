@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       referenceName,
       referenceContact,
       consent,
-      propertyId,
+      unitId,   // now required
       userId,
     } = data;
 
@@ -42,48 +42,39 @@ export async function POST(request: Request) {
     if (!occupancyType) missingFields.push('occupancyType');
     if (!moveInDate) missingFields.push('moveInDate');
     if (!leaseDuration) missingFields.push('leaseDuration');
-    if (!propertyId) missingFields.push('propertyId');
+    if (!unitId) missingFields.push('unitId');
 
     if (missingFields.length > 0) {
-      console.log('Validation failed: Missing required fields', missingFields);
       return NextResponse.json(
         { error: `Missing required fields: ${missingFields.join(', ')}` },
         { status: 400 }
       );
     }
 
-    // Validate property exists
-    const property = await prisma.property.findUnique({
-      where: { id: String(propertyId) }
+    // Fetch unit and include its property
+    const unit = await prisma.unit.findUnique({
+      where: { id: String(unitId).trim() },
+      include: { property: true },
     });
-
-    if (!property) {
-      console.log('Validation failed: Property not found', { propertyId });
-      return NextResponse.json(
-        { error: 'Property not found' },
-        { status: 400 }
-      );
+    if (!unit) {
+      return NextResponse.json({ error: 'Unit not found', unitId }, { status: 400 });
+    }
+    if (!unit.property) {
+      return NextResponse.json({ error: 'Property for this unit not found', unitId }, { status: 400 });
     }
 
-    // Validate user exists if provided
+    // Validate user if provided
+    let user = null;
     if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { id: String(userId) }
-      });
-      if (!user) {
-        console.log('Validation failed: User not found', { userId });
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 400 }
-        );
-      }
+      user = await prisma.user.findUnique({ where: { id: String(userId).trim() } });
+      if (!user) return NextResponse.json({ error: 'User not found', userId }, { status: 400 });
     }
 
     // Safe type casting
     const numericOccupants = occupants ? Number(occupants) : null;
     const numericIncome = monthlyIncome ? parseFloat(monthlyIncome) : null;
 
-    // Create application
+    // Create tenant application
     const newApplication = await prisma.tenantapplication.create({
       data: {
         fullName,
@@ -108,24 +99,17 @@ export async function POST(request: Request) {
         referenceName: referenceName || null,
         referenceContact: referenceContact || null,
         consent: !!consent,
-        propertyId: String(propertyId),
-        userId: userId ? String(userId) : null,
+        unitId: unit.id,
+        propertyId: unit.property.id,
+        userId: user?.id || null,
       },
-      include: { property: true },
+      include: { property: true, unit: true, user: true },
     });
 
-    console.log('Tenant application created successfully', { id: newApplication.id });
-    return NextResponse.json(
-      { success: true, application: newApplication },
-      { status: 201 }
-    );
-
+    return NextResponse.json({ success: true, application: newApplication }, { status: 201 });
   } catch (error: any) {
     console.error('Error saving tenant application:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }
 
@@ -134,6 +118,7 @@ export async function GET() {
     const applications = await prisma.tenantapplication.findMany({
       include: {
         property: true,
+        unit: true,
         user: true,
       },
       orderBy: { createdAt: 'desc' },
@@ -142,9 +127,8 @@ export async function GET() {
     return NextResponse.json(applications, { status: 200 });
   } catch (error: any) {
     console.error('Error fetching applications:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
   }
 }
+
+

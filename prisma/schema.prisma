@@ -485,7 +485,7 @@ model Property {
   location            Location?         @relation(fields: [locationId], references: [id])
   appliances          Appliance[]       @relation("PropertyAppliances")
   tenantapplications  Tenantapplication[]
-    maintenanceRequests  MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
+  maintenanceRequests  MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
 
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
@@ -536,6 +536,7 @@ model Unit {
   houseDetail  HouseDetail?  @relation(fields: [houseDetailId], references: [id])
 
   listing           Listing?                @relation("UnitListing", fields: [listingId], references: [id])
+  tenantApplications Tenantapplication[]
 }
 
 
@@ -663,8 +664,12 @@ model Tenantapplication {
   property           Property          @relation(fields: [propertyId], references: [id])
   user               User?             @relation(fields: [userId], references: [id])
 
+  unitId             String?
+  unit               Unit?     @relation(fields: [unitId], references: [id])
+
   @@index([propertyId], map: "Tenantapplication_propertyId_fkey")
   @@index([userId], map: "Tenantapplication_userId_fkey")
+
 }
 enum ApplicationStatus {
   PENDING

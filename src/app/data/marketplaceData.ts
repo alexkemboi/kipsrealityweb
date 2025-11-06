@@ -1,19 +1,28 @@
 export interface MarketplaceItem {
+  dateposted: ReactNode;
+  postedBy: ReactNode;
   id: string;
   title: string;
-  description: string;
-  image: string;
-  category: "property" | "furniture" | "appliance" | "decor" | "service"; 
+  description?: string;
   price: number;
+  image: string;
+  category: string;
   location: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  size?: number;
-  amenities?: string | null;
-  isFurnished?: boolean;
-  dateposted: string;
-  postedBy: string;
-  verified: boolean;
+
+  unitId?: string | null;
+  propertyId?: string | null;
+  unit?: {
+    id: string;
+    unitNumber?: string;
+    property?: {
+      id: string; // required after normalization
+      name?: string;
+    };
+  } | null;
+  property?: {
+    id: string; // required after normalization
+    name?: string;
+  } | null;
 }
 
 

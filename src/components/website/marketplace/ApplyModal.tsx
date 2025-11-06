@@ -1,17 +1,23 @@
+"use client";
+
 import React, { ChangeEvent, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle2, User, Briefcase, Home, FileCheck } from "lucide-react";
+import { CheckCircle2, User, Briefcase, Home, FileCheck, X, AlertCircle } from "lucide-react";
 
 interface ApplyModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: TenantFormData) => void;
-  property: {
+  onSubmit: (data: any) => void;
+  listing: {
     id: string;
     title: string;
-    location: string;
+    description?: string;
     price: number;
-  };
+    unitId?: string | null;
+    propertyId?: string | null;
+    unit?: { id: string; unitNumber?: string; property?: { id: string; name?: string } } | null;
+    property?: { id: string; name?: string } | null;
+  } | null;
 }
 
 interface TenantFormData {
@@ -39,7 +45,7 @@ interface TenantFormData {
   consent: boolean;
 }
 
-export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyModalProps) {
+export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyModalProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,10 +75,11 @@ export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyM
     consent: false,
   });
 
-  if (!open) return null;
+  if (!open || !listing) return null;
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, type, value, checked } = e.target;
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, type, value } = e.target;
+    const checked = (e.target as HTMLInputElement).type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -94,7 +101,7 @@ export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyM
       case 2:
         return formData.employerName && formData.jobTitle && formData.monthlyIncome;
       case 3:
-        return formData.leaseType && formData.occupancyType && formData.moveInDate;
+        return formData.leaseType && formData.occupancyType && formData.moveInDate && formData.leaseDuration;
       case 4:
         return formData.consent;
       default:
@@ -109,24 +116,30 @@ export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyM
     setError(null);
 
     try {
+      const payload = {
+        ...formData,
+        unitId: listing.unit?.id || listing.unitId || null,
+        propertyId: listing.unit?.property?.id || listing.property?.id || null,
+        monthlyIncome: formData.monthlyIncome ? parseFloat(formData.monthlyIncome) : null,
+        occupants: formData.occupants ? Number(formData.occupants) : null,
+      };
+
+      console.log("Submitting payload:", payload);
+
       const res = await fetch("/api/tenant-application", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          propertyId: property.id,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Failed to submit application");
-      }
-
       const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to submit application");
+
       onSubmit(result);
       alert("Your tenant application has been submitted successfully!");
+      onClose();
     } catch (err: any) {
+      console.error(err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -136,71 +149,113 @@ export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyM
   const progress = (step / 4) * 100;
 
   const stepIcons = [
-    { icon: User, label: "Personal" },
+    { icon: User, label: "Personal Info" },
     { icon: Briefcase, label: "Employment" },
-    { icon: Home, label: "Lease" },
+    { icon: Home, label: "Lease Details" },
     { icon: FileCheck, label: "References" },
   ];
 
+  const InputField = ({ name, placeholder, type = "text", value, required = false }: any) => (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-gray-700">
+        {placeholder} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={handleInputChange}
+        required={required}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+      />
+    </div>
+  );
+
+  const SelectField = ({ name, placeholder, value, options, required = false }: any) => (
+    <div className="space-y-1.5">
+      <label className="block text-sm font-medium text-gray-700">
+        {placeholder} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        name={name}
+        value={value}
+        onChange={handleSelectChange}
+        required={required}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+      >
+        <option value="">Select {placeholder}</option>
+        {options.map((opt: any) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 p-5 sm:p-6">
-          <div className="flex justify-between items-start mb-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+        {/* Compact Header */}
+        <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white px-6 py-5">
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 p-1.5 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Tenant Application</h2>
-              <p className="text-sm text-gray-600 mt-1">Step {step} of 4</p>
-              <p className="text-xs mt-1 text-gray-500">
-                Applying for: <strong>{property.title}</strong> — {property.location}
-              </p>
+              <h2 className="text-2xl font-bold mb-1">Tenant Application</h2>
+              <div className="flex items-center gap-2 text-blue-100 text-sm">
+                <Home className="w-4 h-4" />
+                <span>
+                  Unit {listing.unit?.unitNumber || "N/A"} • {listing.unit?.property?.name || listing.property?.name || "Property"}
+                </span>
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-1 hover:bg-white/50 rounded-full"
-              aria-label="Close modal"
-            >
-              ✕
-            </button>
+            <div className="text-right">
+              <p className="text-xl font-bold">KES {listing.price.toLocaleString()}</p>
+              <p className="text-xs text-blue-200">per month</p>
+            </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+          {/* Compact Progress */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <div className="relative h-1.5 bg-blue-900/40 rounded-full overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+            <span className="text-sm text-blue-100 font-medium whitespace-nowrap">Step {step}/4</span>
           </div>
 
-          {/* Step Icons */}
-          <div className="flex justify-between mt-4">
+          {/* Compact Step Icons */}
+          <div className="flex justify-between mt-4 gap-2">
             {stepIcons.map((item, idx) => {
               const stepNum = idx + 1;
               const Icon = item.icon;
               const isActive = step === stepNum;
               const isCompleted = step > stepNum;
               return (
-                <div key={stepNum} className="flex flex-col items-center flex-1">
+                <div key={stepNum} className="flex items-center gap-2 flex-1">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
                       isCompleted
-                        ? "bg-green-500 text-white"
+                        ? "bg-green-500"
                         : isActive
-                        ? "bg-blue-600 text-white ring-4 ring-blue-100"
-                        : "bg-gray-200 text-gray-400"
+                        ? "bg-white text-blue-600 ring-2 ring-white/50"
+                        : "bg-blue-800/50 text-blue-300"
                     }`}
                   >
-                    {isCompleted ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <Icon className="w-5 h-5" />
-                    )}
+                    {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                   </div>
-                  <span
-                    className={`text-xs mt-1 font-medium ${
-                      isActive ? "text-blue-600" : "text-gray-500"
-                    } hidden sm:block`}
-                  >
+                  <span className={`text-xs font-medium hidden sm:block ${isActive ? "text-white" : "text-blue-200"}`}>
                     {item.label}
                   </span>
                 </div>
@@ -209,228 +264,161 @@ export default function ApplyModal({ open, onClose, onSubmit, property }: ApplyM
           </div>
         </div>
 
-        {/* Scrollable Form */}
-        <ScrollArea className="flex-1 overflow-y-auto p-4 sm:p-6">
-          <div className="space-y-5">
-            {/* Step 1: Personal Details */}
+        {/* Scrollable Form - Now Much Larger */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6 sm:p-8 min-h-[500px]">
             {step === 1 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900">Personal Details</h3>
-                <p className="text-sm text-gray-500">Tell us about yourself</p>
-
-                {[
-                  { name: "fullName", label: "Full Name", type: "text", required: true },
-                  { name: "email", label: "Email", type: "email", required: true },
-                  { name: "phone", label: "Phone Number", type: "tel", required: true },
-                  { name: "dob", label: "Date of Birth", type: "date", required: true },
-                  { name: "ssn", label: "SSN (optional)", type: "text" },
-                  { name: "address", label: "Current Address", type: "text", required: true },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                    </label>
-                    <input
-                      name={field.name}
-                      type={field.type}
-                      onChange={handleInputChange}
-                      value={(formData as any)[field.name]}
-                      className="border border-gray-300 w-full px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                ))}
+              <div className="space-y-5 max-w-2xl mx-auto">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Personal Information</h3>
+                  <p className="text-gray-600">Please provide your basic details to begin your application</p>
+                </div>
+                <InputField name="fullName" placeholder="Full Legal Name" value={formData.fullName} required />
+                <InputField name="email" type="email" placeholder="Email Address" value={formData.email} required />
+                <InputField name="phone" type="tel" placeholder="Phone Number" value={formData.phone} required />
+                <InputField name="dob" type="date" placeholder="Date of Birth" value={formData.dob} required />
+                <InputField name="ssn" placeholder="National ID / Passport Number" value={formData.ssn} />
+                <InputField name="address" placeholder="Current Address" value={formData.address} />
               </div>
             )}
 
-            {/* Step 2: Employment & Income */}
             {step === 2 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900">Employment & Income</h3>
-                <p className="text-sm text-gray-500">Provide details about your job</p>
+              <div className="space-y-5 max-w-2xl mx-auto">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Employment Details</h3>
+                  <p className="text-gray-600">Tell us about your current employment situation</p>
+                </div>
+                <InputField name="employerName" placeholder="Employer Name" value={formData.employerName} required />
+                <InputField name="jobTitle" placeholder="Job Title / Position" value={formData.jobTitle} required />
+                <InputField name="monthlyIncome" type="number" placeholder="Monthly Income (KES)" value={formData.monthlyIncome} required />
+                <InputField name="employmentDuration" placeholder="Employment Duration (e.g., 2 years)" value={formData.employmentDuration} />
+              </div>
+            )}
 
-                {[
-                  { name: "employerName", label: "Employer Name", type: "text" },
-                  { name: "jobTitle", label: "Job Title", type: "text" },
-                  { name: "monthlyIncome", label: "Monthly Income", type: "number" },
-                  { name: "employmentDuration", label: "Employment Duration", type: "text" },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label} <span className="text-red-500">*</span>
-                    </label>
+            {step === 3 && (
+              <div className="space-y-5 max-w-2xl mx-auto">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Lease Information</h3>
+                  <p className="text-gray-600">Specify your lease preferences and move-in details</p>
+                </div>
+                <SelectField
+                  name="leaseType"
+                  placeholder="Lease Type"
+                  value={formData.leaseType}
+                  options={[
+                    { value: "long-term", label: "Long Term (12+ months)" },
+                    { value: "short-term", label: "Short Term (1-11 months)" },
+                  ]}
+                  required
+                />
+                <SelectField
+                  name="occupancyType"
+                  placeholder="Occupancy Type"
+                  value={formData.occupancyType}
+                  options={[
+                    { value: "single", label: "Single Occupant" },
+                    { value: "family", label: "Family" },
+                    { value: "shared", label: "Shared" },
+                  ]}
+                  required
+                />
+                <InputField name="moveInDate" type="date" placeholder="Preferred Move-in Date" value={formData.moveInDate} required />
+                <InputField name="leaseDuration" type="number" placeholder="Lease Duration (months)" value={formData.leaseDuration} required />
+                <InputField name="occupants" type="number" placeholder="Number of Occupants" value={formData.occupants} />
+                <InputField name="pets" placeholder="Pets (if any)" value={formData.pets} />
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-5 max-w-2xl mx-auto">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">References & Previous Landlord</h3>
+                  <p className="text-gray-600">Provide references to support your application</p>
+                </div>
+                <InputField name="landlordName" placeholder="Previous Landlord Name" value={formData.landlordName} />
+                <InputField name="landlordContact" placeholder="Previous Landlord Contact" value={formData.landlordContact} />
+                <InputField name="reasonForMoving" placeholder="Reason for Moving" value={formData.reasonForMoving} />
+                <InputField name="referenceName" placeholder="Reference Name" value={formData.referenceName} />
+                <InputField name="referenceContact" placeholder="Reference Contact" value={formData.referenceContact} />
+
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-8">
+                  <label className="flex items-start gap-4 cursor-pointer group">
                     <input
-                      name={field.name}
-                      type={field.type}
+                      type="checkbox"
+                      name="consent"
+                      checked={formData.consent}
                       onChange={handleInputChange}
-                      value={(formData as any)[field.name]}
-                      className="border border-gray-300 w-full px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="mt-1 w-6 h-6 text-blue-600 rounded-md focus:ring-2 focus:ring-blue-500 cursor-pointer"
                     />
-                  </div>
-                ))}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Proof of Income (optional)
+                    <div className="text-sm text-gray-700 flex-1">
+                      <p className="font-semibold text-base mb-2 text-gray-900">Declaration and Consent</p>
+                      <p className="leading-relaxed">
+                        I certify that all information provided in this application is accurate and complete. I authorize the verification of this information and consent to a background check, credit check, and reference verification as part of the rental application process.
+                      </p>
+                    </div>
                   </label>
-                  <input
-                    type="file"
-                    className="block w-full text-sm text-gray-600 border border-gray-300 rounded-lg p-2.5"
-                  />
                 </div>
               </div>
             )}
-
-            {/* Step 3: Lease & Occupancy */}
-            {step === 3 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900">Lease & Occupancy Details</h3>
-                <p className="text-sm text-gray-500">Select your preferred terms</p>
-
-                <select
-                  name="leaseType"
-                  onChange={handleSelectChange}
-                  value={formData.leaseType}
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                >
-                  <option value="">Select Lease Type</option>
-                  <option value="fixed-term">Fixed-term</option>
-                  <option value="month-to-month">Month-to-Month</option>
-                  <option value="short-term">Short-term</option>
-                  <option value="sublease">Sublease</option>
-                </select>
-
-                <select
-                  name="occupancyType"
-                  onChange={handleSelectChange}
-                  value={formData.occupancyType}
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                >
-                  <option value="">Select Occupancy Type</option>
-                  <option value="single">Single</option>
-                  <option value="family">Family</option>
-                  <option value="roommate">Roommate</option>
-                  <option value="shared">Shared</option>
-                </select>
-
-                <input
-                  name="moveInDate"
-                  type="date"
-                  onChange={handleInputChange}
-                  value={formData.moveInDate}
-                  placeholder="Move-in Date"
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                />
-
-                <input
-                  name="leaseDuration"
-                  placeholder="Preferred Lease Duration (e.g., 12 months)"
-                  onChange={handleInputChange}
-                  value={formData.leaseDuration}
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                />
-
-                <input
-                  name="occupants"
-                  placeholder="Number of Occupants"
-                  onChange={handleInputChange}
-                  value={formData.occupants}
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                />
-
-                <input
-                  name="pets"
-                  placeholder="Pets (Yes/No, type if yes)"
-                  onChange={handleInputChange}
-                  value={formData.pets}
-                  className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                />
-              </div>
-            )}
-
-            {/* Step 4: References & History */}
-            {step === 4 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg text-gray-900">References & History</h3>
-                <p className="text-sm text-gray-500">Provide background and references</p>
-
-                {[
-                  { name: "landlordName", label: "Previous Landlord Name" },
-                  { name: "landlordContact", label: "Landlord Contact" },
-                  { name: "reasonForMoving", label: "Reason for Moving" },
-                  { name: "referenceName", label: "Reference Name" },
-                  { name: "referenceContact", label: "Reference Contact" },
-                ].map((field) => (
-                  <div key={field.name}>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                      {field.label}
-                    </label>
-                    <input
-                      name={field.name}
-                      type="text"
-                      onChange={handleInputChange}
-                      value={(formData as any)[field.name]}
-                      className="border border-gray-300 w-full px-4 py-2.5 rounded-lg"
-                    />
-                  </div>
-                ))}
-
-                <label className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    name="consent"
-                    checked={formData.consent}
-                    onChange={handleInputChange}
-                    className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-700">
-                    I agree to allow background and credit screening and confirm my information is accurate.
-                  </span>
-                </label>
-              </div>
-            )}
           </div>
-        </ScrollArea>
-
+        </div>
         {/* Footer */}
-        <div className="border-t bg-gray-50 p-4 flex justify-between items-center">
-          {error && <p className="text-sm text-red-500">{error}</p>}
-
-          <div className="flex gap-3 ml-auto">
+        <div className="border-t bg-gray-50 px-6 py-5">
+          {error && (
+            <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <p className="text-sm font-medium">{error}</p>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3">
             <button
               onClick={prevStep}
               disabled={step === 1}
-              className={`px-6 py-2.5 border rounded-lg font-medium ${
-                step === 1 ? "text-gray-400 border-gray-200" : "hover:bg-gray-100 border-gray-300"
+              className={`px-6 py-3 border-2 rounded-xl font-semibold transition-all ${
+                step === 1
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
               }`}
             >
               Back
             </button>
-
-            {step < 4 ? (
-              <button
-                onClick={nextStep}
-                disabled={!isStepValid()}
-                className={`px-6 py-2.5 rounded-lg font-medium ${
-                  isStepValid()
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                Continue
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !formData.consent}
-                className={`px-6 py-2.5 rounded-lg font-medium ${
-                  formData.consent
-                    ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
-                {loading ? "Submitting..." : "Submit Application"}
-              </button>
-            )}
+            <div className="flex gap-3">
+              {step < 4 ? (
+                <button
+                  onClick={nextStep}
+                  disabled={!isStepValid()}
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                    isStepValid()
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  Continue →
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || !formData.consent}
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                    formData.consent && !loading
+                      ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Submitting...
+                    </span>
+                  ) : (
+                    "Submit Application"
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
