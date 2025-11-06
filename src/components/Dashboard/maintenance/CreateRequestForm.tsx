@@ -1,25 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactElement } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 type Property = { id: string; address: string | null; city: string | null };
 
 export default function CreateRequestForm({
   organizationId,
-  properties: propsProperties,
-  onCreate,
-  onSuccess, // ✅ NEW — tells parent to hide the form
+  onSuccess,
 }: {
   organizationId?: string;
-  properties?: Property[];
-  onCreate?: (payload: {
-    propertyId: string;
-    title: string;
-    description?: string;
-  }) => Promise<any> | any;
-  onSuccess?: () => void; // ✅ NEW
-}) {
+  onSuccess?: () => void;
+}): ReactElement {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -29,14 +22,7 @@ export default function CreateRequestForm({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If mock props were provided
-    if (Array.isArray(propsProperties)) {
-      setProperties(propsProperties);
-      if (propsProperties[0]) setPropertyId(propsProperties[0].id);
-      return;
-    }
-
-    // Otherwise load from API
+    // Load properties from API
     async function load() {
       const orgId = organizationId ?? user?.organization?.id;
       if (!orgId) {
@@ -58,7 +44,7 @@ export default function CreateRequestForm({
     }
 
     load();
-  }, [user, organizationId, propsProperties]);
+  }, [user, organizationId]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,41 +63,29 @@ export default function CreateRequestForm({
     setLoading(true);
 
     try {
-      if (onCreate) {
-        // MOCK MODE
-        await Promise.resolve(
-          onCreate({ propertyId, title, description })
-        );
+      // Use the real database API
+      const res = await fetch("/api/maintenance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationId: organizationId ?? user.organization?.id,
+          propertyId,
+          userId: user.id,
+          title,
+          description,
+        }),
+      });
 
-        // ✅ Clear form
-        setTitle("");
-        setDescription("");
-        setPropertyId(properties?.[0]?.id ?? "");
-
-        // ✅ Tell parent to hide the form
-        if (onSuccess) onSuccess();
-      } else {
-        // DATABASE MODE
-        const res = await fetch("/api/maintenance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            organizationId: organizationId ?? user.organization?.id,
-            propertyId,
-            userId: user.id,
-            title,
-            description,
-          }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data?.error || "Failed to create");
-        }
-
-        // ✅ Reload page only for DB mode
-        window.location.reload();
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error || "Failed to create");
       }
+
+      // Clear form and notify parent
+      setTitle("");
+      setDescription("");
+      setPropertyId(properties[0]?.id ?? "");
+      if (onSuccess) onSuccess();
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {

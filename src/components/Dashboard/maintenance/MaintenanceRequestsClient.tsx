@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import type { ReactElement } from "react";
 import CreateRequestForm from "./CreateRequestForm";
 
 type Request = {
@@ -23,91 +24,24 @@ type Request = {
   };
 };
 
-type Property = { id: string; address: string | null; city: string | null };
-
-export default function MaintenanceRequestsClient({
-  initialRequests,
-}: {
-  initialRequests: Request[];
-}) {
-  const organizationId = "067ea38b-8093-4d6f-aca9-0907fe4155cc";
+export default function MaintenanceRequestsClient({ initialRequests }: { initialRequests: Request[] }): ReactElement {
+  const organizationId = "b84257cd-f9d9-47cb-b214-b7317020d505";  // Updated to match your organization
   const [showForm, setShowForm] = useState(false);
-
-  // ============================================================
-  // 🧪 MOCK MODE — used while Property table is not ready
-  // ============================================================
-  // NOTE: mock requests keep internal ids but we avoid showing them in the UI.
-  const [mockRequests, setMockRequests] = useState<Request[]>([
-    {
-      id: `mock-${Date.now()}`,
-      title: "Leaky faucet",
-      description: "The kitchen faucet is dripping constantly.",
-      propertyId: "mock-1",
-      priority: "Medium",
-      status: "Open",
-      requestedBy: { user: { firstName: "Jane", lastName: "Doe" } },
-      createdAt: new Date().toISOString(),
-      property: { address: "123 Mock St", city: "Lagos" },
-    },
-  ]);
-
-  const mockProperties: Property[] = [
-    { id: "mock-1", address: "123 Mock St", city: "Lagos" },
-    { id: "mock-2", address: "456 Test Ave", city: "Nairobi" },
-  ];
-
-  const handleAddMockRequest = (newRequest: {
-    propertyId: string;
-    title: string;
-    description?: string;
-  }) => {
-    const newEntry: Request = {
-      id: `mock-${Date.now()}`,
-      title: newRequest.title || "Untitled Request",
-      description: newRequest.description || "",
-      propertyId: newRequest.propertyId,
-      priority: "Low",
-      status: "Open",
-      requestedBy: { user: { firstName: "Mock", lastName: "User" } },
-      createdAt: new Date().toISOString(),
-      property: mockProperties.find((p) => p.id === newRequest.propertyId) ?? {
-        address: "Unknown",
-        city: "",
-      },
-    };
-    setMockRequests((prev) => [...prev, newEntry]);
-  };
-
-
-  // ============================================================
-  // 🧾 DATABASE MODE — uncomment this when backend is ready
-  // ============================================================
-  // const requests = initialRequests || [];
-  // const useMock = false;
-
-  // ============================================================
-  // ACTIVE MODE: MOCK DATA (temporary)
-  // ============================================================
-  const requests = mockRequests;
-  const useMock = true;
-
-  // Search and filter state (search by property/address)
   const [searchTerm, setSearchTerm] = useState("");
   const [emergencyType, setEmergencyType] = useState<"ALL" | "Plumbing" | "Electrical" | "Heating" | "Security" | "Other">("ALL");
 
-  // Derived filtered requests
+  const requests = initialRequests || [];
+
   const filteredRequests = requests.filter((r) => {
-    // search by property address/city or title
     const search = searchTerm.trim().toLowerCase();
     if (search) {
       const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
       if (!prop.includes(search) && !(r.title ?? "").toLowerCase().includes(search)) return false;
     }
 
-    // emergencyType is just a UI filter for now (no data field yet)
+    // Emergency type filter placeholder
     if (emergencyType !== "ALL") {
-      // no-op: no emergency field on requests yet, keep as-pass-through
-      // leaving this here so when you add emergency type to DB it will be ready
+      // No emergency field in DB yet, leave as passthrough
     }
 
     return true;
@@ -115,47 +49,26 @@ export default function MaintenanceRequestsClient({
 
   return (
     <div className="min-h-[400px] p-6 bg-[#0f172a]">
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
         <div>
           <h1 className="text-2xl font-bold text-white">Maintenance Requests</h1>
-          <p className="text-gray-400 text-sm">track property issues, repairs and service needs</p>
+          <p className="text-gray-400 text-sm">Track property issues, repairs and service needs</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowForm((s) => !s)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white shadow"
-          >
-            Make Request
-          </button>
-        </div>
+        <button
+          onClick={() => setShowForm((s) => !s)}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+        >
+          Make Request
+        </button>
       </div>
 
+      {/* Form */}
       {showForm && (
         <div className="mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <h4 className="font-medium mb-3">Create a Request</h4>
-
-            {/* ============================================================
-                🧪 MOCK FORM (Active Now)
-                ============================================================ */}
-            {useMock && (
-              <CreateRequestForm
-                properties={mockProperties}
-                onCreate={async ({ propertyId, title, description }) => {
-                  await Promise.resolve(handleAddMockRequest({ propertyId, title, description }));
-                }}
-                onSuccess={() => setShowForm(false)}
-              />
-            )}
-
-            {/* ============================================================
-                🧾 DATABASE FORM (Uncomment Later)
-                ============================================================ */}
-            {/*
-            {!useMock && (
-              <CreateRequestForm organizationId={organizationId} />
-            )}
-            */}
+            <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
           </div>
         </div>
       )}
@@ -203,7 +116,7 @@ export default function MaintenanceRequestsClient({
         </div>
       </div>
 
-      {/* Table (styled like invites) */}
+      {/* Table */}
       <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
