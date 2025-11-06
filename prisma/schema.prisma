@@ -509,6 +509,7 @@ model HouseDetail {
   numberOfFloors Int?     
   bedrooms            Int?
   bathrooms           Int?
+  totalUnits        Int? 
   property     Property @relation(fields: [propertyId], references: [id])
 
 }
