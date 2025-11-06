@@ -18,65 +18,72 @@ export default function PropertyForm() {
   const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const selectedPropertyType = watch("propertyTypeId");
+  const selectedPropertyTypeId = watch("propertyTypeId");
+  const selectedPropertyTypeName = propertyTypes.find(
+    (type) => type.id === selectedPropertyTypeId
+  )?.name?.toLowerCase();
 
-  // Fetch property types & appliances
   useEffect(() => {
     const getData = async () => {
-      const [types, apps] = await Promise.all([
-        fetchPropertyTypes(),
-        fetchAppliances(),
-      ]);
-      setPropertyTypes(types);
-      setAppliances(apps);
+      try {
+        const [types, apps] = await Promise.all([
+          fetchPropertyTypes(),
+          fetchAppliances(),
+        ]);
+        setPropertyTypes(types);
+        setAppliances(apps);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load property types or appliances.");
+      }
     };
     getData();
   }, []);
 
   const onSubmit = async (data: Property) => {
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      // Construct the correct payload
-      const payload: Property = {
-        ...data,
-        organizationId: "org-123",
-        propertyTypeId: "d0364b0e-b5c9-11f0-bcda-fa163eb3a8b7",
-        applianceIds: Array.isArray(data.applianceIds)
-          ? data.applianceIds
-          : data.applianceIds
-          ? [data.applianceIds]
-          : [],
+  try {
+    const payload = {
+      managerId: data.managerId,
+      name: data.name,
+      organizationId: data.organizationId,
+      propertyTypeId: selectedPropertyTypeId,
+      locationId: data.locationId,
+      city: data.city,
+      address: data.address,
+      amenities: data.amenities,
+      isFurnished: data.isFurnished,
+      availabilityStatus: data.availabilityStatus,
+      propertyDetails:
+        selectedPropertyTypeName === "apartment"
+          ? {
+              buildingName: data.apartmentComplexDetail?.buildingName,
+              totalFloors: data.apartmentComplexDetail?.totalFloors,
+              totalUnits: data.apartmentComplexDetail?.totalUnits,
+            }
+          : selectedPropertyTypeName === "house"
+          ? {
+              numberOfFloors: data.houseDetail?.numberOfFloors,
+              bedrooms: data.houseDetail?.bedrooms,
+              bathrooms: data.houseDetail?.bathrooms,
+              size: data.houseDetail?.size,
+            }
+          : {},
+    };
 
-        apartmentComplexDetail:
-          selectedPropertyType === "apartment"
-            ? {
-                buildingName: data.apartmentComplexDetail?.buildingName,
-                totalFloors: data.apartmentComplexDetail?.totalFloors,
-                totalUnits: data.apartmentComplexDetail?.totalUnits,
-              }
-            : undefined,
+    const newProperty = await postProperty(payload);
+    console.log("Property created:", newProperty);
+    toast.success("Property created successfully!");
+    reset();
+  } catch (error) {
+    console.error("Error creating property:", error);
+    toast.error("Failed to create property.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-        houseDetail:
-          selectedPropertyType === "house"
-            ? {
-                numberOfFloors: data.houseDetail?.numberOfFloors,
-              }
-            : undefined,
-      };
-
-      const newProperty = await postProperty(payload);
-      console.log("Property created:", newProperty);
-
-      reset();
-      toast.success(" Property created successfully!");
-    } catch (error) {
-      console.error("Error creating property:", error);
-      toast.error(" Failed to create property.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200">
@@ -107,7 +114,10 @@ export default function PropertyForm() {
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-8">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="grid grid-cols-1 gap-8"
+          >
             {/* Basic Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <input
@@ -123,7 +133,7 @@ export default function PropertyForm() {
                 className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all rounded-xl p-3 w-full"
               />
 
-              {/* Property Type */}
+              {/* Property Type Dropdown */}
               <select
                 {...register("propertyTypeId")}
                 required
@@ -131,36 +141,45 @@ export default function PropertyForm() {
               >
                 <option value="">Select Property Type</option>
                 {propertyTypes.map((type) => (
-                  <option key={type.id} value={type.name.toLowerCase()}>
+                  <option key={type.id} value={type.id}>
                     {type.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            {selectedPropertyType === "house" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Conditional Fields for House */}
+            {selectedPropertyTypeName === "house" && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <input
-                  {...register("bedrooms", { valueAsNumber: true })}
+                  {...register("houseDetail.numberOfFloors", { valueAsNumber: true })}
+                  type="number"
+                  placeholder="Number of Floors"
+                  className="border border-gray-300 rounded-xl p-3 w-full"
+                />
+                <input
+                  {...register("houseDetail.bedrooms", { valueAsNumber: true })}
                   type="number"
                   placeholder="Bedrooms"
                   className="border border-gray-300 rounded-xl p-3 w-full"
                 />
                 <input
-                  {...register("bathrooms", { valueAsNumber: true })}
+                  {...register("houseDetail.bathrooms", { valueAsNumber: true })}
                   type="number"
                   placeholder="Bathrooms"
                   className="border border-gray-300 rounded-xl p-3 w-full"
                 />
                 <input
-                  {...register("size", { valueAsNumber: true })}
+                  {...register("houseDetail.size", { valueAsNumber: true })}
                   type="number"
                   placeholder="Size (sqft)"
                   className="border border-gray-300 rounded-xl p-3 w-full"
                 />
               </div>
             )}
-            {selectedPropertyType === "apartment" && (
+
+            {/* Conditional Fields for Apartment */}
+            {selectedPropertyTypeName === "apartment" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <input
                   {...register("apartmentComplexDetail.buildingName")}

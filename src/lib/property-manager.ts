@@ -1,6 +1,6 @@
 import { Property, ApartmentComplexDetail, HouseDetail } from "@/app/data/PropertyData";
 
-type PropertyPayload = Property & {
+export type PropertyPayload = Property & {
   propertyDetails?: ApartmentComplexDetail | HouseDetail;
 };
 
@@ -24,6 +24,50 @@ export const postProperty = async (propertyData: PropertyPayload) => {
     return result;
   } catch (error) {
     console.error("Error posting property:", error);
+    throw error;
+  }
+};
+
+export const getProperties = async (): Promise<PropertyPayload[]> => {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
+      method: "GET",
+      cache: "no-store", 
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error("Failed to fetch properties");
+    }
+
+    const properties = await response.json();
+    return properties;
+  } catch (error) {
+    console.error("Error fetching properties:", error);
+    throw error;
+  }
+};
+
+
+export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`);
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch property");
+    }
+
+    const property = await response.json();
+
+    const propertyPayload: PropertyPayload = {
+      ...property,
+      propertyDetails: property.details || undefined,
+    };
+
+    return propertyPayload;
+  } catch (error) {
+    console.error("Error fetching property by ID:", error);
     throw error;
   }
 };

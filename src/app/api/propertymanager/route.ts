@@ -47,9 +47,6 @@ export async function POST(req: Request) {
         locationId,
         city,
         address,
-        bedrooms,
-        bathrooms,
-        size,
         amenities,
         isFurnished,
         availabilityStatus,
@@ -71,6 +68,9 @@ export async function POST(req: Request) {
         data: {
           propertyId: property.id,
           numberOfFloors: propertyDetails?.numberOfFloors || null,
+          bedrooms: propertyDetails?.bedrooms || null,
+          bathrooms: propertyDetails?.bathrooms || null,
+          size: propertyDetails?.size || null,
         },
       });
     }
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Fetch all properties with details
+// Fetching all properties with details
 export async function GET() {
   try {
     const properties = await prisma.property.findMany({
@@ -96,10 +96,29 @@ export async function GET() {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
+        units: true, 
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
-    return NextResponse.json(properties, { status: 200 });
+    const formatted = properties.map((p) => ({
+      id: p.id,
+      name: p.name,
+      city: p.city,
+      address: p.address,
+      type: p.propertyType?.name,
+      isFurnished: p.isFurnished,
+      availabilityStatus: p.availabilityStatus,
+      details: p.propertyType?.name.toLowerCase() === "apartment"
+        ? p.apartmentComplexDetail
+        : p.houseDetail,
+      totalUnits: p.units?.length || 0,
+      createdAt: p.createdAt,
+    }));
+
+    return NextResponse.json(formatted, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching properties:", error);
     return NextResponse.json(
@@ -108,3 +127,4 @@ export async function GET() {
     );
   }
 }
+
