@@ -158,6 +158,9 @@ export const postProperty = async (propertyData: PropertyPayload) => {
   }
 };
 
+
+
+
 export const getProperties = async (): Promise<PropertyPayload[]> => {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
@@ -201,3 +204,22 @@ export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
     throw error;
   }
 };
+
+
+export async function updateProperty(id: string, updatedData: Partial<Property>) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updatedData),
+  });
+  if (!res.ok) throw new Error("Failed to update property");
+  return res.json();
+}
+
+export async function deleteProperty(id: string) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete property");
+  return res.json();
+}

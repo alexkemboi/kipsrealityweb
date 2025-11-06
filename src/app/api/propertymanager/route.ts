@@ -404,3 +404,170 @@ export async function GET() {
     );
   }
 }
+
+
+export async function PUT(req: Request) {
+  try {
+    const data = await req.json();
+    const {
+      id, // property ID to update
+      listingId,
+      managerId,
+      name,
+      organizationId,
+      propertyTypeId,
+      locationId,
+      city,
+      address,
+      amenities,
+      isFurnished,
+      availabilityStatus,
+      propertyDetails, // apartmentComplexDetail or houseDetail
+    } = data;
+
+    // 1️⃣ Ensure propertyTypeId exists
+    if (!propertyTypeId) {
+      return NextResponse.json(
+        { error: "Invalid property type" },
+        { status: 400 }
+      );
+    }
+
+    // 2️⃣ Fetch the property type
+    const propertyType = await prisma.propertyType.findUnique({
+      where: { id: propertyTypeId },
+    });
+
+    if (!propertyType) {
+      return NextResponse.json(
+        { error: "Property type not found" },
+        { status: 400 }
+      );
+    }
+
+    // 3️⃣ Update in a transaction for safety
+    const updatedProperty = await prisma.$transaction(async (tx) => {
+      // Update main property fields
+      const property = await tx.property.update({
+        where: { id },
+        data: {
+          listingId,
+          managerId,
+          name,
+          organizationId,
+          propertyTypeId,
+          locationId,
+          city,
+          address,
+          amenities,
+          isFurnished,
+          availabilityStatus,
+        },
+      });
+
+      // Update apartment or house details
+      if (propertyType.name.toLowerCase() === "apartment") {
+        // Update or create apartmentComplexDetail
+        const existingComplex = await tx.apartmentComplexDetail.findUnique({
+          where: { propertyId: property.id },
+        });
+
+        if (existingComplex) {
+          await tx.apartmentComplexDetail.update({
+            where: { propertyId: property.id },
+            data: {
+              buildingName: propertyDetails?.buildingName ?? existingComplex.buildingName,
+              totalFloors: propertyDetails?.totalFloors ?? existingComplex.totalFloors,
+              totalUnits: propertyDetails?.totalUnits ?? existingComplex.totalUnits,
+            },
+          });
+        } else {
+          await tx.apartmentComplexDetail.create({
+            data: {
+              propertyId: property.id,
+              buildingName: propertyDetails?.buildingName ?? null,
+              totalFloors: propertyDetails?.totalFloors ?? null,
+              totalUnits: propertyDetails?.totalUnits ?? null,
+            },
+          });
+        }
+      } else if (propertyType.name.toLowerCase() === "house") {
+        const existingHouse = await tx.houseDetail.findUnique({
+          where: { propertyId: property.id },
+        });
+
+        if (existingHouse) {
+          await tx.houseDetail.update({
+            where: { propertyId: property.id },
+            data: {
+              numberOfFloors: propertyDetails?.numberOfFloors ?? existingHouse.numberOfFloors,
+              bedrooms: propertyDetails?.bedrooms ?? existingHouse.bedrooms,
+              bathrooms: propertyDetails?.bathrooms ?? existingHouse.bathrooms,
+              size: propertyDetails?.size ?? existingHouse.size,
+            },
+          });
+        } else {
+          await tx.houseDetail.create({
+            data: {
+              propertyId: property.id,
+              numberOfFloors: propertyDetails?.numberOfFloors ?? null,
+              bedrooms: propertyDetails?.bedrooms ?? null,
+              bathrooms: propertyDetails?.bathrooms ?? null,
+              size: propertyDetails?.size ?? null,
+            },
+          });
+        }
+      }
+
+      return property;
+    });
+
+    return NextResponse.json({
+      message: "Property updated successfully",
+      property: updatedProperty,
+    });
+  } catch (error: any) {
+    console.error("Error updating property:", error);
+    return NextResponse.json(
+      { error: "Failed to update property", details: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+
+// ❌ DELETE PROPERTY
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Missing property ID' }, { status: 400 });
+    }
+
+    const existing = await prisma.property.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Delete dependent records in safe order
+      await tx.unit.deleteMany({ where: { propertyId: id } });
+      await tx.apartmentComplexDetail.deleteMany({ where: { propertyId: id } });
+      await tx.houseDetail.deleteMany({ where: { propertyId: id } });
+      await tx.property.delete({ where: { id } });
+    });
+
+    return NextResponse.json(
+      { message: 'Property deleted successfully' },
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Error deleting property:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete property', details: error.message },
+      { status: 500 }
+    );
+  }
+}
