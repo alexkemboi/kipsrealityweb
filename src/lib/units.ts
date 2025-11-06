@@ -59,3 +59,18 @@ export const updateUnitDetails = async (
     return { success: false, message: error.message || "Update failed" };
   }
 };
+
+
+export const fetchUnitDetails = async (propertyId: string, unitNumber: string) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/units/${propertyId}/${unitNumber}`
+    );
+
+    if (!response.ok) throw new Error("Failed to fetch unit details");
+    return await response.json();
+  } catch (error) {
+    console.error("fetchUnitDetails:", error);
+    return null;
+  }
+};
