@@ -89,7 +89,7 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-4 h-4 text-blue-500" />
-                    Posted {editableListing.datePosted}
+                    Posted {editableListing.dateposted}
                   </span>
                 </div>
 

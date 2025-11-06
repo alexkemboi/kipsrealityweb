@@ -37,97 +37,156 @@
 // }
 import { prisma } from "@/lib/db";
 import { MarketplaceClientPage } from "@/components/website/marketplace/ListingClientPage";
-import { MarketplaceItem } from "@/app/data/marketplaceData";
 import Navbar from "@/components/website/Navbar";
 
+// Define the interface here to match what we're creating
+interface MarketplaceItem {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  image: string;
+  category: string;
+  location: string;
+  unitId: string;
+  propertyId: string;
+  unit: {
+    id: string;
+    unitNumber?: string;
+    property: {
+      id: string;
+      name?: string;
+    };
+  };
+  property: {
+    id: string;
+    name?: string;
+  };
+}
+
 export default async function MarketplacePage() {
+  let listings: MarketplaceItem[] = [];
+
   try {
-    // Fetch available properties with related listing data
-    const properties = await prisma.property.findMany({
+    // Fetch listings with unitId
+    const listingsData = await prisma.listing.findMany({
+      where: {
+        unitId: { not: null },
+      },
       include: {
-        listing: {
-          include: {
-            categoryMarketPlace: true,
-            images: true,
-          },
-        },
-        propertyType: true,
-        location: true,
+        categoryMarketPlace: true,
+        images: true,
       },
       orderBy: { createdAt: "desc" },
     });
 
-    const listings: MarketplaceItem[] = properties
-      .filter((p) => p.listing) // Only properties that actually have a listing
-      .map((property) => {
-        const imageUrl =
-          property.listing?.images?.[0]?.imageUrl || "/placeholder-property.jpg";
+    console.log(`Found ${listingsData.length} listings with unitId`);
 
-        const locationName =
-          property.city || property.location?.name || "Unknown Location";
+    // Get all unique unitIds and propertyIds
+    const unitIds = [...new Set(listingsData.map(l => l.unitId).filter(Boolean))] as string[];
+    
+    // Fetch all units with their properties in one query
+    const units = await prisma.unit.findMany({
+      where: {
+        id: { in: unitIds },
+      },
+      include: {
+        property: {
+          include: {
+            location: true,
+            propertyType: true,
+          },
+        },
+      },
+    });
 
-        const categoryName =
-          property.listing?.categoryMarketPlace?.name?.toLowerCase() || "property";
+    console.log(`Found ${units.length} units for those listings`);
+
+    // Create a map for quick lookup
+    const unitMap = new Map(units.map(u => [u.id, u]));
+
+    // Map listings to MarketplaceItems
+    const mappedListings = listingsData
+      .map((listing) => {
+        if (!listing.unitId) {
+          console.warn(`Listing ${listing.id} has no unitId, skipping`);
+          return null;
+        }
+
+        const unit = unitMap.get(listing.unitId);
+        
+        if (!unit) {
+          console.warn(`Listing ${listing.id} references unitId ${listing.unitId} but unit not found in database`);
+          return null;
+        }
+
+        const property = unit.property;
+
+        if (!property) {
+          console.warn(`Unit ${unit.id} has no property relation`);
+          return null;
+        }
 
         return {
-          id: property.id,
-          title: property.listing?.title || `${locationName} Property`,
-          description:
-            property.listing?.description ||
-            property.amenities ||
-            "No description available",
-          price: property.listing?.price || 0,
-          location: locationName,
-          category: categoryName as MarketplaceItem["category"],
-          image: imageUrl,
-          postedBy: property.listing?.createdBy || "Unknown",
-          verified: true,
-          datePosted: property.createdAt.toISOString(),
+          id: listing.id,
+          title: listing.title || "Untitled Listing",
+          description: listing.description || property.amenities || "No description available",
+          price: listing.price || 0,
+          location: property.city || property.location?.name || "Unknown Location",
+          category: listing.categoryMarketPlace?.name?.toLowerCase() || "property",
+          image: listing.images?.[0]?.imageUrl || `https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop`,
+          unitId: unit.id,
+          propertyId: property.id,
+          unit: {
+            id: unit.id,
+            unitNumber: unit.unitNumber || undefined,
+            property: {
+              id: property.id,
+              name: property.name || undefined,
+            },
+          },
+          property: {
+            id: property.id,
+            name: property.name || undefined,
+          },
         };
-      });
+      })
+      .filter((item) => item !== null);
+    
+    listings = mappedListings as MarketplaceItem[];
+    
+    console.log(`Successfully mapped ${listings.length} marketplace items`);
 
-    return (
-      <>
-        <Navbar />
-
-        {/* Hero / Section */}
-        <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
-          <div className="max-w-3xl mx-auto px-6">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Marketplace <span className="text-gradient-primary">Listings</span>
-            </h1>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Explore Property Listings, Assets, and Services on Rentflow 360 Marketplace.
-            </p>
-          </div>
-        </section>
-
-        {/* Marketplace Listings */}
-        <MarketplaceClientPage listings={listings} />
-      </>
-    );
   } catch (error) {
-    console.error("Error fetching marketplace properties:", error);
-    return (
-      <>
-        <Navbar />
-        <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
-          <div className="max-w-3xl mx-auto px-6">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Marketplace <span className="text-gradient-primary">Listings</span>
-            </h1>
-            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-              Explore Property Listings, Assets, and Services on Rentflow 360 Marketplace.
-            </p>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Unable to load properties
-            </h2>
-            <p className="text-gray-600">
-              Please try again later or contact support if the problem persists.
-            </p>
-          </div>
-        </section>
-      </>
-    );
+    console.error("Error fetching marketplace listings:", error);
   }
+
+  return (
+    <>
+      <Navbar />
+      <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
+        <div className="max-w-3xl mx-auto px-6">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+            Marketplace <span className="text-gradient-primary">Listings</span>
+          </h1>
+          <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
+            Explore Property Listings, Assets, and Services on Rentflow 360 Marketplace.
+          </p>
+
+          {listings.length === 0 ? (
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                No listings found
+              </h2>
+              <p className="text-white/80">
+                Please try again later or contact support if the problem persists.
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <MarketplaceClientPage listings={listings} />
+    </>
+  );
 }

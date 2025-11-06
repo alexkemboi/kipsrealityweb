@@ -7,41 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Tenantapplication {
-  id                 String            @id @default(uuid())
-  fullName           String
-  email              String
-  phone              String
-  dob                DateTime
-  ssn                String?
-  address            String?
-  employerName       String?
-  jobTitle           String?
-  monthlyIncome      Float?
-  employmentDuration String?
-  leaseType          String
-  occupancyType      String
-  moveInDate         DateTime
-  leaseDuration      String
-  occupants          Int?
-  pets               String?
-  landlordName       String?
-  landlordContact    String?
-  reasonForMoving    String?
-  referenceName      String?
-  referenceContact   String?
-  consent            Boolean           @default(false)
-  propertyId         String
-  userId             String?
-  status             ApplicationStatus @default(PENDING)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  property           Property          @relation(fields: [propertyId], references: [id])
-  user               User?             @relation(fields: [userId], references: [id])
 
-  @@index([propertyId], map: "Tenantapplication_propertyId_fkey")
-  @@index([userId], map: "Tenantapplication_userId_fkey")
-}
 
 model Organization {
   id         String             @id @default(uuid())
@@ -108,39 +74,7 @@ model OrganizationUser {
   @@map("organization_users")
 }
 
-model Property {
-  id                     String                  @id @default(uuid())
-  listingId              String?                 @unique
-  managerId              String?
-  organizationId         String?
-  propertyTypeId         String?
-  locationId             String?
-  city                   String
-  address                String
-  bedrooms               Int?
-  bathrooms              Int?
-  size                   Float?
-  amenities              String?
-  isFurnished            Boolean                 @default(false)
-  availabilityStatus     String?
-  createdAt              DateTime                @default(now())
-  name                   String?
-  apartmentComplexDetail ApartmentComplexDetail?
-  houseDetail            HouseDetail?
-  listing                Listing?                @relation(fields: [listingId], references: [id])
-  location               Location?               @relation(fields: [locationId], references: [id])
-  manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
-  organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
-  tenantApplications     Tenantapplication[]
-  appliances             Appliance[]             @relation("PropertyAppliances")
-  maintenanceRequests    MaintenanceRequest[]
 
-  @@index([locationId], map: "Property_locationId_fkey")
-  @@index([managerId], map: "Property_managerId_fkey")
-  @@index([organizationId], map: "Property_organizationId_fkey")
-  @@index([propertyTypeId], map: "Property_propertyTypeId_fkey")
-}
 
 model Vendor {
   id             String       @id @default(uuid())
@@ -169,37 +103,9 @@ model CategoryMarketplace {
   listings    Listing[]
 }
 
-model ListingType {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  listings    Listing[]
-}
 
-model ListingStatus {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  listings    Listing[]
-}
 
-model PropertyType {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  properties  Property[]
-}
 
-model ServiceType {
-  id                 String               @id @default(uuid())
-  name               String               @unique
-  description        String?
-  createdAt          DateTime             @default(now())
-  serviceMarketplace ServiceMarketplace[]
-}
 
 model Location {
   id         String     @id @default(uuid())
@@ -211,65 +117,11 @@ model Location {
   properties Property[]
 }
 
-model Listing {
-  id                  String              @id @default(uuid())
-  organizationId      String
-  createdBy           String
-  categoryId          String
-  listingTypeId       String?
-  statusId            String?
-  locationId          String?
-  title               String
-  description         String
-  price               Float
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  adminActions        AdminAction[]
-  categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
-  createdByUser       User                @relation(fields: [createdBy], references: [id])
-  listingType         ListingType?        @relation(fields: [listingTypeId], references: [id])
-  location            Location?           @relation(fields: [locationId], references: [id])
-  organization        Organization        @relation(fields: [organizationId], references: [id])
-  status              ListingStatus?      @relation(fields: [statusId], references: [id])
-  images              ListingImage[]
-  property            Property?
-  serviceMarketplace  ServiceMarketplace?
 
-  @@index([categoryId], map: "Listing_categoryId_fkey")
-  @@index([createdBy], map: "Listing_createdBy_fkey")
-  @@index([listingTypeId], map: "Listing_listingTypeId_fkey")
-  @@index([locationId], map: "Listing_locationId_fkey")
-  @@index([organizationId], map: "Listing_organizationId_fkey")
-  @@index([statusId], map: "Listing_statusId_fkey")
-}
 
-model ServiceMarketplace {
-  id            String            @id @default(uuid())
-  listingId     String            @unique
-  vendorId      String?
-  serviceTypeId String?
-  description   String
-  rate          Float
-  availability  String?
-  createdAt     DateTime          @default(now())
-  listing       Listing           @relation(fields: [listingId], references: [id])
-  serviceType   ServiceType?      @relation(fields: [serviceTypeId], references: [id])
-  vendor        OrganizationUser? @relation(fields: [vendorId], references: [id])
 
-  @@index([serviceTypeId], map: "ServiceMarketplace_serviceTypeId_fkey")
-  @@index([vendorId], map: "ServiceMarketplace_vendorId_fkey")
-}
 
-model ListingImage {
-  id        String   @id @default(uuid())
-  listingId String
-  imageUrl  String
-  isPrimary Boolean  @default(false)
-  createdAt DateTime @default(now())
-  listing   Listing  @relation(fields: [listingId], references: [id])
 
-  @@index([listingId], map: "ListingImage_listingId_fkey")
-}
 
 model ActionType {
   id           String        @id @default(uuid())
@@ -279,25 +131,7 @@ model ActionType {
   adminActions AdminAction[]
 }
 
-model AdminAction {
-  id              String            @id @default(uuid())
-  adminOrgUserId  String
-  targetOrgUserId String?
-  listingId       String?
-  actionTypeId    String
-  reason          String?
-  details         Json?
-  createdAt       DateTime          @default(now())
-  actionType      ActionType        @relation(fields: [actionTypeId], references: [id])
-  admin           OrganizationUser  @relation("AdminActionsByAdmin", fields: [adminOrgUserId], references: [id])
-  listing         Listing?          @relation(fields: [listingId], references: [id])
-  target          OrganizationUser? @relation("AdminActionsTarget", fields: [targetOrgUserId], references: [id])
 
-  @@index([actionTypeId], map: "AdminAction_actionTypeId_fkey")
-  @@index([adminOrgUserId], map: "AdminAction_adminOrgUserId_fkey")
-  @@index([listingId], map: "AdminAction_listingId_fkey")
-  @@index([targetOrgUserId], map: "AdminAction_targetOrgUserId_fkey")
-}
 
 model Plan {
   id            Int            @id @default(autoincrement())
@@ -351,64 +185,14 @@ model SidebarItem {
   @@index([featureId], map: "SidebarItem_featureId_fkey")
 }
 
-model NavbarItem {
-  id          Int          @id @default(autoincrement())
-  name        String
-  href        String
-  order       Int          @default(0)
-  isVisible   Boolean      @default(true)
-  isAvailable Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  parentId    Int?
-  parent      NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
-  children    NavbarItem[] @relation("NavbarSubmenu")
 
-  @@index([parentId])
-  @@index([order])
-}
 
-model ApartmentComplexDetail {
-  id           String   @id @default(uuid())
-  propertyId   String   @unique
-  buildingName String?
-  totalFloors  Int?
-  totalUnits   Int?
-  property     Property @relation(fields: [propertyId], references: [id])
-}
 
-model HouseDetail {
-  id             String   @id @default(uuid())
-  propertyId     String   @unique
-  numberOfFloors Int?
-  property       Property @relation(fields: [propertyId], references: [id])
-}
 
-model Invite {
-  id             String       @id @default(cuid())
-  email          String
-  token          String       @unique
-  role           UserRole
-  organizationId String
-  invitedById    String?
-  expiresAt      DateTime
-  accepted       Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
 
-  @@index([organizationId])
-  @@index([email])
-  @@index([invitedById], map: "Invite_invitedById_fkey")
-}
 
-model Appliance {
-  id          String     @id @default(uuid())
-  createdAt   DateTime   @default(now())
-  description String?
-  name        String
-  properties  Property[] @relation("PropertyAppliances")
-}
+
+
 
 model AboutUs {
   id          Int      @id @default(autoincrement())
@@ -587,7 +371,7 @@ model MaintenanceRequest {
   updatedAt      DateTime      @updatedAt
 
   organization   Organization     @relation(fields: [organizationId], references: [id])
-  property       Property         @relation(fields: [propertyId], references: [id])
+  property    Property @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
   requestedBy    OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
 
   @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
@@ -601,6 +385,290 @@ enum UserStatus {
   SUSPENDED
 }
 
+
+
+
+
+// ---------------------------------------
+// MARKETPLACE LISTINGS
+// ---------------------------------------
+
+
+
+model ListingType {
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., For Sale, For Rent, For Hire
+  description String?
+  createdAt   DateTime  @default(now())
+  listings    Listing[]
+}
+
+model ListingStatus {
+  id          String    @id @default(uuid())
+  name        String    @unique // e.g., Pending, Approved, Active, Rejected, Deleted
+  description String?
+  createdAt   DateTime  @default(now())
+  listings    Listing[]
+}
+
+model PropertyType {
+  id          String     @id @default(uuid())
+  name        String     @unique // e.g., Apartment, House, Land, Commercial
+  description String?
+  createdAt   DateTime   @default(now())
+  properties  Property[]
+}
+
+model ServiceType {
+  id                 String               @id @default(uuid())
+  name               String               @unique // e.g., Plumbing, Cleaning, Electrical
+  description        String?
+  createdAt          DateTime             @default(now())
+  serviceMarketplace ServiceMarketplace[]
+}
+
+
+
+model Listing {
+  id             String   @id @default(uuid())
+  organizationId String
+  createdBy      String
+  categoryId     String
+  listingTypeId  String?
+  statusId       String?
+  locationId     String?
+  propertyId     String?  // optional, FK lives in Property
+  unitId         String?  // optional, FK lives in Unit
+  title          String
+  description    String
+  price          Float
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  //  Relations
+  organization        Organization        @relation(fields: [organizationId], references: [id])
+  createdByUser       User                @relation(fields: [createdBy], references: [id])
+  categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
+  listingType         ListingType?        @relation(fields: [listingTypeId], references: [id])
+  status              ListingStatus?      @relation(fields: [statusId], references: [id])
+  location            Location?           @relation(fields: [locationId], references: [id])
+
+  property            Property?           @relation("PropertyListing") 
+  unit                Unit?               @relation("UnitListing")     
+
+  serviceMarketplace  ServiceMarketplace?
+  images              ListingImage[]
+  adminActions        AdminAction[]
+}
+
+
+model Property {
+  id                  String            @id @default(uuid())
+  listingId           String?           @unique // FK defined here
+  managerId           String?
+  name                String?
+  organizationId      String?
+  propertyTypeId      String?
+  locationId          String?
+  city                String
+  address             String
+  amenities           String?
+  isFurnished         Boolean           @default(false)
+  availabilityStatus  String?
+  createdAt           DateTime          @default(now())
+
+  // 🔗 Relations
+  listing             Listing?          @relation("PropertyListing", fields: [listingId], references: [id])
+  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
+  organization        Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
+  location            Location?         @relation(fields: [locationId], references: [id])
+  appliances          Appliance[]       @relation("PropertyAppliances")
+  tenantapplications  Tenantapplication[]
+  maintenanceRequests  MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
+
+  apartmentComplexDetail ApartmentComplexDetail?
+  houseDetail            HouseDetail?
+  
+  units               Unit[]            
+}
+
+model ApartmentComplexDetail {
+  id                String  @id @default(uuid())
+  propertyId        String  @unique
+  buildingName      String?
+  totalFloors       Int?        
+  totalUnits        Int?        
+  property          Property @relation(fields: [propertyId], references: [id])
+
+}
+model HouseDetail {
+  id           String   @id @default(uuid())
+  propertyId   String   @unique
+  size                Float?
+  numberOfFloors Int?     
+  bedrooms            Int?
+  bathrooms           Int?
+  totalUnits        Int? 
+  property     Property @relation(fields: [propertyId], references: [id])
+
+}
+
+
+model Unit {
+  id              String   @id @default(uuid())
+  propertyId      String
+  complexDetailId String?
+  houseDetailId String?
+  listingId       String?   @unique
+  unitNumber      String
+  floorNumber     Int?
+  bedrooms        Int?
+  bathrooms       Int?
+  isOccupied      Boolean  @default(false)
+  rentAmount      Float?
+  tenantName      String?
+  createdAt       DateTime @default(now())
+
+  property          Property               @relation(fields: [propertyId], references: [id])
+  
+
+  listing           Listing?                @relation("UnitListing", fields: [listingId], references: [id])
+  tenantApplications Tenantapplication[]
+}
+
+
+
+model Appliance {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  properties  Property[] @relation("PropertyAppliances")
+}
+
+model ServiceMarketplace {
+  id            String   @id @default(uuid())
+  listingId     String   @unique
+  vendorId      String?
+  serviceTypeId String?
+  description   String
+  rate          Float
+  availability  String?
+  createdAt     DateTime @default(now())
+
+  listing     Listing           @relation(fields: [listingId], references: [id])
+  vendor      OrganizationUser? @relation(fields: [vendorId], references: [id])
+  serviceType ServiceType?      @relation(fields: [serviceTypeId], references: [id])
+}
+
+// ---------------------------------------
+// SUPPORTING TABLES
+// ---------------------------------------
+
+model ListingImage {
+  id        String   @id @default(uuid())
+  listingId String
+  imageUrl  String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id])
+}
+
+model AdminAction {
+  id              String   @id @default(uuid())
+  adminOrgUserId  String
+  targetOrgUserId String?
+  listingId       String?
+  actionTypeId    String
+  reason          String?
+  details         Json?
+  createdAt       DateTime @default(now())
+
+  admin      OrganizationUser  @relation("AdminActionsByAdmin", fields: [adminOrgUserId], references: [id])
+  target     OrganizationUser? @relation("AdminActionsTarget", fields: [targetOrgUserId], references: [id])
+  listing    Listing?          @relation(fields: [listingId], references: [id])
+  actionType ActionType        @relation(fields: [actionTypeId], references: [id])
+}
+
+model NavbarItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  href        String
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true)
+  isAvailable Boolean  @default(true)
+  parentId    Int? // New: nullable parent reference
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  parent   NavbarItem?  @relation("NavbarSubmenu", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavbarItem[] @relation("NavbarSubmenu")
+
+  @@index([parentId])
+  @@index([order])
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  token          String       @unique
+  role           UserRole
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  invitedById    String?
+  invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
+  expiresAt      DateTime
+  accepted       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+  @@index([email])
+}
+//-----------------------
+// tenant application 
+//------------------------
+model Tenantapplication {
+  id                 String            @id @default(uuid())
+  fullName           String
+  email              String
+  phone              String
+  dob                DateTime
+  ssn                String?
+  address            String?
+  employerName       String?
+  jobTitle           String?
+  monthlyIncome      Float?
+  employmentDuration String?
+  leaseType          String
+  occupancyType      String
+  moveInDate         DateTime
+  leaseDuration      String
+  occupants          Int?
+  pets               String?
+  landlordName       String?
+  landlordContact    String?
+  reasonForMoving    String?
+  referenceName      String?
+  referenceContact   String?
+  consent            Boolean           @default(false)
+  propertyId         String
+  userId             String?
+  status             ApplicationStatus @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  property           Property          @relation(fields: [propertyId], references: [id])
+  user               User?             @relation(fields: [userId], references: [id])
+
+  unitId             String?
+  unit               Unit?     @relation(fields: [unitId], references: [id])
+
+  @@index([propertyId], map: "Tenantapplication_propertyId_fkey")
+  @@index([userId], map: "Tenantapplication_userId_fkey")
+
+}
 enum ApplicationStatus {
   PENDING
   APPROVED

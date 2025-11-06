@@ -1,6 +1,6 @@
 export interface Property {
   id?: string;
-  listingId: string;
+  listingId?: string;
   managerId?: string;
   name?: string;
   organizationId?: string;
@@ -8,9 +8,7 @@ export interface Property {
   locationId?: string;
   city: string;
   address: string;
-  bedrooms: number;
-  bathrooms: number;
-  size: number;
+  
   amenities?: string;
   isFurnished?: boolean;
   availabilityStatus?: string;
@@ -32,4 +30,7 @@ export interface ApartmentComplexDetail {
 
 export interface HouseDetail {
   numberOfFloors?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  size?: number;
 }
