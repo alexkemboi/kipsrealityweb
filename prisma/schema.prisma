@@ -527,7 +527,7 @@ model Unit {
   bathrooms       Int?
   isOccupied      Boolean  @default(false)
   rentAmount      Float?
-  tenantName      String?
+  unitName      String?
   createdAt       DateTime @default(now())
 
   property          Property               @relation(fields: [propertyId], references: [id])

@@ -34,7 +34,7 @@ export default async function ManageUnitsPage({
           </h2>
 
           <Link
-            href={`/property-manager/apartment-details/${propertyId}/units/${unit.unitNumber}/edit`}
+            href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/edit`}
             className="block mt-4 w-full text-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
           >
             Add Unit Details
