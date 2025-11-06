@@ -1,11 +1,25 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 type Property = { id: string; address: string | null; city: string | null };
 
-export default function CreateRequestForm() {
+export default function CreateRequestForm({
+  organizationId,
+  properties: propsProperties,
+  onCreate,
+  onSuccess, // ✅ NEW — tells parent to hide the form
+}: {
+  organizationId?: string;
+  properties?: Property[];
+  onCreate?: (payload: {
+    propertyId: string;
+    title: string;
+    description?: string;
+  }) => Promise<any> | any;
+  onSuccess?: () => void; // ✅ NEW
+}) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -15,11 +29,25 @@ export default function CreateRequestForm() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // fetch properties for the user's organization
+    // If mock props were provided
+    if (Array.isArray(propsProperties)) {
+      setProperties(propsProperties);
+      if (propsProperties[0]) setPropertyId(propsProperties[0].id);
+      return;
+    }
+
+    // Otherwise load from API
     async function load() {
-      if (!user?.organization?.id) return;
+      const orgId = organizationId ?? user?.organization?.id;
+      if (!orgId) {
+        setProperties([]);
+        return;
+      }
+
       try {
-        const res = await fetch(`/api/properties?organizationId=${user.organization.id}`);
+        const res = await fetch(
+          `/api/properties?organizationId=${encodeURIComponent(orgId)}`
+        );
         if (!res.ok) throw new Error("Failed to load properties");
         const data = await res.json();
         setProperties(data || []);
@@ -28,33 +56,62 @@ export default function CreateRequestForm() {
         console.error(err);
       }
     }
+
     load();
-  }, [user]);
+  }, [user, organizationId, propsProperties]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     if (!title || !description || !propertyId) {
       setError("Please fill all fields");
       return;
     }
+
     if (!user) {
       setError("You must be logged in to create a request");
       return;
     }
+
     setLoading(true);
+
     try {
-      const res = await fetch("/api/maintenance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: user.organization?.id, propertyId, userId: user.id, title, description }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data?.error || "Failed to create");
+      if (onCreate) {
+        // MOCK MODE
+        await Promise.resolve(
+          onCreate({ propertyId, title, description })
+        );
+
+        // ✅ Clear form
+        setTitle("");
+        setDescription("");
+        setPropertyId(properties?.[0]?.id ?? "");
+
+        // ✅ Tell parent to hide the form
+        if (onSuccess) onSuccess();
+      } else {
+        // DATABASE MODE
+        const res = await fetch("/api/maintenance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            organizationId: organizationId ?? user.organization?.id,
+            propertyId,
+            userId: user.id,
+            title,
+            description,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data?.error || "Failed to create");
+        }
+
+        // ✅ Reload page only for DB mode
+        window.location.reload();
       }
-      // naive refresh
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -63,28 +120,69 @@ export default function CreateRequestForm() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-3 p-4 bg-white rounded shadow">
+    <form
+      onSubmit={submit}
+      className="space-y-3 p-4 bg-[#0a1628] rounded shadow"
+    >
       <div>
-        <label className="block text-sm font-medium text-gray-700">Property</label>
-        <select value={propertyId} onChange={(e) => setPropertyId(e.target.value)} className="mt-1 block w-full border rounded p-2">
+        <label className="block text-sm font-medium text-gray-300">Property</label>
+        <select
+          value={propertyId}
+          onChange={(e) => setPropertyId(e.target.value)}
+          disabled={loading}
+          className="mt-1 block w-full bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg disabled:opacity-60"
+        >
           <option value="">Select property</option>
           {properties.map((p) => (
-            <option key={p.id} value={p.id}>{p.address ?? p.id} {p.city ? `— ${p.city}` : ''}</option>
+            <option key={p.id} value={p.id}>
+              {p.address ?? p.id} {p.city ? `— ${p.city}` : ""}
+            </option>
           ))}
         </select>
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700">Title</label>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full border rounded p-2" placeholder="Leaky faucet" />
+        <label className="block text-sm font-medium text-gray-300">Title</label>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          disabled={loading}
+          className="mt-1 block w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg disabled:opacity-60"
+          placeholder="Leaky faucet"
+        />
       </div>
+
       <div>
-        <label className="block text-sm font-medium text-gray-700">Description</label>
-        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full border rounded p-2" rows={4} />
+        <label className="block text-sm font-medium text-gray-300">Description</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={loading}
+          className="mt-1 block w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg disabled:opacity-60"
+          rows={4}
+        />
       </div>
+
       {error && <p className="text-sm text-red-600">{error}</p>}
-      <div>
-        <button disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">
+
+      <div className="flex items-center gap-3">
+        <button
+          disabled={loading}
+          className="px-4 py-2 bg-[#30D5C8] text-[#0f172a] rounded-lg font-semibold disabled:opacity-50"
+        >
           {loading ? "Creating..." : "Create Request"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setTitle("");
+            setDescription("");
+            setPropertyId(properties?.[0]?.id ?? "");
+            setError(null);
+          }}
+          className="px-4 py-2 bg-transparent border border-[#15386a] text-white rounded-lg"
+        >
+          Reset
         </button>
       </div>
     </form>
