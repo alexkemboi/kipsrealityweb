@@ -125,6 +125,13 @@ export default function ViewPropertyPage() {
             >
               View Units
             </Link>
+            <Link
+              href={`/property-manager/view-own-property/${property.id}/manage_units_and_leases`}
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Manage Units & Leases
+            </Link>
+
           </div>
         </CardContent>
       </Card>

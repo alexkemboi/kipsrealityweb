@@ -63,10 +63,10 @@ export default function AdminTenantApplications() {
   // Handle Approve
   async function handleApprove(appId: string) {
     try {
-      const res = await fetch(`/api/tenant-applications/${appId}`, {
+      const res = await fetch(`/api/tenant-application/${appId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Approved" }),
+        body: JSON.stringify({ status: "APPROVED" }),
       });
       
       if (res.ok) {
@@ -85,10 +85,10 @@ export default function AdminTenantApplications() {
   // Handle Reject
   async function handleReject(appId: string) {
     try {
-      const res = await fetch(`/api/tenantapplications/${appId}`, {
+      const res = await fetch(`/api/tenant-application/${appId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Rejected" }),
+        body: JSON.stringify({ status: "REJECTED" }),
       });
       
       if (res.ok) {
@@ -107,7 +107,7 @@ export default function AdminTenantApplications() {
   function proceedToLease(app: TenantApplication) {
     // Navigate to lease signing page with application data
     const userId = app.id || app.id;
-    window.location.href = `/admin/lease-signing?applicationId=${app.id}&tenantId=${userId}`;
+    window.location.href = `/property-manager/content/lease-signing?applicationId=${app.id}&tenantId=${userId}`;
   }
 
   // Export to CSV
