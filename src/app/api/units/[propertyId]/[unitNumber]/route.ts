@@ -26,6 +26,10 @@ export async function PUT(req: Request, { params }: { params: { propertyId: stri
         bathrooms: data.bathrooms ? Number(data.bathrooms) : null,
         floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
         rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
+        isOccupied:
+      typeof data.isOccupied === "boolean"
+        ? data.isOccupied
+        : undefined,
       },
     });
 
