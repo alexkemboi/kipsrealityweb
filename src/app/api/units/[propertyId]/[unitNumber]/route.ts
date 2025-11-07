@@ -1,11 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+
 const prisma = new PrismaClient();
 
-
-export async function PUT(req: Request, { params }: { params: { propertyId: string; unitNumber: string } }) {
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ propertyId: string; unitNumber: string }> }
+) {
   try {
-    const { propertyId, unitNumber } = params;
+    const { propertyId, unitNumber } = await context.params;
     const data = await req.json();
 
     // Find the unit first by propertyId + unitNumber
@@ -17,7 +20,7 @@ export async function PUT(req: Request, { params }: { params: { propertyId: stri
       return NextResponse.json({ success: false, message: "Unit not found" }, { status: 404 });
     }
 
-    // Parse numeric fields
+    // Update the unit
     const updatedUnit = await prisma.unit.update({
       where: { id: unit.id },
       data: {
@@ -27,9 +30,7 @@ export async function PUT(req: Request, { params }: { params: { propertyId: stri
         floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
         rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
         isOccupied:
-      typeof data.isOccupied === "boolean"
-        ? data.isOccupied
-        : undefined,
+          typeof data.isOccupied === "boolean" ? data.isOccupied : undefined,
       },
     });
 
@@ -40,19 +41,15 @@ export async function PUT(req: Request, { params }: { params: { propertyId: stri
   }
 }
 
-
 export async function GET(
   req: Request,
-  { params }: { params: { propertyId: string; unitNumber: string } }
+  context: { params: Promise<{ propertyId: string; unitNumber: string }> }
 ) {
-  const { propertyId, unitNumber } = params;
-
   try {
+    const { propertyId, unitNumber } = await context.params;
+
     const unit = await prisma.unit.findFirst({
-      where: {
-        propertyId,
-        unitNumber,
-      },
+      where: { propertyId, unitNumber },
     });
 
     if (!unit) {
@@ -62,9 +59,6 @@ export async function GET(
     return NextResponse.json(unit, { status: 200 });
   } catch (error) {
     console.error("Error fetching unit details:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch unit details" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch unit details" }, { status: 500 });
   }
 }
