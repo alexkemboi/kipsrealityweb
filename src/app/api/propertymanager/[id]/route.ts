@@ -1,3 +1,4 @@
+// src/app/api/propertymanager/[id]/route.ts
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 

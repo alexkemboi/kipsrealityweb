@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       data: { lastLoginAt: new Date() }
     });
 
+    // Updated user response to include organizationUserId
     const userResponse = {
       id: user.id,
       email: user.email,
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       phone: user.phone,
       avatarUrl: user.avatarUrl,
       role: role,
+      organizationUserId: primaryOrgUser?.id, // <-- Added
       organization: primaryOrgUser
         ? {
             id: primaryOrgUser.organization.id,

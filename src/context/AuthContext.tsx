@@ -9,13 +9,13 @@ interface User {
     firstName: string;
     lastName: string;
     role: 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR';
-    avatarUrl?: string
+    avatarUrl?: string;
     organization?: {
-        id: string
-        name: string
-        slug: string
-    }
-
+        id: string;
+        name: string;
+        slug: string;
+    };
+    organizationUserId?: string; // <- add this
 }
 
 interface AuthTokens {
@@ -84,13 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initializeAuth = async () => {
         const storedUser = getStoredUser();
-
         if (storedUser) {
             setUser(storedUser);
         } else {
-            console.log(' AuthContext - No user found in storage');
+            console.log('AuthContext - No user found in storage');
         }
-
         setIsLoading(false);
     };
 
@@ -99,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = (userData: User, tokens: AuthTokens) => {
+        // Make sure the API returns organizationUserId here
         setStoredUser(userData);
         setStoredTokens(tokens);
         setUser(userData);
@@ -124,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (context === undefined) {
+    if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
