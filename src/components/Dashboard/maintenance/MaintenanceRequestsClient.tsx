@@ -9,6 +9,7 @@ type Request = {
   title: string;
   description: string;
   propertyId?: string;
+  unitId?: string;
   priority: string;
   status: string;
   requestedBy?: {
@@ -21,6 +22,11 @@ type Request = {
   property?: {
     address?: string | null;
     name?: string | null;
+    city?: string | null;
+  };
+  unit?: {
+    unitNumber: string;
+    unitName?: string | null;
   };
 };
 
@@ -52,8 +58,12 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
         <div>
-          <h1 className="text-2xl font-bold text-white">Maintenance Requests</h1>
-          <p className="text-gray-400 text-sm">Track property issues, repairs and service needs</p>
+          <h1 className="text-2xl font-bold text-white">
+            Maintenance Requests
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Track property issues, repairs and service needs
+          </p>
         </div>
         <button
           onClick={() => setShowForm((s) => !s)}
@@ -66,7 +76,10 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
       {/* Form */}
       {showForm && (
         <div className="mb-6">
-            <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
+          <CreateRequestForm
+            organizationId={organizationId}
+            onSuccess={() => setShowForm(false)}
+          />
         </div>
       )}
 
@@ -78,11 +91,23 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
         </div>
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
           <p className="text-gray-400 text-sm mb-1">Open Requests</p>
-          <p className="text-3xl font-bold text-yellow-400">{requests.filter(r => (r.status ?? '').toLowerCase().includes('open')).length}</p>
+          <p className="text-3xl font-bold text-yellow-400">
+            {
+              requests.filter((r) =>
+                (r.status ?? "").toLowerCase().includes("open")
+              ).length
+            }
+          </p>
         </div>
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Requests Accepted</p>
-          <p className="text-3xl font-bold text-[#30D5C8]">{requests.filter(r => !(r.status ?? '').toLowerCase().includes('open')).length}</p>
+          <p className="text-gray-400 text-sm mb-1">Requests Completed</p>
+          <p className="text-3xl font-bold text-[#30D5C8]">
+            {
+              requests.filter(
+                (r) => (r.status ?? "").toLowerCase().includes("completed")
+              ).length
+            }
+          </p>
         </div>
       </div>
 
@@ -95,13 +120,13 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
               placeholder="Search by property..."
               className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <select
             className="bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
             value={emergencyType}
-            onChange={e => setEmergencyType(e.target.value as any)}
+            onChange={(e) => setEmergencyType(e.target.value as any)}
           >
             <option value="ALL">Request Types</option>
             <option value="Plumbing">Emergency</option>
@@ -118,46 +143,127 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
           <table className="w-full">
             <thead className="bg-[#15386a]/50">
               <tr>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Title</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Description</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Property</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Priority</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Status</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Requested</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Created At</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Cost</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Assign to</th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Title
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Description
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Property
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Address
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Priority
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Status
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Requested
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Date
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Cost
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Assign to
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  unit
+                </th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((r) => (
-                <tr key={r.id} className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors">
+                <tr
+                  key={r.id}
+                  className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors"
+                >
                   <td className="p-2 text-gray-200">{r.title}</td>
-                  <td className="p-2 text-gray-200">{r.description.length > 15 ? `${r.description.slice(0, 15)}...` : r.description}</td>
-                  <td className="p-2 text-gray-200">{r.property?.name }</td>
                   <td className="p-2 text-gray-200">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{r.priority}</span>
+                    {r.description.length > 15
+                      ? `${r.description.slice(0, 15)}...`
+                      : r.description}
+                  </td>
+                  <td className="p-2 text-gray-200">{r.property?.name}</td>
+                  <td className="p-2 text-gray-200">{r.property?.city}</td>
+                  <td className="p-2 text-gray-200">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold
+                         ${r.priority === "LOW"
+                          ? "bg-gray-300 text-gray-800" // low = gray color
+                          : r.priority === "NORMAL"
+                            ? "bg-green-200 text-green-800" // normal = light green
+                            : r.priority === "HIGH"
+                              ? "bg-green-600 text-white" // high = dark green
+                              : r.priority === "URGENT"
+                                ? "bg-red-500 text-white" // urgent = red
+                                : "bg-orange-400 text-white" // fallback (optional)
+                        }
+                       `}
+                    >
+                      {/* Convert to Title Case for display */}
+                      {r.priority ? r.priority.charAt(0) + r.priority.slice(1).toLowerCase() : ''}
+                    </span>
                   </td>
                   <td className="p-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${ (r.status ?? '').toLowerCase().includes('open') ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[#30D5C8]/20 text-[#30D5C8]' }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        (r.status ?? "").toLowerCase().includes("open")
+                          ? "bg-yellow-500/20 text-yellow-400"
+                          : "bg-[#30D5C8]/20 text-[#30D5C8]"
+                      }`}
+                    >
                       {r.status}
                     </span>
                   </td>
-                  <td className="p-2 text-gray-200">{r.requestedBy?.user?.firstName ?? 'Unknown'} {r.requestedBy?.user?.lastName?.charAt(0) ?? ''}</td>
-                  <td className="p-2 text-gray-400 text-sm">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}</td>
+                  <td className="p-2 text-gray-200">
+                    {r.requestedBy?.user?.firstName ?? "Unknown"}{" "}
+                    {r.requestedBy?.user?.lastName?.charAt(0) ?? ""}
+                  </td>
+                  <td className="p-2 text-gray-400 text-sm">
+                    {r.createdAt
+                      ? new Date(r.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "-"}
+                  </td>
                   <td className="p-2 text-gray-200">200/=</td>
                   <td className="p-2 text-gray-200">not assigned</td>
+                  <td className="p-2 text-gray-200">
+                    {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber  ? `Unit ${r.unit.unitNumber}` : '-'}
+                  </td>
+
                 </tr>
               ))}
               {filteredRequests.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center p-12">
                     <div className="flex flex-col items-center gap-2">
-                      <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      <svg
+                        className="w-12 h-12 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                        />
                       </svg>
                       <p className="text-gray-400 text-lg">No requests found</p>
-                      <p className="text-gray-500 text-sm">Try adjusting your filters or create a new request</p>
+                      <p className="text-gray-500 text-sm">
+                        Try adjusting your filters or create a new request
+                      </p>
                     </div>
                   </td>
                 </tr>

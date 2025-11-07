@@ -9,7 +9,7 @@ export default function Loading() {
           <div className="w-12 h-12 rounded-full border-4 border-[#15386a] border-t-[#30D5C8] animate-spin" />
         </div>
         {/* Loading text */}
-        <p className="text-[#30D5C8] font-medium">Loading || Please wait...</p>
+        <p className="text-[#30D5C8] font-medium">Loading ...</p>
       </div>
       <style jsx>{`
         @keyframes spin {
