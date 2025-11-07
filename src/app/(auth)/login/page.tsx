@@ -70,11 +70,19 @@ const LoginPage = () => {
         }
 
       } else {
-        const err = await response.json();
-        const errorMsg = err.error || "Invalid credentials";
-        setError(errorMsg);
-        toast.error(errorMsg, { duration: 4000 });
-      }
+          const err = await response.json();
+          let errorMsg = err.error || 'Invalid credentials';
+
+         if (response.status === 404) {
+         errorMsg = 'User does not exist. Please create an account to continue.';
+          } else if (response.status === 401) {
+         // credential mismatch
+         errorMsg = 'Invalid email or password.';
+      } 
+
+  setError(errorMsg);
+  toast.error(errorMsg, { duration: 4000 });
+}
     } catch (error) {
       const errorMsg = "Network error. Please try again.";
       setError(errorMsg);

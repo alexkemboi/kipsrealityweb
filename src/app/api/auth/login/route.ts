@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return NextResponse.json({ error: 'User does not exist. Please create an account to continue.' }, { status: 404 });
     }
 
     if (user.status !== 'ACTIVE') {
