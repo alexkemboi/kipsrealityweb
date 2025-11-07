@@ -1,6 +1,8 @@
 // src/lib/units.ts
 import { prisma } from "./db";
 import { Unit } from "@/app/data/UnitData";
+import { UnitFormData } from "@/components/Dashboard/propertymanagerdash/units/EditUnitForm";
+
 
 export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
   const property = await prisma.property.findUnique({
@@ -70,7 +72,7 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
 export const updateUnitDetails = async (
   propertyId: string,
   unitNumber: string,
-  data: Partial<Unit>
+  data: Partial<UnitFormData>  
 ): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(
