@@ -7,27 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 model Organization {
-  id         String             @id @default(uuid())
-  name       String
-  slug       String             @unique
-  logoUrl    String?            @map("logo_url")
-  website    String?
-  phone      String?
-  address    String?
-  isActive   Boolean            @default(true) @map("is_active")
-  createdAt  DateTime           @default(now()) @map("created_at")
-  updatedAt  DateTime           @updatedAt @map("updated_at")
-  planId     Int?
-  invites    Invite[]
-  listings   Listing[]
-  properties Property[]         @relation("OrganizationToProperty")
-  users      OrganizationUser[]
+  id                  String               @id @default(uuid())
+  name                String
+  slug                String               @unique
+  logoUrl             String?              @map("logo_url")
+  website             String?
+  phone               String?
+  address             String?
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  planId              Int?
+  invites             Invite[]
+  listings            Listing[]
+  properties          Property[]           @relation("OrganizationToProperty")
+  users               OrganizationUser[]
   maintenanceRequests MaintenanceRequest[]
-  plan       Plan?              @relation(fields: [planId], references: [id])
-  vendors    Vendor[]
+  plan                Plan?                @relation(fields: [planId], references: [id])
+  vendors             Vendor[]
 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
@@ -50,6 +48,7 @@ model User {
   listings           Listing[]
   tenantApplications Tenantapplication[]
   organizationUsers  OrganizationUser[]
+  leases             Lease[]
   vendors            Vendor[]
 
   @@map("users")
@@ -73,8 +72,6 @@ model OrganizationUser {
   @@index([organizationId], map: "organization_users_organization_id_fkey")
   @@map("organization_users")
 }
-
-
 
 model Vendor {
   id             String       @id @default(uuid())
@@ -103,10 +100,6 @@ model CategoryMarketplace {
   listings    Listing[]
 }
 
-
-
-
-
 model Location {
   id         String     @id @default(uuid())
   name       String
@@ -117,12 +110,6 @@ model Location {
   properties Property[]
 }
 
-
-
-
-
-
-
 model ActionType {
   id           String        @id @default(uuid())
   name         String        @unique
@@ -130,8 +117,6 @@ model ActionType {
   createdAt    DateTime      @default(now())
   adminActions AdminAction[]
 }
-
-
 
 model Plan {
   id            Int            @id @default(autoincrement())
@@ -184,15 +169,6 @@ model SidebarItem {
 
   @@index([featureId], map: "SidebarItem_featureId_fkey")
 }
-
-
-
-
-
-
-
-
-
 
 model AboutUs {
   id          Int      @id @default(autoincrement())
@@ -370,9 +346,9 @@ model MaintenanceRequest {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  organization   Organization     @relation(fields: [organizationId], references: [id])
-  property    Property @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy    OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  property     Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
+  requestedBy  OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
 
   @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
   @@index([propertyId], map: "MaintenanceRequest_propertyId_fkey")
@@ -385,15 +361,9 @@ enum UserStatus {
   SUSPENDED
 }
 
-
-
-
-
 // ---------------------------------------
 // MARKETPLACE LISTINGS
 // ---------------------------------------
-
-
 
 model ListingType {
   id          String    @id @default(uuid())
@@ -427,8 +397,6 @@ model ServiceType {
   serviceMarketplace ServiceMarketplace[]
 }
 
-
-
 model Listing {
   id             String   @id @default(uuid())
   organizationId String
@@ -437,8 +405,8 @@ model Listing {
   listingTypeId  String?
   statusId       String?
   locationId     String?
-  propertyId     String?  // optional, FK lives in Property
-  unitId         String?  // optional, FK lives in Unit
+  propertyId     String? // optional, FK lives in Property
+  unitId         String? // optional, FK lives in Unit
   title          String
   description    String
   price          Float
@@ -453,91 +421,87 @@ model Listing {
   status              ListingStatus?      @relation(fields: [statusId], references: [id])
   location            Location?           @relation(fields: [locationId], references: [id])
 
-  property            Property?           @relation("PropertyListing") 
-  unit                Unit?               @relation("UnitListing")     
+  property Property? @relation("PropertyListing")
+  unit     Unit?     @relation("UnitListing")
 
-  serviceMarketplace  ServiceMarketplace?
-  images              ListingImage[]
-  adminActions        AdminAction[]
+  serviceMarketplace ServiceMarketplace?
+  images             ListingImage[]
+  adminActions       AdminAction[]
 }
 
-
 model Property {
-  id                  String            @id @default(uuid())
-  listingId           String?           @unique // FK defined here
-  managerId           String?
-  name                String?
-  organizationId      String?
-  propertyTypeId      String?
-  locationId          String?
-  city                String
-  address             String
-  amenities           String?
-  isFurnished         Boolean           @default(false)
-  availabilityStatus  String?
-  createdAt           DateTime          @default(now())
+  id                 String   @id @default(uuid())
+  listingId          String?  @unique // FK defined here
+  managerId          String?
+  name               String?
+  organizationId     String?
+  propertyTypeId     String?
+  locationId         String?
+  city               String
+  address            String
+  amenities          String?
+  isFurnished        Boolean  @default(false)
+  availabilityStatus String?
+  createdAt          DateTime @default(now())
 
   // 🔗 Relations
-  listing             Listing?          @relation("PropertyListing", fields: [listingId], references: [id])
-  manager             OrganizationUser? @relation(fields: [managerId], references: [id])
-  organization        Organization?     @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType        PropertyType?     @relation(fields: [propertyTypeId], references: [id])
-  location            Location?         @relation(fields: [locationId], references: [id])
-  appliances          Appliance[]       @relation("PropertyAppliances")
+  listing             Listing?             @relation("PropertyListing", fields: [listingId], references: [id])
+  manager             OrganizationUser?    @relation(fields: [managerId], references: [id])
+  organization        Organization?        @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType        PropertyType?        @relation(fields: [propertyTypeId], references: [id])
+  location            Location?            @relation(fields: [locationId], references: [id])
+  appliances          Appliance[]          @relation("PropertyAppliances")
   tenantapplications  Tenantapplication[]
-  maintenanceRequests  MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
+  leases              Lease[]
+  maintenanceRequests MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
 
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
-  
-  units               Unit[]            
+
+  units Unit[]
 }
 
 model ApartmentComplexDetail {
-  id                String  @id @default(uuid())
-  propertyId        String  @unique
-  buildingName      String?
-  totalFloors       Int?        
-  totalUnits        Int?        
-  property          Property @relation(fields: [propertyId], references: [id])
-
-}
-model HouseDetail {
   id           String   @id @default(uuid())
   propertyId   String   @unique
-  size                Float?
-  numberOfFloors Int?     
-  bedrooms            Int?
-  bathrooms           Int?
-  totalUnits        Int? 
+  buildingName String?
+  totalFloors  Int?
+  totalUnits   Int?
   property     Property @relation(fields: [propertyId], references: [id])
-
 }
 
+model HouseDetail {
+  id             String   @id @default(uuid())
+  propertyId     String   @unique
+  size           Float?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  totalUnits     Int?
+  property       Property @relation(fields: [propertyId], references: [id])
+}
 
 model Unit {
   id              String   @id @default(uuid())
   propertyId      String
   complexDetailId String?
-  houseDetailId String?
-  listingId       String?   @unique
+  houseDetailId   String?
+  listingId       String?  @unique
   unitNumber      String
   floorNumber     Int?
   bedrooms        Int?
   bathrooms       Int?
   isOccupied      Boolean  @default(false)
   rentAmount      Float?
-  unitName      String?
+  unitName        String?
   createdAt       DateTime @default(now())
 
-  property          Property               @relation(fields: [propertyId], references: [id])
-  
+  property Property @relation(fields: [propertyId], references: [id])
 
-  listing           Listing?                @relation("UnitListing", fields: [listingId], references: [id])
+  listing            Listing?            @relation("UnitListing", fields: [listingId], references: [id])
   tenantApplications Tenantapplication[]
+  leases             Lease[]
 }
-
-
 
 model Appliance {
   id          String     @id @default(uuid())
@@ -627,6 +591,7 @@ model Invite {
   @@index([organizationId])
   @@index([email])
 }
+
 //-----------------------
 // tenant application 
 //------------------------
@@ -662,16 +627,87 @@ model Tenantapplication {
   property           Property          @relation(fields: [propertyId], references: [id])
   user               User?             @relation(fields: [userId], references: [id])
 
-  unitId             String?
-  unit               Unit?     @relation(fields: [unitId], references: [id])
+  unitId       String?
+  unit         Unit?   @relation(fields: [unitId], references: [id])
+  tenantLeases Lease[]
 
   @@index([propertyId], map: "Tenantapplication_propertyId_fkey")
   @@index([userId], map: "Tenantapplication_userId_fkey")
-
 }
+
 enum ApplicationStatus {
   PENDING
   APPROVED
   REJECTED
   UNDER_REVIEW
+}
+
+//----------------
+// lease
+//----------------
+model Lease {
+  id            String @id @default(uuid())
+  applicationId String @unique
+  tenantId      String?
+  propertyId    String
+  unitId        String
+
+  // Lease Term
+  startDate     DateTime
+  endDate       DateTime
+  leaseTerm     String? // "12 months", "6 months", "Month-to-month"
+
+  // Payment Terms
+  rentAmount        Float
+  paymentDueDay     Int?        // 1–31
+  paymentFrequency  String      @default("MONTHLY") // MONTHLY / WEEKLY
+
+  // Security Deposit
+  securityDeposit   Float?
+
+  // Late Fees & Penalties
+  lateFeeFlat       Float?
+  lateFeeDaily      Float?
+  gracePeriodDays   Int?        // Allowed late days before fees apply
+
+  // Maintenance & Responsibilities
+  landlordResponsibilities String? // summarized responsibilities
+  tenantResponsibilities   String? // summarized responsibilities
+
+  // Utilities
+  tenantPaysElectric Boolean @default(true)
+  tenantPaysWater    Boolean @default(false)
+  tenantPaysTrash    Boolean @default(false)
+  tenantPaysInternet Boolean @default(false)
+
+  // Usage Clause
+  usageType       String?  // "Residential" (default), "Commercial", etc.
+
+  // Termination
+  earlyTerminationFee Float?
+  terminationNoticeDays Int? // 30 days notice, for example
+
+  // Lease Lifecycle
+  leaseStatus LeaseStatus @default(DRAFT)
+
+  // Signatures
+  tenantSignedAt   DateTime?
+  landlordSignedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  application Tenantapplication @relation(fields: [applicationId], references: [id])
+  tenant   User? @relation(fields: [tenantId], references: [id])
+  property    Property          @relation(fields: [propertyId], references: [id])
+  unit        Unit              @relation(fields: [unitId], references: [id])
+}
+
+
+enum LeaseStatus {
+  DRAFT
+  ACTIVE
+  SIGNED
+  CANCELLED
 }
