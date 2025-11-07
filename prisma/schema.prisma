@@ -450,7 +450,6 @@ model Property {
   organization        Organization?        @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType        PropertyType?        @relation(fields: [propertyTypeId], references: [id])
   location            Location?            @relation(fields: [locationId], references: [id])
-  appliances          Appliance[]          @relation("PropertyAppliances")
   tenantapplications  Tenantapplication[]
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
@@ -501,6 +500,9 @@ model Unit {
   listing            Listing?            @relation("UnitListing", fields: [listingId], references: [id])
   tenantApplications Tenantapplication[]
   leases             Lease[]
+  // Many-to-many with Appliance
+  appliances         Appliance[]         @relation("UnitAppliances")
+
 }
 
 model Appliance {
@@ -508,7 +510,8 @@ model Appliance {
   name        String
   description String?
   createdAt   DateTime   @default(now())
-  properties  Property[] @relation("PropertyAppliances")
+  //  Many-to-many back relation
+  units       Unit[]     @relation("UnitAppliances")
 }
 
 model ServiceMarketplace {
