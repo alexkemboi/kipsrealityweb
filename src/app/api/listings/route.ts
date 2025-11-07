@@ -8,8 +8,6 @@ export async function POST(req: Request) {
     let {
       organizationId,
       createdBy,
-      categoryId,
-      listingTypeId,
       statusId,
       locationId,
       propertyId,
@@ -28,38 +26,9 @@ export async function POST(req: Request) {
     }
 
    // ✅ STEP 1 — AUTO-CREATE DEFAULT CATEGORY IF MISSING
-if (!categoryId) {
-  let defaultCategory = await prisma.categoryMarketplace.findFirst({
-    where: { name: "Housing" },
-  });
-
-  if (!defaultCategory) {
-    defaultCategory = await prisma.categoryMarketplace.create({
-      data: {
-        name: "Housing",   // ✅ slug removed (doesn't exist in your model)
-      },
-    });
-  }
-
-  categoryId = defaultCategory.id;
-}
 
 // ✅ STEP 2 — Assign default listing type if missing
-if (!listingTypeId) {
-  let defaultType = await prisma.listingType.findFirst({
-    where: { name: "For Rent" },
-  });
 
-  if (!defaultType) {
-    defaultType = await prisma.listingType.create({
-      data: {
-        name: "For Rent",  // ✅ slug removed (not in your model)
-      },
-    });
-  }
-
-  listingTypeId = defaultType.id;
-}
 
 
     // ✅ STEP 3 — Assign default status if missing
@@ -82,8 +51,7 @@ if (!listingTypeId) {
       data: {
         organizationId,
         createdBy,
-        categoryId,
-        listingTypeId,
+       
         statusId,
         locationId: locationId ?? null,
         propertyId,

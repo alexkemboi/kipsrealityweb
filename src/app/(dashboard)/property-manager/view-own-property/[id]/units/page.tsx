@@ -148,7 +148,7 @@ export default async function ManageUnitsPage({
               <div className="px-6 pb-6">
               <Link
                 href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/edit`}
-                className={`w-full py-3 px-4 rounded-xl font-semibold text-center block ${
+                className={`w-full py-3 px-4 mb-2 rounded-xl font-semibold text-center block ${
                   hasDetails
                     ? "bg-yellow-500 hover:bg-yellow-600"
                     : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
