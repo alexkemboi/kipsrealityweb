@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { useAuth } from "@/context/AuthContext";
 
-type Property = { id: string; address: string | null; city: string | null };
+type Property = { id: string; address: string | null; name: string | null };
 
 export default function CreateRequestForm({
   organizationId,
@@ -86,6 +86,8 @@ export default function CreateRequestForm({
       setDescription("");
       setPropertyId(properties[0]?.id ?? "");
       if (onSuccess) onSuccess();
+      // Reload the page to refresh the data
+      window.location.reload();
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -96,7 +98,7 @@ export default function CreateRequestForm({
   return (
     <form
       onSubmit={submit}
-      className="space-y-3 p-4 bg-[#0a1628] rounded shadow"
+      className="space-y-3 p-4 bg-[#0a1628] rounded shadow max-w-2xl mx-auto"
     >
       <div>
         <label className="block text-sm font-medium text-gray-300">Property</label>
@@ -109,7 +111,7 @@ export default function CreateRequestForm({
           <option value="">Select property</option>
           {properties.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.address ?? p.id} {p.city ? `— ${p.city}` : ""}
+              {p.name ?? p.address ?? p.id}
             </option>
           ))}
         </select>
@@ -153,10 +155,12 @@ export default function CreateRequestForm({
             setDescription("");
             setPropertyId(properties?.[0]?.id ?? "");
             setError(null);
+            if (onSuccess) onSuccess();
           }}
+        
           className="px-4 py-2 bg-transparent border border-[#15386a] text-white rounded-lg"
         >
-          Reset
+          Cancel
         </button>
       </div>
     </form>

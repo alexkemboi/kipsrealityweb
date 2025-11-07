@@ -6,7 +6,7 @@ export async function GET() {
     const requests = await (prisma as any).maintenanceRequest.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        property: { select: { id: true, address: true, city: true } },
+        property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
       },
     });

@@ -20,7 +20,7 @@ type Request = {
   createdAt?: string;
   property?: {
     address?: string | null;
-    city?: string | null;
+    name?: string | null;
   };
 };
 
@@ -35,7 +35,7 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
   const filteredRequests = requests.filter((r) => {
     const search = searchTerm.trim().toLowerCase();
     if (search) {
-      const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
+      const prop = `${r.property?.name ?? ""} ${r.property?.address ?? ""}`.toLowerCase();
       if (!prop.includes(search) && !(r.title ?? "").toLowerCase().includes(search)) return false;
     }
 
@@ -66,21 +66,18 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
       {/* Form */}
       {showForm && (
         <div className="mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h4 className="font-medium mb-3">Create a Request</h4>
             <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
-          </div>
         </div>
       )}
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Requests Assigned</p>
+        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[rgb(21,56,106)] rounded-xl p-4">
+          <p className="text-gray-400 text-sm mb-1">Total Requests</p>
           <p className="text-3xl font-bold text-white">{requests.length}</p>
         </div>
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Pending</p>
+          <p className="text-gray-400 text-sm mb-1">Open Requests</p>
           <p className="text-3xl font-bold text-yellow-400">{requests.filter(r => (r.status ?? '').toLowerCase().includes('open')).length}</p>
         </div>
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
@@ -106,12 +103,11 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
             value={emergencyType}
             onChange={e => setEmergencyType(e.target.value as any)}
           >
-            <option value="ALL">All Emergency Types</option>
-            <option value="Plumbing">Plumbing</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Heating">Heating</option>
-            <option value="Security">Security</option>
-            <option value="Other">Other</option>
+            <option value="ALL">Request Types</option>
+            <option value="Plumbing">Emergency</option>
+            <option value="Electrical">Urgent</option>
+            <option value="Heating">Standard</option>
+            <option value="Security">Routine</option>
           </select>
         </div>
       </div>
@@ -127,26 +123,30 @@ export default function MaintenanceRequestsClient({ initialRequests }: { initial
                 <th className="text-left p-4 text-gray-300 font-semibold text-sm">Property</th>
                 <th className="text-left p-4 text-gray-300 font-semibold text-sm">Priority</th>
                 <th className="text-left p-4 text-gray-300 font-semibold text-sm">Status</th>
-                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Requested By</th>
+                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Requested</th>
                 <th className="text-left p-4 text-gray-300 font-semibold text-sm">Created At</th>
+                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Cost</th>
+                <th className="text-left p-4 text-gray-300 font-semibold text-sm">Assign to</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((r) => (
                 <tr key={r.id} className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors">
-                  <td className="p-4 text-gray-200">{r.title}</td>
-                  <td className="p-4 text-gray-200">{r.description.length > 40 ? `${r.description.slice(0, 40)}...` : r.description}</td>
-                  <td className="p-4 text-gray-200">{r.property?.address ?? r.propertyId} {r.property?.city ? `— ${r.property.city}` : ''}</td>
-                  <td className="p-4 text-gray-200">
+                  <td className="p-2 text-gray-200">{r.title}</td>
+                  <td className="p-2 text-gray-200">{r.description.length > 15 ? `${r.description.slice(0, 15)}...` : r.description}</td>
+                  <td className="p-2 text-gray-200">{r.property?.name }</td>
+                  <td className="p-2 text-gray-200">
                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{r.priority}</span>
                   </td>
-                  <td className="p-4">
+                  <td className="p-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${ (r.status ?? '').toLowerCase().includes('open') ? 'bg-yellow-500/20 text-yellow-400' : 'bg-[#30D5C8]/20 text-[#30D5C8]' }`}>
                       {r.status}
                     </span>
                   </td>
-                  <td className="p-4 text-gray-200">{r.requestedBy?.user?.firstName ?? 'Unknown'} {r.requestedBy?.user?.lastName ?? ''}</td>
-                  <td className="p-4 text-gray-400 text-sm">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                  <td className="p-2 text-gray-200">{r.requestedBy?.user?.firstName ?? 'Unknown'} {r.requestedBy?.user?.lastName?.charAt(0) ?? ''}</td>
+                  <td className="p-2 text-gray-400 text-sm">{r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-'}</td>
+                  <td className="p-2 text-gray-200">200/=</td>
+                  <td className="p-2 text-gray-200">not assigned</td>
                 </tr>
               ))}
               {filteredRequests.length === 0 && (

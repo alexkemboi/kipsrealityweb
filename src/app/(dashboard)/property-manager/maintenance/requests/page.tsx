@@ -14,7 +14,7 @@ export default async function MaintenanceRequestsPage() {
     requests = await (prisma as any).maintenanceRequest.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        property: { select: { id: true, address: true, city: true } },
+        property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
       },
     });
@@ -22,6 +22,6 @@ export default async function MaintenanceRequestsPage() {
     console.warn("MaintenanceRequest table not available yet:");
   }
 
-  // Render a client component that handles interactive UI (toggle form, etc.)
+  // Redering a client component that handles interactive UI (toggle form, etc.)
   return <MaintenanceRequestsClient initialRequests={requests} />;
 }
