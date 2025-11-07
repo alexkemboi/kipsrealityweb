@@ -12,6 +12,7 @@ interface AccessTokenPayload {
     email: string
     role: string
     organizationId: string
+    organizationUserId: string;
 }
 
 interface RefreshTokenPayload {

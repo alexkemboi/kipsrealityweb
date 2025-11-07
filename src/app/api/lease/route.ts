@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,30 +14,22 @@ export async function POST(req: NextRequest) {
       endDate,
       rentAmount,
       securityDeposit,
-
-      // Optional extended fields
       leaseTerm,
       paymentDueDay,
       paymentFrequency,
       lateFeeFlat,
       lateFeeDaily,
       gracePeriodDays,
-
       landlordResponsibilities,
       tenantResponsibilities,
-
       tenantPaysElectric,
       tenantPaysWater,
       tenantPaysTrash,
       tenantPaysInternet,
-
       usageType,
-
       earlyTerminationFee,
       terminationNoticeDays
     } = data;
-    
-    const finalTenantId = tenantId ?? null;
 
     // Basic validation
     if (!applicationId || !propertyId || !unitId) {
@@ -82,32 +75,26 @@ export async function POST(req: NextRequest) {
     const lease = await prisma.lease.create({
       data: {
         applicationId,
-        tenantId,
+        tenantId: tenantId ?? null,
         propertyId,
         unitId,
-
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         rentAmount,
         securityDeposit: securityDeposit ?? null,
-
         leaseTerm,
         paymentDueDay,
         paymentFrequency,
         lateFeeFlat,
         lateFeeDaily,
         gracePeriodDays,
-
         landlordResponsibilities,
         tenantResponsibilities,
-
         tenantPaysElectric,
         tenantPaysWater,
         tenantPaysTrash,
         tenantPaysInternet,
-
         usageType,
-
         earlyTerminationFee,
         terminationNoticeDays,
       },
@@ -130,43 +117,81 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// export async function GET(req: NextRequest) {
+//   try {
+//     const user = await getCurrentUser();
 
+//     if (!user) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     // Fetch all leases where user is the property manager
+//     const leases = await prisma.lease.findMany({
+//       where: {
+//         property: {
+//           managerId: user.id,
+//         },
+//       },
+//       include: {
+//         tenant: {
+//           select: {
+//             id: true,
+//             email: true,
+//           },
+//         },
+//         property: {
+//           select: {
+//             id: true,
+//             name: true,
+//           },
+//         },
+//         unit: {
+//           select: {
+//             id: true,
+//             unitNumber: true,
+//           },
+//         },
+//       },
+//       orderBy: {
+//         createdAt: "desc",
+//       },
+//     });
+
+//     return NextResponse.json(leases);
+//   } catch (error) {
+//     console.error("Error fetching leases:", error);
+//     return NextResponse.json({ error: "Failed to fetch leases" }, { status: 500 });
+//   }
+// }
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const applicationId = searchParams.get("applicationId");
+    const user = await getCurrentUser();
 
-    if (!applicationId) {
-      return NextResponse.json(
-        { error: "applicationId is required" },
-        { status: 400 }
-      );
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const lease = await prisma.lease.findUnique({
-      where: { applicationId },
+    const leases = await prisma.lease.findMany({
+      where: {
+        property: {
+          manager: {
+            userId: user.id // ✅ Correct relationship
+          }
+        }
+      },
       include: {
         tenant: true,
         property: true,
         unit: true,
-        application: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       }
     });
 
-    if (!lease) {
-      return NextResponse.json(
-        { error: "Lease not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(lease);
-
-  } catch (error: any) {
-    console.error("GET lease error:", error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json(leases);
+  } catch (error) {
+    console.error("Error fetching leases:", error);
+    return NextResponse.json({ error: "Failed to fetch leases" }, { status: 500 });
   }
 }

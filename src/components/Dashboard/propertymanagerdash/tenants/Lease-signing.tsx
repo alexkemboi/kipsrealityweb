@@ -147,33 +147,33 @@ export default function LeaseSigningPage() {
     if (step > 1) setStep(step - 1);
   }
 
-  /* ✅ Create Lease API call */
-  async function createLease() {
-    try {
-      if (!application) throw new Error("Missing application data.");
+  // In your LeaseSigningPage component (the form with steps)
+async function createLease() {
+  try {
+    if (!application) throw new Error("Missing application data.");
 
-      const res = await fetch("/api/lease", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          applicationId,
-          tenantId: application.userId ?? null,
-          propertyId: application.propertyId,
-          unitId: application.unitId,
-          ...form,
-        }),
-      });
+    const res = await fetch("/api/lease", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        applicationId,
+        tenantId: application.userId ?? null,
+        propertyId: application.propertyId,
+        unitId: application.unitId,
+        ...form,
+      }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Failed to create lease");
+    if (!res.ok) throw new Error(data.error || "Failed to create lease");
 
-      alert("Lease created successfully!");
-      window.location.href = `/admin/leases/${data.id}`;
-    } catch (err: any) {
-      alert(err.message);
-    }
+    alert("Lease created successfully!");
+    window.location.href = `/property-manager/content/lease/${data.id}/sign`;
+  } catch (err: any) {
+    alert(err.message);
   }
+}
 
   if (loading) return <p className="p-10 text-center">Loading...</p>;
   if (error) return <p className="p-10 text-center text-red-600">{error}</p>;

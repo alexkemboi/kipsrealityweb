@@ -41,7 +41,8 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role: role,
-      organizationId: primaryOrgUser?.organizationId ?? ''
+      organizationId: primaryOrgUser?.organizationId ?? '',
+      organizationUserId: primaryOrgUser?.id
     });
 
     const refreshToken = generateRefreshToken({ userId: user.id });

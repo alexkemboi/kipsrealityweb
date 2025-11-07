@@ -136,7 +136,8 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role: invite.role,
-      organizationId: invite.organizationId
+      organizationId: invite.organizationId,
+      organizationUserId: ''
     })
 
     const refreshToken = generateRefreshToken({ userId: user.id })

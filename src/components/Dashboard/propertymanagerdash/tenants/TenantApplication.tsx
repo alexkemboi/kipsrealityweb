@@ -103,11 +103,11 @@ export default function AdminTenantApplications() {
     }
   }
 
-  // Proceed to Lease Signing
+
   function proceedToLease(app: TenantApplication) {
     // Navigate to lease signing page with application data
     const userId = app.id || app.id;
-    window.location.href = `/property-manager/content/lease-signing?applicationId=${app.id}&tenantId=${userId}`;
+    window.location.href = `/property-manager/content/lease/create?applicationId=${app.id}&tenantId=${userId}`;
   }
 
   // Export to CSV
