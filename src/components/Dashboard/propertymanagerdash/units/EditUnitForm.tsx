@@ -122,7 +122,7 @@ export default function EditUnitForm({
               type="text"
               {...register("unitName")}
               placeholder="e.g. Apartment A1"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
             />
           </div>
 
@@ -139,7 +139,7 @@ export default function EditUnitForm({
                 min: { value: 0, message: "Bedrooms cannot be negative" }
               })}
               placeholder="e.g. 2"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
             {errors.bedrooms && (
               <p className="text-red-500 text-xs mt-1">{errors.bedrooms.message}</p>
@@ -160,7 +160,7 @@ export default function EditUnitForm({
                 min: { value: 0, message: "Bathrooms cannot be negative" }
               })}
               placeholder="e.g. 1.5"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
             {errors.bathrooms && (
               <p className="text-red-500 text-xs mt-1">{errors.bathrooms.message}</p>
@@ -177,7 +177,7 @@ export default function EditUnitForm({
               min="0"
               {...register("floorNumber")}
               placeholder="e.g. 3"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -192,26 +192,11 @@ export default function EditUnitForm({
               step="0.01"
               {...register("rentAmount")}
               placeholder="e.g. 25000"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Appliances */}
-          <div className="md:col-span-2">
-            <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-              Appliances
-            </label>
-            <input
-              type="text"
-              value={applianceInput}
-              onChange={(e) => setApplianceInput(e.target.value)}
-              placeholder="e.g. Fridge, Microwave, TV"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-gray-500 text-xs mt-1">
-              Enter multiple appliances separated by commas. Existing appliances will be replaced.
-            </p>
-          </div>
+
         </div>
 
         {/* Occupied */}
