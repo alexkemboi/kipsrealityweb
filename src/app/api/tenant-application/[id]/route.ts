@@ -1,37 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db"; // Adjust path to your prisma client
+import { ApplicationStatus } from "@prisma/client";
 // import { getServerSession } from "next-auth"; 
 // import { authOptions } from "@/lib/auth"; // Adjust to your auth config
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Optional: Add authentication check
-    // const session = await getServerSession(authOptions);
-    // if (!session) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const { id } = await context.params;
+    const { status } = await req.json();
 
-    const { id } = params;
-    const body = await req.json();
-    const { status } = body;
-
-    // Validate status
-    if (!status || !["Pending", "Approved", "Rejected", "PENDING", "APPROVED", "REJECTED"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status. Must be Pending, Approved, or Rejected" },
-        { status: 400 }
-      );
+    if (!status) {
+      return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
 
-    // Update the application
+    const normalizedStatus = status.toUpperCase().replace(" ", "_");
+
+    if (!["PENDING", "APPROVED", "REJECTED", "UNDER_REVIEW"].includes(normalizedStatus)) {
+      return NextResponse.json({
+        error: "Invalid status. Must be PENDING, APPROVED, REJECTED, UNDER_REVIEW",
+      }, { status: 400 });
+    }
+
     const updatedApplication = await prisma.tenantapplication.update({
       where: { id },
-      data: { 
-        status: status.toUpperCase() as "PENDING" | "APPROVED" | "REJECTED" 
-      },
+      data: { status: normalizedStatus as ApplicationStatus },
       include: {
         property: true,
         unit: true,
@@ -40,22 +35,19 @@ export async function PATCH(
     });
 
     return NextResponse.json(updatedApplication, { status: 200 });
+
   } catch (error: any) {
     console.error("Error updating application:", error);
-    
+
     if (error.code === "P2025") {
-      return NextResponse.json(
-        { error: "Application not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
 
-    return NextResponse.json(
-      { error: "Failed to update application", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+
 
 // Optional: Add GET method to fetch single application
 export async function GET(

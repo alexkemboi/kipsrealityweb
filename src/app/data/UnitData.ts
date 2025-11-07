@@ -9,6 +9,6 @@ export interface Unit {
   bathrooms?: number | null;
   isOccupied: boolean;
   rentAmount?: number | null;
-  tenantName?: string | null;
+  unitName?: string | null;
   createdAt: string;
 }

@@ -1,0 +1,18 @@
+-- AlterTable
+ALTER TABLE `Lease` ADD COLUMN `earlyTerminationFee` DOUBLE NULL,
+    ADD COLUMN `gracePeriodDays` INTEGER NULL,
+    ADD COLUMN `landlordResponsibilities` VARCHAR(191) NULL,
+    ADD COLUMN `landlordSignedAt` DATETIME(3) NULL,
+    ADD COLUMN `lateFeeDaily` DOUBLE NULL,
+    ADD COLUMN `lateFeeFlat` DOUBLE NULL,
+    ADD COLUMN `leaseTerm` VARCHAR(191) NULL,
+    ADD COLUMN `paymentDueDay` INTEGER NULL,
+    ADD COLUMN `paymentFrequency` VARCHAR(191) NOT NULL DEFAULT 'MONTHLY',
+    ADD COLUMN `tenantPaysElectric` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `tenantPaysInternet` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `tenantPaysTrash` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `tenantPaysWater` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `tenantResponsibilities` VARCHAR(191) NULL,
+    ADD COLUMN `tenantSignedAt` DATETIME(3) NULL,
+    ADD COLUMN `terminationNoticeDays` INTEGER NULL,
+    ADD COLUMN `usageType` VARCHAR(191) NULL;
