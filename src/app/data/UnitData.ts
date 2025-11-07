@@ -1,3 +1,10 @@
+export interface Appliance {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: string;
+}
+
 export interface Unit {
   id: string;
   propertyId: string;
@@ -11,4 +18,22 @@ export interface Unit {
   rentAmount?: number | null;
   unitName?: string | null;
   createdAt: string;
+
+  //  This is the correct way:
+  appliances?: Appliance[];
+}
+
+
+export interface ApplianceInput {
+  name: string;
+}
+
+export interface UnitUpdateInput {
+  bedrooms: number;
+  bathrooms: number;
+  floorNumber: number | null;
+  rentAmount: number | null;
+  isOccupied: boolean;
+  appliances: { name: string }[];
+  unitName?: string;
 }

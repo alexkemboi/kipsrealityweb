@@ -3,16 +3,19 @@
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { updateUnitDetails } from "@/lib/units";
+import { Appliance, Unit } from "@/app/data/UnitData";
 
+// Form interface aligned with backend expectations
 interface UnitFormData {
   bedrooms: number;
   bathrooms: number;
-  floorNumber?: number;
-  rentAmount?: number;
+  floorNumber?: number | null;
+  rentAmount?: number | null;
   unitName?: string;
   isOccupied?: boolean;
+  appliances?: string; // ✅ Send as comma-separated string
 }
 
 export default function EditUnitForm({
@@ -22,26 +25,49 @@ export default function EditUnitForm({
 }: {
   propertyId: string;
   unitNumber: string;
-  existingUnit: UnitFormData | null;
+  existingUnit: (Unit & { appliances?: Appliance[] }) | null;
 }) {
   const router = useRouter();
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UnitFormData>({
-    defaultValues: existingUnit || {},
-  });
   const [loading, setLoading] = useState(false);
+
+  // Preprocess appliances for display as string
+  const defaultValues: UnitFormData = {
+    bedrooms: existingUnit?.bedrooms ?? 0,
+    bathrooms: existingUnit?.bathrooms ?? 0,
+    floorNumber: existingUnit?.floorNumber ?? null,
+    rentAmount: existingUnit?.rentAmount ?? null,
+    unitName: existingUnit?.unitName ?? "",
+    isOccupied: existingUnit?.isOccupied ?? false,
+    appliances: existingUnit?.appliances
+      ?.map((a) => a.name)
+      .join(", ") ?? "", // ✅ Convert appliance array to comma-separated string
+  };
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UnitFormData>({
+    defaultValues,
+  });
+
+  useEffect(() => {
+    reset(defaultValues);
+  }, [existingUnit]);
 
   const onSubmit = async (data: UnitFormData) => {
     setLoading(true);
 
-  const formattedData = {
-  ...data,
-  bedrooms: Number(data.bedrooms),
-  bathrooms: Number(data.bathrooms),
-  floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
-  rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
-  isOccupied: Boolean(data.isOccupied), 
-};
-
+    const formattedData = {
+      bedrooms: Number(data.bedrooms),
+      bathrooms: Number(data.bathrooms),
+      floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
+      rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
+      isOccupied: Boolean(data.isOccupied),
+      unitName: data.unitName || undefined,
+      appliances: data.appliances || "", // ✅ Pass as string (backend splits it)
+    };
 
     const result = await updateUnitDetails(propertyId, unitNumber, formattedData);
 
@@ -49,7 +75,7 @@ export default function EditUnitForm({
       toast.success("Unit details saved successfully!");
       setTimeout(() => router.back(), 1000);
     } else {
-      toast.error("Failed to save unit details.");
+      toast.error(result.message || "Failed to save unit details.");
     }
 
     setLoading(false);
@@ -57,7 +83,6 @@ export default function EditUnitForm({
 
   return (
     <div className="max-w-2xl mx-auto bg-white/90 backdrop-blur-xl border border-gray-200 shadow-2xl rounded-3xl p-8 transition-all duration-300">
-      {/* Header Section */}
       <div className="text-center mb-8">
         <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
           <span className="text-white font-bold text-lg">#{unitNumber}</span>
@@ -69,83 +94,72 @@ export default function EditUnitForm({
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Grid Layout for Related Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Unit Name */}
           <div className="md:col-span-2">
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Unit Name
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                {...register("unitName")}
-                placeholder="e.g. Apartment A1"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
-              />
-              
-            </div>
+            <input
+              type="text"
+              {...register("unitName")}
+              placeholder="e.g. Apartment A1"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+            />
           </div>
 
-          {/* Bedrooms & Bathrooms */}
+          {/* Bedrooms */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Bedrooms
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                {...register("bedrooms", { 
-                  required: "Number of bedrooms is required",
-                  min: { value: 0, message: "Must be 0 or more" }
-                })}
-                placeholder="e.g. 2"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
-              />
-              
-            </div>
+            <input
+              type="number"
+              {...register("bedrooms", {
+                required: "Number of bedrooms is required",
+                min: { value: 0, message: "Must be 0 or more" },
+              })}
+              placeholder="e.g. 2"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+            />
             {errors.bedrooms && (
               <p className="text-red-500 text-xs mt-1 ml-1">{errors.bedrooms.message}</p>
             )}
           </div>
 
+          {/* Bathrooms */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Bathrooms
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                {...register("bathrooms", { 
-                  required: "Number of bathrooms is required",
-                  min: { value: 0, message: "Must be 0 or more" }
-                })}
-                placeholder="e.g. 1"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
-              />
-              
-            </div>
+            <input
+              type="number"
+              {...register("bathrooms", {
+                required: "Number of bathrooms is required",
+                min: { value: 0, message: "Must be 0 or more" },
+              })}
+              placeholder="e.g. 1"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+            />
             {errors.bathrooms && (
               <p className="text-red-500 text-xs mt-1 ml-1">{errors.bathrooms.message}</p>
             )}
           </div>
 
-          {/* Floor Number & Rent Amount */}
+          {/* Floor Number */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Floor Number
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                {...register("floorNumber", { min: 0 })}
-                placeholder="e.g. 3"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
-              />
-              
-            </div>
+            <input
+              type="number"
+              {...register("floorNumber", { min: 0 })}
+              placeholder="e.g. 3"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+            />
           </div>
 
+          {/* Rent Amount */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Rent Amount (KSh)
@@ -161,32 +175,33 @@ export default function EditUnitForm({
               />
             </div>
           </div>
+
+          {/* Appliances */}
+          <div className="md:col-span-2">
+            <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+              Appliances
+            </label>
+            <input
+              type="text"
+              {...register("appliances")}
+              placeholder="e.g. Fridge, Microwave, TV"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+            />
+            <p className="text-gray-500 text-xs mt-1">
+              Enter multiple appliances separated by commas
+            </p>
+          </div>
         </div>
 
-        {/* Occupied Checkbox with Enhanced Styling */}
+        {/* Occupied Checkbox */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 transition-all duration-200 hover:bg-blue-100">
           <label className="flex items-center space-x-3 cursor-pointer">
-            <div className="relative">
-              <input
-                type="checkbox"
-                {...register("isOccupied")}
-                className="sr-only peer"
-              />
-              <div className="w-5 h-5 bg-white border-2 border-gray-300 rounded-md peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all duration-200 flex items-center justify-center">
-                <svg 
-                  className="w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity duration-200" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <span className="text-gray-700 font-semibold">Currently Occupied</span>
-              <p className="text-gray-600 text-sm mt-1">Click this if the unit is currently rented out</p>
-            </div>
+            <input
+              type="checkbox"
+              {...register("isOccupied")}
+              className="w-5 h-5 border-gray-300 rounded-md text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-gray-700 font-semibold">Currently Occupied</span>
           </label>
         </div>
 
@@ -215,9 +230,7 @@ export default function EditUnitForm({
                 Saving...
               </>
             ) : (
-              <>
-                Save Changes
-              </>
+              <>Save Changes</>
             )}
           </button>
         </div>
