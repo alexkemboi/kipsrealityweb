@@ -129,23 +129,7 @@ export default async function ManageUnitsPage({
                     </div>
 
                     {/* 🧺 Appliances */}
-                    {unit.appliances && unit.appliances.length > 0 && (
-                      <div className="pt-4 border-t border-gray-100">
-                        <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
-                          🧺 Appliances
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {unit.appliances.map((appliance: any) => (
-                            <span
-                              key={appliance.id}
-                              className="bg-gray-100 text-gray-700 text-xs px-3 py-1 rounded-full border border-gray-200"
-                            >
-                              {appliance.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    
                   </div>
                 ) : (
                   <div className="text-center py-8 flex-1 flex flex-col justify-center">
