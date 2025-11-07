@@ -1,30 +1,67 @@
 // src/lib/units.ts
+import { prisma } from "./db";
 import { Unit } from "@/app/data/UnitData";
 
 export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/units?propertyId=${propertyId}`,
-      { next: { revalidate: 60 } }
-    );
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    include: { units: true, apartmentComplexDetail: true, houseDetail: true },
+  });
 
-    if (!response.ok) {
-      console.error(
-        `API Error: ${response.status} ${response.statusText} for ${response.url}`
-      );
-      throw new Error("Failed to fetch units");
-    }
+  if (!property) return [];
 
-    const data = await response.json();
-    return data || [];
-  } catch (error) {
-    console.error("fetchUnits:", error);
-    return [];
+  const now = new Date().toISOString(); // fallback for placeholders
+  let allUnits: Unit[] = [];
+
+  if (property.apartmentComplexDetail) {
+  // Apartment: generate placeholders based on totalUnits
+  const totalUnits = property.apartmentComplexDetail.totalUnits ?? 0;
+  const existingUnits = property.units || [];
+
+  allUnits = Array.from({ length: totalUnits }, (_, i) => {
+    const expectedUnitNumber = (i + 1 + 100).toString(); // 101, 102, ...
+    const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
+
+    const detail = property.apartmentComplexDetail!; // non-null because of the if-check above
+
+    return {
+      id: existing?.id ?? `placeholder-${expectedUnitNumber}`,
+      propertyId: property.id,
+      complexDetailId: detail.id,
+      houseDetailId: null,
+      unitNumber: existing?.unitNumber ?? expectedUnitNumber,
+      unitName: existing?.unitName ?? null,
+      bedrooms: existing?.bedrooms ?? null,
+      bathrooms: existing?.bathrooms ?? null,
+      floorNumber: existing?.floorNumber ?? null,
+      rentAmount: existing?.rentAmount ?? null,
+      isOccupied: existing?.isOccupied ?? false,
+      createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
+    };
+  });
+} else if (property.houseDetail) {
+    // House: only 1 unit
+    const existing = property.units[0];
+    allUnits = [
+      {
+        id: existing?.id ?? `placeholder-1`,
+        propertyId: property.id,
+        complexDetailId: null,
+        houseDetailId: property.houseDetail.id,
+        unitNumber: existing?.unitNumber ?? "1",
+        unitName: existing?.unitName ?? null,
+        bedrooms: existing?.bedrooms ?? property.houseDetail.bedrooms ?? null,
+        bathrooms: existing?.bathrooms ?? property.houseDetail.bathrooms ?? null,
+        floorNumber: existing?.floorNumber ?? property.houseDetail.numberOfFloors ?? null,
+        rentAmount: existing?.rentAmount ?? null,
+        isOccupied: existing?.isOccupied ?? false,
+        createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
+      },
+    ];
   }
+
+  return allUnits;
 };
-
-
-
 
 
 /**

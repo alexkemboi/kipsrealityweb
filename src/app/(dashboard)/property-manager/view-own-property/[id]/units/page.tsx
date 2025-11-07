@@ -144,19 +144,28 @@ export default async function ManageUnitsPage({
               </div>
 
               {/* Action Button */}
+             
               <div className="px-6 pb-6">
-                <Link
-                  href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/edit`}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-center block ${
-                    hasDetails
-                      ? "bg-yellow-500 hover:bg-yellow-600"
-                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                  }`}
-                >
-                  {hasDetails ? "Edit Details" : "Add Details"}
-                </Link>
+              <Link
+                href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/edit`}
+                className={`w-full py-3 px-4 rounded-xl font-semibold text-center block ${
+                  hasDetails
+                    ? "bg-yellow-500 hover:bg-yellow-600"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                }`}
+              >
+                {hasDetails ? "Edit Details" : "Add Details"}
+              </Link>
 
-              </div>
+              {/* List Unit Button */}
+              <Link
+                href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/list`}
+                className="w-full py-3 px-4 rounded-xl font-semibold text-center block bg-green-500 hover:bg-green-600 text-white"
+              >
+                List This Unit
+              </Link>
+            </div>
+
             </div>
           );
         })}

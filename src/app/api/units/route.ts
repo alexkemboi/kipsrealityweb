@@ -2,6 +2,18 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+// Define a unit type
+type UnitPlaceholder = {
+  id: string | null;
+  unitNumber: string;
+  unitName: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  floorNumber: number | null;
+  rentAmount: number | null;
+  isOccupied: boolean;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const propertyId = searchParams.get("propertyId");
@@ -13,30 +25,55 @@ export async function GET(req: Request) {
   try {
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      include: { units: true, apartmentComplexDetail: true },
+      include: {
+        units: true,
+        apartmentComplexDetail: true,
+        houseDetail: true,
+      },
     });
 
-    if (!property) return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    if (!property) {
+      return NextResponse.json({ error: "Property not found" }, { status: 404 });
+    }
 
-    const totalUnits = property.apartmentComplexDetail?.totalUnits ?? 0;
-    const existingUnits = property.units || [];
+    let allUnits: UnitPlaceholder[] = [];
 
-    // Generate placeholders
-    const allUnits = Array.from({ length: totalUnits }, (_, i) => {
-      // Use DB unit numbers if they exist, otherwise sequential placeholders
-      const expectedUnitNumber = (i + 1 + 100).toString(); // Example: 101, 102, 103…
-      const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
-      return existing || {
-        id: null,
-        unitNumber: expectedUnitNumber,
-        unitName: null,
-        bedrooms: null,
-        bathrooms: null,
-        floorNumber: null,
-        rentAmount: null,
-        isOccupied: false,
-      };
-    });
+    if (property.apartmentComplexDetail) {
+      // It's an apartment
+      const totalUnits = property.apartmentComplexDetail.totalUnits ?? 0;
+      const existingUnits = property.units || [];
+      allUnits = Array.from({ length: totalUnits }, (_, i) => {
+        const expectedUnitNumber = (i + 1 + 100).toString(); // 101, 102, ...
+        const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
+        return (
+          existing || {
+            id: null,
+            unitNumber: expectedUnitNumber,
+            unitName: null,
+            bedrooms: null,
+            bathrooms: null,
+            floorNumber: null,
+            rentAmount: null,
+            isOccupied: false,
+          }
+        );
+      });
+    } else if (property.houseDetail) {
+      // It's a house → always 1 unit
+      const existingUnit = property.units[0];
+      allUnits = [
+        existingUnit || {
+          id: null,
+          unitNumber: "1",
+          unitName: null,
+          bedrooms: property.houseDetail.bedrooms ?? null,
+          bathrooms: property.houseDetail.bathrooms ?? null,
+          floorNumber: property.houseDetail.numberOfFloors ?? null,
+          rentAmount: null,
+          isOccupied: false,
+        },
+      ];
+    }
 
     return NextResponse.json(allUnits);
   } catch (error) {
