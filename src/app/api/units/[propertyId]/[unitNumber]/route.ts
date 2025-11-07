@@ -1,64 +1,67 @@
-import { PrismaClient } from "@prisma/client";
+// src/app/api/units/[propertyId]/[unitNumber]/route.ts
+import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
+export async function GET(req: Request, context: { params: Promise<{ propertyId: string; unitNumber: string }> }) {
+  const { propertyId, unitNumber } = await context.params;
 
-export async function PUT(
-  req: Request,
-  context: { params: Promise<{ propertyId: string; unitNumber: string }> }
-) {
-  try {
-    const { propertyId, unitNumber } = await context.params;
-    const data = await req.json();
+  const unit = await prisma.unit.findFirst({
+    where: { propertyId, unitNumber },
+  });
 
-    // Find the unit first by propertyId + unitNumber
-    const unit = await prisma.unit.findFirst({
-      where: { propertyId, unitNumber },
-    });
-
-    if (!unit) {
-      return NextResponse.json({ success: false, message: "Unit not found" }, { status: 404 });
-    }
-
-    // Update the unit
-    const updatedUnit = await prisma.unit.update({
-      where: { id: unit.id },
-      data: {
-        unitName: data.unitName || undefined,
-        bedrooms: data.bedrooms ? Number(data.bedrooms) : null,
-        bathrooms: data.bathrooms ? Number(data.bathrooms) : null,
-        floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
-        rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
-        isOccupied:
-          typeof data.isOccupied === "boolean" ? data.isOccupied : undefined,
-      },
-    });
-
-    return NextResponse.json({ success: true, message: "Unit details updated", updatedUnit });
-  } catch (error) {
-    console.error("PUT /units error:", error);
-    return NextResponse.json({ success: false, message: "Server error", error: String(error) }, { status: 500 });
+  if (!unit) {
+    return NextResponse.json({
+      id: null,
+      unitNumber,
+      unitName: null,
+      bedrooms: null,
+      bathrooms: null,
+      floorNumber: null,
+      rentAmount: null,
+      isOccupied: false,
+    }, { status: 200 }); // return placeholder instead of 404
   }
+
+  return NextResponse.json(unit);
 }
 
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ propertyId: string; unitNumber: string }> }
-) {
-  try {
-    const { propertyId, unitNumber } = await context.params;
+export async function PUT(req: Request, context: { params: Promise<{ propertyId: string; unitNumber: string }> }) {
+  const { propertyId, unitNumber } = await context.params;
+  const data = await req.json();
 
-    const unit = await prisma.unit.findFirst({
-      where: { propertyId, unitNumber },
+  // Try to find existing unit
+  let unit = await prisma.unit.findFirst({
+    where: { propertyId, unitNumber },
+  });
+
+  if (!unit) {
+    // Create new unit if it doesn't exist
+    unit = await prisma.unit.create({
+      data: {
+        propertyId,
+        unitNumber,
+        unitName: data.unitName ?? null,
+        bedrooms: data.bedrooms ?? null,
+        bathrooms: data.bathrooms ?? null,
+        floorNumber: data.floorNumber ?? null,
+        rentAmount: data.rentAmount ?? null,
+        isOccupied: data.isOccupied ?? false,
+      },
     });
-
-    if (!unit) {
-      return NextResponse.json({ error: "Unit not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(unit, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching unit details:", error);
-    return NextResponse.json({ error: "Failed to fetch unit details" }, { status: 500 });
+  } else {
+    // Update existing unit
+    unit = await prisma.unit.update({
+      where: { id: unit.id },
+      data: {
+        unitName: data.unitName ?? undefined,
+        bedrooms: data.bedrooms ?? undefined,
+        bathrooms: data.bathrooms ?? undefined,
+        floorNumber: data.floorNumber ?? undefined,
+        rentAmount: data.rentAmount ?? undefined,
+        isOccupied: data.isOccupied ?? undefined,
+      },
+    });
   }
+
+  return NextResponse.json({ success: true, message: "Unit saved", unit });
 }

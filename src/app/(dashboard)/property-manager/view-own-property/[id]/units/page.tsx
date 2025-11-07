@@ -147,17 +147,15 @@ export default async function ManageUnitsPage({
               <div className="px-6 pb-6">
                 <Link
                   href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/edit`}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-center block transition-all duration-200 group/btn ${
+                  className={`w-full py-3 px-4 rounded-xl font-semibold text-center block ${
                     hasDetails
-                      ? "bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
-                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      ? "bg-yellow-500 hover:bg-yellow-600"
+                      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                   }`}
                 >
-                  <div className="flex items-center justify-center space-x-2">
-                    <span>{hasDetails ? "✏️" : "➕"}</span>
-                    <span>{hasDetails ? "Edit Details" : "Add Details"}</span>
-                  </div>
+                  {hasDetails ? "Edit Details" : "Add Details"}
                 </Link>
+
               </div>
             </div>
           );

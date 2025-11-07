@@ -61,13 +61,17 @@ export const updateUnitDetails = async (
 };
 
 
-export const fetchUnitDetails = async (propertyId: string, unitNumber: string) => {
+export const fetchUnitDetails = async (propertyId: string, unitNumber: string, p0: boolean) => {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/units/${propertyId}/${unitNumber}`
-    );
+    const response = await fetch(`/api/units/${propertyId}/${unitNumber}`);
 
-    if (!response.ok) throw new Error("Failed to fetch unit details");
+    if (!response.ok) {
+      console.error(
+        `API Error: ${response.status} ${response.statusText} for /api/units/${propertyId}/${unitNumber}`
+      );
+      throw new Error("Failed to fetch unit details");
+    }
+
     return await response.json();
   } catch (error) {
     console.error("fetchUnitDetails:", error);

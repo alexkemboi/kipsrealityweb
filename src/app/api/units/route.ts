@@ -7,47 +7,40 @@ export async function GET(req: Request) {
   const propertyId = searchParams.get("propertyId");
 
   if (!propertyId) {
-    return NextResponse.json(
-      { error: "Missing propertyId" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing propertyId" }, { status: 400 });
   }
 
   try {
-    // Fetch property and check its type
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      include: { apartmentComplexDetail: true, units: true },
+      include: { units: true, apartmentComplexDetail: true },
     });
 
-    if (!property) {
-      return NextResponse.json({ error: "Property not found" }, { status: 404 });
-    }
+    if (!property) return NextResponse.json({ error: "Property not found" }, { status: 404 });
 
     const totalUnits = property.apartmentComplexDetail?.totalUnits ?? 0;
     const existingUnits = property.units || [];
 
-    // Generate placeholders for missing units
+    // Generate placeholders
     const allUnits = Array.from({ length: totalUnits }, (_, i) => {
-      const unitNumber = `${i + 1}`;
-      const existing = existingUnits.find((u) => u.unitNumber === unitNumber);
-      return (
-        existing || {
-          id: null,
-          unitNumber,
-          bedrooms: null,
-          bathrooms: null,
-          rentAmount: null,
-        }
-      );
+      // Use DB unit numbers if they exist, otherwise sequential placeholders
+      const expectedUnitNumber = (i + 1 + 100).toString(); // Example: 101, 102, 103…
+      const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
+      return existing || {
+        id: null,
+        unitNumber: expectedUnitNumber,
+        unitName: null,
+        bedrooms: null,
+        bathrooms: null,
+        floorNumber: null,
+        rentAmount: null,
+        isOccupied: false,
+      };
     });
 
     return NextResponse.json(allUnits);
   } catch (error) {
     console.error("Error fetching units:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch units" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch units" }, { status: 500 });
   }
 }
