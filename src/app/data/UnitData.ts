@@ -24,16 +24,17 @@ export interface Unit {
 }
 
 
+// types/unit.ts
 export interface ApplianceInput {
   name: string;
 }
 
-export interface UnitUpdateInput {
+export interface UnitFormData {
   bedrooms: number;
   bathrooms: number;
-  floorNumber: number | null;
-  rentAmount: number | null;
-  isOccupied: boolean;
-  appliances: { name: string }[];
+  floorNumber?: number | null;
+  rentAmount?: number | null;
   unitName?: string;
+  isOccupied?: boolean;
+  appliances?: ApplianceInput[];
 }

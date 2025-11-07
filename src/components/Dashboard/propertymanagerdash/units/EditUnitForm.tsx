@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import { updateUnitDetails } from "@/lib/units";
-import { Appliance, Unit } from "@/app/data/UnitData";
 
-// Form interface aligned with backend expectations
-interface UnitFormData {
+export interface ApplianceInput {
+  name: string;
+}
+
+export interface UnitFormData {
   bedrooms: number;
   bathrooms: number;
   floorNumber?: number | null;
   rentAmount?: number | null;
   unitName?: string;
   isOccupied?: boolean;
-  appliances?: string; // ✅ Send as comma-separated string
+  appliances?: ApplianceInput[];
 }
 
 export default function EditUnitForm({
@@ -25,60 +27,74 @@ export default function EditUnitForm({
 }: {
   propertyId: string;
   unitNumber: string;
-  existingUnit: (Unit & { appliances?: Appliance[] }) | null;
+  existingUnit: UnitFormData | null;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  // Preprocess appliances for display as string
-  const defaultValues: UnitFormData = {
-    bedrooms: existingUnit?.bedrooms ?? 0,
-    bathrooms: existingUnit?.bathrooms ?? 0,
-    floorNumber: existingUnit?.floorNumber ?? null,
-    rentAmount: existingUnit?.rentAmount ?? null,
-    unitName: existingUnit?.unitName ?? "",
-    isOccupied: existingUnit?.isOccupied ?? false,
-    appliances: existingUnit?.appliances
-      ?.map((a) => a.name)
-      .join(", ") ?? "", // ✅ Convert appliance array to comma-separated string
-  };
-
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
+    watch,
   } = useForm<UnitFormData>({
-    defaultValues,
+    defaultValues: {
+      bedrooms: existingUnit?.bedrooms || 0,
+      bathrooms: existingUnit?.bathrooms || 0,
+      floorNumber: existingUnit?.floorNumber || null,
+      rentAmount: existingUnit?.rentAmount || null,
+      unitName: existingUnit?.unitName || "",
+      isOccupied: existingUnit?.isOccupied || false,
+      // appliances will be handled separately
+    },
   });
 
+  const [loading, setLoading] = useState(false);
+  const [applianceInput, setApplianceInput] = useState("");
+
+  // Initialize appliance input from existing data
   useEffect(() => {
-    reset(defaultValues);
+    if (existingUnit?.appliances && existingUnit.appliances.length > 0) {
+      const applianceNames = existingUnit.appliances
+        .map((appliance) => appliance.name)
+        .join(", ");
+      setApplianceInput(applianceNames);
+    }
   }, [existingUnit]);
 
   const onSubmit = async (data: UnitFormData) => {
     setLoading(true);
 
-    const formattedData = {
-      bedrooms: Number(data.bedrooms),
-      bathrooms: Number(data.bathrooms),
-      floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
-      rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
-      isOccupied: Boolean(data.isOccupied),
-      unitName: data.unitName || undefined,
-      appliances: data.appliances || "", // ✅ Pass as string (backend splits it)
-    };
+    try {
+      // Convert appliance string input into structured array for backend
+      const appliancesArray: ApplianceInput[] = applianceInput
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .map((name) => ({ name }));
 
-    const result = await updateUnitDetails(propertyId, unitNumber, formattedData);
+      const formattedData = {
+        ...data,
+        bedrooms: Number(data.bedrooms),
+        bathrooms: Number(data.bathrooms),
+        floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
+        rentAmount: data.rentAmount ? Number(data.rentAmount) : null,
+        appliances: appliancesArray,
+      };
 
-    if (result.success) {
-      toast.success("Unit details saved successfully!");
-      setTimeout(() => router.back(), 1000);
-    } else {
-      toast.error(result.message || "Failed to save unit details.");
+      const result = await updateUnitDetails(propertyId, unitNumber, formattedData);
+
+      if (result.success) {
+        toast.success("Unit details saved successfully!");
+        setTimeout(() => router.back(), 1000);
+      } else {
+        toast.error(result.message || "Failed to save unit details.");
+      }
+    } catch (error: any) {
+      toast.error("An error occurred while saving unit details.");
+      console.error("Form submission error:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -90,7 +106,9 @@ export default function EditUnitForm({
         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
           Edit Unit Details
         </h1>
-        <p className="text-gray-600 text-sm">Update the information for this rental unit</p>
+        <p className="text-gray-600 text-sm">
+          Update the information for this rental unit
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -104,45 +122,48 @@ export default function EditUnitForm({
               type="text"
               {...register("unitName")}
               placeholder="e.g. Apartment A1"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
             />
           </div>
 
           {/* Bedrooms */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-              Bedrooms
+              Bedrooms *
             </label>
             <input
               type="number"
-              {...register("bedrooms", {
+              min="0"
+              {...register("bedrooms", { 
                 required: "Number of bedrooms is required",
-                min: { value: 0, message: "Must be 0 or more" },
+                min: { value: 0, message: "Bedrooms cannot be negative" }
               })}
               placeholder="e.g. 2"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
             {errors.bedrooms && (
-              <p className="text-red-500 text-xs mt-1 ml-1">{errors.bedrooms.message}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.bedrooms.message}</p>
             )}
           </div>
 
           {/* Bathrooms */}
           <div>
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-              Bathrooms
+              Bathrooms *
             </label>
             <input
               type="number"
-              {...register("bathrooms", {
+              min="0"
+              step="0.5"
+              {...register("bathrooms", { 
                 required: "Number of bathrooms is required",
-                min: { value: 0, message: "Must be 0 or more" },
+                min: { value: 0, message: "Bathrooms cannot be negative" }
               })}
-              placeholder="e.g. 1"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+              placeholder="e.g. 1.5"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
             {errors.bathrooms && (
-              <p className="text-red-500 text-xs mt-1 ml-1">{errors.bathrooms.message}</p>
+              <p className="text-red-500 text-xs mt-1">{errors.bathrooms.message}</p>
             )}
           </div>
 
@@ -153,9 +174,10 @@ export default function EditUnitForm({
             </label>
             <input
               type="number"
-              {...register("floorNumber", { min: 0 })}
+              min="0"
+              {...register("floorNumber")}
               placeholder="e.g. 3"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -164,16 +186,14 @@ export default function EditUnitForm({
             <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
               Rent Amount (KSh)
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-3 text-gray-500 font-semibold">KSh</span>
-              <input
-                type="number"
-                step="0.01"
-                {...register("rentAmount", { min: 0 })}
-                placeholder="e.g. 25000"
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
-              />
-            </div>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              {...register("rentAmount")}
+              placeholder="e.g. 25000"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           {/* Appliances */}
@@ -183,54 +203,56 @@ export default function EditUnitForm({
             </label>
             <input
               type="text"
-              {...register("appliances")}
+              value={applianceInput}
+              onChange={(e) => setApplianceInput(e.target.value)}
               placeholder="e.g. Fridge, Microwave, TV"
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all duration-200"
+              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
             />
             <p className="text-gray-500 text-xs mt-1">
-              Enter multiple appliances separated by commas
+              Enter multiple appliances separated by commas. Existing appliances will be replaced.
             </p>
           </div>
         </div>
 
-        {/* Occupied Checkbox */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 transition-all duration-200 hover:bg-blue-100">
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <input
-              type="checkbox"
-              {...register("isOccupied")}
-              className="w-5 h-5 border-gray-300 rounded-md text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-gray-700 font-semibold">Currently Occupied</span>
-          </label>
+        {/* Occupied */}
+        <div className="flex items-center gap-3 mt-4">
+          <input 
+            type="checkbox" 
+            {...register("isOccupied")} 
+            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-gray-700 font-medium">Currently Occupied</span>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 pt-4">
+        {/* Buttons */}
+        <div className="flex gap-4 pt-6">
           <button
             type="button"
             onClick={() => router.back()}
             disabled={loading}
-            className="flex-1 py-3 px-6 rounded-xl font-semibold border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 py-3 px-6 rounded-xl border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white shadow-lg transition-all duration-200 flex items-center justify-center ${
+            className={`flex-1 py-3 px-6 rounded-xl text-white font-semibold shadow-md transition-all ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] hover:shadow-lg"
             }`}
           >
             {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 Saving...
-              </>
+              </span>
             ) : (
-              <>Save Changes</>
+              "Save Changes"
             )}
           </button>
         </div>

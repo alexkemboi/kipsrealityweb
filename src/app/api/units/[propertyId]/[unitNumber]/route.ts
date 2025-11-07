@@ -3,8 +3,6 @@ import { NextResponse, NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
-
-
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ propertyId: string; unitNumber: string }> }
@@ -13,7 +11,7 @@ export async function PUT(
     const { propertyId, unitNumber } = await params;
     const data = await req.json();
 
-    // 1 Find the unit by propertyId + unitNumber
+    // 1️⃣ Find the unit by propertyId + unitNumber
     const unit = await prisma.unit.findFirst({
       where: { propertyId, unitNumber },
     });
@@ -25,37 +23,32 @@ export async function PUT(
       );
     }
 
-    // 2 Handle appliances: create all new ones, then link them to this unit
+    // 2️⃣ Handle appliances as an array
     let appliancesToConnect = undefined;
 
-    if (data.appliances && typeof data.appliances === "string") {
-      const applianceNames = data.appliances
-        .split(",")
-        .map((a: string) => a.trim())
-        .filter(Boolean);
+    if (Array.isArray(data.appliances) && data.appliances.length > 0) {
+      // Create new appliance entries for each name
+      const createdAppliances = await Promise.all(
+        data.appliances.map(async (a: { name: string }) => {
+          const appliance = await prisma.appliance.create({
+            data: {
+              name: a.name,
+              description: `Appliance "${a.name}" included in unit ${unit.unitNumber}`,
+            },
+          });
+          return appliance;
+        })
+      );
 
-      if (applianceNames.length > 0) {
-        const createdAppliances = await Promise.all(
-          applianceNames.map(async (name: string) => {
-            const appliance = await prisma.appliance.create({
-              data: {
-                name,
-                description: `Appliance "${name}" included in unit ${unit.unitNumber}`,
-              },
-            });
-            return appliance;
-          })
-        );
-
-        appliancesToConnect = createdAppliances.map((a) => ({ id: a.id }));
-      }
+      // Prepare array for Prisma connect
+      appliancesToConnect = createdAppliances.map((a) => ({ id: a.id }));
     }
 
-    //  Update unit and link new appliances
+    // 3️⃣ Update the unit
     const updatedUnit = await prisma.unit.update({
       where: { id: unit.id },
       data: {
-        unitName: data.unitName || undefined,
+        unitName: data.unitName ?? undefined,
         bedrooms: data.bedrooms ? Number(data.bedrooms) : null,
         bathrooms: data.bathrooms ? Number(data.bathrooms) : null,
         floorNumber: data.floorNumber ? Number(data.floorNumber) : null,
@@ -65,7 +58,7 @@ export async function PUT(
 
         ...(appliancesToConnect && {
           appliances: {
-            set: [], // clear existing links first
+            set: [], // clear old ones
             connect: appliancesToConnect,
           },
         }),
@@ -97,7 +90,7 @@ export async function GET(
     const unit = await prisma.unit.findFirst({
       where: { propertyId, unitNumber },
       include: {
-        appliances: true, 
+        appliances: true,
       },
     });
 
