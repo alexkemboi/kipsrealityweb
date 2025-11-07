@@ -74,7 +74,6 @@ export default async function MarketplacePage() {
         unitId: { not: null },
       },
       include: {
-        categoryMarketPlace: true,
         images: true,
       },
       orderBy: { createdAt: "desc" },
@@ -133,7 +132,6 @@ export default async function MarketplacePage() {
           description: listing.description || property.amenities || "No description available",
           price: listing.price || 0,
           location: property.city || property.location?.name || "Unknown Location",
-          category: listing.categoryMarketPlace?.name?.toLowerCase() || "property",
           image: listing.images?.[0]?.imageUrl || `https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop`,
           unitId: unit.id,
           propertyId: property.id,

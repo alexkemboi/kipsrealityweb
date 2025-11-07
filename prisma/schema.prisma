@@ -97,7 +97,6 @@ model CategoryMarketplace {
   name        String    @unique
   description String?
   createdAt   DateTime  @default(now())
-  listings    Listing[]
 }
 
 model Location {
@@ -365,13 +364,7 @@ enum UserStatus {
 // MARKETPLACE LISTINGS
 // ---------------------------------------
 
-model ListingType {
-  id          String    @id @default(uuid())
-  name        String    @unique // e.g., For Sale, For Rent, For Hire
-  description String?
-  createdAt   DateTime  @default(now())
-  listings    Listing[]
-}
+
 
 model ListingStatus {
   id          String    @id @default(uuid())
@@ -401,8 +394,7 @@ model Listing {
   id             String   @id @default(uuid())
   organizationId String
   createdBy      String
-  categoryId     String
-  listingTypeId  String?
+  
   statusId       String?
   locationId     String?
   propertyId     String? // optional, FK lives in Property
@@ -416,8 +408,6 @@ model Listing {
   //  Relations
   organization        Organization        @relation(fields: [organizationId], references: [id])
   createdByUser       User                @relation(fields: [createdBy], references: [id])
-  categoryMarketPlace CategoryMarketplace @relation(fields: [categoryId], references: [id])
-  listingType         ListingType?        @relation(fields: [listingTypeId], references: [id])
   status              ListingStatus?      @relation(fields: [statusId], references: [id])
   location            Location?           @relation(fields: [locationId], references: [id])
 
@@ -450,7 +440,6 @@ model Property {
   organization        Organization?        @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType        PropertyType?        @relation(fields: [propertyTypeId], references: [id])
   location            Location?            @relation(fields: [locationId], references: [id])
-  appliances          Appliance[]          @relation("PropertyAppliances")
   tenantapplications  Tenantapplication[]
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[] @relation("PropertyMaintenanceRequests")
@@ -501,6 +490,9 @@ model Unit {
   listing            Listing?            @relation("UnitListing", fields: [listingId], references: [id])
   tenantApplications Tenantapplication[]
   leases             Lease[]
+  // Many-to-many with Appliance
+  appliances         Appliance[]         @relation("UnitAppliances")
+
 }
 
 model Appliance {
@@ -508,7 +500,8 @@ model Appliance {
   name        String
   description String?
   createdAt   DateTime   @default(now())
-  properties  Property[] @relation("PropertyAppliances")
+  //  Many-to-many back relation
+  units       Unit[]     @relation("UnitAppliances")
 }
 
 model ServiceMarketplace {
