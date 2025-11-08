@@ -67,7 +67,7 @@ export default function VendorInviteForm({ isOpen, onClose, onSuccess }: VendorI
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="bg-[#0a1628] border-[#15386a] max-w-md">
+      <AlertDialogContent className="bg-[#0a1628] border-[#15386a] max-w-md flex flex-col max-h-[80vh]">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-2xl font-bold text-white mb-2">
             Invite Vendor
@@ -77,7 +77,7 @@ export default function VendorInviteForm({ isOpen, onClose, onSuccess }: VendorI
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <div className="space-y-4 py-4">
+  <div className="flex-1 overflow-auto space-y-4 py-4">
           <div>
             <label className="block text-gray-300 text-sm font-medium mb-2">Company Name *</label>
             <input
@@ -149,7 +149,7 @@ export default function VendorInviteForm({ isOpen, onClose, onSuccess }: VendorI
           </div>
         </div>
         
-        <AlertDialogFooter className="gap-3">
+  <AlertDialogFooter className="gap-3 mt-4">
           <AlertDialogCancel className="bg-[#15386a]/50 text-gray-300 hover:bg-[#15386a] border-none">
             Cancel
           </AlertDialogCancel>
