@@ -500,7 +500,6 @@ model ApartmentComplexDetail {
   totalFloors       Int?        
   totalUnits        Int?        
   property          Property @relation(fields: [propertyId], references: [id])
-    units        Unit[]
 
 }
 model HouseDetail {
@@ -510,8 +509,8 @@ model HouseDetail {
   numberOfFloors Int?     
   bedrooms            Int?
   bathrooms           Int?
+  totalUnits        Int? 
   property     Property @relation(fields: [propertyId], references: [id])
-      units        Unit[]
 
 }
 
@@ -532,8 +531,7 @@ model Unit {
   createdAt       DateTime @default(now())
 
   property          Property               @relation(fields: [propertyId], references: [id])
-  apartmentComplex  ApartmentComplexDetail?  @relation(fields: [complexDetailId], references: [id])
-  houseDetail  HouseDetail?  @relation(fields: [houseDetailId], references: [id])
+  
 
   listing           Listing?                @relation("UnitListing", fields: [listingId], references: [id])
   tenantApplications Tenantapplication[]

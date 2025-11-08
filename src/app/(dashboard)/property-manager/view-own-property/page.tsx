@@ -47,57 +47,63 @@ export default function PropertyManagerPage() {
         {properties.map((p) => (
           <Link
             key={p.id}
-            href={`/property-manager/view-own-property/${p.id}`} 
+            href={`/property-manager/view-own-property/${p.id}`}
             className="group"
           >
-            <Card className="hover:shadow-lg transition-shadow duration-200 border border-gray-200 rounded-2xl cursor-pointer">
-              <CardContent className="p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                  {p.type?.toLowerCase() === "apartment" ? (
-                    <Building2 className="text-blue-600 w-5 h-5" />
-                  ) : (
-                    <Home className="text-green-600 w-5 h-5" />
-                  )}
-                  <span className="font-medium text-gray-700 capitalize">{p.type}</span>
-                </div>
+            <Card className="hover:shadow-lg transition-shadow duration-200 border border-gray-200 rounded-2xl cursor-pointer h-full">
+              <CardContent className="p-5 flex flex-col justify-between h-[320px]">
+                {/* Top Section */}
+                <div className="space-y-3">
+                  {/* Type Icon */}
+                  <div className="flex items-center gap-2">
+                    {p.type?.toLowerCase() === "apartment" ? (
+                      <Building2 className="text-blue-600 w-5 h-5" />
+                    ) : (
+                      <Home className="text-green-600 w-5 h-5" />
+                    )}
+                    <span className="font-medium text-gray-700 capitalize">{p.type}</span>
+                  </div>
 
-                {/* Name and Address */}
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 group-hover:text-blue-600">
-                    {p.name}
-                  </h2>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <MapPin className="w-4 h-4" />
-                    {p.city}, {p.address}
+                  {/* Name & Address */}
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-800 group-hover:text-blue-600 truncate">
+                      {p.name}
+                    </h2>
+                    <div className="flex items-center gap-1 text-sm text-gray-500">
+                      <MapPin className="w-4 h-4" />
+                      <span className="truncate">
+                        {p.city}, {p.address}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div className="text-sm text-gray-600 space-y-1">
+                    {p.type?.toLowerCase() === "apartment" && (
+                      <>
+                        <p>Building: {p.details?.buildingName || "N/A"}</p>
+                        <p>Total Floors: {p.details?.totalFloors || "N/A"}</p>
+                        <p>Total Units: {p.details?.totalUnits || "N/A"}</p>
+                      </>
+                    )}
+
+                    {p.type?.toLowerCase() === "house" && (
+                      <div className="flex flex-wrap gap-3 items-center">
+                        <div className="flex items-center gap-1">
+                          <Bed className="w-4 h-4" />
+                          <span>{p.details?.bedrooms || "N/A"}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Bath className="w-4 h-4" />
+                          <span>{p.details?.bathrooms || "N/A"}</span>
+                        </div>
+                        <span>{p.details?.size ? `${p.details.size} sqft` : ""}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Details */}
-                <div className="text-sm text-gray-600 space-y-1">
-                  {p.type?.toLowerCase() === "apartment" && (
-                    <>
-                      <p>Building: {p.details?.buildingName || "N/A"}</p>
-                      <p>Total Floors: {p.details?.totalFloors || "N/A"}</p>
-                      <p>Total Units: {p.details?.totalUnits || "N/A"}</p>
-                    </>
-                  )}
-
-                  {p.type?.toLowerCase() === "house" && (
-                    <div className="flex gap-3 items-center">
-                      <div className="flex items-center gap-1">
-                        <Bed className="w-4 h-4" />
-                        <span>{p.details?.bedrooms || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Bath className="w-4 h-4" />
-                        <span>{p.details?.bathrooms || "N/A"}</span>
-                      </div>
-                      <span>{p.details?.size ? `${p.details.size} sqft` : ""}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer info */}
+                {/* Footer */}
                 <div className="pt-3 border-t text-xs text-gray-500">
                   Status: {p.availabilityStatus || "Unknown"} •{" "}
                   {p.isFurnished ? "Furnished" : "Unfurnished"}

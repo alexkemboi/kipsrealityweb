@@ -242,8 +242,9 @@
 import { prisma } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-// Create a new property
 export async function POST(req: Request) {
+  const tx = prisma.$transaction; // for safety in case something fails
+
   try {
     const data = await req.json();
 
@@ -265,65 +266,100 @@ export async function POST(req: Request) {
       propertyDetails, // contains either apartmentComplexDetail or houseDetail info
     } = data;
 
-    // Validate property type
+    //  Validate property type
     const propertyType = await prisma.propertyType.findUnique({
       where: { id: propertyTypeId },
     });
 
     if (!propertyType) {
       return NextResponse.json(
-        { error: "Invalid property type" },
+        { error: 'Invalid property type' },
         { status: 400 }
       );
     }
 
-    // Create the property first
-    const property = await prisma.property.create({
-      data: {
-        listingId,
-        managerId,
-        name,
-        organizationId,
-        propertyTypeId,
-        locationId,
-        city,
-        address,
-        amenities,
-        isFurnished,
-        availabilityStatus,
-      },
+    //  Create everything in a single transaction for atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // 1 Create the property
+      const property = await tx.property.create({
+        data: {
+          listingId,
+          managerId,
+          name,
+          organizationId,
+          propertyTypeId,
+          locationId,
+          city,
+          address,
+          amenities,
+          isFurnished,
+          availabilityStatus,
+        },
+      });
+
+      // 2 Handle apartment type
+      if (propertyType.name.toLowerCase() === 'apartment') {
+        const complex = await tx.apartmentComplexDetail.create({
+          data: {
+            propertyId: property.id,
+            buildingName: propertyDetails?.buildingName || null,
+            totalFloors: propertyDetails?.totalFloors || null,
+            totalUnits: propertyDetails?.totalUnits || null,
+          },
+        });
+
+        // 3 If totalUnits is set, generate empty unit records
+        const totalUnits = propertyDetails?.totalUnits ?? 0;
+        const unitsData = [];
+
+        for (let i = 1; i <= totalUnits; i++) {
+          unitsData.push({
+            propertyId: property.id,
+            complexDetailId: complex.id,
+            unitNumber: `${i}`, // store as string since Prisma model uses String
+          });
+        }
+
+        if (unitsData.length > 0) {
+          await tx.unit.createMany({
+            data: unitsData,
+          });
+        }
+      }
+
+      // Handle house type
+      else if (propertyType.name.toLowerCase() === 'house') {
+        const house = await tx.houseDetail.create({
+          data: {
+            propertyId: property.id,
+            numberOfFloors: propertyDetails?.numberOfFloors || null,
+            bedrooms: propertyDetails?.bedrooms || null,
+            bathrooms: propertyDetails?.bathrooms || null,
+            size: propertyDetails?.size || null,
+          },
+        });
+
+        // Optionally create a single unit for the house
+        await tx.unit.create({
+          data: {
+            propertyId: property.id,
+            houseDetailId: house.id,
+            unitNumber: '1',
+          },
+        });
+      }
+
+      return property;
     });
 
-    // Create details based on property type
-    if (propertyType.name.toLowerCase() === "apartment") {
-      await prisma.apartmentComplexDetail.create({
-        data: {
-          propertyId: property.id,
-          buildingName: propertyDetails?.buildingName || null,
-          totalFloors: propertyDetails?.totalFloors || null,
-          totalUnits: propertyDetails?.totalUnits || null,
-        },
-      });
-    } else if (propertyType.name.toLowerCase() === "house") {
-      await prisma.houseDetail.create({
-        data: {
-          propertyId: property.id,
-          numberOfFloors: propertyDetails?.numberOfFloors || null,
-          bedrooms: propertyDetails?.bedrooms || null,
-          bathrooms: propertyDetails?.bathrooms || null,
-          size: propertyDetails?.size || null,
-        },
-      });
-    }
-
     return NextResponse.json(
-      { message: "Property created successfully", property },
+      { message: 'Property created successfully', property: result },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Error creating property:", error);
+    console.error('Error creating property:', error);
     return NextResponse.json(
-      { error: "Failed to create property", details: error.message },
+      { error: 'Failed to create property', details: error.message },
       { status: 500 }
     );
   }

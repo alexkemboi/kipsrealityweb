@@ -31,9 +31,12 @@ export default function ViewPropertyPage() {
     fetchProperty();
   }, [id]);
 
-  if (loading) return <div className="text-center text-gray-500 mt-10">Loading property...</div>;
-  if (error) return <div className="text-center text-red-500 mt-10">{error}</div>;
-  if (!property) return <div className="text-center text-gray-500 mt-10">Property not found</div>;
+  if (loading)
+    return <div className="text-center text-gray-500 mt-10">Loading property...</div>;
+  if (error)
+    return <div className="text-center text-red-500 mt-10">{error}</div>;
+  if (!property)
+    return <div className="text-center text-gray-500 mt-10">Property not found</div>;
 
   const isApartment = property.type?.toLowerCase() === "apartment";
   const isHouse = property.type?.toLowerCase() === "house";
@@ -113,6 +116,16 @@ export default function ViewPropertyPage() {
               </div>
             </div>
           )}
+
+          {/* View Units Button */}
+          <div className="pt-4 border-t border-gray-200">
+            <Link
+              href={`/property-manager/view-own-property/${property.id}/units?type=${isApartment ? "apartment" : "house"}`}
+              className="inline-block w-full text-center px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+            >
+              View Units
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
