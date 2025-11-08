@@ -73,8 +73,10 @@ export default function CreateRequestForm({
         const res = await fetch(`/api/units?organizationId=${organizationId}&propertyId=${propertyId}`);
         if (!res.ok) throw new Error('Failed to load units');
         const data = await res.json();
-        setUnits(data || []);
-        if (data?.[0]) setUnitId(data[0].id);
+        // Filter out generated placeholders that don't have real IDs
+        const realUnits = (data || []).filter((u: any) => u && u.id);
+        setUnits(realUnits);
+        if (realUnits?.[0]) setUnitId(realUnits[0].id);
       } catch (err) {
         console.error('Error loading units:', err);
       }
@@ -139,8 +141,8 @@ export default function CreateRequestForm({
       // Clear form and notify parent
       setTitle("");
       setDescription("");
-  setPropertyId(properties[0]?.id ?? "");
-  setCategory("STANDARD");
+      setPropertyId(properties[0]?.id ?? "");
+      setCategory("STANDARD");
       if (onSuccess) onSuccess();
       // Reload the page to refresh the data
       window.location.reload();

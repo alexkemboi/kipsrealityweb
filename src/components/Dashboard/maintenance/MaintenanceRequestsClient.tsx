@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import type { ReactElement } from "react";
 import CreateRequestForm from "./CreateRequestForm";
 import { useAuth } from "@/context/AuthContext";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 type Request = {
   id: string;
@@ -32,14 +34,55 @@ type Request = {
   };
 };
 
+
+function handleExcel(data: any, filename = 'maintenance_requests.xlsx', username:string) {
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  worksheet["!cols"] = [
+    { wch: 20 }, // Title
+    { wch: 50 }, // Description
+    { wch: 20 }, // Property
+    { wch: 20 }, // Address
+    { wch: 10 }, // Unit
+    { wch: 10 }, // Priority
+    { wch: 10 }, // Status
+    { wch: 15 }, // RequestedBy
+    { wch: 12 }, // Category
+    { wch: 25 }, // CreatedAt
+  ];
+
+  const range = XLSX.utils.decode_range(worksheet["!ref"] || "");
+  //this loop is to just help us to make the headers bold  but its not working atm
+  const headerRowIndex = 0; // if no extra row
+  // or headerRowIndex = 2 if you added manager name + blank row
+
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const cell_address = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
+    const cell = worksheet[cell_address];
+    if (cell) {
+      cell.s = { font: { bold: true } };
+    }
+  }
+
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  const saveTitle = `${username}_${filename}` 
+  saveAs(blob, saveTitle);
+
+}
+
+
 export default function MaintenanceRequestsClient(): ReactElement {
   const { user } = useAuth();
+  const loggedInUser = `${ user?.firstName ?? "" }_${ user?.lastName ?? "" }`;
   const organizationId = user?.organization?.id;
   const [requests, setRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [emergencyType, setEmergencyType] = useState<"ALL" | "Plumbing" | "Electrical" | "Heating" | "Security" | "Other">("ALL");
+  const [exportFormat, setExportFormat] = useState("");
 
   useEffect(() => {
     async function fetchRequests() {
@@ -69,13 +112,24 @@ export default function MaintenanceRequestsClient(): ReactElement {
       if (!prop.includes(search) && !(r.title ?? "").toLowerCase().includes(search)) return false;
     }
 
-    // Emergency type filter placeholder
-    if (emergencyType !== "ALL") {
-      // No emergency field in DB yet, leave as passthrough
-    }
-
     return true;
   });
+
+  //in this function am flattening the requests array so that it can be human readable in the excel sheet
+  function flattenRequestsForExcel(data: Request[]) {
+  return data.map((r) => ({
+    TITLE: r.title,
+    DESCRIPTION: r.description,
+    PROPERTY_NAME: r.property?.name ?? "",
+    ADDRESS: r.property?.city ?? "",
+    UNIT: r.unit?.unitName ?? r.unit?.unitNumber ?? "",
+    PRIORITY: r.priority.toLowerCase(),
+    STATUS: r.status.toLowerCase(),
+    REQUESTED_BY: `${r.requestedBy?.user?.firstName ?? ""} ${r.requestedBy?.user?.lastName ?? ""}`,
+    CATEGORY: r.category ?? "",
+    CreatedAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
+  }));
+}
 
   return (
     <div className="min-h-[400px] p-6 bg-[#0f172a]">
@@ -147,17 +201,25 @@ export default function MaintenanceRequestsClient(): ReactElement {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select
-            className="bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
-            value={emergencyType}
-            onChange={(e) => setEmergencyType(e.target.value as any)}
-          >
-            <option value="ALL">Request Types</option>
-            <option value="Plumbing">Emergency</option>
-            <option value="Electrical">Urgent</option>
-            <option value="Heating">Standard</option>
-            <option value="Security">Routine</option>
-          </select>
+
+          {organizationId && (
+            <select
+              className="bg-green-600 border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
+              value={exportFormat}
+              onChange={(e) => {
+                const value = e.target.value;
+                setExportFormat(value);
+                if (value === "Excel"){
+                  const flattenData = flattenRequestsForExcel(requests)
+                  handleExcel(flattenData, "maintenance_requests.xlsx", loggedInUser);
+              }}}
+            >
+              <option value="ALL">Export</option>
+              <option value="Excel">Excel sheet</option>
+              <option value="CSV">CSV</option>
+            </select>
+          )}
+
         </div>
       </div>
 
@@ -188,9 +250,10 @@ export default function MaintenanceRequestsClient(): ReactElement {
                 <th className="text-left p-2 text-gray-300 font-semibold text-sm">
                   Requested
                 </th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                {/* //date column and its contents is commented out because the table will look too big */}
+                {/* <th className="text-left p-2 text-gray-300 font-semibold text-sm">
                   Date
-                </th>
+                </th> */}
                 <th className="text-left p-2 text-gray-300 font-semibold text-sm">
                   Category
                 </th>
@@ -253,7 +316,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
                     {r.requestedBy?.user?.firstName ?? "Unknown"}{" "}
                     {r.requestedBy?.user?.lastName?.charAt(0) ?? ""}
                   </td>
-                  <td className="p-2 text-gray-400 text-sm">
+                  {/* <td className="p-2 text-gray-400 text-sm">
                     {r.createdAt
                       ? new Date(r.createdAt).toLocaleDateString("en-US", {
                           year: "numeric",
@@ -261,17 +324,18 @@ export default function MaintenanceRequestsClient(): ReactElement {
                           day: "numeric",
                         })
                       : "-"}
-                  </td>
+                  </td> */}
                   <td className="p-2 text-gray-200">
-                    {r.category ?? "STANDARD"}
+                    {r.category?.toLowerCase() ?? "STANDARD".toLowerCase()}
                   </td>
                   <td className="p-2 text-gray-200">200/=</td>
-                  <td className="p-2 text-gray-200">not assigned</td>
+                  <td className="p-2 text-gray-200">-</td>
                   <td className="p-2 text-gray-200">
-                    {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber  ? `Unit ${r.unit.unitNumber}` : '-'}
+                    {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber  ? r.unit.unitNumber: '-'}
                   </td>
-
-                </tr>
+                <td className="p-2">
+                </td>
+              </tr>
               ))}
               {filteredRequests.length === 0 && (
                 <tr>

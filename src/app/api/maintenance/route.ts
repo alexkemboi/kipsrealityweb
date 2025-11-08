@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
       include: {
         property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
+        unit: { select: { id: true, unitNumber: true, unitName: true } },
       },
     });
     return NextResponse.json(requests);
@@ -32,7 +33,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-  const { organizationId, propertyId, unitId, userId, title, description, priority, category } = body;
+    console.log('POST /api/maintenance body:', body);
+    const { organizationId, propertyId, unitId, userId, title, description, priority, category } = body;
 
     if (!organizationId || !propertyId || !unitId || !userId || !title || !description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
