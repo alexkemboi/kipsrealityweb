@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { organizationId, propertyId, unitId, userId, title, description, priority } = body;
+  const { organizationId, propertyId, unitId, userId, title, description, priority, category } = body;
 
     if (!organizationId || !propertyId || !unitId || !userId || !title || !description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -51,6 +51,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Invalid priority value: ${priority}` }, { status: 400 });
     }
 
+    // Validate category (RequestCategory: EMERGENCY | URGENT | ROUTINE | STANDARD)
+    const allowedCategories = ["EMERGENCY", "URGENT", "ROUTINE", "STANDARD"];
+    if (category && !allowedCategories.includes(category)) {
+      return NextResponse.json({ error: `Invalid category value: ${category}` }, { status: 400 });
+    }
+
     const newRequest = await (prisma as any).maintenanceRequest.create({
       data: {
         organizationId,
@@ -60,6 +66,7 @@ export async function POST(req: NextRequest) {
         title,
         description,
         ...(priority ? { priority } : {}),
+        ...(category ? { category } : {}),
       },
     });
 

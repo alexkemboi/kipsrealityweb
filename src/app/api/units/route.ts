@@ -73,7 +73,7 @@ export async function GET(req: Request) {
       const totalUnits = property.apartmentComplexDetail.totalUnits ?? 0;
       const existingUnits = property.units || [];
       allUnits = Array.from({ length: totalUnits }, (_, i) => {
-        const expectedUnitNumber = (i + 1 + 100).toString(); // 101, 102, ...
+        const expectedUnitNumber = (i + 1).toString(); // 1, 2, ...
         const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
         return (
           existing || {

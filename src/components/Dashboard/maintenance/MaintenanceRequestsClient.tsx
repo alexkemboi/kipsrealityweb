@@ -13,6 +13,7 @@ type Request = {
   unitId?: string;
   priority: string;
   status: string;
+  category?: string;
   requestedBy?: {
     user?: {
       firstName?: string;
@@ -191,6 +192,9 @@ export default function MaintenanceRequestsClient(): ReactElement {
                   Date
                 </th>
                 <th className="text-left p-2 text-gray-300 font-semibold text-sm">
+                  Category
+                </th>
+                <th className="text-left p-2 text-gray-300 font-semibold text-sm">
                   Cost
                 </th>
                 <th className="text-left p-2 text-gray-300 font-semibold text-sm">
@@ -257,6 +261,9 @@ export default function MaintenanceRequestsClient(): ReactElement {
                           day: "numeric",
                         })
                       : "-"}
+                  </td>
+                  <td className="p-2 text-gray-200">
+                    {r.category ?? "STANDARD"}
                   </td>
                   <td className="p-2 text-gray-200">200/=</td>
                   <td className="p-2 text-gray-200">not assigned</td>
