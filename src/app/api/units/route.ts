@@ -17,9 +17,39 @@ type UnitPlaceholder = {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const propertyId = searchParams.get("propertyId");
+  const organizationId = searchParams.get("organizationId");
 
+  if (!organizationId) {
+    return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+  }
+
+  // If propertyId is not provided, fetch all units for the organization
   if (!propertyId) {
-    return NextResponse.json({ error: "Missing propertyId" }, { status: 400 });
+    try {
+      const units = await prisma.unit.findMany({
+        where: {
+          property: {
+            organizationId
+          }
+        },
+        include: {
+          property: {
+            select: {
+              name: true,
+              address: true,
+              city: true
+            }
+          }
+        },
+        orderBy: {
+          unitNumber: 'asc'
+        }
+      });
+      return NextResponse.json(units);
+    } catch (error) {
+      console.error("Error fetching all units:", error);
+      return NextResponse.json({ error: "Failed to fetch units" }, { status: 500 });
+    }
   }
 
   try {

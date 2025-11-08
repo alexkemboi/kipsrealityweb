@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { ReactElement } from "react";
 import CreateRequestForm from "./CreateRequestForm";
+import { useAuth } from "@/context/AuthContext";
 
 type Request = {
   id: string;
@@ -30,13 +31,35 @@ type Request = {
   };
 };
 
-export default function MaintenanceRequestsClient({ initialRequests }: { initialRequests: Request[] }): ReactElement {
-  const organizationId = "b84257cd-f9d9-47cb-b214-b7317020d505";  // Updated to match your organization
+export default function MaintenanceRequestsClient(): ReactElement {
+  const { user } = useAuth();
+  const organizationId = user?.organization?.id;
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [emergencyType, setEmergencyType] = useState<"ALL" | "Plumbing" | "Electrical" | "Heating" | "Security" | "Other">("ALL");
 
-  const requests = initialRequests || [];
+  useEffect(() => {
+    async function fetchRequests() {
+      if (!organizationId) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const res = await fetch(`/api/maintenance?organizationId=${organizationId}`);
+        if (!res.ok) throw new Error('Failed to fetch requests');
+        const data = await res.json();
+        setRequests(data);
+      } catch (error) {
+        console.error('Error fetching maintenance requests:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRequests();
+  }, [organizationId]);
 
   const filteredRequests = requests.filter((r) => {
     const search = searchTerm.trim().toLowerCase();

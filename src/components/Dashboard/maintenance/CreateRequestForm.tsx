@@ -61,14 +61,27 @@ export default function CreateRequestForm({
     load();
   }, [user, organizationId]);
 
-  // Reset unitId when property changes
+  // Fetch units when property changes
+  const [units, setUnits] = useState<Unit[]>([]);
+  
   useEffect(() => {
-    setUnitId("");
-    const property = properties.find(p => p.id === propertyId);
-    if (property?.units?.[0]) {
-      setUnitId(property.units[0].id);
+    async function loadUnits() {
+      if (!propertyId || !organizationId) return;
+      
+      try {
+        const res = await fetch(`/api/units?organizationId=${organizationId}&propertyId=${propertyId}`);
+        if (!res.ok) throw new Error('Failed to load units');
+        const data = await res.json();
+        setUnits(data || []);
+        if (data?.[0]) setUnitId(data[0].id);
+      } catch (err) {
+        console.error('Error loading units:', err);
+      }
     }
-  }, [propertyId, properties]);
+    
+    setUnitId('');
+    loadUnits();
+  }, [propertyId, organizationId]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,9 +177,7 @@ export default function CreateRequestForm({
           className="mt-1 block w-full bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg disabled:opacity-60"
         >
           <option value="">Select unit</option>
-          {properties
-            .find(p => p.id === propertyId)
-            ?.units.map((unit) => (
+          {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.unitName || `Unit ${unit.unitNumber}`}
               </option>

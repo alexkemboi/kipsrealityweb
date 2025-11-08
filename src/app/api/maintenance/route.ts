@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    const organizationId = url.searchParams.get("organizationId");
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+    }
+
     const requests = await (prisma as any).maintenanceRequest.findMany({
+      where: { organizationId },
       orderBy: { createdAt: "desc" },
       include: {
         property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
-        unit: { select: { id: true, unitNumber: true, unitName: true } },
       },
     });
     return NextResponse.json(requests);

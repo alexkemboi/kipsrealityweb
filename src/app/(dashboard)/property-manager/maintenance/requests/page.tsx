@@ -8,20 +8,6 @@ export const metadata: Metadata = {
   description: "View and manage maintenance requests",
 };
 
-export default async function MaintenanceRequestsPage() {
-  let requests: any[] = [];
-  try {
-    requests = await (prisma as any).maintenanceRequest.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        property: { select: { id: true, name: true, address: true, city: true } },
-        requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
-      },
-    });
-  } catch (err) {
-    console.warn("MaintenanceRequest table not available yet:");
-  }
-
-  // Redering a client component that handles interactive UI (toggle form, etc.)
-  return <MaintenanceRequestsClient initialRequests={requests} />;
+export default function MaintenanceRequestsPage() {
+  return <MaintenanceRequestsClient />;
 }
