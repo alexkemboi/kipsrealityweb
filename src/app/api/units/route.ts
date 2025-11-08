@@ -2,52 +2,82 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
+// Define a unit type
+type UnitPlaceholder = {
+  id: string | null;
+  unitNumber: string;
+  unitName: string | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  floorNumber: number | null;
+  rentAmount: number | null;
+  isOccupied: boolean;
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const propertyId = searchParams.get("propertyId");
 
   if (!propertyId) {
-    return NextResponse.json(
-      { error: "Missing propertyId" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing propertyId" }, { status: 400 });
   }
 
   try {
-    // Fetch property and check its type
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      include: { apartmentComplexDetail: true, units: true },
+      include: {
+        units: true,
+        apartmentComplexDetail: true,
+        houseDetail: true,
+      },
     });
 
     if (!property) {
       return NextResponse.json({ error: "Property not found" }, { status: 404 });
     }
 
-    const totalUnits = property.apartmentComplexDetail?.totalUnits ?? 0;
-    const existingUnits = property.units || [];
+    let allUnits: UnitPlaceholder[] = [];
 
-    // Generate placeholders for missing units
-    const allUnits = Array.from({ length: totalUnits }, (_, i) => {
-      const unitNumber = `${i + 1}`;
-      const existing = existingUnits.find((u) => u.unitNumber === unitNumber);
-      return (
-        existing || {
+    if (property.apartmentComplexDetail) {
+      // It's an apartment
+      const totalUnits = property.apartmentComplexDetail.totalUnits ?? 0;
+      const existingUnits = property.units || [];
+      allUnits = Array.from({ length: totalUnits }, (_, i) => {
+        const expectedUnitNumber = (i + 1 + 100).toString(); // 101, 102, ...
+        const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
+        return (
+          existing || {
+            id: null,
+            unitNumber: expectedUnitNumber,
+            unitName: null,
+            bedrooms: null,
+            bathrooms: null,
+            floorNumber: null,
+            rentAmount: null,
+            isOccupied: false,
+          }
+        );
+      });
+    } else if (property.houseDetail) {
+      // It's a house → always 1 unit
+      const existingUnit = property.units[0];
+      allUnits = [
+        existingUnit || {
           id: null,
-          unitNumber,
-          bedrooms: null,
-          bathrooms: null,
+          unitNumber: "1",
+          unitName: null,
+          bedrooms: property.houseDetail.bedrooms ?? null,
+          bathrooms: property.houseDetail.bathrooms ?? null,
+          floorNumber: property.houseDetail.numberOfFloors ?? null,
           rentAmount: null,
-        }
-      );
-    });
+          isOccupied: false,
+        },
+      ];
+    }
 
     return NextResponse.json(allUnits);
   } catch (error) {
     console.error("Error fetching units:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch units" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch units" }, { status: 500 });
   }
 }

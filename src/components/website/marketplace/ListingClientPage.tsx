@@ -11,8 +11,7 @@ export interface MarketplaceItem {
   description?: string;
   price: number;
   image: string;
-  category: string;
-  location: string;
+  
 
   unitId?: string | null;
   propertyId?: string | null;
@@ -42,17 +41,8 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
   const [selectedListing, setSelectedListing] = useState<MarketplaceItem | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const uniqueLocations = ["all", ...new Set(listings.map((item) => item.location))];
-  const uniqueCategories = ["all", ...new Set(listings.map((item) => item.category))];
-
-  const filteredListings = listings.filter((item) => {
-    const matchesSearch = searchTerm
-      ? item.title.toLowerCase().includes(searchTerm.toLowerCase())
-      : true;
-    const matchesCategory = filterCategory === "all" || item.category === filterCategory;
-    const matchesLocation = filterLocation === "all" || item.location === filterLocation;
-    return matchesSearch && matchesCategory && matchesLocation;
-  });
+  
+  
 
   const handleApply = (listing: MarketplaceItem) => {
     const unitId = listing.unitId ?? listing.unit?.id;
@@ -110,44 +100,16 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
             )}
           </div>
 
-          {/* Category Filter */}
-          <div className="relative w-full md:w-1/4">
-            <Grid className="absolute left-3 top-2.5 text-gray-400" size={18} />
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all"
-            >
-              {uniqueCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat === "all" ? "All Categories" : cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+          
 
-          {/* Location Filter */}
-          <div className="relative w-full md:w-1/4">
-            <MapPin className="absolute left-3 top-2.5 text-gray-400" size={18} />
-            <select
-              value={filterLocation}
-              onChange={(e) => setFilterLocation(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-all"
-            >
-              {uniqueLocations.map((loc) => (
-                <option key={loc} value={loc}>
-                  {loc === "all" ? "All Locations" : loc}
-                </option>
-              ))}
-            </select>
-          </div>
+       
         </div>
       </div>
 
       {/* Listings */}
-      {filteredListings.length > 0 ? (
+      {listings.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredListings.map((item) => (
+          {listings.map((item) => (
             <div
               key={item.id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
@@ -158,7 +120,6 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
                 <p className="text-gray-600 text-sm line-clamp-3">{item.description}</p>
                 <div className="flex items-center justify-between mt-4">
                   <span className="text-blue-600 font-semibold">KES {item.price.toLocaleString()}</span>
-                  <span className="text-sm text-gray-500">{item.location}</span>
                 </div>
                 <div className="mt-5">
                   <button
