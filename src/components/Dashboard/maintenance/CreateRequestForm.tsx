@@ -31,6 +31,7 @@ export default function CreateRequestForm({
   // Default priority to NORMAL so the form will send a valid enum value
   // and the database default is explicit when creating requests.
   const [priority, setPriority] = useState("NORMAL");
+  const [category, setCategory] = useState("STANDARD");
   const [properties, setProperties] = useState<Property[]>([]);
   const [unitId, setUnitId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,14 +62,29 @@ export default function CreateRequestForm({
     load();
   }, [user, organizationId]);
 
-  // Reset unitId when property changes
+  // Fetch units when property changes
+  const [units, setUnits] = useState<Unit[]>([]);
+  
   useEffect(() => {
-    setUnitId("");
-    const property = properties.find(p => p.id === propertyId);
-    if (property?.units?.[0]) {
-      setUnitId(property.units[0].id);
+    async function loadUnits() {
+      if (!propertyId || !organizationId) return;
+      
+      try {
+        const res = await fetch(`/api/units?organizationId=${organizationId}&propertyId=${propertyId}`);
+        if (!res.ok) throw new Error('Failed to load units');
+        const data = await res.json();
+        // Filter out generated placeholders that don't have real IDs
+        const realUnits = (data || []).filter((u: any) => u && u.id);
+        setUnits(realUnits);
+        if (realUnits?.[0]) setUnitId(realUnits[0].id);
+      } catch (err) {
+        console.error('Error loading units:', err);
+      }
     }
-  }, [propertyId, properties]);
+    
+    setUnitId('');
+    loadUnits();
+  }, [propertyId, organizationId]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +123,9 @@ export default function CreateRequestForm({
         // Ensure we send the enum value expected by Prisma (e.g. 'LOW', 'NORMAL')
         payload.priority = priority;
       }
+      if (category) {
+        payload.category = category;
+      }
 
       const res = await fetch("/api/maintenance", {
         method: "POST",
@@ -123,6 +142,7 @@ export default function CreateRequestForm({
       setTitle("");
       setDescription("");
       setPropertyId(properties[0]?.id ?? "");
+      setCategory("STANDARD");
       if (onSuccess) onSuccess();
       // Reload the page to refresh the data
       window.location.reload();
@@ -164,9 +184,7 @@ export default function CreateRequestForm({
           className="mt-1 block w-full bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg disabled:opacity-60"
         >
           <option value="">Select unit</option>
-          {properties
-            .find(p => p.id === propertyId)
-            ?.units.map((unit) => (
+          {units.map((unit) => (
               <option key={unit.id} value={unit.id}>
                 {unit.unitName || `Unit ${unit.unitNumber}`}
               </option>
@@ -204,6 +222,21 @@ export default function CreateRequestForm({
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-gray-300">Category</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          disabled={loading}
+          className="mt-1 block w-full bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg disabled:opacity-60"
+        >
+          <option value="STANDARD">Standard</option>
+          <option value="EMERGENCY">Emergency</option>
+          <option value="URGENT">Urgent</option>
+          <option value="ROUTINE">Routine</option>
+        </select>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-gray-300">Description</label>
         <textarea
           value={description}
@@ -229,6 +262,7 @@ export default function CreateRequestForm({
             setTitle("");
             setDescription("");
             setPropertyId(properties?.[0]?.id ?? "");
+            setCategory("STANDARD");
             setError(null);
             if (onSuccess) onSuccess();
           }}

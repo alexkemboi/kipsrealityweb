@@ -333,6 +333,13 @@ enum RequestStatus {
   CANCELLED
 }
 
+enum RequestCategory {
+  EMERGENCY
+  URGENT
+  ROUTINE
+  STANDARD
+}
+
 model MaintenanceRequest {
   id             String        @id @default(uuid())
   organizationId String
@@ -340,7 +347,9 @@ model MaintenanceRequest {
   requestedById  String
   title          String
   description    String
+  unitId         String?
   priority       Priority      @default(NORMAL)
+  category       RequestCategory @default(STANDARD)
   status         RequestStatus @default(OPEN)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -348,6 +357,7 @@ model MaintenanceRequest {
   organization Organization     @relation(fields: [organizationId], references: [id])
   property     Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
   requestedBy  OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
+  unit         Unit?            @relation(fields: [unitId], references: [id])
 
   @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
   @@index([propertyId], map: "MaintenanceRequest_propertyId_fkey")
@@ -492,7 +502,7 @@ model Unit {
   leases             Lease[]
   // Many-to-many with Appliance
   appliances         Appliance[]         @relation("UnitAppliances")
-
+  maintenanceRequests MaintenanceRequest[]
 }
 
 model Appliance {
