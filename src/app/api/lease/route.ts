@@ -117,52 +117,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// export async function GET(req: NextRequest) {
-//   try {
-//     const user = await getCurrentUser();
 
-//     if (!user) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     // Fetch all leases where user is the property manager
-//     const leases = await prisma.lease.findMany({
-//       where: {
-//         property: {
-//           managerId: user.id,
-//         },
-//       },
-//       include: {
-//         tenant: {
-//           select: {
-//             id: true,
-//             email: true,
-//           },
-//         },
-//         property: {
-//           select: {
-//             id: true,
-//             name: true,
-//           },
-//         },
-//         unit: {
-//           select: {
-//             id: true,
-//             unitNumber: true,
-//           },
-//         },
-//       },
-//       orderBy: {
-//         createdAt: "desc",
-//       },
-//     });
-
-//     return NextResponse.json(leases);
-//   } catch (error) {
-//     console.error("Error fetching leases:", error);
-//     return NextResponse.json({ error: "Failed to fetch leases" }, { status: 500 });
-//   }
-// }
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -175,7 +130,7 @@ export async function GET(req: NextRequest) {
       where: {
         property: {
           manager: {
-            userId: user.id // ✅ Correct relationship
+            userId: user.id 
           }
         }
       },
@@ -183,6 +138,8 @@ export async function GET(req: NextRequest) {
         tenant: true,
         property: true,
         unit: true,
+        application: true
+
       },
       orderBy: {
         createdAt: "desc",
