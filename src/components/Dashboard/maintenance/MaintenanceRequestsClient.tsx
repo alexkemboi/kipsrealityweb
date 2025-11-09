@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import type { ReactElement } from "react";
 import CreateRequestForm from "./CreateRequestForm";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
@@ -73,6 +74,29 @@ function handleExcel(data: any, filename = 'maintenance_requests.xlsx', username
 
 }
 
+function handleCSV(data: any, filename = "maintenance_requests.csv", username: string) {
+  // Convert data (array of objects) to CSV string
+  const headers = Object.keys(data[0] || {}); // get keys as column headers
+  const rows = data.map((row: any) =>
+    headers
+      .map((header) => {
+        const value = row[header] ?? "";
+        // Escape commas, quotes, and newlines
+        const escaped =
+          typeof value === "string"
+            ? `"${value.replace(/"/g, '""')}"`
+            : value;
+        return escaped;
+      })
+      .join(",")
+  );
+
+  const csvString = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const saveTitle = `${username}_${filename}`;
+  saveAs(blob, saveTitle);
+}
+
 
 export default function MaintenanceRequestsClient(): ReactElement {
   const { user } = useAuth();
@@ -117,19 +141,25 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
   //in this function am flattening the requests array so that it can be human readable in the excel sheet
   function flattenRequestsForExcel(data: Request[]) {
+  const capFirst = (s?: string | null ) =>
+    s && s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+
   return data.map((r) => ({
-    TITLE: r.title,
-    DESCRIPTION: r.description,
-    PROPERTY_NAME: r.property?.name ?? "",
-    ADDRESS: r.property?.city ?? "",
+    TITLE: capFirst(r.title),
+    DESCRIPTION: capFirst(r.description),
+    PROPERTY_NAME: capFirst(r.property?.name),
+    ADDRESS: capFirst(r.property?.city),
     UNIT: r.unit?.unitName ?? r.unit?.unitNumber ?? "",
-    PRIORITY: r.priority.toLowerCase(),
-    STATUS: r.status.toLowerCase(),
-    REQUESTED_BY: `${r.requestedBy?.user?.firstName ?? ""} ${r.requestedBy?.user?.lastName ?? ""}`,
-    CATEGORY: r.category ?? "",
+    PRIORITY: r.priority ?? "",
+    STATUS: r.status ?? "",
+    REQUESTED_BY: `${capFirst(r.requestedBy?.user?.firstName)} ${capFirst(
+      r.requestedBy?.user?.lastName
+    )}`.trim(),
+    CATEGORY: capFirst(r.category),
     CreatedAt: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "",
   }));
 }
+
 
   return (
     <div className="min-h-[400px] p-6 bg-[#0f172a]">
@@ -204,19 +234,28 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
           {organizationId && (
             <select
-              className="bg-green-600 border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
+              className="bg-emerald-600 border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
               value={exportFormat}
               onChange={(e) => {
                 const value = e.target.value;
                 setExportFormat(value);
                 if (value === "Excel"){
+                  toast.success("Your Excel file is downloading...");
                   const flattenData = flattenRequestsForExcel(requests)
                   handleExcel(flattenData, "maintenance_requests.xlsx", loggedInUser);
-              }}}
-            >
-              <option value="ALL">Export</option>
-              <option value="Excel">Excel sheet</option>
-              <option value="CSV">CSV</option>
+                  setExportFormat("Export")
+                }
+                 if (value === "CSV"){
+                  toast.success("Your CSV file is downloading...");
+                  const flattenData = flattenRequestsForExcel(requests)
+                  handleCSV(flattenData, "maintenance_requests.csv", loggedInUser);
+                  setExportFormat("Export")
+              }      
+                }}
+                >
+              <option value="Export" className="bg-grey">Export</option>
+              <option value="Excel" className="bg-grey" >Excel sheet</option>
+              <option value="CSV" className="bg-grey">CSV</option>
             </select>
           )}
 
