@@ -1,4 +1,4 @@
-
+//app/invite/accept/page.tsx
 
 'use client'
 

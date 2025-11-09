@@ -1,3 +1,4 @@
+//appp/dashboard/property-manager/content/lease/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
