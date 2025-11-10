@@ -11,9 +11,9 @@ type Unit = {
 };
 
 type Property = {
-  id: string;
-  address: string | null;
+  id: string | null;
   name: string | null;
+  address: string | null;
   units: Unit[];
 };
 
@@ -28,28 +28,23 @@ export default function CreateRequestForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [propertyId, setPropertyId] = useState("");
-  // Default priority to NORMAL so the form will send a valid enum value
-  // and the database default is explicit when creating requests.
   const [priority, setPriority] = useState("NORMAL");
   const [category, setCategory] = useState("STANDARD");
   const [properties, setProperties] = useState<Property[]>([]);
   const [unitId, setUnitId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [units, setUnits] = useState<Unit[]>([]);
 
   useEffect(() => {
-    // Load properties from API
     async function load() {
       const orgId = organizationId ?? user?.organization?.id;
       if (!orgId) {
         setProperties([]);
         return;
       }
-
       try {
-        const res = await fetch(
-          `/api/properties?organizationId=${encodeURIComponent(orgId)}`
-        );
+        const res = await fetch(`/api/properties?organizationId=${encodeURIComponent(orgId)}`);
         if (!res.ok) throw new Error("Failed to load properties");
         const data = await res.json();
         setProperties(data || []);
@@ -58,31 +53,24 @@ export default function CreateRequestForm({
         console.error(err);
       }
     }
-
     load();
   }, [user, organizationId]);
 
-  // Fetch units when property changes
-  const [units, setUnits] = useState<Unit[]>([]);
-  
   useEffect(() => {
     async function loadUnits() {
       if (!propertyId || !organizationId) return;
-      
       try {
         const res = await fetch(`/api/units?organizationId=${organizationId}&propertyId=${propertyId}`);
-        if (!res.ok) throw new Error('Failed to load units');
+        if (!res.ok) throw new Error("Failed to load units");
         const data = await res.json();
-        // Filter out generated placeholders that don't have real IDs
         const realUnits = (data || []).filter((u: any) => u && u.id);
         setUnits(realUnits);
         if (realUnits?.[0]) setUnitId(realUnits[0].id);
       } catch (err) {
-        console.error('Error loading units:', err);
+        console.error("Error loading units:", err);
       }
     }
-    
-    setUnitId('');
+    setUnitId("");
     loadUnits();
   }, [propertyId, organizationId]);
 
@@ -108,8 +96,6 @@ export default function CreateRequestForm({
     setLoading(true);
 
     try {
-      // Use the real database API
-      // Build payload and only include priority if the user selected one
       const payload: any = {
         organizationId: organizationId ?? user.organization?.id,
         propertyId,
@@ -118,14 +104,8 @@ export default function CreateRequestForm({
         title,
         description,
       };
-
-      if (priority) {
-        // Ensure we send the enum value expected by Prisma (e.g. 'LOW', 'NORMAL')
-        payload.priority = priority;
-      }
-      if (category) {
-        payload.category = category;
-      }
+      if (priority) payload.priority = priority;
+      if (category) payload.category = category;
 
       const res = await fetch("/api/maintenance", {
         method: "POST",
@@ -138,13 +118,11 @@ export default function CreateRequestForm({
         throw new Error(data?.error || "Failed to create");
       }
 
-      // Clear form and notify parent
       setTitle("");
       setDescription("");
       setPropertyId(properties[0]?.id ?? "");
       setCategory("STANDARD");
       if (onSuccess) onSuccess();
-      // Reload the page to refresh the data
       window.location.reload();
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -154,10 +132,7 @@ export default function CreateRequestForm({
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="space-y-3 p-4 bg-[#0a1628] rounded shadow max-w-2xl mx-auto"
-    >
+    <form onSubmit={submit} className="space-y-3 p-4 bg-[#0a1628] rounded shadow max-w-2xl mx-auto">
       <div>
         <label className="block text-sm font-medium text-gray-300">Property</label>
         <select
@@ -185,10 +160,10 @@ export default function CreateRequestForm({
         >
           <option value="">Select unit</option>
           {units.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.unitName || `Unit ${unit.unitNumber}`}
-              </option>
-            ))}
+            <option key={unit.id} value={unit.id}>
+              {unit.unitName || `Unit ${unit.unitNumber}`}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -212,12 +187,11 @@ export default function CreateRequestForm({
           disabled={loading}
           className="mt-1 block w-full bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg disabled:opacity-60"
         >
-      <option value="">Select priority</option>
-        <option value="LOW">Low</option>
-        <option value="NORMAL">Normal</option>
-        <option value="HIGH">High</option>
-        <option value="URGENT">Urgent</option>
-
+          <option value="">Select priority</option>
+          <option value="LOW">Low</option>
+          <option value="NORMAL">Normal</option>
+          <option value="HIGH">High</option>
+          <option value="URGENT">Urgent</option>
         </select>
       </div>
 
@@ -266,7 +240,6 @@ export default function CreateRequestForm({
             setError(null);
             if (onSuccess) onSuccess();
           }}
-        
           className="px-4 py-2 bg-transparent border border-[#15386a] text-white rounded-lg"
         >
           Cancel
