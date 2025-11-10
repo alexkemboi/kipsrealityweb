@@ -1,10 +1,7 @@
-
-
 'use client'
 
-import { Suspense } from 'react'
-import { useEffect, useState, FormEvent, ChangeEvent } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useState, FormEvent, ChangeEvent } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button, TextField, Card, Typography, CircularProgress } from '@mui/material'
 import { toast } from 'react-toastify'
 
@@ -15,53 +12,104 @@ interface FormData {
   firstName: string
   lastName: string
   phone: string
+  leaseId?: string
 }
 
 function AcceptInviteForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [inviteValid, setInviteValid] = useState(true)
+  const [leaseSigned, setLeaseSigned] = useState(false)
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     token: '',
     password: '',
     firstName: '',
     lastName: '',
-    phone: ''
+    phone: '',
+    leaseId: ''
   })
 
-  useEffect(() => {
-    const email = searchParams.get('email')
-    const token = searchParams.get('token')
+useEffect(() => {
+  const email = searchParams.get('email')
+  const token = searchParams.get('token')
+  const leaseId = searchParams.get('leaseId')
 
-    if (!email || !token) {
+  console.log("URL params:", { email, token, leaseId }) // Debug
+
+  if (!email || !token || !leaseId) {
+    setInviteValid(false)
+    return
+  }
+
+  setFormData(prev => ({
+    ...prev,
+    email,
+    token,
+    leaseId
+  }))
+
+  // ✅ Check if tenant signed lease
+  async function checkLease() {
+    try {
+      const res = await fetch(`/api/lease/${leaseId}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        console.error("Lease fetch error:", data.error)
+        setInviteValid(false)
+        return
+      }
+
+      if (data.tenantSignedAt) {
+        setLeaseSigned(true)
+      } else {
+        // ✅ Redirect to lease sign page (absolute path)
+        router.push(`/invite/lease/${leaseId}/sign?redirect=invite`)
+      }
+    } catch (err) {
+      console.error("Lease fetch failed:", err)
       setInviteValid(false)
-    } else {
-      setFormData(prev => ({ ...prev, email, token }))
     }
-  }, [searchParams])
+  }
 
+  checkLease()
+}, [searchParams, router])
+
+
+
+  // ✅ Handle input change
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  // ✅ Handle account creation AFTER signing lease
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (!leaseSigned) {
+      toast.info('Please sign your lease before creating an account.')
+      router.push(`/lease/${formData.leaseId}/sign`)
+      return
+    }
+
     setLoading(true)
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-      const res = await fetch(`${baseUrl}/api/auth/invites/accept`, {
+      const res = await fetch(`/api/auth/invites/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Invite acceptance failed')
 
-      toast.success('Invite accepted! Please log in.')
-      setTimeout(() => (window.location.href = '/login'), 1500)
+      if (!res.ok) throw new Error(data.error)
+
+      toast.success('Account created successfully! Redirecting to login...')
+      setTimeout(() => router.push('/login'), 1500)
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong.')
     } finally {
@@ -77,24 +125,33 @@ function AcceptInviteForm() {
     )
   }
 
+  // ✅ If lease not signed, do not show form
+  if (!leaseSigned) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <CircularProgress />
+      </div>
+    )
+  }
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50">
       <Card sx={{ p: 4, maxWidth: 420, width: '100%' }}>
         <Typography variant="h5" gutterBottom>
-          Accept Invite
-        </Typography>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Complete your account setup to access your tenant dashboard.
+          Create Your Account
         </Typography>
 
         <form onSubmit={handleSubmit}>
           <TextField label="Email" name="email" value={formData.email} fullWidth margin="normal" InputProps={{ readOnly: true }} />
-          <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} fullWidth margin="normal" required />
+
+          <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required fullWidth margin="normal" />
           <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} fullWidth margin="normal" />
           <TextField label="Phone" name="phone" value={formData.phone} onChange={handleChange} fullWidth margin="normal" />
-          <TextField label="Password" name="password" type="password" value={formData.password} onChange={handleChange} fullWidth margin="normal" required />
-          <Button type="submit" variant="contained" color="primary" disabled={loading} fullWidth sx={{ mt: 2 }}>
-            {loading ? <CircularProgress size={24} /> : 'Create Account'}
+
+          <TextField label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required fullWidth margin="normal" />
+
+          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ mt: 2 }}>
+            {loading ? <CircularProgress size={24} /> : "Create Account"}
           </Button>
         </form>
       </Card>
@@ -104,11 +161,7 @@ function AcceptInviteForm() {
 
 export default function AcceptInvitePage() {
   return (
-    <Suspense fallback={
-      <div className="flex justify-center items-center min-h-screen">
-        <CircularProgress />
-      </div>
-    }>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><CircularProgress /></div>}>
       <AcceptInviteForm />
     </Suspense>
   )

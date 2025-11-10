@@ -1,4 +1,9 @@
 'use client'
+import { useSearchParams } from 'next/navigation';
+
 export default function AdminDashboardPage() {
-  return <div>System Admin Dashboard Home</div>;
+  const searchParams = useSearchParams();
+  const tab = searchParams.get('tab') || 'home';
+
+  return <div>Current tab: {tab}</div>;
 }

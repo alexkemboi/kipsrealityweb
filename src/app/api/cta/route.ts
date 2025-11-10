@@ -12,14 +12,28 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { page, title, subtitle, buttonText, buttonUrl, gradient } = await req.json();
+    const { page, title, subtitle, buttonText, buttonUrl, gradient } =
+      await req.json();
 
     const newCTA = await prisma.cTA.create({
-      data: { page, title, subtitle, buttonText, buttonUrl, gradient },
+      data: {
+        page,
+        title,
+        subtitle,
+        buttonText,
+        buttonUrl,
+        gradient,
+        // ✅ REQUIRED FIX
+        updatedAt: new Date(),
+      },
     });
 
     return NextResponse.json(newCTA, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create CTA" }, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to create CTA" },
+      { status: 500 }
+    );
   }
 }

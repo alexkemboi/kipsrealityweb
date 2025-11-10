@@ -1,4 +1,5 @@
-'use client'
+"use client";
+
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 const SignupPage = () => {
   const router = useRouter();
   const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -18,87 +20,116 @@ const SignupPage = () => {
     password: "",
     confirmPassword: "",
     organizationName: "",
-    phone: ""
+    phone: "",
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // ✅ Input Handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+
     if (error) setError("");
   };
 
+  // ✅ Full Validation
+  const validateForm = () => {
+    if (!formData.organizationName.trim())
+      return "Company name is required";
+
+    if (!formData.firstName.trim())
+      return "First name is required";
+
+    if (!formData.lastName.trim())
+      return "Last name is required";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email))
+      return "Please enter a valid email address";
+
+    const phoneRegex = /^[0-9+\-\s]{7,15}$/;
+    if (formData.phone && !phoneRegex.test(formData.phone))
+      return "Invalid phone number format";
+
+    if (formData.password.length < 8)
+      return "Password must be at least 8 characters long";
+
+    const strongPasswordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[\W_]).{8,}$/;
+
+    if (!strongPasswordRegex.test(formData.password))
+      return "Password must include uppercase, lowercase, number, and symbol";
+
+    if (formData.password !== formData.confirmPassword)
+      return "Passwords do not match";
+
+    return null;
+  };
+
+  // ✅ Handle Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (formData.password !== formData.confirmPassword) {
-      const errorMsg = "Passwords do not match";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    if (!formData.organizationName) {
-      const errorMsg = "Company name is required";
-      setError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      const errorMsg = "Password must be at least 8 characters long";
-      setError(errorMsg);
-      toast.error(errorMsg);
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      toast.error(validationError);
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
           firstName: formData.firstName,
           lastName: formData.lastName,
           organizationName: formData.organizationName,
-          phone: formData.phone
+          phone: formData.phone,
         }),
       });
 
       const result = await response.json();
 
+      // ✅ Detect duplicate company
       if (!response.ok) {
-        throw new Error(result.error || 'Registration failed');
+        if (
+          result.error === "ORGANIZATION_EXISTS" ||
+          result.error?.toLowerCase().includes("company") ||
+          result.error?.toLowerCase().includes("organization")
+        ) {
+          const msg = "A company with this name already exists";
+          setError(msg);
+          toast.error(msg);
+          return;
+        }
+
+        throw new Error(result.error || "Registration failed");
       }
 
-      if (result.user && result.tokens) {
-        login(result.user, result.tokens);
+      toast.success("Account created successfully! Please sign in.");
 
-        toast.success("Account created successfully! Redirecting...");
-
-        // Give a small delay for the AuthContext to update
-        setTimeout(() => {
-          router.push('/property-manager');
-        }, 500);
-      } else {
-        throw new Error('Invalid response from server');
-      }
+      // ✅ Redirect to login
+      setTimeout(() => router.push("/login"), 600);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
-      toast.error("Registration failed");
+      const message =
+        err instanceof Error ? err.message : "Registration failed";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -118,72 +149,66 @@ const SignupPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+
         {/* Company Name */}
-        <div>
+        <Input
+          type="text"
+          name="organizationName"
+          placeholder="Company Name *"
+          value={formData.organizationName}
+          onChange={handleInputChange}
+          required
+          className="h-12 text-base"
+        />
+
+        {/* Personal Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             type="text"
-            name="organizationName"
-            placeholder="Company Name *"
-            value={formData.organizationName}
+            name="firstName"
+            placeholder="First Name *"
+            value={formData.firstName}
             onChange={handleInputChange}
             required
-            className="h-12 text-base focus:border-blue-500 transition-colors"
+            className="h-12 text-base"
+          />
+          <Input
+            type="text"
+            name="lastName"
+            placeholder="Last Name *"
+            value={formData.lastName}
+            onChange={handleInputChange}
+            required
+            className="h-12 text-base"
           />
         </div>
 
-        {/* Personal Information */}
+        {/* Contact Info */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Input
-              type="text"
-              name="firstName"
-              placeholder="First Name *"
-              value={formData.firstName}
-              onChange={handleInputChange}
-              required
-              className="h-12 text-base"
-            />
-          </div>
-          <div>
-            <Input
-              type="text"
-              name="lastName"
-              placeholder="Last Name *"
-              value={formData.lastName}
-              onChange={handleInputChange}
-              required
-              className="h-12 text-base"
-            />
-          </div>
-        </div>
+          <Input
+            type="email"
+            name="email"
+            placeholder="Email Address *"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+            className="h-12 text-base"
+          />
 
-        {/* Contact Information */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Input
-              type="email"
-              name="email"
-              placeholder="Email Address *"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              className="h-12 text-base"
-            />
-          </div>
-          <div>
-            <Input
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="h-12 text-base"
-            />
-          </div>
+          <Input
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleInputChange}
+            className="h-12 text-base"
+          />
         </div>
 
         {/* Passwords */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          {/* Password */}
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
@@ -197,11 +222,13 @@ const SignupPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
+
+          {/* Confirm Password */}
           <div className="relative">
             <Input
               type={showConfirmPassword ? "text" : "password"}
@@ -214,21 +241,28 @@ const SignupPage = () => {
             />
             <button
               type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() =>
+                setShowConfirmPassword(!showConfirmPassword)
+              }
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showConfirmPassword ? (
+                <EyeOff size={16} />
+              ) : (
+                <Eye size={16} />
+              )}
             </button>
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* Error Block */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm text-center">{error}</p>
           </div>
         )}
 
+        {/* Submit */}
         <Button
           type="submit"
           disabled={isLoading}
@@ -236,13 +270,12 @@ const SignupPage = () => {
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
               Creating Account...
             </div>
           ) : (
             <>
-              Create Account
-              <ArrowRight className="w-4 h-4 ml-2" />
+              Create Account <ArrowRight className="w-4 h-4 ml-2" />
             </>
           )}
         </Button>

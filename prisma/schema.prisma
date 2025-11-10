@@ -579,21 +579,24 @@ model NavbarItem {
 }
 
 model Invite {
-  id             String       @id @default(cuid())
-  email          String
-  token          String       @unique
-  role           UserRole
+  id            String       @id @default(cuid())
+  email         String
+  token         String       @unique
+  role          UserRole
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   invitedById    String?
   invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
-  expiresAt      DateTime
-  accepted       Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  leaseId       String?      // <-- new: link invite to a specific lease
+  lease     Lease?   @relation("LeaseInvites", fields: [leaseId], references: [id]) // must match name
+  expiresAt     DateTime
+  accepted      Boolean      @default(false)
+  createdAt     DateTime     @default(now())
 
   @@index([organizationId])
   @@index([email])
 }
+
 
 //-----------------------
 // tenant application 
@@ -705,6 +708,7 @@ model Lease {
   tenant   User? @relation(fields: [tenantId], references: [id])
   property    Property          @relation(fields: [propertyId], references: [id])
   unit        Unit              @relation(fields: [unitId], references: [id])
+  invites     Invite[]          @relation("LeaseInvites") 
 }
 
 

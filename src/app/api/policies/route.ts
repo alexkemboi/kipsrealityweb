@@ -35,6 +35,8 @@ export async function POST(req: NextRequest) {
         mailingAddress,
         responseTime,
         inactiveAccountThreshold,
+        updatedAt: new Date(),
+
        
       },
     });

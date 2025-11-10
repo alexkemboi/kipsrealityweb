@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface Invite {
+  leaseId: string;
   id: string;
   token: string; 
   email: string;
@@ -21,6 +22,41 @@ interface Invite {
   phone?: string;
   accepted: boolean;
   createdAt: string;
+  
+}
+
+interface Lease {
+  id: string;
+  tenantId?: string | null;
+  applicationId?: string | null;
+  propertyId: string;
+  unitId: string;
+  startDate: string;
+  endDate: string;
+  rentAmount: number;
+  leaseStatus: string;
+  tenant?: {
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  } | null;
+  application?: {
+    id: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+  } | null;
+  property?: {
+    id: string;
+    address: string;
+    city?: string;
+  } | null;
+  unit?: {
+    id: string;
+    unitNumber: string;
+    unitName?: string;
+  } | null;
 }
 
 export default function InvitesPage() {
@@ -36,21 +72,51 @@ export default function InvitesPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [selectedLeaseId, setSelectedLeaseId] = useState<string | null>(null);
+  const [leases, setLeases] = useState<Lease[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch invites
+  // Fetch invites and leases
   useEffect(() => {
-    const fetchInvites = async () => {
+    const fetchData = async () => {
+      setInitialLoading(true);
+      setError(null);
+      
       try {
-        const res = await fetch("/api/auth/invites/tenant");
-        const data = await res.json();
-        setInvites(data.invites || []);
-        setFilteredInvites(data.invites || []);
+        // Fetch invites
+        const invitesRes = await fetch("/api/auth/invites/tenant");
+        if (!invitesRes.ok) throw new Error("Failed to fetch invites");
+        const invitesData = await invitesRes.json();
+        setInvites(invitesData.invites || []);
+        setFilteredInvites(invitesData.invites || []);
+
+        // Fetch leases
+        const leasesRes = await fetch("/api/lease");
+        if (!leasesRes.ok) {
+          const errorData = await leasesRes.json();
+          throw new Error(errorData.error || "Failed to fetch leases");
+        }
+        const leasesData = await leasesRes.json();
+        console.log("Leases API Response:", leasesData);
+        
+        // API returns array directly, not wrapped in {leases: [...]}
+        const leasesArray = Array.isArray(leasesData) ? leasesData : (leasesData.leases || []);
+        console.log("Leases Array:", leasesArray);
+        console.log("First lease application:", leasesArray[0]?.application);
+        
+        setLeases(leasesArray);
       } catch (err) {
         console.error(err);
+        setError(err instanceof Error ? err.message : "Failed to load data");
+      } finally {
+        setInitialLoading(false);
       }
     };
-    fetchInvites();
+
+    fetchData();
   }, []);
 
   // Filter invites by search and status
@@ -58,7 +124,7 @@ export default function InvitesPage() {
     let filtered = invites;
 
     if (filterStatus !== "ALL") {
-      filtered = filtered.filter(inv => 
+      filtered = filtered.filter(inv =>
         filterStatus === "ACCEPTED" ? inv.accepted : !inv.accepted
       );
     }
@@ -75,59 +141,186 @@ export default function InvitesPage() {
     setFilteredInvites(filtered);
   }, [searchTerm, filterStatus, invites]);
 
-  const handleInvite = async () => {
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/auth/invites/tenant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, firstName, lastName, phone }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send invite");
-
-      setInvites(prev => [data.tenant, ...prev]);
-      setIsOpen(false);
-
-      // Clear inputs
+  // Prefill form when lease is selected
+  useEffect(() => {
+    console.log("Selected Lease ID changed:", selectedLeaseId);
+    
+    if (selectedLeaseId) {
+      const lease = leases.find(l => l.id === selectedLeaseId);
+      console.log("Found lease:", lease);
+      console.log("Lease application:", lease?.application);
+      
+      if (lease?.application) {
+        // Split fullName into firstName and lastName
+        const fullName = lease.application.fullName || "";
+        const nameParts = fullName.trim().split(/\s+/);
+        const fName = nameParts[0] || "";
+        const lName = nameParts.slice(1).join(" ") || "";
+        
+        console.log("Prefilling with:", {
+          email: lease.application.email,
+          firstName: fName,
+          lastName: lName,
+          phone: lease.application.phone
+        });
+        
+        setEmail(lease.application.email || "");
+        setFirstName(fName);
+        setLastName(lName);
+        setPhone(lease.application.phone || "");
+      } else {
+        console.log("No application data found on lease");
+        setEmail("");
+        setFirstName("");
+        setLastName("");
+        setPhone("");
+      }
+    } else {
+      console.log("No lease selected, clearing form");
       setEmail("");
       setFirstName("");
       setLastName("");
       setPhone("");
-    } catch (err: any) {
-      console.error(err.message || "Server error");
+    }
+  }, [selectedLeaseId, leases]);
+
+  const validateForm = () => {
+    if (!selectedLeaseId) {
+      setError("Please select a lease");
+      return false;
+    }
+    if (!email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    if (!firstName.trim()) {
+      setError("First name is required");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    return true;
+  };
+
+  const handleInvite = async () => {
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/invites/tenant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email: email.trim(), 
+          firstName: firstName.trim(), 
+          lastName: lastName.trim(), 
+          phone: phone.trim(), 
+          leaseId: selectedLeaseId 
+        }),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send invite");
+      }
+
+      setInvites(prev => [data.tenant, ...prev]);
+      setSuccessMessage("Invite sent successfully!");
+      setTimeout(() => setSuccessMessage(null), 3000);
+      setIsOpen(false);
+      resetForm();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send invite");
     } finally {
       setLoading(false);
     }
   };
 
-  const copyInviteLink = async (token: string, email: string) => {
-    const baseUrl = window.location.origin;
-    // Use token instead of id
-    const inviteLink = `${baseUrl}/invite/accept?email=${encodeURIComponent(email)}&token=${token}`;
-    
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopiedToken(token);
-      setTimeout(() => setCopiedToken(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy link");
-    }
+  const resetForm = () => {
+    setSelectedLeaseId(null);
+    setEmail("");
+    setFirstName("");
+    setLastName("");
+    setPhone("");
+    setError(null);
   };
+
+  const copyInviteLink = async (token: string, email: string, leaseId: string) => {
+  const baseUrl = window.location.origin;
+
+  const inviteLink = `${baseUrl}/invite/accept?email=${encodeURIComponent(
+    email
+  )}&token=${token}&leaseId=${leaseId}`;
+
+      try {
+        await navigator.clipboard.writeText(inviteLink);
+        setCopiedToken(token);
+        setTimeout(() => setCopiedToken(null), 2000);
+      } catch (err) {
+        console.error("Failed to copy link");
+        setError("Failed to copy link to clipboard");
+      }
+    };
+
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#0a1628] to-[#0f172a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#30D5C8] mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading invites...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f172a] via-[#0a1628] to-[#0f172a] p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {successMessage && (
+          <div className="mb-4 bg-green-500/20 border border-green-500 text-green-400 p-4 rounded-lg flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {successMessage}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 bg-red-500/20 border border-red-500 text-red-400 p-4 rounded-lg flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {error}
+            </div>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Tenant Invites</h1>
             <p className="text-gray-400 text-sm">Manage and track your tenant invitations</p>
           </div>
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true);
+              setError(null);
+            }}
             className="bg-[#30D5C8] text-[#0f172a] px-6 py-3 rounded-lg font-semibold hover:bg-[#28bfb4] transition-all duration-200 shadow-lg hover:shadow-[#30D5C8]/20 flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +330,6 @@ export default function InvitesPage() {
           </button>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
             <p className="text-gray-400 text-sm mb-1">Total Invites</p>
@@ -153,7 +345,6 @@ export default function InvitesPage() {
           </div>
         </div>
 
-        {/* Filters */}
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
@@ -168,7 +359,7 @@ export default function InvitesPage() {
             <select
               className="bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-[160px]"
               value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value as any)}
+              onChange={e => setFilterStatus(e.target.value as "ALL" | "ACCEPTED" | "PENDING")}
             >
               <option value="ALL">All Statuses</option>
               <option value="PENDING">Pending</option>
@@ -177,7 +368,6 @@ export default function InvitesPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -193,39 +383,20 @@ export default function InvitesPage() {
               </thead>
               <tbody>
                 {filteredInvites.map((inv) => (
-                  <tr 
-                    key={inv.id} 
-                    className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors"
-                  >
+                  <tr key={inv.id} className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors">
                     <td className="p-4 text-gray-200">{inv.email}</td>
-                    <td className="p-4 text-gray-200">
-                      {inv.firstName || inv.lastName 
-                        ? `${inv.firstName ?? ""} ${inv.lastName ?? ""}`.trim() 
-                        : "-"}
-                    </td>
+                    <td className="p-4 text-gray-200">{inv.firstName || inv.lastName ? `${inv.firstName ?? ""} ${inv.lastName ?? ""}`.trim() : "-"}</td>
                     <td className="p-4 text-gray-200">{inv.phone ?? "-"}</td>
                     <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        inv.accepted 
-                          ? "bg-[#30D5C8]/20 text-[#30D5C8]" 
-                          : "bg-yellow-500/20 text-yellow-400"
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${inv.accepted ? "bg-[#30D5C8]/20 text-[#30D5C8]" : "bg-yellow-500/20 text-yellow-400"}`}>
                         {inv.accepted ? "Accepted" : "Pending"}
                       </span>
                     </td>
-                    <td className="p-4 text-gray-400 text-sm">
-                      {new Date(inv.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
+                    <td className="p-4 text-gray-400 text-sm">{new Date(inv.createdAt).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</td>
                     <td className="p-4">
                       {!inv.accepted && (
                         <button
-                          onClick={() => copyInviteLink(inv.token, inv.email)}
+                          onClick={() => copyInviteLink(inv.token, inv.email, inv.leaseId)}
                           className="flex items-center gap-2 bg-[#15386a] hover:bg-[#15386a]/80 text-[#30D5C8] px-3 py-2 rounded-lg transition-colors text-sm font-medium"
                           title="Copy invite link"
                         >
@@ -268,72 +439,106 @@ export default function InvitesPage() {
         </div>
       </div>
 
-      {/* Modal for Invite Form */}
-      <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+      <AlertDialog open={isOpen} onOpenChange={(open) => {
+        setIsOpen(open);
+        if (!open) resetForm();
+      }}>
         <AlertDialogContent className="bg-[#0a1628] border-[#15386a] max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-bold text-white mb-2">
-              Invite New Tenant
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Send an invitation to a new tenant
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-2xl font-bold text-white mb-2">Invite New Tenant</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">Send an invitation to a new tenant</AlertDialogDescription>
           </AlertDialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div>
+              <label className="block text-gray-300 text-sm font-medium mb-2">Select Lease *</label>
+              <select
+                value={selectedLeaseId || ""}
+                onChange={(e) => setSelectedLeaseId(e.target.value || null)}
+                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8]"
+                disabled={loading}
+              >
+                <option value="">-- Select a lease ({leases.length} available) --</option>
+                {leases.map(lease => {
+                  const unitNum = lease.unit?.unitNumber || "N/A";
+                  const unitName = lease.unit?.unitName || "";
+                  const city = lease.property?.city || "";
+                  const address = lease.property?.address || "No Address";
+                  const fullAddress = city && address !== city ? `${address}, ${city}` : address;
+                  const displayName = unitName ? `${unitNum} (${unitName})` : unitNum;
+                  
+                  return (
+                    <option key={lease.id} value={lease.id}>
+                      Unit {displayName} - {fullAddress}
+                    </option>
+                  );
+                })}
+              </select>
+              {leases.length === 0 && (
+                <p className="text-yellow-400 text-xs mt-2">No leases available. Please create a lease first.</p>
+              )}
+            </div>
+
+            <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">Email Address *</label>
-              <input
-                type="email"
-                placeholder="tenant@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+              <input 
+                type="email" 
+                placeholder="tenant@example.com" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8]"
+                disabled={loading}
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">First Name *</label>
-              <input
-                type="text"
-                placeholder="John"
-                value={firstName}
-                onChange={e => setFirstName(e.target.value)}
-                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+              <input 
+                type="text" 
+                placeholder="John" 
+                value={firstName} 
+                onChange={e => setFirstName(e.target.value)} 
+                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8]"
+                disabled={loading}
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">Last Name</label>
-              <input
-                type="text"
-                placeholder="Doe"
-                value={lastName}
-                onChange={e => setLastName(e.target.value)}
-                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+              <input 
+                type="text" 
+                placeholder="Doe" 
+                value={lastName} 
+                onChange={e => setLastName(e.target.value)} 
+                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8]"
+                disabled={loading}
               />
             </div>
-            
+
             <div>
               <label className="block text-gray-300 text-sm font-medium mb-2">Phone Number</label>
-              <input
-                type="text"
-                placeholder="+1 (555) 000-0000"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+              <input 
+                type="text" 
+                placeholder="+1 (555) 000-0000" 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)} 
+                className="w-full bg-[#15386a]/30 border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8]"
+                disabled={loading}
               />
             </div>
           </div>
-          
+
           <AlertDialogFooter className="gap-3">
-            <AlertDialogCancel className="bg-[#15386a]/50 text-gray-300 hover:bg-[#15386a] border-none">
+            <AlertDialogCancel 
+              className="bg-[#15386a]/50 text-gray-300 hover:bg-[#15386a] border-none"
+              disabled={loading}
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleInvite}
-              disabled={loading || !email || !firstName}
-              className="bg-[#30D5C8] text-[#0f172a] hover:bg-[#28bfb4] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              onClick={handleInvite} 
+              disabled={loading} 
+              className="bg-[#30D5C8] text-[#0f172a] hover:bg-[#28bfb4]"
             >
               {loading ? "Sending..." : "Send Invite"}
             </AlertDialogAction>

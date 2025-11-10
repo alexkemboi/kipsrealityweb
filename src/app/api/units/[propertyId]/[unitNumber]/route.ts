@@ -15,6 +15,7 @@ export async function GET(req: Request, context: { params: Promise<{ propertyId:
       unitNumber,
       unitName: null,
       bedrooms: null,
+      appliances: [],
       bathrooms: null,
       floorNumber: null,
       rentAmount: null,
@@ -25,17 +26,39 @@ export async function GET(req: Request, context: { params: Promise<{ propertyId:
   return NextResponse.json(unit);
 }
 
-export async function PUT(req: Request, context: { params: Promise<{ propertyId: string; unitNumber: string }> }) {
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ propertyId: string; unitNumber: string }> }
+) {
   const { propertyId, unitNumber } = await context.params;
   const data = await req.json();
 
-  // Try to find existing unit
+  type ApplianceInput = { name: string };
+  const applianceArray: ApplianceInput[] =
+    typeof data.appliances === "string"
+      ? data.appliances
+          .split(",")
+          .map((name: string) => ({ name: name.trim() }))
+      : Array.isArray(data.appliances)
+      ? data.appliances.map((a: any) => ({ name: a.name }))
+      : [];
+
+  // Find or create the unit
   let unit = await prisma.unit.findFirst({
     where: { propertyId, unitNumber },
   });
 
   if (!unit) {
-    // Create new unit if it doesn't exist
+    // --- CREATE ---
+    // Create appliance records for this new unit
+    const createdAppliances = await Promise.all(
+      applianceArray.map((a) =>
+        prisma.appliance.create({
+          data: { name: a.name },
+        })
+      )
+    );
+
     unit = await prisma.unit.create({
       data: {
         propertyId,
@@ -46,10 +69,24 @@ export async function PUT(req: Request, context: { params: Promise<{ propertyId:
         floorNumber: data.floorNumber ?? null,
         rentAmount: data.rentAmount ?? null,
         isOccupied: data.isOccupied ?? false,
+        appliances: {
+          connect: createdAppliances.map((a) => ({ id: a.id })),
+        },
       },
+      include: { appliances: true },
     });
   } else {
-    // Update existing unit
+    // --- UPDATE ---
+    // Create new appliance entries for this unit (duplicates allowed)
+    const createdAppliances = await Promise.all(
+      applianceArray.map((a) =>
+        prisma.appliance.create({
+          data: { name: a.name },
+        })
+      )
+    );
+
+    // Update the unit and connect the new appliances
     unit = await prisma.unit.update({
       where: { id: unit.id },
       data: {
@@ -59,7 +96,12 @@ export async function PUT(req: Request, context: { params: Promise<{ propertyId:
         floorNumber: data.floorNumber ?? undefined,
         rentAmount: data.rentAmount ?? undefined,
         isOccupied: data.isOccupied ?? undefined,
+        appliances: {
+          set: [], // Clear old relationships
+          connect: createdAppliances.map((a) => ({ id: a.id })), // Connect new ones
+        },
       },
+      include: { appliances: true },
     });
   }
 
