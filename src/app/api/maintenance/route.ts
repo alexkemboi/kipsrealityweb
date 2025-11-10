@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const url = new URL(req.url);
+    const organizationId = url.searchParams.get("organizationId");
+
+    if (!organizationId) {
+      return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
+    }
+
     const requests = await (prisma as any).maintenanceRequest.findMany({
+      where: { organizationId },
       orderBy: { createdAt: "desc" },
       include: {
-        property: { select: { id: true, address: true, city: true } },
+        property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
+        unit: { select: { id: true, unitNumber: true, unitName: true } },
       },
     });
     return NextResponse.json(requests);
@@ -24,9 +33,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { organizationId, propertyId, userId, title, description, priority } = body;
+    console.log('POST /api/maintenance body:', body);
+    const { organizationId, propertyId, unitId, userId, title, description, priority, category } = body;
 
-    if (!organizationId || !propertyId || !userId || !title || !description) {
+    if (!organizationId || !propertyId || !unitId || !userId || !title || !description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -37,14 +47,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User is not associated with the organization" }, { status: 403 });
     }
 
+    // Validate priority (Prisma enum expects: LOW | NORMAL | HIGH | URGENT)
+    const allowedPriorities = ["LOW", "NORMAL", "HIGH", "URGENT"];
+    if (priority && !allowedPriorities.includes(priority)) {
+      return NextResponse.json({ error: `Invalid priority value: ${priority}` }, { status: 400 });
+    }
+
+    // Validate category (RequestCategory: EMERGENCY | URGENT | ROUTINE | STANDARD)
+    const allowedCategories = ["EMERGENCY", "URGENT", "ROUTINE", "STANDARD"];
+    if (category && !allowedCategories.includes(category)) {
+      return NextResponse.json({ error: `Invalid category value: ${category}` }, { status: 400 });
+    }
+
     const newRequest = await (prisma as any).maintenanceRequest.create({
       data: {
         organizationId,
         propertyId,
+        unitId,
         requestedById: orgUser.id,
         title,
         description,
-        priority,
+        ...(priority ? { priority } : {}),
+        ...(category ? { category } : {}),
       },
     });
 
