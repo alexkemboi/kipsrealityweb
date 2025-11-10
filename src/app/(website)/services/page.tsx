@@ -3,10 +3,11 @@ import { prisma } from "@/lib/db";
 import ServicesPageClient from "@/components/website/services/ServicePageClient";
 
 export default async function ServicesPage() {
-  const categoriesFromDB = await prisma.category.findMany({
-    include: { services: true },
-    orderBy: { id: "asc" },
-  });
+    const categoriesFromDB = await prisma.categories.findMany({
+      include: { services: true },
+      orderBy: { id: "asc" },
+    });
+
 
   // Format JSON `features` safely
   const categories = categoriesFromDB.map((cat) => ({

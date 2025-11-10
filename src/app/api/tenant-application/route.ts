@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 export async function POST(request: Request) {
   try {
     const data = await request.json();
@@ -115,20 +115,39 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // ✅ Fetch ONLY applications for units belonging to properties managed by this PR
     const applications = await prisma.tenantapplication.findMany({
-      include: {
-        property: true,
-        unit: true,
-        user: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    where: {
+      property: {
+        manager: {
+          userId: user.id
+        }
+      }
+    },
+    include: {
+      property: true,
+      unit: true,
+      user: true
+    },
+    orderBy: { createdAt: "desc" }
+  });
 
     return NextResponse.json(applications, { status: 200 });
+
   } catch (error: any) {
-    console.error('Error fetching applications:', error);
-    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+    console.error("Error fetching applications:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error.message },
+      { status: 500 }
+    );
   }
 }
-
-

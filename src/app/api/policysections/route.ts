@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
         intro,
         content,
         order,
+        updatedAt: new Date(),
         policyId: Number(policyId),
       },
     });

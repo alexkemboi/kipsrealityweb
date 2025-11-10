@@ -14,23 +14,27 @@ export default function PropertyManagerPage() {
 
   useEffect(() => {
     const fetchProperties = async () => {
-      if (!user?.organizationUserId) {
+      if (!user?.organizationUserId || !user?.organization?.id) {
         setError("Please log in to view properties");
         setLoading(false);
         return;
       }
 
       try {
-        // Send organizationUserId as managerId
-        const data = await getProperties(user.organizationUserId, user.organization?.id);
+        const data = await getProperties(
+          user.organizationUserId,     
+          user.organization.id        
+        );
+
         setProperties(data);
-      } catch (err: any) {
-        setError("Failed to fetch properties");
+      } catch (err) {
         console.error(err);
+        setError("Failed to fetch properties");
       } finally {
         setLoading(false);
       }
     };
+
 
     fetchProperties();
   }, [user]);

@@ -4,7 +4,7 @@ import ServiceCrud from "./ServiceCrud";
 import { Category, Service } from "../../type";
 
 export default async function ServiceCrudWrapper() {
-  const categoriesFromDB = await prisma.category.findMany({
+  const categoriesFromDB = await prisma.categories.findMany({
     include: { services: true },
     orderBy: { id: "asc" },
   });

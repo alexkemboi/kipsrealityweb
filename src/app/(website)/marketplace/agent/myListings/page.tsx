@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { MarketplaceClientPage } from '@/components/website/marketplace/ListingClientPage';
-import Navbar from '@/components/website/Navbar';
-import {MyListings} from "@/components/website/marketplace/MyListings"
-import { marketplaceListings } from "@/app/data/marketplaceData"
+// import { MarketplaceClientPage } from '@/components/website/marketplace/ListingClientPage';
+// import Navbar from '@/components/website/Navbar';
+// import {MyListings} from "@/components/website/marketplace/MyListings"
+// import { marketplaceListings } from "@/app/data/marketplaceData"
 
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function MyListingsPage() {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      {/* <Navbar />
       
       <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
         <div className="max-w-3xl mx-auto px-6">
@@ -29,7 +29,7 @@ export default function MyListingsPage() {
                         </div>
         
       </section>
-      <MyListings listings={marketplaceListings} />
+      <MyListings listings={marketplaceListings} /> */}
     </div>
   );
 }

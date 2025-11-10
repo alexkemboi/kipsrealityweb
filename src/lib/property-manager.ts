@@ -54,32 +54,27 @@ export const getProperties = async (
   organizationId?: string
 ): Promise<PropertyPayload[]> => {
   try {
-    // Build query parameters
     const params = new URLSearchParams();
     if (managerId) params.append('managerId', managerId);
     if (organizationId) params.append('organizationId', organizationId);
-    
-    const queryString = params.toString();
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager${queryString ? `?${queryString}` : ''}`;
 
-    const response = await fetch(url, {
-      method: "GET",
-      cache: "no-store",
-    });
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
+    const res = await fetch(url, { method: "GET", cache: "no-store" });
+
+    if (!res.ok) {
       throw new Error("Failed to fetch properties");
     }
 
-    const properties = await response.json();
-    return properties;
+    return res.json();
   } catch (error) {
     console.error("Error fetching properties:", error);
     throw error;
   }
 };
+
 
 export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
   try {

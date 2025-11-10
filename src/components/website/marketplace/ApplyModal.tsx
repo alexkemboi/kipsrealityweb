@@ -264,9 +264,9 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
           </div>
         </div>
 
-        {/* Scrollable Form - Now Much Larger */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-6 sm:p-8 min-h-[500px]">
+        {/* Scrollable Form */}
+        <div className="overflow-y-auto max-h-[75vh] relative">
+          <div className="p-6 sm:p-8">
             {step === 1 && (
               <div className="space-y-5 max-w-2xl mx-auto">
                 <div className="mb-6">
@@ -362,6 +362,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
             )}
           </div>
         </div>
+
         {/* Footer */}
         <div className="border-t bg-gray-50 px-6 py-5">
           {error && (

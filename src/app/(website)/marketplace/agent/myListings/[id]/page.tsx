@@ -1,35 +1,35 @@
 
 import React from "react";
-import {MarketplaceItem, marketplaceListings}  from "@/app/data/marketplaceData";
-import Navbar from '@/components/website/Navbar';
-import MyListings from "@/components/website/marketplace/MyListingClient";
-import Footer from "@/components/website/Footer";
+// import {MarketplaceItem, marketplaceListings}  from "@/app/data/marketplaceData";
+// import Navbar from '@/components/website/Navbar';
+// import MyListings from "@/components/website/marketplace/MyListingClient";
+// import Footer from "@/components/website/Footer";
 
 
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
+// interface PageProps {
+//   params: Promise<{ id: string }>;
+// }
 
-export default async function ListingDetailsPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const listingId = Number(resolvedParams.id);
-  const listing = marketplaceListings.find((item) => item.id === listingId);
+export default async function ListingDetailsPage() {
+//   const resolvedParams = await params;
+//   const listingId = Number(resolvedParams.id);
+//   const listing = marketplaceListings.find((item) => item.id === listingId);
   
 
    
     
-if (!listing) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <h1 className="text-3xl font-bold text-gray-700">Unfortunately, this listing does not exist </h1>
-    </div>
-  );
-}
+// if (!listing) {
+//   return (
+//     <div className="min-h-screen flex items-center justify-center bg-background">
+//       <h1 className="text-3xl font-bold text-gray-700">Unfortunately, this listing does not exist </h1>
+//     </div>
+//   );
+// }
 
 return (
   <div className="min-h-screen bg-background">
-    <Navbar />
+    {/* <Navbar />
 
     <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
       <div className="max-w-3xl mx-auto px-6">
@@ -43,7 +43,7 @@ return (
     </section>
 
     <MyListings listing={listing} />
-    <Footer />
+    <Footer /> */}
   </div>
 );
 

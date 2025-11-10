@@ -6,116 +6,115 @@ import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    console.log(' Received request body:', JSON.stringify(body, null, 2))
-    
+    console.log(' Received request body:', body)
+
     const { email, token, password, firstName, lastName, phone } = body
 
-    // Check 1: Required fields
     if (!email || !token || !password) {
-      console.log(' Missing required fields:', { 
-        hasEmail: !!email, 
-        hasToken: !!token, 
-        hasPassword: !!password 
-      })
-      return NextResponse.json({ error: 'Email, token and password are required' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Email, token, and password are required' },
+        { status: 400 }
+      )
     }
 
     const normalizedEmail = email.toLowerCase()
-    console.log(' Searching for invite - Token:', token, 'Email:', normalizedEmail)
 
-    // Find invite by token
-    const invite = await prisma.invite.findUnique({
+    // ✅ 1. Try find invite by `token` normally
+    let invite = await prisma.invite.findUnique({
       where: { token }
     })
 
-    console.log(' Invite found:', invite ? {
-      id: invite.id,
-      email: invite.email,
-      accepted: invite.accepted,
-      expiresAt: invite.expiresAt,
-      organizationId: invite.organizationId
-    } : 'null')
+    console.log("Invite via token:", invite?.id || "NO INVITE FOUND")
 
-    // Check 2: Invite exists and email matches
-    if (!invite || invite.email !== normalizedEmail) {
-      console.log(' Invite validation failed:', {
-        inviteExists: !!invite,
-        inviteEmail: invite?.email,
-        providedEmail: normalizedEmail,
-        emailsMatch: invite?.email === normalizedEmail
+    // ✅ 2. If not found → treat token as leaseId
+    if (!invite) {
+      console.log("Token is NOT an invite token. Trying to interpret as leaseId…")
+
+      const lease = await prisma.lease.findUnique({
+        where: { id: token },
+        include: { invites: true }
       })
-      return NextResponse.json({ error: 'Invalid invite token or email' }, { status: 400 })
+
+      if (!lease || lease.invites.length === 0) {
+        return NextResponse.json(
+          { error: 'Invalid invite or lease. Cannot continue.' },
+          { status: 400 }
+        )
+      }
+
+      invite = lease.invites[0]
+      console.log("Invite found through lease:", invite.id)
     }
 
-    // Check 3: Not already accepted
+    // ✅ 3. Validate invite
+    if (invite.email !== normalizedEmail) {
+      return NextResponse.json(
+        { error: 'Invite email does not match' },
+        { status: 400 }
+      )
+    }
+
     if (invite.accepted) {
-      console.log(' Invite already accepted')
-      return NextResponse.json({ error: 'Invite already used' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invite already used' },
+        { status: 400 }
+      )
     }
 
-    // Check 4: Not expired
     if (invite.expiresAt < new Date()) {
-      console.log(' Invite expired:', {
-        expiresAt: invite.expiresAt,
-        now: new Date()
-      })
-      return NextResponse.json({ error: 'Invite has expired' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Invite has expired' },
+        { status: 400 }
+      )
     }
 
-    console.log(' All validations passed, creating/updating user...')
-
-    // If a user already exists with that email:
-    // - if active -> block (should not happen because invite should not be created)
-    // - if inactive -> update password and activate
+    // ✅ 4. Create or update user
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail }
     })
 
     const hashedPassword = await bcrypt.hash(password, 12)
-
     let user
 
     if (existingUser) {
       if (existingUser.status === 'ACTIVE') {
-        return NextResponse.json({ error: 'User already exists and is active' }, { status: 409 })
+        return NextResponse.json({ error: 'User already exists' }, { status: 409 })
       }
 
-      // Update existing inactive user (created earlier or by mistake)
       user = await prisma.user.update({
         where: { id: existingUser.id },
         data: {
           passwordHash: hashedPassword,
-          firstName: firstName?.trim() || existingUser.firstName,
-          lastName: lastName?.trim() || existingUser.lastName,
-          phone: phone?.trim() || existingUser.phone,
+          firstName,
+          lastName,
+          phone,
           status: 'ACTIVE',
-          emailVerified: true,
+          emailVerified: true
         }
       })
     } else {
-      // Create new user
       user = await prisma.user.create({
         data: {
           email: normalizedEmail,
           passwordHash: hashedPassword,
-          firstName: firstName?.trim() || null,
-          lastName: lastName?.trim() || null,
-          phone: phone?.trim() || null,
+          firstName,
+          lastName,
+          phone,
           status: 'ACTIVE',
-          emailVerified: true,
+          emailVerified: true
         }
       })
     }
 
-    // Create organizationUser link if doesn't exist
-    const orgUserExists = await prisma.organizationUser.findFirst({
+    // ✅ 5. Link user to organization
+    const orgUser = await prisma.organizationUser.findFirst({
       where: {
         userId: user.id,
         organizationId: invite.organizationId
       }
     })
 
-    if (!orgUserExists) {
+    if (!orgUser) {
       await prisma.organizationUser.create({
         data: {
           userId: user.id,
@@ -125,51 +124,27 @@ export async function POST(request: Request) {
       })
     }
 
-    // Mark invite as accepted
+    // ✅ 6. Mark invite accepted
     await prisma.invite.update({
       where: { id: invite.id },
       data: { accepted: true }
     })
 
-    // Generate tokens and return them so the user can be signed in automatically
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: invite.role,
-      organizationId: invite.organizationId
-    })
-
-    const refreshToken = generateRefreshToken({ userId: user.id })
-    const expiresAt = Date.now() + 60 * 60 * 1000
-
-    const response = NextResponse.json({
+    // ✅ 7. Return success (we do NOT auto-login)
+    return NextResponse.json({
       success: true,
-      message: 'Invite accepted. Account activated.',
+      message: 'Invite accepted. You may now log in.',
       user: {
         id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: invite.role,
-        organizationId: invite.organizationId
-      },
-      tokens: { accessToken, refreshToken, expiresAt }
-    }, { status: 200 })
-
-    // Set cookie with access token for middleware (so next requests are authenticated)
-    response.cookies.set('token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60,
-      path: '/'
+        email: user.email
+      }
     })
 
-    console.log(' User created and logged in successfully')
-    return response
-
   } catch (error) {
-    console.error(' Accept invite error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Accept invite error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }
