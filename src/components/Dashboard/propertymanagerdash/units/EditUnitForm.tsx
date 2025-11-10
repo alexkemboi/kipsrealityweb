@@ -196,6 +196,24 @@ export default function EditUnitForm({
             />
           </div>
 
+          {/* Appliances */}
+<div className="md:col-span-2">
+  <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+    Appliances
+  </label>
+  <input
+    type="text"
+    value={applianceInput}
+    onChange={(e) => setApplianceInput(e.target.value)}
+    placeholder="e.g. Fridge, Microwave, Washing Machine"
+    className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Separate multiple appliances with commas (,)
+  </p>
+</div>
+
+
 
         </div>
 

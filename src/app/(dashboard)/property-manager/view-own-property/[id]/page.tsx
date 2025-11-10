@@ -121,13 +121,13 @@ export default function ViewPropertyPage() {
           <div className="pt-4 border-t border-gray-200">
             <Link
               href={`/property-manager/view-own-property/${property.id}/units?type=${isApartment ? "apartment" : "house"}`}
-              className="inline-block w-full text-center px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
+              className="inline-block w-full text-center px-4 py-3 bg-blue-600 mb-4 text-white font-medium rounded-lg hover:bg-blue-700 transition"
             >
               View Units
             </Link>
             <Link
               href={`/property-manager/view-own-property/${property.id}/manage_units_and_leases`}
-              className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="inline-block w-full text-center px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
             >
               Manage Units & Leases
             </Link>

@@ -120,7 +120,7 @@ export default function PropertyManagerPage() {
                       )}
                       <div>
                         <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600">
-                          {p.name || "Unnamed Property"}
+                          {p.type}
                         </h2>
                         {p.type?.toLowerCase() === "apartment" && p.details?.buildingName && (
                           <p className="text-sm text-blue-600 font-medium mt-1">{p.details.buildingName}</p>

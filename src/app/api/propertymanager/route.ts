@@ -148,8 +148,11 @@ export async function GET(req: Request) {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
-        units: true,
-        manager: {
+units: {
+      include: {
+        appliances: true, 
+      },
+    },        manager: {
           select: {
             id: true,
             role: true,
