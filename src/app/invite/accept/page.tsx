@@ -21,6 +21,7 @@ function AcceptInviteForm() {
   const [loading, setLoading] = useState(false)
   const [inviteValid, setInviteValid] = useState(true)
   const [leaseSigned, setLeaseSigned] = useState(false)
+  const [checkingLease, setCheckingLease] = useState(true)
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -32,72 +33,82 @@ function AcceptInviteForm() {
     leaseId: ''
   })
 
-useEffect(() => {
-  const email = searchParams.get('email')
-  const token = searchParams.get('token')
-  const leaseId = searchParams.get('leaseId')
+  useEffect(() => {
+    const email = searchParams.get('email')
+    const token = searchParams.get('token')
+    const leaseId = searchParams.get('leaseId')
 
-  console.log("URL params:", { email, token, leaseId }) // Debug
+    console.log("Accept page URL params:", { email, token, leaseId }) // Debug
 
-  if (!email || !token || !leaseId) {
-    setInviteValid(false)
-    return
-  }
-
-  setFormData(prev => ({
-    ...prev,
-    email,
-    token,
-    leaseId
-  }))
-
-  // ✅ Check if tenant signed lease
-  async function checkLease() {
-    try {
-      const res = await fetch(`/api/lease/${leaseId}`)
-      const data = await res.json()
-
-      if (!res.ok) {
-        console.error("Lease fetch error:", data.error)
-        setInviteValid(false)
-        return
-      }
-
-      if (data.tenantSignedAt) {
-        setLeaseSigned(true)
-      } else {
-        // ✅ Redirect to lease sign page (absolute path)
-        router.push(`/invite/lease/${leaseId}/sign?redirect=invite`)
-      }
-    } catch (err) {
-      console.error("Lease fetch failed:", err)
+    if (!email || !token || !leaseId) {
+      console.error("Missing required params:", { email: !!email, token: !!token, leaseId: !!leaseId })
       setInviteValid(false)
+      setCheckingLease(false)
+      return
     }
-  }
 
-  checkLease()
-}, [searchParams, router])
+    setFormData(prev => ({
+      ...prev,
+      email,
+      token,
+      leaseId
+    }))
 
+    // Check if tenant signed lease
+    async function checkLease() {
+      try {
+        // IMPORTANT: Include token in request
+        const res = await fetch(`/api/lease/${leaseId}?token=${token}`)
+        const data = await res.json()
 
+        console.log("Lease check response:", data) // Debug
 
-  // ✅ Handle input change
+        if (!res.ok) {
+          console.error("Lease fetch error:", data.error)
+          setInviteValid(false)
+          setCheckingLease(false)
+          return
+        }
+
+        if (data.tenantSignedAt) {
+          console.log("Lease is signed, showing form")
+          setLeaseSigned(true)
+          setCheckingLease(false)
+        } else {
+          console.log("Lease not signed, redirecting to sign page")
+          // Redirect to lease sign page with token
+          router.push(`/invite/lease/${leaseId}/sign?token=${token}`)
+        }
+      } catch (err) {
+        console.error("Lease fetch failed:", err)
+        setInviteValid(false)
+        setCheckingLease(false)
+      }
+    }
+
+    checkLease()
+  }, [searchParams, router])
+
+  // Handle input change
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  // ✅ Handle account creation AFTER signing lease
+  // Handle account creation AFTER signing lease
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     if (!leaseSigned) {
       toast.info('Please sign your lease before creating an account.')
-      router.push(`/lease/${formData.leaseId}/sign`)
+      router.push(`/invite/lease/${formData.leaseId}/sign?token=${formData.token}`)
       return
     }
 
     setLoading(true)
 
     try {
+      console.log("Creating account with:", formData) // Debug
+
       const res = await fetch(`/api/auth/invites/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,6 +122,7 @@ useEffect(() => {
       toast.success('Account created successfully! Redirecting to login...')
       setTimeout(() => router.push('/login'), 1500)
     } catch (error: any) {
+      console.error("Account creation error:", error)
       toast.error(error.message || 'Something went wrong.')
     } finally {
       setLoading(false)
@@ -119,17 +131,57 @@ useEffect(() => {
 
   if (!inviteValid) {
     return (
-      <Typography variant="h6" color="error" sx={{ textAlign: 'center', mt: 8 }}>
-        Invalid or missing invite link.
-      </Typography>
+      <div className="flex justify-center items-center min-h-screen">
+        <Card sx={{ p: 4, maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            Invalid Invite Link
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            The invite link is invalid or missing required information. Please check your email for the correct link.
+          </Typography>
+          <Button 
+            variant="outlined" 
+            onClick={() => window.history.back()}
+          >
+            Go Back
+          </Button>
+        </Card>
+      </div>
     )
   }
 
-  // ✅ If lease not signed, do not show form
+  // If still checking lease status
+  if (checkingLease) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <CircularProgress />
+          <Typography variant="body1" sx={{ mt: 2 }}>
+            Checking lease status...
+          </Typography>
+        </div>
+      </div>
+    )
+  }
+
+  // If lease not signed yet (shouldn't reach here due to redirect)
   if (!leaseSigned) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <CircularProgress />
+        <Card sx={{ p: 4, maxWidth: 420, width: '100%', textAlign: 'center' }}>
+          <Typography variant="h6" gutterBottom>
+            Lease Not Signed
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            You need to sign your lease before creating an account.
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={() => router.push(`/invite/lease/${formData.leaseId}/sign?token=${formData.token}`)}
+          >
+            Sign Lease Now
+          </Button>
+        </Card>
       </div>
     )
   }
@@ -140,17 +192,66 @@ useEffect(() => {
         <Typography variant="h5" gutterBottom>
           Create Your Account
         </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Your lease has been signed. Complete your account setup below.
+        </Typography>
 
         <form onSubmit={handleSubmit}>
-          <TextField label="Email" name="email" value={formData.email} fullWidth margin="normal" InputProps={{ readOnly: true }} />
+          <TextField 
+            label="Email" 
+            name="email" 
+            value={formData.email} 
+            fullWidth 
+            margin="normal" 
+            InputProps={{ readOnly: true }}
+            disabled
+          />
 
-          <TextField label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required fullWidth margin="normal" />
-          <TextField label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} fullWidth margin="normal" />
-          <TextField label="Phone" name="phone" value={formData.phone} onChange={handleChange} fullWidth margin="normal" />
+          <TextField 
+            label="First Name" 
+            name="firstName" 
+            value={formData.firstName} 
+            onChange={handleChange} 
+            required 
+            fullWidth 
+            margin="normal" 
+          />
+          <TextField 
+            label="Last Name" 
+            name="lastName" 
+            value={formData.lastName} 
+            onChange={handleChange} 
+            fullWidth 
+            margin="normal" 
+          />
+          <TextField 
+            label="Phone" 
+            name="phone" 
+            value={formData.phone} 
+            onChange={handleChange} 
+            fullWidth 
+            margin="normal" 
+          />
 
-          <TextField label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required fullWidth margin="normal" />
+          <TextField 
+            label="Password" 
+            name="password" 
+            type="password" 
+            value={formData.password} 
+            onChange={handleChange} 
+            required 
+            fullWidth 
+            margin="normal"
+            helperText="Choose a strong password for your account"
+          />
 
-          <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ mt: 2 }}>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            fullWidth 
+            disabled={loading} 
+            sx={{ mt: 2 }}
+          >
             {loading ? <CircularProgress size={24} /> : "Create Account"}
           </Button>
         </form>
@@ -161,7 +262,11 @@ useEffect(() => {
 
 export default function AcceptInvitePage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><CircularProgress /></div>}>
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen">
+        <CircularProgress />
+      </div>
+    }>
       <AcceptInviteForm />
     </Suspense>
   )
