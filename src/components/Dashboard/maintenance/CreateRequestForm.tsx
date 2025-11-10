@@ -11,7 +11,7 @@ type Unit = {
 };
 
 type Property = {
-  id: string | null;
+  id: string;
   name: string | null;
   address: string | null;
   units: Unit[];

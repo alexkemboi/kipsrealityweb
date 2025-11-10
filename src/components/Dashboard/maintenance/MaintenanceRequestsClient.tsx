@@ -65,7 +65,6 @@ export default function MaintenanceRequestsClient(): ReactElement {
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [exportFormat, setExportFormat] = useState("");
-  const [emergencyType, setEmergencyType] = useState("ALL");
 
   useEffect(() => {
     async function fetchRequests() {
@@ -103,7 +102,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
       const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
       if (!prop.includes(search) && !(r.title ?? "").toLowerCase().includes(search)) return false;
     }
-    return emergencyType === "ALL";
+    return true;
   });
 
   return (
@@ -186,18 +185,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
                 <option value="CSV" className="bg-grey">CSV</option>
               </select>
 
-              <select
-                className="bg-[#0a1628] border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
-                value={emergencyType}
-                onChange={(e) => setEmergencyType(e.target.value as any)}
-              >
-                <option value="ALL">All Emergency Types</option>
-                <option value="Plumbing">Plumbing</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Heating">Heating</option>
-                <option value="Security">Security</option>
-                <option value="Other">Other</option>
-              </select>
+
             </div>
           )}
         </div>
