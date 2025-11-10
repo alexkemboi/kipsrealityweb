@@ -7,7 +7,15 @@ import { UnitFormData } from "@/components/Dashboard/propertymanagerdash/units/E
 export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
   const property = await prisma.property.findUnique({
     where: { id: propertyId },
-    include: { units: true, apartmentComplexDetail: true, houseDetail: true },
+    include: {
+      units: {
+        include: {
+          appliances: true, 
+        },
+      },
+      apartmentComplexDetail: true,
+      houseDetail: true,
+    },
   });
 
   if (!property) return [];
@@ -39,6 +47,11 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
       rentAmount: existing?.rentAmount ?? null,
       isOccupied: existing?.isOccupied ?? false,
       createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
+      appliances: existing?.appliances?.map(a => ({
+          id: a.id,
+          name: a.name,
+          createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : now,
+        })) ?? []
     };
   });
 } else if (property.houseDetail) {
@@ -58,6 +71,11 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
         rentAmount: existing?.rentAmount ?? null,
         isOccupied: existing?.isOccupied ?? false,
         createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
+         appliances: existing?.appliances?.map(a => ({
+          id: a.id,
+          name: a.name,
+          createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : now,
+        })) ?? [],
       },
     ];
   }

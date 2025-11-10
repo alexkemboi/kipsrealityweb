@@ -12,6 +12,12 @@
 //   unitName?: string | null;
 //   createdAt: string;
 // }
+export interface Appliance {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface Unit {
   id: string;
   propertyId: string;
@@ -25,4 +31,5 @@ export interface Unit {
   rentAmount?: number | null;
   unitName?: string | null;
   createdAt: string; // must be string
+  appliances?: Appliance[];
 }

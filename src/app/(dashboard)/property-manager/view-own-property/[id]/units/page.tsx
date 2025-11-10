@@ -48,6 +48,8 @@ export default async function ManageUnitsPage({
             unit.bathrooms ||
             unit.floorNumber ||
             unit.rentAmount;
+              (unit.appliances && unit.appliances.length > 0);
+
 
           return (
             <div
@@ -128,7 +130,29 @@ export default async function ManageUnitsPage({
                       )}
                     </div>
 
-                    {/* 🧺 Appliances */}
+                    
+{unit.appliances && unit.appliances.length > 0 ? (
+  <div className="pt-3 border-t border-gray-100">
+    <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center">
+      <span className="mr-2">🧺</span> Appliances
+    </h4>
+    <div className="flex flex-wrap gap-2">
+      {unit.appliances.map((appliance) => (
+        <span
+          key={appliance.id}
+          className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200"
+        >
+          {appliance.name}
+        </span>
+      ))}
+    </div>
+  </div>
+) : (
+  <div className="pt-3 border-t border-gray-100 text-sm text-gray-500 italic">
+    No appliances listed
+  </div>
+)}
+
                     
                   </div>
                 ) : (
