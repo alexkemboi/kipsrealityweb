@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
 export interface MarketplaceItem {
+  contact: any;
   dateposted: ReactNode;
   postedBy: ReactNode;
   id: string;

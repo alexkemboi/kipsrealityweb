@@ -34,12 +34,18 @@ export async function POST(req: Request) {
         searchBar: data.searchBar ?? false,
         gradient: data.gradient,
         layout: data.layout,
+
+        // ✅ REQUIRED FIX
+        updatedAt: new Date(),
       },
     })
 
     return NextResponse.json(hero)
   } catch (error) {
     console.error(error)
-    return NextResponse.json({ error: 'Failed to create hero section' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create hero section' },
+      { status: 500 }
+    )
   }
 }

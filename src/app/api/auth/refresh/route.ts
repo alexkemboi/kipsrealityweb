@@ -48,7 +48,8 @@ export async function POST(request: Request) {
             userId: user.id,
             email: user.email,
             role: primaryOrgUser.role,
-            organizationId: primaryOrgUser.organizationId
+            organizationId: primaryOrgUser.organizationId,
+            organizationUserId: ''
         })
 
         const expiresAt = Date.now() + (60 * 60 * 1000)

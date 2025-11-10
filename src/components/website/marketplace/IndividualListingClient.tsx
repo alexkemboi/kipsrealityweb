@@ -52,7 +52,7 @@ className="object-cover transition-transform duration-700 hover:scale-105"
             </span>
             <span className="flex items-center gap-1">
               <Clock className="w-4 h-4 text-blue-500" />
-              Posted {listing.datePosted}
+              Posted {listing.dateposted}
             </span>
           </div>
 

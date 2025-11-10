@@ -37,18 +37,13 @@ export async function POST(req: Request) {
       location: locationId ? { connect: { id: locationId } } : undefined,
       city,
       address,
-      bedrooms: Number(bedrooms),
-      bathrooms: Number(bathrooms),
-      size: Number(size),
-      amenities,
       isFurnished,
       availabilityStatus,
 
       listing: {
   create: {
     organizationId,
-createdBy: "466bcb9a-6454-4c61-aace-c87855d89ce4" ,
-    categoryId: propertyCategory.id,
+    createdBy: "466bcb9a-6454-4c61-aace-c87855d89ce4" ,
     title: `${city} Property Listing`,
     description: amenities || "No description provided",
     price: 0,
