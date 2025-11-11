@@ -71,27 +71,35 @@ function AcceptInviteForm() {
     // Check if tenant signed lease
     async function checkLease() {
       try {
-        // IMPORTANT: Include token in request
-        const res = await fetch(`/api/lease/${leaseId}?token=${token}`)
+        // IMPORTANT: Include token in request (encode to be safe)
+        const safeToken = encodeURIComponent(token || "")
+        const res = await fetch(`/api/lease/${leaseId}?token=${safeToken}`)
         const data = await res.json()
 
         console.log("Lease check response:", data) // Debug
+        console.log('Lease fetch status:', res.status)
 
         if (!res.ok) {
-          console.error("Lease fetch error:", data.error)
+          console.error("Lease fetch error:", data.error || data)
+          // If lease not found or server error, mark invite invalid and stop checking
           setInviteValid(false)
           setCheckingLease(false)
           return
         }
 
+        // If tenantSignedAt is set, allow account creation. Otherwise redirect
+        // to the lease signing page. Ensure we always clear the "checking"
+        // state so the spinner doesn't remain indefinitely if router.push
+        // fails or is interrupted.
         if (data.tenantSignedAt) {
           console.log("Lease is signed, showing form")
           setLeaseSigned(true)
           setCheckingLease(false)
         } else {
           console.log("Lease not signed, redirecting to sign page")
+          setCheckingLease(false)
           // Redirect to lease sign page with token
-          router.push(`/invite/lease/${leaseId}/sign?token=${token}`)
+          router.push(`/invite/lease/${leaseId}/sign?token=${safeToken}`)
         }
       } catch (err) {
         console.error("Lease fetch failed:", err)
