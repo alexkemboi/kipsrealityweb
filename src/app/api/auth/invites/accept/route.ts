@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { email, token, password, firstName, lastName, phone } = body;
+    const { email, token, password, firstName, lastName, phone, companyName, serviceType } = body;
 
     if (!email || !token || !password || !firstName) {
       return NextResponse.json(
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       data: { accepted: true }
     });
 
-    // 6️⃣ Update lease to link tenant
+    // 6️⃣ Update lease to link tenant (if tenant invite)
     if (invite.leaseId) {
       await prisma.lease.update({
         where: { id: invite.leaseId },
@@ -107,9 +107,26 @@ export async function POST(request: Request) {
       });
     }
 
+    // 7️⃣ Create Vendor record (if vendor invite)
+    if (invite.role === "VENDOR" && companyName && serviceType) {
+      await prisma.vendor.create({
+        data: {
+          userId: user.id,
+          organizationId: invite.organizationId,
+          companyName,
+          serviceType,
+          phone: phone || null,
+          email: normalizedEmail,
+          isActive: true
+        }
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Invite accepted. Tenant account created and linked to lease.",
+      message: invite.role === "VENDOR" 
+        ? "Vendor account created successfully. You may now log in."
+        : "Invite accepted. Tenant account created and linked to lease.",
       user: {
         id: user.id,
         email: user.email,

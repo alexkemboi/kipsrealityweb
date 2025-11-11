@@ -122,10 +122,9 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
       {showForm && (
         <div className="mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h4 className="font-medium mb-3">Create a Request</h4>
+          
             <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
-          </div>
+          
         </div>
       )}
 

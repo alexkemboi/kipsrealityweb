@@ -17,7 +17,10 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
   const router = useRouter()
 
   const handleRoute = () => {
-    router.push(route.path || '/dashboard/vendor')
+    // Default to the vendor dashboard route when a route path isn't provided.
+    // The vendor dashboard lives at `/vendor` (the `(dashboard)` folder is a
+    // Next.js route group and does not appear in the public URL).
+    router.push(route.path || '/vendor')
   }
 
   const ItemContent = () => (

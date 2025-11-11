@@ -233,7 +233,7 @@ export const routeConfig = {
 
   VENDOR: {
     main: [
-      { path: '/dashboard/vendor', label: 'Overview', icon: Home, badge: null },
+      { path: '/vendor', label: 'Overview', icon: Home, badge: null },
     ],
     workOrders: [
       { path: '/dashboard/vendor/jobs', label: 'My Jobs', icon: ClipboardList, badge: '4' },

@@ -185,7 +185,7 @@ export default function VendorInviteForm() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const generateInviteLink = (token: string, inviteEmail: string) => {
-    return `${baseUrl}/invite/vendor?email=${encodeURIComponent(inviteEmail)}&token=${token}`;
+    return `${baseUrl}/inviteor?email=${encodeURIComponent(inviteEmail)}&token=${token}`;
   };
 
   return (
