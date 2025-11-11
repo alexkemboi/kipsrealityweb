@@ -1,3 +1,4 @@
+//app/api/lease/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
@@ -46,12 +47,30 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    
+    const { searchParams } = new URL(req.url);
+    const token = searchParams.get("token");
+
     let user = null;
+    let isValidTenant = false;
+
+    // Try to get authenticated user
     try {
       user = await getCurrentUser(req);
     } catch (error) {
-      console.log("User not authenticated, continuing without user context");
+      console.log("User not authenticated, checking for invite token");
+    }
+
+    // If no authenticated user but token provided, validate invite
+    if (!user && token) {
+      const invite = await prisma.invite.findUnique({
+        where: { token },
+        include: { lease: true }
+      });
+
+      if (invite && invite.leaseId === id) {
+        isValidTenant = true;
+        console.log("Valid tenant invite token provided");
+      }
     }
 
     const lease = await prisma.lease.findUnique({
@@ -67,21 +86,29 @@ export async function GET(
       return NextResponse.json({ error: "Lease not found" }, { status: 404 });
     }
 
-    // ✅ FIX: Use organizationUserId instead of user.id
+    // Determine user role
     let userRole: "landlord" | "tenant" | null = null;
 
     if (user) {
-      console.log("Lease manager:", lease.property?.managerId);
-      console.log("Logged in orgUser:", user.organizationId);
-      console.log("Lease tenant:", lease.tenantId);
-      console.log("Logged in userId:", user.id);
-
+      // Authenticated user - check if landlord or tenant
       if (lease.property?.managerId === user.organizationUserId) {
         userRole = "landlord";
       } else if (lease.tenantId === user.id) {
         userRole = "tenant";
       }
+    } else if (isValidTenant) {
+      // Unauthenticated but valid invite token
+      userRole = "tenant";
     }
+
+    console.log("Determined role:", userRole, { 
+      hasUser: !!user, 
+      isValidTenant,
+      managerId: lease.property?.managerId,
+      orgUserId: user?.organizationUserId,
+      tenantId: lease.tenantId,
+      userId: user?.id
+    });
 
     return NextResponse.json({ ...lease, userRole });
   } catch (error) {

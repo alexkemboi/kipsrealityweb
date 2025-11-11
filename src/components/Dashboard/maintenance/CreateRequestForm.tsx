@@ -11,7 +11,7 @@ type Unit = {
 };
 
 type Property = {
-  id: string | null;
+  id: string;
   name: string | null;
   address: string | null;
   units: Unit[];
@@ -143,7 +143,7 @@ export default function CreateRequestForm({
         >
           <option value="">Select property</option>
           {properties.map((p) => (
-            <option key={p.id} value={p.id}>
+<option key={p.id ?? ""} value={p.id ?? ""}>
               {p.name ?? p.address ?? p.id}
             </option>
           ))}
