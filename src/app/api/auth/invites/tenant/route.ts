@@ -171,7 +171,10 @@ export async function GET() {
     }
 
     const invites = await prisma.invite.findMany({
-      where: { organizationId: payload.organizationId },
+      where: { 
+        organizationId: payload.organizationId,
+        role: 'TENANT'
+      },
       orderBy: { createdAt: "desc" },
       include: { invitedBy: true, lease: { include: { unit: true } } },
     });

@@ -33,4 +33,6 @@ export interface HouseDetail {
   bedrooms?: number;
   bathrooms?: number;
   size?: number;
+    totalUnits?: number;
+
 }

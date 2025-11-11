@@ -30,17 +30,28 @@ export default function LeaseSignPage() {
   const [userRole, setUserRole] = useState<"landlord" | "tenant" | null>(null);
   const [signing, setSigning] = useState(false);
 
+  console.log("Page loaded with:", { leaseId, inviteToken }); // Debug
+
   // Fetch lease and determine role
   useEffect(() => {
     async function fetchLease() {
       try {
-        const url = `/api/lease/${leaseId}${inviteToken ? `?token=${inviteToken}` : ""}`;
+        // ALWAYS include token if available
+        const url = inviteToken 
+          ? `/api/lease/${leaseId}?token=${inviteToken}`
+          : `/api/lease/${leaseId}`;
+        
+        console.log("Fetching lease from:", url); // Debug
+        
         const res = await fetch(url);
         const data = await res.json();
+
+        console.log("Lease response:", data); // Debug
 
         if (res.ok) {
           setLease(data);
           setUserRole(data.userRole || null);
+          console.log("User role determined:", data.userRole); // Debug
         } else {
           console.error("Failed to fetch lease:", data.error);
         }
@@ -61,7 +72,12 @@ export default function LeaseSignPage() {
   // Signing function
   async function handleSign() {
     if (!userRole) {
-      alert("Unable to determine your role");
+      alert("Unable to determine your role. Please check your invite link.");
+      return;
+    }
+
+    if (userRole === "tenant" && !inviteToken) {
+      alert("Missing invite token. Please use the link from your email.");
       return;
     }
 
@@ -74,6 +90,8 @@ export default function LeaseSignPage() {
           ? { token: inviteToken }
           : undefined;
 
+      console.log("Signing lease:", { url, body }); // Debug
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,17 +99,21 @@ export default function LeaseSignPage() {
       });
 
       const data = await res.json();
+      console.log("Sign response:", data); // Debug
 
       if (res.ok) {
         if (userRole === "tenant") {
-          // Redirect tenant after signing
-          window.location.href = `/invite/accept?email=${data.lease.tenant.email}&token=${data.lease.id}&leaseId=${data.lease.id}`;
+          // Redirect tenant after signing with token preserved
+          const redirectUrl = `/invite/accept?email=${encodeURIComponent(data.lease.tenant.email)}&token=${inviteToken}&leaseId=${data.lease.id}`;
+          console.log("Redirecting to:", redirectUrl);
+          window.location.href = redirectUrl;
           return;
         }
 
         // Landlord signed — refresh data
         alert(`Lease signed successfully as ${userRole}!`);
         setLease(data.lease);
+        setUserRole(data.lease.userRole || userRole);
       } else {
         alert(data.error || "Failed to sign lease");
       }
@@ -134,6 +156,17 @@ export default function LeaseSignPage() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Lease Agreement</h1>
 
+      {/* Debug info - remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-4 p-3 bg-gray-100 rounded text-xs">
+          <p><strong>Debug:</strong></p>
+          <p>User Role: {userRole || "none"}</p>
+          <p>Has Token: {inviteToken ? "yes" : "no"}</p>
+          <p>Tenant Signed: {lease.tenantSignedAt ? "yes" : "no"}</p>
+          <p>Landlord Signed: {lease.landlordSignedAt ? "yes" : "no"}</p>
+        </div>
+      )}
+
       {/* Role Badge */}
       {userRole && (
         <div className="mb-4">
@@ -164,7 +197,7 @@ export default function LeaseSignPage() {
           <p><strong>Lease Term:</strong> {lease.leaseTerm || "N/A"}</p>
           <p><strong>Monthly Rent:</strong> KES {lease.rentAmount?.toLocaleString()}</p>
           {lease.securityDeposit && (
-            <p><strong>Security Deposit:</strong> {lease.securityDeposit?.toLocaleString()}</p>
+            <p><strong>Security Deposit:</strong> KES {lease.securityDeposit?.toLocaleString()}</p>
           )}
         </div>
 
@@ -205,7 +238,7 @@ export default function LeaseSignPage() {
         )}
 
         {/* Messages */}
-        {!canSign && lease.leaseStatus !== "SIGNED" && (
+        {!canSign && userRole && lease.leaseStatus !== "SIGNED" && (
           <div className="mt-6 bg-blue-50 border border-blue-200 rounded p-4">
             <p className="text-blue-800">
               ✓ You have already signed this lease. Waiting for the other party to sign.
@@ -221,7 +254,10 @@ export default function LeaseSignPage() {
         )}
         {!userRole && (
           <div className="mt-6 bg-red-50 border border-red-200 rounded p-4">
-            <p className="text-red-800">You do not have permission to sign this lease.</p>
+            <p className="text-red-800">
+              You do not have permission to sign this lease.
+              {!inviteToken && " Please use the invite link from your email."}
+            </p>
           </div>
         )}
       </div>

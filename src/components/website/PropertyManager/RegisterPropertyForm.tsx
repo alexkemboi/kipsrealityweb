@@ -127,13 +127,13 @@ export default function PropertyForm() {
                 {...register("city")}
                 placeholder="City"
                 required
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-3 w-full"
+                className="border border-gray-300 focus:border-blue-500 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-200 rounded-xl p-3 w-full"
               />
               <input
                 {...register("address")}
                 placeholder="Address"
                 required
-                className="border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl p-3 w-full"
+                className="border border-gray-300 focus:border-blue-500 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-200 rounded-xl p-3 w-full"
               />
               <select
                 {...register("propertyTypeId")}
@@ -149,83 +149,155 @@ export default function PropertyForm() {
               </select>
             </div>
 
-            {/* House Fields */}
-            {selectedPropertyTypeName === "house" && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <input
-                  {...register("houseDetail.numberOfFloors", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Number of Floors"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-                <input
-                  {...register("houseDetail.bedrooms", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Bedrooms"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-                <input
-                  {...register("houseDetail.bathrooms", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Bathrooms"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-                <input
-                  {...register("houseDetail.size", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Size (sqft)"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-              </div>
-            )}
+           {/* House Fields */}
+{selectedPropertyTypeName === "house" && (
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    {/* Number of Floors */}
+    <div className="flex flex-col">
+      <label
+        htmlFor="numberOfFloors"
+        className="text-sm font-semibold text-gray-700 mb-1"
+      >
+        Number of Floors
+      </label>
+      <input
+        id="numberOfFloors"
+        type="number"
+        {...register("houseDetail.numberOfFloors", { valueAsNumber: true })}
+        placeholder="Enter number of floors"
+        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    {/* Bedrooms */}
+    <div className="flex flex-col">
+      <label
+        htmlFor="bedrooms"
+        className="text-sm font-semibold text-gray-700 mb-1"
+      >
+        Bedrooms
+      </label>
+      <input
+        id="bedrooms"
+        type="number"
+        {...register("houseDetail.bedrooms", { valueAsNumber: true })}
+        placeholder="Enter bedrooms"
+        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    {/* Bathrooms */}
+    <div className="flex flex-col">
+      <label
+        htmlFor="bathrooms"
+        className="text-sm font-semibold text-gray-700 mb-1"
+      >
+        Bathrooms
+      </label>
+      <input
+        id="bathrooms"
+        type="number"
+        {...register("houseDetail.bathrooms", { valueAsNumber: true })}
+        placeholder="Enter bathrooms"
+        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    {/* Size */}
+    <div className="flex flex-col">
+      <label
+        htmlFor="size"
+        className="text-sm font-semibold text-gray-700 mb-1"
+      >
+        Size (sqft)
+      </label>
+      <input
+        id="size"
+        type="number"
+        {...register("houseDetail.size", { valueAsNumber: true })}
+        placeholder="Enter size in sqft"
+        className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+
+    {/* Total Units */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="totalUnits"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      Total Units
+    </label>
+    <input
+      id="totalUnits"
+      type="number"
+      {...register("houseDetail.totalUnits", { valueAsNumber: true })}
+      placeholder="Enter total units"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  </div>
+)}
+
 
             {/* Apartment Fields */}
             {selectedPropertyTypeName === "apartment" && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <input
-                  {...register("apartmentComplexDetail.buildingName")}
-                  placeholder="Building Name"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-                <input
-                  {...register("apartmentComplexDetail.totalFloors", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Total Floors"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-                <input
-                  {...register("apartmentComplexDetail.totalUnits", { valueAsNumber: true })}
-                  type="number"
-                  placeholder="Total Units"
-                  className="border border-gray-300 rounded-xl p-3 w-full"
-                />
-              </div>
+  {/* Building Name */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="buildingName"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      Building Name
+    </label>
+    <input
+      id="buildingName"
+      {...register("apartmentComplexDetail.buildingName")}
+      placeholder="Enter building name"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
+  {/* Total Floors */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="totalFloors"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      Total Floors
+    </label>
+    <input
+      id="totalFloors"
+      type="number"
+      {...register("apartmentComplexDetail.totalFloors", { valueAsNumber: true })}
+      placeholder="Enter total floors"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
+  {/* Total Units */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="totalUnits"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      Total Units
+    </label>
+    <input
+      id="totalUnits"
+      type="number"
+      {...register("apartmentComplexDetail.totalUnits", { valueAsNumber: true })}
+      placeholder="Enter total units"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+</div>
+
             )}
 
-            {/* Appliances */}
-            <div>
-              <h3 className="text-2xl font-semibold text-gray-800 mb-4">Select Appliances</h3>
-              {appliances.length === 0 ? (
-                <p className="text-gray-500 text-sm">Loading appliances...</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {appliances.map((appliance) => (
-                    <label
-                      key={appliance.id}
-                      className="flex items-center gap-3 border border-gray-200 p-3 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer bg-white"
-                    >
-                      <input
-                        type="checkbox"
-                        value={appliance.id}
-                        {...register("applianceIds")}
-                        className="h-5 w-5 accent-blue-600"
-                      />
-                      <span className="text-gray-700 font-medium">{appliance.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
+           
 
             {/* Furnished */}
             <label className="flex items-center gap-3 mt-4 text-gray-700">

@@ -1,0 +1,3 @@
+-- This migration existed in the database but was missing locally.
+-- Recreated to sync history.
+-- (Leave empty because the DB already executed it)

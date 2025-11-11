@@ -1,3 +1,4 @@
+//lib/lease.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "./db";
 import { getCurrentUser } from "./Getcurrentuser";
