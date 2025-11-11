@@ -39,7 +39,8 @@ useEffect(() => {
 
   console.log("URL params:", { email, token, leaseId }) // Debug
 
-  if (!email || !token || !leaseId) {
+  // Require at least email and token. leaseId is optional (used for tenant invites).
+  if (!email || !token) {
     setInviteValid(false)
     return
   }
@@ -48,8 +49,15 @@ useEffect(() => {
     ...prev,
     email,
     token,
-    leaseId
+    leaseId: leaseId || ''
   }))
+
+  // If leaseId is present, we need to ensure tenant signed the lease first.
+  // If leaseId is absent (e.g., vendor invite), skip lease check and show form.
+  if (!leaseId) {
+    setLeaseSigned(true)
+    return
+  }
 
   // ✅ Check if tenant signed lease
   async function checkLease() {
