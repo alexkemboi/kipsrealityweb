@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchInvoices } from "@/lib/Invoice";
-import { Invoice } from "@/app/data/FinanceData";
+import { Invoice,  } from "@/app/data/FinanceData";
 import { toast } from "sonner";
 
 export default function InvoicesPage() {

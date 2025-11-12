@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import FullInvoiceButton from "@/components/Dashboard/propertymanagerdash/invoice/CreateInvoice";
+import ManualInvoiceForm from "@/components/Dashboard/propertymanagerdash/invoice/ManualInvoice";
+
 
 interface Lease {
   id: string;
@@ -292,9 +294,35 @@ export default function LeaseViewPage() {
               </div>
             </div>
           </div>
-           <div className="mt-4">
-    <FullInvoiceButton leaseId={lease.id} />
-  </div>
+        </div>
+
+
+     {/* Full Invoice Section */}
+              <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            🏢 Full Invoice
+          </h2>
+          <div className="space-y-3 flex flex-col items-center">
+            <div>
+              <p className="text-lg text-gray-500 mb-4">Generate the full invoice for this lease.</p>
+            </div>
+               <FullInvoiceButton leaseId={lease.id} />
+
+          </div>
+        </div>
+
+     {/* Manual Invoice Section */}
+    <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            🏢 Create Manual Invoice
+          </h2>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-gray-500">Generate the full invoice for this lease.</p>
+            </div>
+        <ManualInvoiceForm leaseId={lease.id} />
+
+          </div>
         </div>
 
         {/* Late Fees */}
