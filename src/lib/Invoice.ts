@@ -96,3 +96,21 @@ export async function fetchInvoices(filters?: InvoiceFilters): Promise<Invoice[]
     throw new Error(error?.message || "Unexpected error fetching invoices");
   }
 }
+
+
+export async function fetchInvoiceById(id: string) {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/${id}`;
+    const res = await fetch(url, { cache: "no-store" });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData?.error || "Failed to fetch invoice");
+    }
+
+    return await res.json();
+  } catch (error: any) {
+    console.error("fetchInvoiceById error:", error);
+    throw new Error(error?.message || "Unexpected error fetching invoice");
+  }
+}

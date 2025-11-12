@@ -90,7 +90,7 @@ export default function InvoicesPage() {
       <tr
         key={inv.id}
         onClick={() =>
-          router.push(`/property-manager/content/invoices/${inv.id}`)
+          router.push(`/property-manager/finance/invoices/${inv.id}`)
         }
         className="cursor-pointer hover:bg-blue-50 transition-all duration-150"
       >
