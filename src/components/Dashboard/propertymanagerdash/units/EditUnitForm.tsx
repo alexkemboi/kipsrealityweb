@@ -16,6 +16,7 @@ export interface UnitFormData {
   floorNumber?: number | null;
   rentAmount?: number | null;
   unitName?: string;
+  currency?: string;
   isOccupied?: boolean;
   appliances?: ApplianceInput[];
 }
@@ -43,6 +44,8 @@ export default function EditUnitForm({
       floorNumber: existingUnit?.floorNumber || null,
       rentAmount: existingUnit?.rentAmount || null,
       unitName: existingUnit?.unitName || "",
+      currency: existingUnit?.currency || "KES",
+
       isOccupied: existingUnit?.isOccupied || false,
       // appliances will be handled separately
     },
@@ -154,7 +157,7 @@ export default function EditUnitForm({
             <input
               type="number"
               min="0"
-              step="0.5"
+              step="1"
               {...register("bathrooms", { 
                 required: "Number of bathrooms is required",
                 min: { value: 0, message: "Bathrooms cannot be negative" }
@@ -182,19 +185,33 @@ export default function EditUnitForm({
           </div>
 
           {/* Rent Amount */}
-          <div>
-            <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-              Rent Amount (KSh)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              {...register("rentAmount")}
-              placeholder="e.g. 25000"
-              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+        <div>
+  <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+    Rent Amount
+  </label>
+  <div className="flex gap-2">
+    <select
+      {...register("currency")}
+      className="w-1/3 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+      defaultValue="KES"
+    >
+      <option value="KES">KES</option>
+      <option value="USD">USD</option>
+      <option value="EUR">EUR</option>
+      <option value="GBP">GBP</option>
+    </select>
+
+    
+    <input
+      type="number"
+      min="0"
+      step="0.01"
+      {...register("rentAmount", { valueAsNumber: true })}
+      placeholder="e.g. 25000"
+      className="w-2/3 px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+</div>
 
           {/* Appliances */}
 <div className="md:col-span-2">
