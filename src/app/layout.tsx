@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingBar } from "@/components/ui/loading-bar";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +14,6 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-
 });
 
 export const metadata: Metadata = {
@@ -47,16 +47,25 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen transition-colors duration-500`}
       >
-        <AuthProvider>
-          <LoadingBar />
-          {children}
-          <Toaster
-            position="top-center"
-            expand={false}
-            richColors
-            closeButton
-          />
-        </AuthProvider>
+        <Suspense fallback={
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </div>
+        }>
+          <AuthProvider>
+            <LoadingBar />
+            {children}
+            <Toaster
+              position="top-center"
+              expand={false}
+              richColors
+              closeButton
+            />
+          </AuthProvider>
+        </Suspense>
       </body>
     </html>
   );

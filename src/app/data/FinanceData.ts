@@ -1,20 +1,4 @@
 // types/finance.ts
-export interface Lease {
-  id: string;
-  tenantId: string;
-  propertyId: string;
-  unitId: string;
-  startDate: string;
-  endDate: string;
-  rentAmount: number;
-  securityDeposit?: number;
-  leaseStatus: 'DRAFT' | 'ACTIVE' | 'SIGNED' | 'CANCELLED';
-  paymentFrequency: string;
-  lateFeeDaily?: number;
-  lateFeeFlat?: number;
-  paymentDueDay?: number;
-}
-
 export interface Invoice {
   id: string;
   lease_id: string;
@@ -26,32 +10,23 @@ export interface Invoice {
   updatedAt?: string;
 }
 
-export interface Payment {
+export interface Lease {
   id: string;
-  invoice_id: string;
+  rentAmount: number;
+  paymentFrequency: 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  paymentDueDay?: number;
+  lateFeeDaily?: number;
+  leaseStatus: 'DRAFT' | 'ACTIVE' | 'SIGNED' | 'CANCELLED';
+}
+
+export interface ManualInvoiceInput {
+  lease_id: string;
+  type: 'RENT' | 'UTILITY';
   amount: number;
-  method: 'CASH' | 'BANK' | 'CREDIT CARD';
-  reference?: string;
-  paidOn?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  dueDate: string;
 }
 
-export interface Unit {
-  id: string;
-  propertyId: string;
-  unitNumber: string;
-  rentAmount?: number;
-  currency?: string;
-  isOccupied: boolean;
-  bedrooms?: number;
-  bathrooms?: number;
-}
-
-export interface Utility {
-  id: string;
-  name: string;
-  type: 'FIXED' | 'METERED';
-  unitPrice?: number;
-  fixedAmount?: number;
+export interface FullInvoiceInput {
+  lease_id: string;
+  type: 'RENT' | 'UTILITY';
 }
