@@ -30,6 +30,7 @@ export interface Unit {
   isOccupied: boolean;
   rentAmount?: number | null;
   unitName?: string | null;
+  currency?: string | null;
   createdAt: string; // must be string
   appliances?: Appliance[];
 }
