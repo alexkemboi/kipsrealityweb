@@ -14,7 +14,17 @@ interface Invoice {
   status: string;
   createdAt: string;
   updatedAt: string;
+  lease?: {
+    tenant?: {
+      firstName: string;
+      lastName: string;
+    };
+    property?: {
+      name: string;
+    };
+  };
 }
+
 
 export default function InvoiceDetailsPage() {
   const { id } = useParams();
@@ -134,6 +144,26 @@ export default function InvoiceDetailsPage() {
               </span>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+  <div>
+    <p className="font-semibold text-gray-500 text-sm uppercase">
+      Tenant
+    </p>
+    <p>
+      {invoice.lease?.tenant
+        ? `${invoice.lease.tenant.firstName} ${invoice.lease.tenant.lastName}`
+        : "—"}
+    </p>
+  </div>
+
+  <div>
+    <p className="font-semibold text-gray-500 text-sm uppercase">
+      Property
+    </p>
+    <p>{invoice.lease?.property?.name || "—"}</p>
+  </div>
+</div>
 
           <hr className="my-4" />
 

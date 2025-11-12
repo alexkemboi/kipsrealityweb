@@ -2,13 +2,25 @@
 export interface Invoice {
   id: string;
   lease_id: string;
-  type: 'RENT' | 'UTILITY';
+  type: "RENT" | "UTILITY";
   amount: number;
   dueDate: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
-  createdAt?: string;
-  updatedAt?: string;
+  status: "PENDING" | "PAID" | "OVERDUE";
+  createdAt: string;
+  updatedAt: string;
+  Lease?: {
+    tenant?: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+    };
+    property?: {
+      name?: string;
+      address?: string;
+    };
+  };
 }
+
 
 export interface Lease {
   id: string;

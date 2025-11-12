@@ -71,7 +71,7 @@ export default function InvoicesPage() {
             <thead className="bg-blue-100 text-gray-700 uppercase text-xs font-semibold">
               <tr>
                 <th className="px-6 py-3 text-left">Invoice ID</th>
-                <th className="px-6 py-3 text-left">Lease ID</th>
+                <th className="px-6 py-3 text-left">Tenant Name</th>
                 <th className="px-6 py-3 text-left">Type</th>
                 <th className="px-6 py-3 text-left">Amount (KES)</th>
                 <th className="px-6 py-3 text-left">Due Date</th>
@@ -79,50 +79,51 @@ export default function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {invoices.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-10 text-gray-500 italic"
-                  >
-                    No invoices found.
-                  </td>
-                </tr>
-              ) : (
-                invoices.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    onClick={() =>
-                      router.push(`/property-manager/content/invoices/${inv.id}`)
-                    }
-                    className="cursor-pointer hover:bg-blue-50 transition-all duration-150"
-                  >
-                    <td className="px-6 py-4 font-mono text-blue-600">
-                      {inv.id}
+  {invoices.length === 0 ? (
+    <tr>
+      <td colSpan={7} className="text-center py-10 text-gray-500 italic">
+        No invoices found.
+      </td>
+    </tr>
+  ) : (
+    invoices.map((inv) => (
+      <tr
+        key={inv.id}
+        onClick={() =>
+          router.push(`/property-manager/content/invoices/${inv.id}`)
+        }
+        className="cursor-pointer hover:bg-blue-50 transition-all duration-150"
+      >
+         <td className="px-6 py-4 font-mono text-blue-600">{inv.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-700">
+                      {inv.Lease?.tenant
+                        ? `${inv.Lease.tenant.firstName} ${inv.Lease.tenant.lastName}`
+                        : "—"}
                     </td>
-                    <td className="px-6 py-4">{inv.lease_id}</td>
-                    <td className="px-6 py-4">{inv.type}</td>
-                    <td className="px-6 py-4 font-semibold text-gray-800">
-                      {inv.amount.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      {new Date(inv.dueDate).toLocaleDateString()}
-                    </td>
-                    <td
-                      className={`px-6 py-4 font-bold ${
-                        inv.status === "PAID"
-                          ? "text-green-600"
-                          : inv.status === "OVERDUE"
-                          ? "text-red-600"
-                          : "text-yellow-600"
-                      }`}
-                    >
-                      {inv.status}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
+                   
+        <td className="px-6 py-4">{inv.type}</td>
+        <td className="px-6 py-4 font-semibold text-gray-800">
+          {inv.amount.toLocaleString()}
+        </td>
+        <td className="px-6 py-4">
+          {new Date(inv.dueDate).toLocaleDateString()}
+        </td>
+        <td
+          className={`px-6 py-4 font-bold ${
+            inv.status === "PAID"
+              ? "text-green-600"
+              : inv.status === "OVERDUE"
+              ? "text-red-600"
+              : "text-yellow-600"
+          }`}
+        >
+          {inv.status}
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
           </table>
         </div>
       </div>
