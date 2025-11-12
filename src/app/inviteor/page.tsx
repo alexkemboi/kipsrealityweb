@@ -14,7 +14,7 @@ export default function InviteOrRedirect({ searchParams }: { searchParams: Recor
   }
 
   const query = params.toString()
-  const target = query ? `/invite/accept?${query}` : '/invite/accept'
+  const target = query ? `/invite/vendor/accept?${query}` : '/invite/accept'
 
   redirect(target)
 }
