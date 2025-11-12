@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import FullInvoiceButton from "@/components/Dashboard/propertymanagerdash/invoice/CreateInvoice";
 
 interface Lease {
   id: string;
@@ -291,6 +292,9 @@ export default function LeaseViewPage() {
               </div>
             </div>
           </div>
+           <div className="mt-4">
+    <FullInvoiceButton leaseId={lease.id} />
+  </div>
         </div>
 
         {/* Late Fees */}
