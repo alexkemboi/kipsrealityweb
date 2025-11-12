@@ -1,5 +1,3 @@
-//app/(dashboard)/property-manager/content/utilities/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -82,107 +80,115 @@ export default function UtilitiesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <Toaster position="top-right" richColors />
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold">Utilities</h2>
-          <p className="text-gray-500 mt-1">Manage utility types and pricing</p>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-4xl font-bold text-[#0b1f3a]">Utilities</h2>
+            <p className="text-[#15386a]/70 mt-2">Manage utility types and pricing</p>
+          </div>
+          <Link href="/property-manager/content/utilities/new">
+            <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20 hover:shadow-xl hover:shadow-[#30D5C8]/30 transition-all">
+              <Plus className="mr-2 w-4 h-4" /> Add Utility
+            </Button>
+          </Link>
         </div>
-        <Link href="/property-manager/content/utilities/new">
-          <Button>
-            <Plus className="mr-2 w-4 h-4" /> Add Utility
-          </Button>
-        </Link>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>All Utilities</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-              <span className="ml-3 text-gray-500">Loading utilities...</span>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <AlertCircle className="w-12 h-12 text-red-500" />
-              <p className="text-gray-500">{error}</p>
-              <Button onClick={loadUtilities} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          ) : utilities.length === 0 ? (
-            <div className="text-center py-12 space-y-4">
-              <p className="text-gray-500">No utilities found</p>
-              <Link href="/property-manager/content/utilities/new">
-                <Button variant="outline">
-                  <Plus className="mr-2 w-4 h-4" /> Create Your First Utility
+        <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
+            <CardTitle className="text-xl">All Utilities</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-[#30D5C8]" />
+                <span className="ml-3 text-[#15386a]">Loading utilities...</span>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <p className="text-[#15386a]/70">{error}</p>
+                <Button onClick={loadUtilities} variant="outline" className="border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
+                  Try Again
                 </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Unit Price</TableHead>
-                    <TableHead>Fixed Amount</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {utilities.map((u) => (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name}</TableCell>
-                      <TableCell>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          u.type === "FIXED" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
-                        }`}>
-                          {u.type === "FIXED" ? "Fixed" : "Metered"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {u.type === "METERED" ? formatCurrency(u.unitPrice) : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {u.type === "FIXED" ? formatCurrency(u.fixedAmount) : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <Link href={`/property-manager/content/utilities/${u.id}`}>
-                            <Button variant="outline" size="sm" title="Assign to Leases">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(u.id, u.name)}
-                            disabled={deletingId === u.id}
-                            title="Delete Utility"
-                          >
-                            {deletingId === u.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
+              </div>
+            ) : utilities.length === 0 ? (
+              <div className="text-center py-12 space-y-4">
+                <div className="w-16 h-16 mx-auto bg-[#30D5C8]/10 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-[#30D5C8]" />
+                </div>
+                <p className="text-[#15386a]/70">No utilities found</p>
+                <Link href="/property-manager/content/utilities/new">
+                  <Button variant="outline" className="border-2 border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
+                    <Plus className="mr-2 w-4 h-4" /> Create Your First Utility
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b-2 border-[#0b1f3a]/10 hover:bg-transparent">
+                      <TableHead className="text-[#0b1f3a] font-semibold">Name</TableHead>
+                      <TableHead className="text-[#0b1f3a] font-semibold">Type</TableHead>
+                      <TableHead className="text-[#0b1f3a] font-semibold">Unit Price</TableHead>
+                      <TableHead className="text-[#0b1f3a] font-semibold">Fixed Amount</TableHead>
+                      <TableHead className="text-right text-[#0b1f3a] font-semibold">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {utilities.map((u) => (
+                      <TableRow key={u.id} className="border-b border-slate-100 hover:bg-[#30D5C8]/5 transition-colors">
+                        <TableCell className="font-medium text-[#0b1f3a]">{u.name}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                            u.type === "FIXED" ? "bg-[#15386a]/10 text-[#15386a]" : "bg-[#30D5C8]/10 text-[#30D5C8]"
+                          }`}>
+                            {u.type === "FIXED" ? "Fixed" : "Metered"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-[#15386a]">
+                          {u.type === "METERED" ? formatCurrency(u.unitPrice) : "-"}
+                        </TableCell>
+                        <TableCell className="text-[#15386a]">
+                          {u.type === "FIXED" ? formatCurrency(u.fixedAmount) : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-2">
+                            <Link href={`/property-manager/content/utilities/${u.id}`}>
+                              <Button variant="outline" size="sm" title="Assign to Leases" className="bg-[#30D5C8]/10 hover:bg-[#30D5C8]/20 text-[#30D5C8] border-[#30D5C8]/30">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(u.id, u.name)}
+                              disabled={deletingId === u.id}
+                              title="Delete Utility"
+                              className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                            >
+                              {deletingId === u.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

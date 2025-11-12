@@ -1,4 +1,4 @@
-// app/(dashboard)/property-manager/content/utilities/[id]/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -62,7 +62,6 @@ export default function AssignUtilityPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Edit mode states
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -72,7 +71,6 @@ export default function AssignUtilityPage() {
     fixedAmount: "",
   });
 
-  // Fetch utility and assignments
   useEffect(() => {
     loadData();
   }, [id]);
@@ -82,18 +80,15 @@ export default function AssignUtilityPage() {
       setIsLoading(true);
       setError(null);
 
-      // Fetch utility
       const utilRes = await fetch(`/api/utilities/${id}`);
       const utilData = await utilRes.json();
       
       console.log("Utility Response:", utilData);
 
-      // Handle different response structures
       let utilityData = null;
       if (utilData?.success && utilData?.data) {
         utilityData = utilData.data;
       } else if (utilData?.id) {
-        // Direct object without wrapper
         utilityData = utilData;
       }
 
@@ -110,7 +105,6 @@ export default function AssignUtilityPage() {
         return;
       }
 
-      // Fetch leases
       const leaseRes = await fetch("/api/lease");
       const leaseData = await leaseRes.json();
       
@@ -122,7 +116,6 @@ export default function AssignUtilityPage() {
         setLeases(leaseData);
       }
 
-      // Fetch lease utilities
       const leaseUtilRes = await fetch("/api/lease-utility");
       const leaseUtilData = await leaseUtilRes.json();
       
@@ -135,7 +128,6 @@ export default function AssignUtilityPage() {
         assignedData = leaseUtilData;
       }
 
-      // Filter assignments for this utility
       const filtered = assignedData.filter((a: LeaseUtility) => a.utility_id === id);
       setAssigned(filtered);
 
@@ -296,22 +288,24 @@ export default function AssignUtilityPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
-        <span className="ml-3 text-gray-500">Loading...</span>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#30D5C8]" />
+        <span className="ml-3 text-[#15386a]">Loading...</span>
       </div>
     );
   }
 
   if (error || !utility) {
     return (
-      <div className="p-6">
-        <Card>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
+        <Card className="max-w-2xl mx-auto border-slate-200 shadow-xl rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-            <AlertCircle className="w-12 h-12 text-red-500" />
-            <p className="text-gray-500">{error || "Utility not found"}</p>
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <p className="text-[#15386a]/70">{error || "Utility not found"}</p>
             <Link href="/property-manager/content/utilities">
-              <Button variant="outline">
+              <Button variant="outline" className="border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Utilities
               </Button>
@@ -323,312 +317,327 @@ export default function AssignUtilityPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <Toaster position="top-right" richColors />
 
-      <div className="flex items-center gap-4">
-        <Link href="/property-manager/content/utilities">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Utilities
-          </Button>
-        </Link>
-      </div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/property-manager/content/utilities">
+            <Button variant="ghost" size="sm" className="text-[#15386a] hover:text-[#0b1f3a] hover:bg-[#30D5C8]/5">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Utilities
+            </Button>
+          </Link>
+        </div>
 
-      {/* Utility Info */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-3">
-              <span>{utility.name}</span>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                utility.type === "FIXED" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
-              }`}>
-                {utility.type === "FIXED" ? "Fixed" : "Metered"}
-              </span>
-            </CardTitle>
-            {!isEditing && (
-              <Button variant="outline" size="sm" onClick={handleEdit}>
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isEditing ? (
-            // Edit Form
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Utility Name *</Label>
-                <Input
-                  id="edit-name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  placeholder="e.g., Electricity, Water, Gas"
-                  disabled={isSaving}
-                />
+        {/* Utility Info */}
+        <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-2xl">{utility.name}</CardTitle>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                  utility.type === "FIXED" ? "bg-white/20 text-white" : "bg-[#30D5C8] text-[#0b1f3a]"
+                }`}>
+                  {utility.type === "FIXED" ? "Fixed" : "Metered"}
+                </span>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-type">Billing Type *</Label>
-                <Select
-                  value={editForm.type}
-                  onValueChange={(v: "FIXED" | "METERED") => 
-                    setEditForm({ ...editForm, type: v, unitPrice: "", fixedAmount: "" })
-                  }
-                  disabled={isSaving}
-                >
-                  <SelectTrigger id="edit-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FIXED">Fixed Amount</SelectItem>
-                    <SelectItem value="METERED">Metered</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {editForm.type === "METERED" && (
-                <div className="space-y-2">
-                  <Label htmlFor="edit-unitPrice">Unit Price *</Label>
-                  <Input
-                    id="edit-unitPrice"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editForm.unitPrice}
-                    onChange={(e) => setEditForm({ ...editForm, unitPrice: e.target.value })}
-                    placeholder="e.g., 12.50"
-                    disabled={isSaving}
-                  />
-                </div>
-              )}
-
-              {editForm.type === "FIXED" && (
-                <div className="space-y-2">
-                  <Label htmlFor="edit-fixedAmount">Fixed Amount *</Label>
-                  <Input
-                    id="edit-fixedAmount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={editForm.fixedAmount}
-                    onChange={(e) => setEditForm({ ...editForm, fixedAmount: e.target.value })}
-                    placeholder="e.g., 50.00"
-                    disabled={isSaving}
-                  />
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <Button onClick={handleSaveEdit} disabled={isSaving}>
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Save Changes
-                    </>
-                  )}
+              {!isEditing && (
+                <Button variant="outline" size="sm" onClick={handleEdit} className="bg-white/10 hover:bg-white/20 text-white border-white/30">
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit
                 </Button>
-                <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving}>
-                  <X className="w-4 h-4 mr-2" />
-                  Cancel
-                </Button>
-              </div>
+              )}
             </div>
-          ) : (
-            // Display Mode
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="text-sm text-gray-500">Unit Price</p>
-                <p className="text-lg font-semibold">
-                  {utility.type === "METERED" ? formatCurrency(utility.unitPrice) : "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Fixed Amount</p>
-                <p className="text-lg font-semibold">
-                  {utility.type === "FIXED" ? formatCurrency(utility.fixedAmount) : "N/A"}
-                </p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Assign Utility */}
-      {!isEditing && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Plus className="w-5 h-5 mr-2" />
-              Assign Utility to Lease
-            </CardTitle>
           </CardHeader>
-          <CardContent>
-            {availableLeases.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-lg space-y-3">
-                <p className="text-gray-500">
-                  {leases.length === 0
-                    ? "No leases available. Create a lease first."
-                    : "All leases already have this utility assigned."}
-                </p>
-                {leases.length === 0 && (
-                  <Link href="/property-manager/content/lease/new">
-                    <Button variant="outline" size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Lease
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="lease-select">Select Lease</Label>
-                  <Select value={selectedLease} onValueChange={setSelectedLease} disabled={isAssigning}>
-                    <SelectTrigger id="lease-select">
-                      <SelectValue placeholder="Choose a lease" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableLeases.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">
-                              Unit: {l.unit?.unitNumber ?? l.unit?.number ?? "N/A"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              Tenant: {l.tenant?.firstName ?? l.tenant?.name ?? "Unknown"} {l.tenant?.lastName ?? ""}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              Rent: {formatCurrency(l.rentAmount)}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          <CardContent className="p-6 space-y-6">
+            {isEditing ? (
+              <div className="space-y-4 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 p-6 rounded-xl border-2 border-[#30D5C8]/20">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name" className="text-[#0b1f3a] font-semibold">
+                    Utility Name <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="edit-name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    placeholder="e.g., Electricity, Water, Gas"
+                    disabled={isSaving}
+                    className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                  />
                 </div>
 
-                <div>
-                  <Label htmlFor="responsibility-select">Who Pays?</Label>
-                  <Select value={responsibility} onValueChange={setResponsibility} disabled={isAssigning}>
-                    <SelectTrigger id="responsibility-select">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type" className="text-[#0b1f3a] font-semibold">
+                    Billing Type <span className="text-red-500">*</span>
+                  </Label>
+                  <Select
+                    value={editForm.type}
+                    onValueChange={(v: "FIXED" | "METERED") => 
+                      setEditForm({ ...editForm, type: v, unitPrice: "", fixedAmount: "" })
+                    }
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger id="edit-type" className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="true">Tenant</SelectItem>
-                      <SelectItem value="false">Landlord</SelectItem>
+                      <SelectItem value="FIXED">Fixed Amount</SelectItem>
+                      <SelectItem value="METERED">Metered</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="flex items-end">
-                  <Button onClick={handleAssign} className="w-full" disabled={isAssigning}>
-                    {isAssigning ? (
+                {editForm.type === "METERED" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-unitPrice" className="text-[#0b1f3a] font-semibold">
+                      Unit Price <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-unitPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editForm.unitPrice}
+                      onChange={(e) => setEditForm({ ...editForm, unitPrice: e.target.value })}
+                      placeholder="e.g., 12.50"
+                      disabled={isSaving}
+                      className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                    />
+                  </div>
+                )}
+
+                {editForm.type === "FIXED" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-fixedAmount" className="text-[#0b1f3a] font-semibold">
+                      Fixed Amount <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="edit-fixedAmount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editForm.fixedAmount}
+                      onChange={(e) => setEditForm({ ...editForm, fixedAmount: e.target.value })}
+                      placeholder="e.g., 50.00"
+                      disabled={isSaving}
+                      className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={handleSaveEdit} disabled={isSaving} className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20">
+                    {isSaving ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Assigning...
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
                       </>
                     ) : (
-                      "Assign Utility"
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </>
                     )}
                   </Button>
+                  <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving} className="border-2 border-slate-300 text-[#0b1f3a] hover:bg-slate-50">
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-[#15386a]/5 to-[#15386a]/10 p-6 rounded-xl border border-[#15386a]/20">
+                  <p className="text-sm text-[#15386a]/70 mb-2 font-medium">Unit Price</p>
+                  <p className="text-2xl font-bold text-[#0b1f3a]">
+                    {utility.type === "METERED" ? formatCurrency(utility.unitPrice) : "N/A"}
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-[#30D5C8]/5 to-[#30D5C8]/10 p-6 rounded-xl border border-[#30D5C8]/20">
+                  <p className="text-sm text-[#15386a]/70 mb-2 font-medium">Fixed Amount</p>
+                  <p className="text-2xl font-bold text-[#0b1f3a]">
+                    {utility.type === "FIXED" ? formatCurrency(utility.fixedAmount) : "N/A"}
+                  </p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
-      )}
 
-      {/* Assigned Leases */}
-      {!isEditing && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Assigned Leases ({assigned.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {assigned.length === 0 ? (
-              <div className="text-center py-12 space-y-4">
-                <p className="text-gray-500">No leases assigned yet.</p>
-                <p className="text-sm text-gray-400">
-                  Select a lease above to assign this utility.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Unit</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Rent Amount</TableHead>
-                      <TableHead>Responsibility</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {assigned.map((a) => {
-                      const lease = leases.find((l) => l.id === a.lease_id);
-                      return (
-                        <TableRow key={a.id}>
-                          <TableCell>
-                            {a.Lease?.unit?.unitNumber ?? a.Lease?.unit?.number ?? lease?.unit?.unitNumber ?? lease?.unit?.number ?? "N/A"}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span>
-                                {a.Lease?.tenant?.firstName ?? a.Lease?.tenant?.name ?? lease?.tenant?.firstName ?? lease?.tenant?.name ?? "Unknown"}
-                                {" "}
-                                {a.Lease?.tenant?.lastName ?? lease?.tenant?.lastName ?? ""}
+        {/* Assign Utility */}
+        {!isEditing && (
+          <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-[#30D5C8] to-[#30D5C8]/80 text-white">
+              <CardTitle className="flex items-center text-xl">
+                <Plus className="w-5 h-5 mr-2" />
+                Assign Utility to Lease
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {availableLeases.length === 0 ? (
+                <div className="text-center py-8 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 rounded-xl space-y-3">
+                  <p className="text-[#15386a]/70">
+                    {leases.length === 0
+                      ? "No leases available. Create a lease first."
+                      : "All leases already have this utility assigned."}
+                  </p>
+                  {leases.length === 0 && (
+                    <Link href="/property-manager/content/lease/new">
+                      <Button variant="outline" size="sm" className="border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Lease
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="lease-select" className="text-[#0b1f3a] font-semibold">Select Lease</Label>
+                    <Select value={selectedLease} onValueChange={setSelectedLease} disabled={isAssigning}>
+                      <SelectTrigger id="lease-select" className="mt-2 border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
+                        <SelectValue placeholder="Choose a lease" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableLeases.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">
+                                Unit: {l.unit?.unitNumber ?? l.unit?.number ?? "N/A"}
                               </span>
-                              {(a.Lease?.tenant?.email || lease?.tenant?.email) && (
-                                <span className="text-xs text-gray-500">
-                                  {a.Lease?.tenant?.email ?? lease?.tenant?.email}
-                                </span>
-                              )}
+                              <span className="text-xs text-gray-500">
+                                Tenant: {l.tenant?.firstName ?? l.tenant?.name ?? "Unknown"} {l.tenant?.lastName ?? ""}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Rent: {formatCurrency(l.rentAmount)}
+                              </span>
                             </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(a.Lease?.rentAmount ?? lease?.rentAmount)}</TableCell>
-                          <TableCell>
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                a.is_tenant_responsible 
-                                  ? "bg-purple-100 text-purple-800" 
-                                  : "bg-orange-100 text-orange-800"
-                              }`}
-                            >
-                              {a.is_tenant_responsible ? "Tenant" : "Landlord"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleUnassign(a.id)}
-                              disabled={deletingId === a.id}
-                              title="Remove Assignment"
-                            >
-                              {deletingId === a.id ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="responsibility-select" className="text-[#0b1f3a] font-semibold">Who Pays?</Label>
+                    <Select value={responsibility} onValueChange={setResponsibility} disabled={isAssigning}>
+                      <SelectTrigger id="responsibility-select" className="mt-2 border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Tenant</SelectItem>
+                        <SelectItem value="false">Landlord</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button onClick={handleAssign} className="w-full bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20" disabled={isAssigning}>
+                      {isAssigning ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Assigning...
+                        </>
+                      ) : (
+                        "Assign Utility"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Assigned Leases */}
+        {!isEditing && (
+          <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
+              <CardTitle className="text-xl">Assigned Leases ({assigned.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              {assigned.length === 0 ? (
+                <div className="text-center py-12 space-y-4">
+                  <div className="w-16 h-16 mx-auto bg-[#30D5C8]/10 rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-8 h-8 text-[#30D5C8]" />
+                  </div>
+                  <p className="text-[#15386a]/70">No leases assigned yet.</p>
+                  <p className="text-sm text-[#15386a]/50">
+                    Select a lease above to assign this utility.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b-2 border-[#0b1f3a]/10 hover:bg-transparent">
+                        <TableHead className="text-[#0b1f3a] font-semibold">Unit</TableHead>
+                        <TableHead className="text-[#0b1f3a] font-semibold">Tenant</TableHead>
+                        <TableHead className="text-[#0b1f3a] font-semibold">Rent Amount</TableHead>
+                        <TableHead className="text-[#0b1f3a] font-semibold">Responsibility</TableHead>
+                        <TableHead className="text-right text-[#0b1f3a] font-semibold">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {assigned.map((a) => {
+                        const lease = leases.find((l) => l.id === a.lease_id);
+                        return (
+                          <TableRow key={a.id} className="border-b border-slate-100 hover:bg-[#30D5C8]/5 transition-colors">
+                            <TableCell className="text-[#0b1f3a]">
+                              {a.Lease?.unit?.unitNumber ?? a.Lease?.unit?.number ?? lease?.unit?.unitNumber ?? lease?.unit?.number ?? "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="text-[#0b1f3a]">
+                                  {a.Lease?.tenant?.firstName ?? a.Lease?.tenant?.name ?? lease?.tenant?.firstName ?? lease?.tenant?.name ?? "Unknown"}
+                                  {" "}
+                                  {a.Lease?.tenant?.lastName ?? lease?.tenant?.lastName ?? ""}
+                                </span>
+                                {(a.Lease?.tenant?.email || lease?.tenant?.email) && (
+                                  <span className="text-xs text-[#15386a]/70">
+                                    {a.Lease?.tenant?.email ?? lease?.tenant?.email}
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-[#15386a]">{formatCurrency(a.Lease?.rentAmount ?? lease?.rentAmount)}</TableCell>
+                            <TableCell>
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  a.is_tenant_responsible 
+                                    ? "bg-[#30D5C8]/10 text-[#30D5C8]" 
+                                    : "bg-orange-100 text-orange-800"
+                                }`}
+                              >
+                                {a.is_tenant_responsible ? "Tenant" : "Landlord"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleUnassign(a.id)}
+                                disabled={deletingId === a.id}
+                                title="Remove Assignment"
+                                className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                              >
+                                {deletingId === a.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
