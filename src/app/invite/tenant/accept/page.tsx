@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Button, TextField, Card, Typography, CircularProgress, MenuItem } from '@mui/material'
+import { Button, TextField, Card, Typography, CircularProgress } from '@mui/material'
 import { toast } from 'react-toastify'
 
 interface FormData {
@@ -13,8 +13,6 @@ interface FormData {
   lastName: string
   phone: string
   leaseId?: string
-  companyName?: string
-  serviceType?: string
 }
 
 function AcceptInviteForm() {
@@ -24,7 +22,6 @@ function AcceptInviteForm() {
   const [inviteValid, setInviteValid] = useState(true)
   const [leaseSigned, setLeaseSigned] = useState(false)
   const [checkingLease, setCheckingLease] = useState(true)
-  const [isLeaseInvite, setIsLeaseInvite] = useState(false)
 
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -33,9 +30,7 @@ function AcceptInviteForm() {
     firstName: '',
     lastName: '',
     phone: '',
-    leaseId: '',
-    companyName: '',
-    serviceType: ''
+    leaseId: ''
   })
 
   useEffect(() => {
@@ -45,9 +40,10 @@ function AcceptInviteForm() {
 
     console.log("Accept page URL params:", { email, token, leaseId }) // Debug
 
-    // Require at least email and token. leaseId is optional (used for tenant invites).
-    if (!email || !token) {
+    if (!email || !token || !leaseId) {
+      console.error("Missing required params:", { email: !!email, token: !!token, leaseId: !!leaseId })
       setInviteValid(false)
+      setCheckingLease(false)
       return
     }
 
@@ -55,51 +51,33 @@ function AcceptInviteForm() {
       ...prev,
       email,
       token,
-      leaseId: leaseId || ''
+      leaseId
     }))
-
-    const leasePresent = Boolean(leaseId)
-    setIsLeaseInvite(leasePresent)
-
-    // If leaseId is absent (e.g., vendor invite), skip lease check and show form.
-    if (!leasePresent) {
-      setLeaseSigned(true)
-      setCheckingLease(false)
-      return
-    }
 
     // Check if tenant signed lease
     async function checkLease() {
       try {
-        // IMPORTANT: Include token in request (encode to be safe)
-        const safeToken = encodeURIComponent(token || "")
-        const res = await fetch(`/api/lease/${leaseId}?token=${safeToken}`)
+        // IMPORTANT: Include token in request
+        const res = await fetch(`/api/lease/${leaseId}?token=${token}`)
         const data = await res.json()
 
         console.log("Lease check response:", data) // Debug
-        console.log('Lease fetch status:', res.status)
 
         if (!res.ok) {
-          console.error("Lease fetch error:", data.error || data)
-          // If lease not found or server error, mark invite invalid and stop checking
+          console.error("Lease fetch error:", data.error)
           setInviteValid(false)
           setCheckingLease(false)
           return
         }
 
-        // If tenantSignedAt is set, allow account creation. Otherwise redirect
-        // to the lease signing page. Ensure we always clear the "checking"
-        // state so the spinner doesn't remain indefinitely if router.push
-        // fails or is interrupted.
         if (data.tenantSignedAt) {
           console.log("Lease is signed, showing form")
           setLeaseSigned(true)
           setCheckingLease(false)
         } else {
           console.log("Lease not signed, redirecting to sign page")
-          setCheckingLease(false)
           // Redirect to lease sign page with token
-          router.push(`/invite/lease/${leaseId}/sign?token=${safeToken}`)
+          router.push(`/invite/lease/${leaseId}/sign?token=${token}`)
         }
       } catch (err) {
         console.error("Lease fetch failed:", err)
@@ -141,12 +119,8 @@ function AcceptInviteForm() {
 
       if (!res.ok) throw new Error(data.error)
 
-      // Redirect based on user type (vendor vs tenant)
-      const isVendor = !formData.leaseId
-      const redirectPath = isVendor ? '/vendor' : '/login'
-      
-      toast.success('Account created successfully! Redirecting...')
-      setTimeout(() => router.push(redirectPath), 1500)
+      toast.success('Account created successfully! Redirecting to login...')
+      setTimeout(() => router.push('/login'), 1500)
     } catch (error: any) {
       console.error("Account creation error:", error)
       toast.error(error.message || 'Something went wrong.')
@@ -176,8 +150,8 @@ function AcceptInviteForm() {
     )
   }
 
-  // If still checking lease status (only relevant for lease invites)
-  if (checkingLease && isLeaseInvite) {
+  // If still checking lease status
+  if (checkingLease) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
@@ -190,8 +164,8 @@ function AcceptInviteForm() {
     )
   }
 
-  // If lease not signed yet (only relevant for lease invites)
-  if (!leaseSigned && isLeaseInvite) {
+  // If lease not signed yet (shouldn't reach here due to redirect)
+  if (!leaseSigned) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Card sx={{ p: 4, maxWidth: 420, width: '100%', textAlign: 'center' }}>
@@ -219,7 +193,7 @@ function AcceptInviteForm() {
           Create Your Account
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          {isLeaseInvite ? 'Your lease has been signed. Complete your account setup below.' : 'Complete your account setup below.'}
+          Your lease has been signed. Complete your account setup below.
         </Typography>
 
         <form onSubmit={handleSubmit}>
@@ -270,42 +244,6 @@ function AcceptInviteForm() {
             margin="normal"
             helperText="Choose a strong password for your account"
           />
-
-          {!formData.leaseId && (
-            <>
-              <TextField 
-                label="Company Name" 
-                name="companyName" 
-                value={formData.companyName} 
-                onChange={handleChange} 
-                required 
-                fullWidth 
-                margin="normal" 
-              />
-              <TextField 
-                label="Service Type" 
-                name="serviceType" 
-                value={formData.serviceType} 
-                onChange={handleChange} 
-                required 
-                fullWidth 
-                margin="normal" 
-                select
-                defaultValue=""
-              >
-                <MenuItem value="">Select a service type</MenuItem>
-                <MenuItem value="Plumbing">Plumbing</MenuItem>
-                <MenuItem value="Electrical">Electrical</MenuItem>
-                <MenuItem value="Cleaning">Cleaning</MenuItem>
-                <MenuItem value="Maintenance">Maintenance</MenuItem>
-                <MenuItem value="HVAC">HVAC</MenuItem>
-                <MenuItem value="Landscaping">Landscaping</MenuItem>
-                <MenuItem value="Painting">Painting</MenuItem>
-                <MenuItem value="Carpentry">Carpentry</MenuItem>
-                <MenuItem value="Other">Other</MenuItem>
-              </TextField>
-            </>
-          )}
 
           <Button 
             type="submit" 
