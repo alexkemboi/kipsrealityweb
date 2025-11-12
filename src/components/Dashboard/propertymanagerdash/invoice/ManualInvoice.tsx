@@ -51,7 +51,7 @@ export default function ManualInvoiceForm({ leaseId }: ManualInvoiceFormProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium mb-1">Amount</label>
+            <label className="block text-sm font-semibold mb-1">Amount</label>
             <input
               type="number"
               step="0.01"
@@ -65,7 +65,7 @@ export default function ManualInvoiceForm({ leaseId }: ManualInvoiceFormProps) {
 
           {/* Due Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Due Date</label>
+            <label className="block text-sm font-semibold mb-1">Due Date</label>
             <input
               type="date"
               value={dueDate}
