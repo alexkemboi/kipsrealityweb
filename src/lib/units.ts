@@ -44,7 +44,8 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
       bedrooms: existing?.bedrooms ?? null,
       bathrooms: existing?.bathrooms ?? null,
       floorNumber: existing?.floorNumber ?? null,
-      rentAmount: existing?.rentAmount ?? null,
+      rentAmountu: existing?.rentAmount ?? null,
+      currency: existing?.currency ?? null,
       isOccupied: existing?.isOccupied ?? false,
       createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
       appliances: existing?.appliances?.map(a => ({
@@ -69,6 +70,7 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
         bathrooms: existing?.bathrooms ?? property.houseDetail.bathrooms ?? null,
         floorNumber: existing?.floorNumber ?? property.houseDetail.numberOfFloors ?? null,
         rentAmount: existing?.rentAmount ?? null,
+        currency: existing?.currency ?? null,
         isOccupied: existing?.isOccupied ?? false,
         createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
          appliances: existing?.appliances?.map(a => ({

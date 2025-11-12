@@ -48,6 +48,8 @@ interface Lease {
     bedrooms: number | null;
     bathrooms: number | null;
     squareFeet: number | null;
+    currency: string | null;
+
   };
 }
 
@@ -269,7 +271,7 @@ export default function LeaseViewPage() {
             <div>
               <p className="text-sm text-gray-500">Monthly Rent</p>
               <p className="font-semibold text-2xl text-blue-600">
-                ${lease.rentAmount.toLocaleString()}
+                {lease.unit?.currency}{lease.rentAmount.toLocaleString()}
               </p>
             </div>
             {lease.securityDeposit !== null && (
