@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Copy, CheckCircle2, Clock, Trash2, Send, X } from "lucide-react";
 
@@ -14,6 +15,7 @@ interface Invite {
 }
 
 export default function VendorInviteForm() {
+  const router = useRouter();
   const [invites, setInvites] = useState<Invite[]>([]);
   const [filteredInvites, setFilteredInvites] = useState<Invite[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -448,6 +450,12 @@ export default function VendorInviteForm() {
                           {new Date(invite.expiresAt).toLocaleDateString()}
                         </td>
                         <td className="p-3">
+                        <button 
+                          onClick={() => router.push(`/property-manager/vendors/${invite.id}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-green-200 hover:bg-green-300 text-green-700 font-medium transition-colors"
+                        >
+                          View Details
+                        </button>
                           <div className="flex items-center gap-2 flex-wrap">
                             {!isAccepted && !isExpired && (
                               <button
