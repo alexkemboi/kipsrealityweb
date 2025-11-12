@@ -118,7 +118,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
     }
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/accept?token=${invite.token}&email=${encodeURIComponent(normalizedEmail)}&leaseId=${lease.id}`;
+    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/tenant/accept?token=${invite.token}&email=${encodeURIComponent(normalizedEmail)}&leaseId=${lease.id}`;
 
     return NextResponse.json({
       success: true,

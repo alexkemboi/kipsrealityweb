@@ -257,7 +257,7 @@ export default function InvitesPage() {
   const copyInviteLink = async (token: string, email: string, leaseId: string) => {
   const baseUrl = window.location.origin;
 
-  const inviteLink = `${baseUrl}/invite/accept?email=${encodeURIComponent(
+  const inviteLink = `${baseUrl}/invite/tenant/accept?email=${encodeURIComponent(
     email
   )}&token=${token}&leaseId=${leaseId}`;
 
