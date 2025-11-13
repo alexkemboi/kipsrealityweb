@@ -2,27 +2,55 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// GET /api/utility-readings -> List all readings
 export async function GET() {
   try {
     const readings = await prisma.utility_reading.findMany({
       include: {
         lease_utility: {
           include: {
-            Lease: true,  // From your lease_utility model
-            utility: true
-          }
-        }
+            utility: true,
+            Lease: {
+              include: {
+                tenant: true,
+                unit: true,
+                property: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { readingDate: "desc" },
+      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ success: true, data: readings });
+    const formatted = readings.map((r) => ({
+      id: r.id,
+      reading_value: r.reading_value,
+      amount: r.amount,
+      readingDate: r.readingDate,
+      lease_utility: {
+        id: r.lease_utility.id,
+        utility: r.lease_utility.utility,
+        Lease: {
+          id: r.lease_utility.Lease?.id,
+          tenantName: r.lease_utility.Lease?.tenant
+            ? `${r.lease_utility.Lease.tenant.firstName ?? ""} ${r.lease_utility.Lease.tenant.lastName ?? ""}`.trim() || "Unknown Tenant"
+            : "Unknown Tenant",
+          unitNumber: r.lease_utility.Lease?.unit?.unitNumber || "N/A",
+          propertyName: r.lease_utility.Lease?.property?.name || "N/A",
+        },
+      },
+    }));
+
+    return NextResponse.json({ success: true, data: formatted });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "Failed to fetch utility readings" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch utility readings" },
+      { status: 500 }
+    );
   }
 }
+
 
 // POST /api/utility-readings -> Add new reading
 export async function POST(req: NextRequest) {
