@@ -2,6 +2,7 @@
 
 // src/app/api/propertymanager/route.ts
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -132,15 +133,26 @@ export async function POST(req: Request) {
   }
 }
 
+
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const managerId = searchParams.get("managerId");
-    const organizationId = searchParams.get("organizationId");
+    // Pass the req to getCurrentUser
+    const user = await getCurrentUser(req);
 
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Build where clause based on role/org
     const whereClause: any = {};
-    if (managerId) whereClause.managerId = managerId;
-    if (organizationId) whereClause.organizationId = organizationId;
+
+    if (user.role === "PROPERTY_MANAGER") {
+      whereClause.managerId = user.organizationUserId;
+    }
+
+    if (user.organizationId) {
+      whereClause.organizationId = user.organizationId;
+    }
 
     const properties = await prisma.property.findMany({
       where: whereClause,
@@ -148,11 +160,8 @@ export async function GET(req: Request) {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
-units: {
-      include: {
-        appliances: true, 
-      },
-    },        manager: {
+        units: { include: { appliances: true } },
+        manager: {
           select: {
             id: true,
             role: true,
@@ -171,6 +180,7 @@ units: {
       orderBy: { createdAt: "desc" },
     });
 
+    // Format response
     const formatted = properties.map((p) => ({
       id: p.id,
       name: p.name,
