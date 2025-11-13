@@ -5,24 +5,39 @@ export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const organizationId = url.searchParams.get("organizationId");
+    const status = url.searchParams.get("status");
+    const unassigned = url.searchParams.get("unassigned"); // expected "true" if present
 
     if (!organizationId) {
       return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
     }
 
+    // Build a where clause incrementally so we don't break existing callers
+    const where: any = { organizationId };
+    if (status) {
+      where.status = status;
+    }
+    if (unassigned === "true") {
+      // requires migration that adds assigned_vendor_id to the schema
+      where.assigned_vendor_id = null;
+    }
+
     const requests = await (prisma as any).maintenanceRequest.findMany({
-      where: { organizationId },
+      where,
       orderBy: { createdAt: "desc" },
       include: {
         property: { select: { id: true, name: true, address: true, city: true } },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
         unit: { select: { id: true, unitNumber: true, unitName: true } },
+        // include assigned vendor if available (added after migration)
+        // relation name in schema is `vendors` (mapped to assigned_vendor_id)
+        vendors: { include: { user: { select: { firstName: true, lastName: true } } } },
       },
     });
     return NextResponse.json(requests);
   } catch (error) {
     console.error(error);
-    // Check if error is due to missing table
+    // Check if error is due to missing table/column
     if ((error as any)?.message?.includes("does not exist")) {
       return NextResponse.json({ error: "Maintenance requests feature not yet available" }, { status: 503 });
     }

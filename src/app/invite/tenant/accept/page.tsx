@@ -77,7 +77,7 @@ function AcceptInviteForm() {
         } else {
           console.log("Lease not signed, redirecting to sign page")
           // Redirect to lease sign page with token
-          router.push(`/invite/lease/${leaseId}/sign?token=${token}`)
+          router.push(`/invite/tenant/lease/${leaseId}/sign?token=${token}`)
         }
       } catch (err) {
         console.error("Lease fetch failed:", err)
@@ -100,7 +100,7 @@ function AcceptInviteForm() {
 
     if (!leaseSigned) {
       toast.info('Please sign your lease before creating an account.')
-      router.push(`/invite/lease/${formData.leaseId}/sign?token=${formData.token}`)
+      router.push(`/invite/tenant/lease/${formData.leaseId}/sign?token=${formData.token}`)
       return
     }
 
@@ -177,7 +177,7 @@ function AcceptInviteForm() {
           </Typography>
           <Button 
             variant="contained" 
-            onClick={() => router.push(`/invite/lease/${formData.leaseId}/sign?token=${formData.token}`)}
+            onClick={() => router.push(`/invite/tenant/lease/${formData.leaseId}/sign?token=${formData.token}`)}
           >
             Sign Lease Now
           </Button>
