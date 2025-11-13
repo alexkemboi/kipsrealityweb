@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fetchInvoiceById } from "@/lib/Invoice";
+import { UtilityItem } from "@/app/data/FinanceData";
 import { ArrowLeft } from "lucide-react";
 
 interface Invoice {
@@ -26,9 +27,13 @@ interface Invoice {
   };
 }
 
+interface InvoiceWithUtilities extends Invoice {
+  utilities?: UtilityItem[];
+}
+
 export default function InvoiceDetailsPage() {
   const { id } = useParams();
-  const [invoice, setInvoice] = useState<Invoice>();
+const [invoice, setInvoice] = useState<InvoiceWithUtilities>();
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -115,6 +120,74 @@ export default function InvoiceDetailsPage() {
             <p className="text-gray-800">{invoice.Lease?.property?.name || "—"}</p>
           </div>
         </div>
+
+{/* Utility Breakdown — only show for UTILITY invoices */}
+{invoice.type === "UTILITY" && invoice.utilities && invoice.utilities.length > 0 && (
+  <div className="bg-white rounded-2xl shadow p-6">
+    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      Utility Breakdown
+    </h3>
+
+    <div className="overflow-x-auto">
+      <table className="min-w-full border border-gray-200 rounded-lg">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Utility</th>
+            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Type</th>
+            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Units</th>
+            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Price / Unit</th>
+            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {invoice.utilities.map((u) => {
+            // Calculate total based on type
+            const total =
+              u.type === "METERED"
+                ? (u.units ?? 0) * (u.unitPrice ?? 0)
+                : u.fixedAmount ?? u.amount ?? 0;
+
+            return (
+              <tr key={u.id} className="border-t border-gray-100">
+                <td className="py-3 px-4 text-gray-800">{u.name}</td>
+                <td className="py-3 px-4 text-gray-800">{u.type}</td>
+                <td className="py-3 px-4 text-gray-800">{u.type === "METERED" ? u.units ?? 0 : "—"}</td>
+                <td className="py-3 px-4 text-gray-800">
+                  {u.type === "METERED"
+                    ? `KES ${(u.unitPrice ?? 0).toLocaleString()}`
+                    : u.fixedAmount
+                    ? `KES ${u.fixedAmount.toLocaleString()}`
+                    : "—"}
+                </td>
+                <td className="py-3 px-4 text-gray-800 font-semibold">
+                  KES {total.toLocaleString()}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    <div className="flex justify-end mt-4 border-t pt-4">
+      <p className="font-bold text-gray-900">
+        Total: KES{" "}
+        {invoice.utilities
+          .reduce((sum, u) => {
+            const total =
+              u.type === "METERED"
+                ? (u.units ?? 0) * (u.unitPrice ?? 0)
+                : u.fixedAmount ?? u.amount ?? 0;
+            return sum + total;
+          }, 0)
+          .toLocaleString()}
+      </p>
+    </div>
+  </div>
+)}
+
+
+
 
         {/* Metadata */}
         <div className="bg-white rounded-2xl shadow p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
