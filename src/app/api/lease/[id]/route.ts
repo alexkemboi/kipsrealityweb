@@ -64,7 +64,7 @@ export async function GET(
     if (!user && token) {
       const invite = await prisma.invite.findUnique({
         where: { token },
-        include: { lease: true }
+        include: { lease: true },
       });
 
       if (invite && invite.leaseId === id) {
@@ -79,7 +79,12 @@ export async function GET(
         tenant: true,
         property: true,
         unit: true,
-      }
+        invoice: {
+          include: {
+            payment: true,
+          },
+        },
+      },
     });
 
     if (!lease) {
@@ -90,29 +95,46 @@ export async function GET(
     let userRole: "landlord" | "tenant" | null = null;
 
     if (user) {
-      // Authenticated user - check if landlord or tenant
       if (lease.property?.managerId === user.organizationUserId) {
         userRole = "landlord";
       } else if (lease.tenantId === user.id) {
         userRole = "tenant";
       }
     } else if (isValidTenant) {
-      // Unauthenticated but valid invite token
       userRole = "tenant";
     }
 
-    console.log("Determined role:", userRole, { 
-      hasUser: !!user, 
-      isValidTenant,
-      managerId: lease.property?.managerId,
-      orgUserId: user?.organizationUserId,
-      tenantId: lease.tenantId,
-      userId: user?.id
-    });
+    // 🧮 Balance calculation
+    const totalInvoiced = lease.invoice.reduce(
+      (sum, inv) => sum + inv.amount,
+      0
+    );
 
-    return NextResponse.json({ ...lease, userRole });
+    const totalPaid = lease.invoice.reduce(
+      (sum, inv) =>
+        sum + inv.payment.reduce((pSum, p) => pSum + p.amount, 0),
+      0
+    );
+
+    const balance = totalInvoiced - totalPaid;
+
+    console.log("Determined role:", userRole);
+
+    //  Return all lease data plus computed balance
+    return NextResponse.json({
+      ...lease,
+      userRole,
+      financialSummary: {
+        totalInvoiced,
+        totalPaid,
+        balance,
+      },
+    });
   } catch (error) {
     console.error("Error fetching lease:", error);
-    return NextResponse.json({ error: "Failed to fetch lease" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch lease" },
+      { status: 500 }
+    );
   }
 }
