@@ -20,6 +20,12 @@ interface Unit {
   unitNumber: string;
 }
 
+interface FinancialSummary {
+  totalInvoiced: number;
+  totalPaid: number;
+  balance: number;
+}
+
 interface Lease {
   id: string;
   tenant?: Tenant;
@@ -30,7 +36,9 @@ interface Lease {
   rentAmount: number;
   securityDeposit?: number | null;
   leaseStatus: "DRAFT" | "SIGNED" | "PENDING" | string;
+  financialSummary?: FinancialSummary; 
 }
+
 
 export default function TenantLeasesPage() {
   const [leases, setLeases] = useState<Lease[]>([]);
@@ -324,18 +332,54 @@ export default function TenantLeasesPage() {
                   </div>
 
                   {/* Financial Info */}
-                  <div className="border-t border-slate-200 pt-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-600 text-sm">Monthly Rent</span>
-                      <span className="font-bold text-slate-900">KES {lease.rentAmount?.toLocaleString() || 0}</span>
-                    </div>
-                    {lease.securityDeposit && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-600 text-sm">Security Deposit</span>
-                        <span className="font-semibold text-slate-700">KES {lease.securityDeposit.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
+<div className="border-t border-slate-200 pt-4 space-y-2">
+  <div className="flex justify-between items-center">
+    <span className="text-slate-600 text-sm">Monthly Rent</span>
+    <span className="font-bold text-slate-900">
+      KES {lease.rentAmount?.toLocaleString() || 0}
+    </span>
+  </div>
+
+  {lease.securityDeposit && (
+    <div className="flex justify-between items-center">
+      <span className="text-slate-600 text-sm">Security Deposit</span>
+      <span className="font-semibold text-slate-700">
+        KES {lease.securityDeposit.toLocaleString()}
+      </span>
+    </div>
+  )}
+
+  {/* Financial Summary Section */}
+  {lease.financialSummary && (
+    <div className="mt-3 bg-slate-50 rounded-lg p-3 space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="text-slate-600">Total Invoiced</span>
+        <span className="font-medium text-slate-800">
+          KES {lease.financialSummary.totalInvoiced.toLocaleString()}
+        </span>
+      </div>
+      <div className="flex justify-between text-sm">
+        <span className="text-slate-600">Total Paid</span>
+        <span className="font-medium text-emerald-700">
+          KES {lease.financialSummary.totalPaid.toLocaleString()}
+        </span>
+      </div>
+      <div className="flex justify-between text-sm">
+        <span className="text-slate-600">Balance</span>
+        <span
+          className={`font-bold ${
+            lease.financialSummary.balance > 0
+              ? "text-red-600"
+              : "text-emerald-600"
+          }`}
+        >
+          KES {lease.financialSummary.balance.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  )}
+</div>
+
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2">
