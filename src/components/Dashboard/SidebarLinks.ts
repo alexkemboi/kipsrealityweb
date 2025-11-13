@@ -175,9 +175,14 @@ export const routeConfig = {
       { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
     ],
     utilities: [
-      { path: '/property-manager/utilities/track', label: 'Track Usage', icon: BarChart3 },
-      { path: '/property-manager/utilities/allocate', label: 'Allocate Bills', icon: BarChart3 },
+      { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },
+      { path: '/property-manager/content/meter-readings', label: 'Allocate Bills', icon: BarChart3 },
       { path: '/property-manager/utilities/reports', label: 'Reports', icon: BarChart3 },
+    ],
+
+    invoice: [
+      { path: '/property-manager/finance/invoices', label: 'Track Usage', icon: BarChart3 },
+      
     ],
     analytics: [
       { path: '/property-manager/analytics/revenue', label: 'Revenue Insights', icon: BarChart3 },
