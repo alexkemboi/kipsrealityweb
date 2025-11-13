@@ -181,7 +181,7 @@ export const routeConfig = {
     ],
 
     invoice: [
-      { path: '/property-manager/finance/invoices', label: 'Track Usage', icon: BarChart3 },
+      { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
       
     ],
     analytics: [
