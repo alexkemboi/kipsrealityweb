@@ -42,7 +42,7 @@ export default function GenerateUtilityInvoiceButton({ leaseId }: Props) {
       onClick={handleGenerate}
       disabled={loading}
       className={`mt-4 px-4 py-2 rounded-lg shadow text-white transition-all duration-200 
-        ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+        ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
     >
       {loading ? "Generating..." : "Generate Utility Invoice"}
     </button>

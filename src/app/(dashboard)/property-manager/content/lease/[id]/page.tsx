@@ -319,7 +319,7 @@ export default function LeaseViewPage() {
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             🏢 Full Utility Invoice
           </h2>
-          <div className="space-y-3 flex flex-col items-center">
+  <div className="flex flex-col items-center text-center space-y-4">
             <div>
               <p className="text-lg text-gray-500 mb-4">Generate the full invoice for this lease.</p>
             </div>
