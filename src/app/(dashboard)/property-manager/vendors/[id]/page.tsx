@@ -74,7 +74,8 @@ export default function VendorDetailsPage() {
     async function fetchRequests() {
       if (!organizationId) { setLoading(false); return; }
       try {
-        const res = await fetch(`/api/maintenance?organizationId=${organizationId}`);
+        // fetch only open and unassigned requests for this organization
+        const res = await fetch(`/api/maintenance?organizationId=${organizationId}&status=OPEN&unassigned=true`);
         if (!res.ok) throw new Error("Failed to fetch requests");
         const data = await res.json();
         setOpenRequests(data);
@@ -93,20 +94,32 @@ export default function VendorDetailsPage() {
 
     try {
       setAssignLoading(true);
+      // vendor.vendorRecordId is the actual Vendor.id in the Vendor table (ensure the vendor has a vendor record)
+      const actualVendorId = (vendor as any).vendorRecordId;
+      if (!actualVendorId) {
+        console.warn("Vendor details:", vendor);
+        const errorMsg = vendor?.accepted
+          ? "Vendor record not found in database. Please ensure the vendor has completed registration."
+          : "Vendor has not yet accepted the invitation. They must register first before you can assign requests.";
+        throw new Error(errorMsg);
+      }
 
-      const res = await fetch(`/api/maintenance-requests/${selectedRequest}/assign`, {
+      const res = await fetch(`/api/maintenance/${selectedRequest}/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          vendorId: vendorId,
+          vendorId: actualVendorId,
         }),
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to assign request to vendor");
+      const json = await res.json();
+      if (!res.ok || !json?.success) {
+        const errMsg = json?.error || json?.message || "Failed to assign request to vendor";
+        throw new Error(errMsg);
       }
 
       toast.success("Request assigned successfully!");
+      // remove the assigned request from the local list so it no longer appears
+      setOpenRequests((prev) => prev.filter((r) => r.id !== selectedRequest));
       setShowAssignModal(false);
       setSelectedRequest("");
     } catch (err) {
@@ -254,7 +267,7 @@ export default function VendorDetailsPage() {
       </div>
 
       {/* Action Buttons */}
-      {vendor.accepted && (
+      {vendor.accepted ? (
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setShowAssignModal(true)}
@@ -262,6 +275,10 @@ export default function VendorDetailsPage() {
           >
             Assign a Request
           </button>
+        </div>
+      ) : (
+        <div className="bg-yellow-900/20 border border-yellow-600 text-yellow-400 px-4 py-3 rounded-lg mb-6">
+          ⚠️ This vendor has not yet accepted the invitation. They must register first before you can assign maintenance requests.
         </div>
       )}
 

@@ -35,7 +35,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Vendor invite not found' }, { status: 404 })
     }
 
-    // Get user details if vendor has registered
+    // Build vendor view object. Note: invite.id != Vendor.id. If the invite was accepted and
+    // a Vendor row exists, include its id as vendorRecordId so callers can reference the Vendor table.
     let vendor = {
       id: invite.id,
       email: invite.email,
@@ -50,12 +51,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
       availability: 'Not specified',
       accepted: invite.accepted,
       createdAt: invite.createdAt,
+      vendorRecordId: null as string | null,
     }
 
     if (invite.accepted) {
-      const user = await prisma.user.findUnique({
-        where: { email: invite.email }
-      })
+      const user = await prisma.user.findUnique({ where: { email: invite.email } });
 
       if (user) {
         vendor = {
@@ -63,6 +63,42 @@ export async function GET(request: Request, { params }: { params: { id: string }
           firstName: user.firstName || '',
           lastName: user.lastName || '',
           phone: user.phone || '',
+        };
+
+        // Try to find a Vendor record for this user/email in the same organization
+        let vendorRecord = await prisma.vendor.findFirst({
+          where: {
+            organizationId: invite.organizationId,
+            OR: [{ userId: user.id }, { email: invite.email }],
+          },
+        });
+
+        // If vendor has accepted but no Vendor record exists, create one now with basic info
+        // (this handles edge cases where invite was accepted without full vendor setup)
+        if (!vendorRecord) {
+          try {
+            vendorRecord = await prisma.vendor.create({
+              data: {
+                userId: user.id,
+                organizationId: invite.organizationId,
+                companyName: vendor.companyName || `${user.firstName} ${user.lastName}`,
+                serviceType: vendor.serviceType || 'General Services',
+                email: invite.email,
+                phone: user.phone || null,
+                isActive: true,
+              },
+            });
+          } catch (err) {
+            // Vendor record might already exist or there's a constraint; log but continue
+            console.warn('Failed to create vendor record on demand:', err);
+          }
+        }
+
+        if (vendorRecord) {
+          vendor.vendorRecordId = vendorRecord.id;
+          // fill in company/service info from vendor record if available
+          vendor.companyName = vendorRecord.companyName || vendor.companyName;
+          vendor.serviceType = vendorRecord.serviceType || vendor.serviceType;
         }
       }
     }
