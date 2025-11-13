@@ -5,6 +5,44 @@ import { verifyAccessToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
+export async function GET(request: Request) {
+  try {
+    // Validate auth token (cookie)
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = verifyAccessToken(token)
+
+    // Only property managers or system admins can view vendor invites
+    if (payload.role !== 'PROPERTY_MANAGER' && payload.role !== 'SYSTEM_ADMIN') {
+      return NextResponse.json({ error: 'Only property managers or system admins can view vendor invites' }, { status: 403 })
+    }
+
+    // Get all vendor invites for this organization
+    const invites = await prisma.invite.findMany({
+      where: {
+        organizationId: payload.organizationId,
+        role: 'VENDOR'
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      invites
+    }, { status: 200 })
+
+  } catch (error) {
+    console.error('Get vendor invites error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Validate auth token (cookie)
@@ -53,7 +91,7 @@ export async function POST(request: Request) {
     })
 
     // Build an invite link (send by email in production)
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/accept?token=${inviteToken}&email=${encodeURIComponent(normalizedEmail)}`
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/inviteor?token=${inviteToken}&email=${encodeURIComponent(normalizedEmail)}`
 
     // TODO: enqueue/send email with inviteLink & companyName/serviceType in production
 

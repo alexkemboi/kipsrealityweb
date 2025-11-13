@@ -43,7 +43,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     SYSTEM_ADMIN: "/admin",
     PROPERTY_MANAGER: "/property-manager",
     TENANT: "/tenant",
-    VENDOR: "/dashboard/vendor",
+    VENDOR: "/vendor",
   } as const;
 
   const currentPath =

@@ -21,6 +21,9 @@ type Request = {
   createdAt?: string;
   property?: { address?: string | null; name?: string | null; city?: string | null };
   unit?: { unitNumber: string; unitName?: string | null };
+  assignedVendor?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
+  // prisma relation currently named `vendors` on MaintenanceRequest model
+  vendors?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
 };
 
 function handleExcel(data: any, filename = "maintenance_requests.xlsx", username: string) {
@@ -122,10 +125,9 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
       {showForm && (
         <div className="mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h4 className="font-medium mb-3">Create a Request</h4>
+          
             <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
-          </div>
+          
         </div>
       )}
 
@@ -246,7 +248,13 @@ export default function MaintenanceRequestsClient(): ReactElement {
                   </td>
                   <td className="p-2 text-gray-200">{r.category?.toLowerCase() ?? "STANDARD".toLowerCase()}</td>
                   <td className="p-2 text-gray-200">200/=</td>
-                  <td className="p-2 text-gray-200">-</td>
+                  <td className="p-2 text-gray-200">
+                    {r.vendors ? (
+                      r.vendors.companyName || `${r.vendors.user?.firstName ?? ""} ${r.vendors.user?.lastName ?? ""}`.trim()
+                    ) : (
+                      "-"
+                    )}
+                  </td>
                   <td className="p-2 text-gray-200">
                     {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber ? r.unit.unitNumber : "-"}
                   </td>

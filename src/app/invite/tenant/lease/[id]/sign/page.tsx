@@ -104,7 +104,7 @@ export default function LeaseSignPage() {
       if (res.ok) {
         if (userRole === "tenant") {
           // Redirect tenant after signing with token preserved
-          const redirectUrl = `/invite/accept?email=${encodeURIComponent(data.lease.tenant.email)}&token=${inviteToken}&leaseId=${data.lease.id}`;
+          const redirectUrl = `/invite/tenant/accept?email=${encodeURIComponent(data.lease.tenant.email)}&token=${inviteToken}&leaseId=${data.lease.id}`;
           console.log("Redirecting to:", redirectUrl);
           window.location.href = redirectUrl;
           return;

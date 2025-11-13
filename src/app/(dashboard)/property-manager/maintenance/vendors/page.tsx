@@ -1,25 +1,13 @@
-// import { prisma } from "@/lib/db";
-// import VendorsClient from "@/components/Dashboard/maintenance/VendorsClient";
+"use client";
 
-// export default async function VendorsPage() {
-//   let vendors: any[] = [];
-//   try {
-//     vendors = await (prisma as any).vendor.findMany({
-//       orderBy: { createdAt: "desc" },
-//       include: {
-//         user: {
-//           select: {
-//             firstName: true,
-//             lastName: true,
-//             email: true,
-//             phone: true
-//           }
-//         }
-//       }
-//     });
-//   } catch (err) {
-//     console.warn("Vendor table not available yet:", err);
-//   }
+import VendorInviteForm from "@/components/Dashboard/propertymanagerdash/vendors/VendorInviteForm";
 
-//   return <VendorsClient initialVendors={vendors} />;
-// }
+export default function VendorsPage() {
+  return (
+    <div className="min-h-screen p-6 bg-[#0f172a]">
+      <div className="max-w-7xl mx-auto">
+         <VendorInviteForm />  
+      </div>
+    </div>
+  );
+}
