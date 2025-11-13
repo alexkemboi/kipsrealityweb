@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { LoadingBar } from "@/components/ui/loading-bar";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,7 +50,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen transition-colors duration-500`}
       >
         <AuthProvider>
-          <LoadingBar />
+          <Suspense fallback={null}>
+            <LoadingBar />
+          </Suspense>
           {children}
           <Toaster
             position="top-center"
