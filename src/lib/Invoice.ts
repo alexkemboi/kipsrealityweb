@@ -1,5 +1,6 @@
 // src/lib/finance.ts
-import { FullInvoiceInput, ManualInvoiceInput, Invoice } from "@/app/data/FinanceData";
+import { FullInvoiceInput, ManualInvoiceInput, ManualInvoiceItem,ManualUtilityItem, Invoice } from "@/app/data/FinanceData";
+
 
 export async function generateFullInvoice(data: FullInvoiceInput): Promise<Invoice> {
   try {
@@ -114,3 +115,77 @@ export async function fetchInvoiceById(id: string) {
     throw new Error(error?.message || "Unexpected error fetching invoice");
   }
 }
+
+
+// lib/Invoice.ts
+export async function generateUtilityInvoice(leaseId: string) {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/utilities/${leaseId}`;
+    const res = await fetch(url, { method: "POST" });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      // Throw an error so the button can catch it
+      throw new Error(data.error || "Failed to generate utility invoice");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    console.error("generateUtilityInvoice error:", error);
+    throw new Error(error?.message || "Unexpected error generating utility invoice");
+  }
+}
+
+
+
+export async function createManualUtilityInvoice(
+  leaseId: string,
+  items: ManualInvoiceItem[]
+) {
+  try {
+
+      const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/manual/utility`,{
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ leaseId, items }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to create manual utility invoice");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    console.error("createManualUtilityInvoice error:", error);
+    throw new Error(error?.message || "Unexpected error creating manual utility invoice");
+  }
+}
+
+
+export async function generateManualUtilityInvoiceData(leaseId: string) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/manual/utility/data?leaseId=${leaseId}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Failed to fetch manual utility data");
+    }
+
+    // data.data should be an array of utilities
+    return data.data as ManualUtilityItem[];
+  } catch (error: any) {
+    console.error("generateManualUtilityInvoiceData error:", error);
+    throw new Error(
+      error?.message || "Unexpected error fetching manual utility data"
+    );
+  }
+}
+
+ 
