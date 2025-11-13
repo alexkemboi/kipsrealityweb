@@ -172,7 +172,7 @@ export const routeConfig = {
     ],
     accounting: [
       { path: '/property-manager/accounting/invoicing', label: 'Rent Invoicing', icon: DollarSign },
-      { path: '/property-manager/accounting/late-fees', label: 'Late Fees', icon: DollarSign },
+      { path: '/property-manager/content/payments', label: 'Payment Records', icon: DollarSign },
       { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
     ],
     utilities: [
