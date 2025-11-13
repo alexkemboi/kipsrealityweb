@@ -18,8 +18,27 @@ export interface Invoice {
       name?: string;
       address?: string;
     };
+     lease_utility?: {
+      utility: {
+        id: string;
+        name: string;
+        type: "FIXED" | "METERED";
+        fixedAmount?: number;
+        unitPrice?: number;
+      };
+      is_tenant_responsible?: boolean;
+    }[];
   };
-}
+  utilities?: {
+    id: string;
+    name: string;
+    type: "FIXED" | "METERED";
+    fixedAmount?: number;
+    unitPrice?: number;
+    isTenantResponsible?: boolean;
+  }[];
+};
+ 
 
 
 export interface Lease {
