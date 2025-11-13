@@ -2,17 +2,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+// Allowed payment methods based on your Prisma enum
+const VALID_PAYMENT_METHODS = ["CASH", "BANK", "CREDIT_CARD"] as const;
+
+export async function POST(req: Request, context: { params: { id: string } }) {
   try {
-    const invoiceId = params.id;
+    // Await params correctly
+    const { id: invoiceId } = context.params;
+
     const { amount, method, reference } = await req.json();
 
     // Validate payment input
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid payment amount" }, { status: 400 });
     }
-    if (!method) {
-      return NextResponse.json({ error: "Payment method is required" }, { status: 400 });
+    if (!method || !VALID_PAYMENT_METHODS.includes(method as typeof VALID_PAYMENT_METHODS[number])) {
+      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
     }
 
     // Fetch invoice
@@ -46,10 +51,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Update invoice status to PAID
     await prisma.invoice.update({
       where: { id: invoiceId },
-      data: { status: "PAID" }, // enum-safe
+      data: { status: "PAID" },
     });
-
-    // Optionally, you can implement a receipt or log here if needed
 
     return NextResponse.json({ success: true, payment, status: "PAID" });
   } catch (error) {
@@ -58,10 +61,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: { id: string } }) {
   try {
+    const { id: invoiceId } = context.params;
+
     const payments = await prisma.payment.findMany({
-      where: { invoice_id: params.id },
+      where: { invoice_id: invoiceId },
       orderBy: { paidOn: "desc" },
     });
 
