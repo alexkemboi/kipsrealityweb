@@ -2,13 +2,25 @@
 export interface Invoice {
   id: string;
   lease_id: string;
-  type: 'RENT' | 'UTILITY';
+  type: "RENT" | "UTILITY";
   amount: number;
   dueDate: string;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
-  createdAt?: string;
-  updatedAt?: string;
+  status: "PENDING" | "PAID" | "OVERDUE";
+  createdAt: string;
+  updatedAt: string;
+  Lease?: {
+    tenant?: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+    };
+    property?: {
+      name?: string;
+      address?: string;
+    };
+  };
 }
+
 
 export interface Lease {
   id: string;
@@ -30,3 +42,30 @@ export interface FullInvoiceInput {
   lease_id: string;
   type: 'RENT' | 'UTILITY';
 }
+
+export interface ManualInvoiceItem {
+  utilityId: string;
+  description: string;
+  amount: number;
+}
+
+export interface ManualUtilityItem {
+  id: string; // could be utility id
+  description: string;
+  type: "FIXED" | "METERED";
+  units: number; // number of units (only relevant for metered)
+  amount: number; // cost per unit or fixed amount
+   fixedAmount?: number;
+  unitPrice?: number;
+}
+
+export interface UtilityItem {
+  id: string;
+  name: string;
+  type: "FIXED" | "METERED";
+  unitPrice?: number;
+  units?: number;
+  fixedAmount?: number;
+  amount?: number;
+}
+
