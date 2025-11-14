@@ -170,30 +170,44 @@ export default function PaymentsPage() {
     window.print();
   }
 
-  async function downloadReceipt() {
+ async function downloadReceipt() {
   if (!viewingReceipt) return;
 
   try {
     const html2canvas = (await import('html2canvas')).default;
     const { jsPDF } = await import('jspdf');
 
-    // Create a temporary container
+    // Get the element
+    const element = document.getElementById('receipt-content');
+    if (!element) return toast.error('Receipt content not found');
+
+    // Clone the element into an off-screen container
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.top = '-9999px';
     container.style.left = '-9999px';
-    container.style.width = '800px'; // set fixed width for consistent PDF
+    container.style.width = '800px';
     container.style.background = 'white';
     document.body.appendChild(container);
-
-    // Clone the receipt content into container
-    const element = document.getElementById('receipt-content');
-    if (!element) return toast.error('Receipt content not found');
 
     const cloned = element.cloneNode(true) as HTMLElement;
     cloned.style.transform = 'scale(1)';
     cloned.style.opacity = '1';
     container.appendChild(cloned);
+
+    // Fix unsupported colors (oklch) in all descendants
+    const allElements = cloned.querySelectorAll<HTMLElement>('*');
+    allElements.forEach(el => {
+      const styles = window.getComputedStyle(el);
+      // For background and color
+      ['backgroundColor', 'color', 'borderColor'].forEach(prop => {
+        const value = styles.getPropertyValue(prop);
+        if (value.includes('oklch')) {
+          // Convert oklch to white fallback (or you can use rgb approximation)
+          el.style.setProperty(prop, '#ffffff', 'important');
+        }
+      });
+    });
 
     toast.loading('Generating PDF...');
 
@@ -205,7 +219,6 @@ export default function PaymentsPage() {
 
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-
     const pageWidth = pdf.internal.pageSize.getWidth();
     const imgProps = pdf.getImageProperties(imgData);
     const pdfHeight = (imgProps.height * pageWidth) / imgProps.width;
@@ -226,6 +239,8 @@ export default function PaymentsPage() {
 }
 
 
+
+
   const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
   const paymentMethods = {
     CASH: payments.filter(p => p.method === "CASH").length,
@@ -244,8 +259,8 @@ export default function PaymentsPage() {
 
         {/* Receipt Modal */}
         {viewingReceipt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto ">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-visible">
               {/* Modal Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-800">Receipt Details</h2>

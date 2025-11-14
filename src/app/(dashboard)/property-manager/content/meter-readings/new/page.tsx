@@ -14,17 +14,17 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
-import { 
-  ArrowLeft, 
-  Loader2, 
-  Calculator, 
-  AlertCircle, 
+import {
+  ArrowLeft,
+  Loader2,
+  Calculator,
+  AlertCircle,
   Zap,
   Building2,
   User,
   DollarSign,
   CheckCircle,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -32,27 +32,11 @@ interface LeaseUtility {
   id: string;
   Lease: {
     id: string;
-    rentAmount?: number;
-    tenant?: {
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-    } | null;
-    unit?: {
-      number?: string;
-      unitNumber?: string;
-    } | null;
-    property?: {
-      name?: string;
-      address?: string;
-    } | null;
+    tenant?: { firstName?: string; lastName?: string; email?: string } | null;
+    unit?: { number?: string; unitNumber?: string } | null;
+    property?: { name?: string; address?: string } | null;
   };
-  utility: {
-    id: string;
-    name: string;
-    unitPrice: number | null;
-    type: "FIXED" | "METERED";
-  };
+  utility: { id: string; name: string; unitPrice: number | null; type: "FIXED" | "METERED" };
 }
 
 export default function NewMeterReadingPage() {
@@ -64,6 +48,10 @@ export default function NewMeterReadingPage() {
   const [isLoadingUtilities, setIsLoadingUtilities] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [initialReading, setInitialReading] = useState<number | null>(null);
+  const [previousReading, setPreviousReading] = useState<number | null>(null);
+  const [consumption, setConsumption] = useState<number | null>(null);
 
   useEffect(() => {
     loadLeaseUtilities();
@@ -81,11 +69,8 @@ export default function NewMeterReadingPage() {
           (lu: LeaseUtility) => lu.utility.type === "METERED"
         );
         setLeaseUtilities(metered);
-
         if (metered.length === 0) {
-          setError(
-            "No metered utilities found. Please assign metered utilities to leases first."
-          );
+          setError("No metered utilities found. Please assign metered utilities to leases first.");
         }
       } else {
         setError(data.error || "Failed to load utilities");
@@ -99,36 +84,58 @@ export default function NewMeterReadingPage() {
     }
   };
 
-  useEffect(() => {
-    const lu = leaseUtilities.find((l) => l.id === selectedLU);
-    const value = parseFloat(readingValue);
+  const selectedUtility = leaseUtilities.find((lu) => lu.id === selectedLU);
 
-    if (lu && lu.utility.unitPrice && value > 0) {
-      setAmount(value * lu.utility.unitPrice);
+  useEffect(() => {
+    const fetchReadings = async () => {
+      if (!selectedLU) return;
+      try {
+        const res = await fetch(`/api/utility-readings?lease_utility_id=${selectedLU}`);
+        const data = await res.json();
+        if (data.success) {
+          const readings = (data.data || []).sort(
+            (a: any, b: any) => new Date(a.readingDate).getTime() - new Date(b.readingDate).getTime()
+          );
+          setInitialReading(readings[0]?.reading_value ?? null);
+          setPreviousReading(
+            readings.length > 1 ? readings[readings.length - 1]?.reading_value : readings[0]?.reading_value ?? 0
+          );
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchReadings();
+  }, [selectedLU]);
+
+  useEffect(() => {
+    const current = parseFloat(readingValue);
+    if (!isNaN(current) && previousReading !== null) {
+      const cons = current - previousReading;
+      setConsumption(cons >= 0 ? cons : null);
+    } else {
+      setConsumption(null);
+    }
+  }, [readingValue, previousReading]);
+
+  useEffect(() => {
+    if (selectedUtility && selectedUtility.utility.unitPrice && consumption !== null) {
+      setAmount(consumption * selectedUtility.utility.unitPrice);
     } else {
       setAmount(null);
     }
-  }, [selectedLU, readingValue, leaseUtilities]);
+  }, [selectedUtility, consumption]);
 
   const handleSubmit = async () => {
-    if (!selectedLU) {
-      toast.error("Please select a lease utility");
-      return;
-    }
-
+    if (!selectedLU) return toast.error("Please select a lease utility");
     const value = parseFloat(readingValue);
-    if (!readingValue || isNaN(value) || value <= 0) {
-      toast.error("Please enter a valid reading value greater than 0");
-      return;
-    }
-
-    if (amount === null) {
-      toast.error("Unable to calculate amount. Please check the unit price.");
-      return;
-    }
+    if (!readingValue || isNaN(value) || value <= 0)
+      return toast.error("Please enter a valid reading value greater than 0");
+    if (previousReading !== null && value < previousReading)
+      return toast.error("Current reading cannot be less than the previous reading");
+    if (amount === null) return toast.error("Unable to calculate amount");
 
     setIsSubmitting(true);
-
     try {
       const res = await fetch("/api/utility-readings", {
         method: "POST",
@@ -137,16 +144,13 @@ export default function NewMeterReadingPage() {
           lease_utility_id: selectedLU,
           reading_value: value,
           amount,
+          readingDate: new Date().toISOString(),
         }),
       });
-
       const data = await res.json();
-
       if (data.success) {
         toast.success("Meter reading added successfully!");
-        setTimeout(() => {
-          router.push("/property-manager/content/meter-readings");
-        }, 1000);
+        setTimeout(() => router.push("/property-manager/content/meter-readings"), 1000);
       } else {
         toast.error(data.error || "Failed to add reading");
         setIsSubmitting(false);
@@ -158,13 +162,7 @@ export default function NewMeterReadingPage() {
   };
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-      minimumFractionDigits: 2,
-    }).format(value);
-
-  const selectedUtility = leaseUtilities.find((lu) => lu.id === selectedLU);
+    new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 2 }).format(value);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
@@ -174,13 +172,8 @@ export default function NewMeterReadingPage() {
       <div className="bg-gradient-to-r from-[#0b1f3a] via-[#15386a] to-[#0b1f3a] text-white shadow-2xl">
         <div className="max-w-6xl mx-auto px-6 py-8">
           <Link href="/property-manager/content/meter-readings">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="text-white hover:bg-white/10 mb-6 transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Readings
+            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 mb-6 transition-all">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Readings
             </Button>
           </Link>
           <div className="flex items-center gap-6">
@@ -189,9 +182,7 @@ export default function NewMeterReadingPage() {
             </div>
             <div>
               <h1 className="text-4xl font-bold mb-2">Add Meter Reading</h1>
-              <p className="text-blue-200 text-lg">
-                Record a new utility meter reading for accurate billing
-              </p>
+              <p className="text-blue-200 text-lg">Record a new utility meter reading for accurate billing</p>
             </div>
           </div>
         </div>
@@ -203,10 +194,7 @@ export default function NewMeterReadingPage() {
           <Card className="border-none shadow-2xl">
             <CardContent className="flex items-center justify-center py-20">
               <div className="text-center">
-                <div className="relative">
-                  <Loader2 className="w-16 h-16 animate-spin text-[#30D5C8] mx-auto mb-6" />
-                  <div className="absolute inset-0 w-16 h-16 mx-auto blur-xl bg-[#30D5C8] opacity-20 animate-pulse"></div>
-                </div>
+                <Loader2 className="w-16 h-16 animate-spin text-[#30D5C8] mx-auto mb-6" />
                 <span className="text-gray-600 text-xl font-medium">Loading utilities...</span>
               </div>
             </CardContent>
@@ -223,18 +211,12 @@ export default function NewMeterReadingPage() {
                   <p className="text-gray-700 text-lg leading-relaxed">{error}</p>
                 </div>
                 <div className="flex gap-4 pt-4">
-                  <Button 
-                    onClick={loadLeaseUtilities} 
-                    variant="outline"
-                    className="border-2 border-red-200 hover:bg-red-50 h-12 px-6"
-                  >
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Try Again
+                  <Button onClick={loadLeaseUtilities} variant="outline" className="border-2 border-red-200 hover:bg-red-50 h-12 px-6">
+                    <TrendingUp className="w-4 h-4 mr-2" /> Try Again
                   </Button>
                   <Link href="/property-manager/content/utilities">
                     <Button className="bg-[#0b1f3a] hover:bg-[#15386a] h-12 px-6">
-                      <Zap className="w-4 h-4 mr-2" />
-                      Go to Utilities
+                      <Zap className="w-4 h-4 mr-2" /> Go to Utilities
                     </Button>
                   </Link>
                 </div>
@@ -243,7 +225,7 @@ export default function NewMeterReadingPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            {/* Main Form - Takes 3 columns */}
+            {/* Main Form */}
             <div className="lg:col-span-3">
               <Card className="border-none shadow-2xl overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white pb-8">
@@ -258,22 +240,14 @@ export default function NewMeterReadingPage() {
                 <CardContent className="p-8 space-y-8">
                   {/* Lease Utility Selector */}
                   <div className="space-y-4">
-                    <Label 
-                      htmlFor="lease-utility" 
-                      className="text-[#0b1f3a] font-bold text-lg flex items-center gap-2"
-                    >
+                    <Label htmlFor="lease-utility" className="text-[#0b1f3a] font-bold text-lg flex items-center gap-2">
                       <div className="bg-[#30D5C8]/10 p-1.5 rounded">
                         <Zap className="w-5 h-5 text-[#30D5C8]" />
                       </div>
-                      Select Lease Utility
-                      <span className="text-red-500">*</span>
+                      Select Lease Utility <span className="text-red-500">*</span>
                     </Label>
-                    <Select
-                      value={selectedLU}
-                      onValueChange={setSelectedLU}
-                      disabled={isSubmitting}
-                    >
-                      <SelectTrigger 
+                    <Select value={selectedLU} onValueChange={setSelectedLU} disabled={isSubmitting}>
+                      <SelectTrigger
                         id="lease-utility"
                         className="h-14 border-2 border-gray-300 hover:border-[#30D5C8] focus:border-[#30D5C8] transition-colors text-base bg-white shadow-sm"
                       >
@@ -284,18 +258,12 @@ export default function NewMeterReadingPage() {
                           const tenant = lu.Lease?.tenant;
                           const property = lu.Lease?.property;
                           const unit = lu.Lease?.unit;
-
                           const tenantName =
                             tenant?.firstName || tenant?.lastName
                               ? `${tenant?.firstName ?? ""} ${tenant?.lastName ?? ""}`.trim()
                               : "Unknown Tenant";
-
                           return (
-                            <SelectItem 
-                              key={lu.id} 
-                              value={lu.id}
-                              className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50 border-b border-gray-100 last:border-0"
-                            >
+                            <SelectItem key={lu.id} value={lu.id} className="cursor-pointer hover:bg-blue-50 focus:bg-blue-50 border-b border-gray-100 last:border-0">
                               <div className="py-3 px-2">
                                 <div className="font-bold text-[#0b1f3a] text-base mb-2 flex items-center gap-2">
                                   <Zap className="w-4 h-4 text-[#30D5C8]" />
@@ -323,40 +291,30 @@ export default function NewMeterReadingPage() {
                         })}
                       </SelectContent>
                     </Select>
-                    {selectedUtility && (
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-500 p-2 rounded-lg">
-                            <CheckCircle className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600 font-medium">Selected Rate</p>
-                            <p className="text-[#0b1f3a] font-bold text-lg">
-                              {formatCurrency(selectedUtility.utility.unitPrice || 0)} per unit
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Initial, Previous & Consumption */}
+                  {selectedLU && (
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm space-y-2">
+                      <p className="text-sm text-gray-600">Initial Reading: <span className="font-bold">{initialReading ?? "—"}</span> units</p>
+                      <p className="text-sm text-gray-600">Previous Reading: <span className="font-bold">{previousReading ?? "—"}</span> units</p>
+                      <p className="text-sm text-gray-600">Consumption: <span className="font-bold">{consumption ?? "—"}</span> units</p>
+                    </div>
+                  )}
 
                   {/* Reading Input */}
                   <div className="space-y-4">
-                    <Label 
-                      htmlFor="reading-value" 
-                      className="text-[#0b1f3a] font-bold text-lg flex items-center gap-2"
-                    >
+                    <Label htmlFor="reading-value" className="text-[#0b1f3a] font-bold text-lg flex items-center gap-2">
                       <div className="bg-[#30D5C8]/10 p-1.5 rounded">
                         <TrendingUp className="w-5 h-5 text-[#30D5C8]" />
                       </div>
-                      Reading Value (units)
-                      <span className="text-red-500">*</span>
+                      Reading Value (units) <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="reading-value"
                       type="number"
                       step="0.01"
-                      min="0"
+                      min={previousReading || 0}
                       value={readingValue}
                       onChange={(e) => setReadingValue(e.target.value)}
                       placeholder="Enter meter reading (e.g., 45.6)"
@@ -364,10 +322,6 @@ export default function NewMeterReadingPage() {
                       className="h-14 border-2 border-gray-300 hover:border-[#30D5C8] focus:border-[#30D5C8] transition-colors text-lg bg-white shadow-sm"
                       required
                     />
-                    <p className="text-sm text-gray-600 flex items-start gap-2">
-                      <span className="text-[#30D5C8] mt-0.5">ℹ️</span>
-                      <span>Enter the current meter reading in units (kWh, cubic meters, gallons, etc.)</span>
-                    </p>
                   </div>
 
                   {/* Actions */}
@@ -389,10 +343,7 @@ export default function NewMeterReadingPage() {
                         </>
                       )}
                     </Button>
-                    <Link
-                      href="/property-manager/content/meter-readings"
-                      className="flex-1"
-                    >
+                    <Link href="/property-manager/content/meter-readings" className="flex-1">
                       <Button
                         type="button"
                         variant="outline"
@@ -407,7 +358,7 @@ export default function NewMeterReadingPage() {
               </Card>
             </div>
 
-            {/* Calculation Summary Sidebar - Takes 2 columns */}
+            {/* Sidebar with live calculation */}
             <div className="lg:col-span-2">
               <div className="sticky top-6">
                 <Card className="border-none shadow-2xl overflow-hidden">
@@ -423,10 +374,9 @@ export default function NewMeterReadingPage() {
                       {selectedLU && readingValue ? (
                         <div className="space-y-4">
                           <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg">
-                            <p className="text-sm text-gray-600 font-medium mb-2">Reading Value</p>
+                            <p className="text-sm text-gray-600 font-medium mb-2">Current Reading</p>
                             <p className="text-3xl font-bold text-[#0b1f3a] flex items-baseline gap-2">
-                              {readingValue}
-                              <span className="text-base font-normal text-gray-600">units</span>
+                              {readingValue} <span className="text-base font-normal text-gray-600">units</span>
                             </p>
                           </div>
 
@@ -440,14 +390,17 @@ export default function NewMeterReadingPage() {
                             </div>
                           )}
 
+                          <div className="bg-white/95 backdrop-blur-sm rounded-xl p-5 shadow-lg">
+                            <p className="text-sm text-gray-600 font-medium mb-2">Consumption</p>
+                            <p className="text-3xl font-bold text-[#0b1f3a]">{consumption !== null ? consumption : "—"} units</p>
+                          </div>
+
                           <div className="relative">
                             <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-green-400 rounded-xl blur-xl opacity-50"></div>
                             <div className="relative bg-white rounded-xl p-6 shadow-2xl border-2 border-emerald-200">
                               <div className="flex items-center gap-2 mb-3">
                                 <DollarSign className="w-5 h-5 text-emerald-600" />
-                                <p className="text-sm font-bold text-emerald-900 uppercase tracking-wide">
-                                  Total Amount
-                                </p>
+                                <p className="text-sm font-bold text-emerald-900 uppercase tracking-wide">Total Amount</p>
                               </div>
                               <p className="text-4xl font-bold text-emerald-600 mb-2">
                                 {amount ? formatCurrency(amount) : "—"}
@@ -455,7 +408,7 @@ export default function NewMeterReadingPage() {
                               {amount && selectedUtility && (
                                 <div className="bg-emerald-50 rounded-lg p-3 mt-3">
                                   <p className="text-xs text-emerald-800 font-medium">
-                                    {readingValue} units × {formatCurrency(selectedUtility.utility.unitPrice || 0)}
+                                    {consumption} units × {formatCurrency(selectedUtility.utility.unitPrice || 0)}
                                   </p>
                                 </div>
                               )}

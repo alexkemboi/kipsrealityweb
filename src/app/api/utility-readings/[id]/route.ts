@@ -1,63 +1,77 @@
-// app/api/utility-readings/[id]/route.ts
+// app/api/utility-readings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// GET /api/utility-readings/:id
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET() {
   try {
-    const { id } = params;
-    const reading = await prisma.utility_reading.findUnique({
-      where: { id },
+    const readings = await prisma.utility_reading.findMany({
       include: {
         lease_utility: {
           include: {
-            Lease: true,
-            utility: true
-          }
-        }
+            utility: true,
+            Lease: {
+              include: {
+                tenant: true,
+                unit: true,
+                property: true,
+              },
+            },
+          },
+        },
       },
+      orderBy: { createdAt: "desc" },
     });
 
-    if (!reading) {
-      return NextResponse.json({ success: false, error: "Utility reading not found" }, { status: 404 });
-    }
+    const formatted = readings.map((r) => ({
+      id: r.id,
+      reading_value: r.reading_value,
+      amount: r.amount,
+      readingDate: r.readingDate,
+      lease_utility: {
+        id: r.lease_utility.id,
+        utility: r.lease_utility.utility,
+        Lease: {
+          id: r.lease_utility.Lease?.id,
+          tenantName: r.lease_utility.Lease?.tenant
+            ? `${r.lease_utility.Lease.tenant.firstName ?? ""} ${r.lease_utility.Lease.tenant.lastName ?? ""}`.trim() || "Unknown Tenant"
+            : "Unknown Tenant",
+          unitNumber: r.lease_utility.Lease?.unit?.unitNumber || "N/A",
+          propertyName: r.lease_utility.Lease?.property?.name || "N/A",
+        },
+      },
+    }));
 
-    return NextResponse.json({ success: true, data: reading });
+    return NextResponse.json({ success: true, data: formatted });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ success: false, error: "Failed to fetch utility reading" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch utility readings" },
+      { status: 500 }
+    );
   }
 }
 
-// PUT /api/utility-readings/:id
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params;
-    const body = await req.json();
-    const { reading_value, readingDate, amount } = body;
 
-    const updated = await prisma.utility_reading.update({
-      where: { id },
+// POST /api/utility-readings -> Add new reading
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { lease_utility_id, reading_value, readingDate, amount } = body;
+
+    if (!lease_utility_id || reading_value === undefined) {
+      return NextResponse.json({ success: false, error: "lease_utility_id and reading_value are required" }, { status: 400 });
+    }
+
+    const newReading = await prisma.utility_reading.create({
       data: {
+        lease_utility_id,
         reading_value,
         readingDate: readingDate ? new Date(readingDate) : undefined,
         amount
       },
     });
 
-    return NextResponse.json({ success: true, data: updated });
-  } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-  }
-}
-
-// DELETE /api/utility-readings/:id
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  try {
-    const { id } = params;
-    await prisma.utility_reading.delete({ where: { id } });
-    return NextResponse.json({ success: true, message: "Utility reading deleted successfully" });
+    return NextResponse.json({ success: true, data: newReading });
   } catch (error: any) {
     console.error(error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
