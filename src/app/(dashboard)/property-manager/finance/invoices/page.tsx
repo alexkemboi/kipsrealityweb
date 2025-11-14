@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { fetchInvoices } from "@/lib/Invoice";
 import { Invoice } from "@/app/data/FinanceData";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -29,12 +31,53 @@ export default function InvoicesPage() {
     loadInvoices();
   }, [status, type]);
 
+  // --- PDF Download function ---
+  const downloadPDF = () => {
+    if (invoices.length === 0) {
+      toast.error("No invoices to download");
+      return;
+    }
+
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text("Invoice List", 14, 22);
+
+    const tableColumn = ["Invoice ID", "Tenant Name", "Type", "Amount ", "Due Date", "Status"];
+    const tableRows: any[] = [];
+
+    invoices.forEach((inv) => {
+      const tenantName = inv.Lease?.tenant
+        ? `${inv.Lease.tenant.firstName} ${inv.Lease.tenant.lastName}`
+        : "—";
+
+      tableRows.push([
+        inv.id,
+        tenantName,
+        inv.type,
+        inv.amount.toLocaleString(),
+        new Date(inv.dueDate).toLocaleDateString(),
+        inv.status,
+      ]);
+    });
+
+    autoTable(doc, {
+      startY: 30,
+      head: [tableColumn],
+      body: tableRows,
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [173, 216, 230] }, // light blue
+    });
+
+    doc.save(`Invoices_${new Date().toISOString()}.pdf`);
+  };
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-gray-800">📄 Invoices</h1>
 
-        {/* Filters */}
+        {/* Filters + Download Button */}
         <div className="flex flex-wrap gap-4 mb-6 items-center">
           <select
             value={status}
@@ -63,6 +106,13 @@ export default function InvoicesPage() {
           >
             Refresh
           </button>
+
+          <button
+            onClick={downloadPDF}
+            className="bg-green-600 text-white px-5 py-2 rounded-lg shadow hover:bg-green-700 transition"
+          >
+            Download PDF
+          </button>
         </div>
 
         {/* Table */}
@@ -71,9 +121,9 @@ export default function InvoicesPage() {
             <thead className="bg-blue-100 text-gray-700 uppercase text-xs font-semibold">
               <tr>
                 <th className="px-6 py-3 text-left">Invoice ID</th>
-                <th className="px-6 py-3 text-left">Lease ID</th>
+                <th className="px-6 py-3 text-left">Tenant Name</th>
                 <th className="px-6 py-3 text-left">Type</th>
-                <th className="px-6 py-3 text-left">Amount (KES)</th>
+                <th className="px-6 py-3 text-left">Amount </th>
                 <th className="px-6 py-3 text-left">Due Date</th>
                 <th className="px-6 py-3 text-left">Status</th>
               </tr>
@@ -81,10 +131,7 @@ export default function InvoicesPage() {
             <tbody className="divide-y divide-gray-200">
               {invoices.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="text-center py-10 text-gray-500 italic"
-                  >
+                  <td colSpan={6} className="text-center py-10 text-gray-500 italic">
                     No invoices found.
                   </td>
                 </tr>
@@ -92,22 +139,20 @@ export default function InvoicesPage() {
                 invoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    onClick={() =>
-                      router.push(`/property-manager/content/invoices/${inv.id}`)
-                    }
+                    onClick={() => router.push(`/property-manager/finance/invoices/${inv.id}`)}
                     className="cursor-pointer hover:bg-blue-50 transition-all duration-150"
                   >
-                    <td className="px-6 py-4 font-mono text-blue-600">
-                      {inv.id}
+                    <td className="px-6 py-4 font-mono text-blue-600">{inv.id}</td>
+                    <td className="px-6 py-4 font-medium text-gray-700">
+                      {inv.Lease?.tenant
+                        ? `${inv.Lease.tenant.firstName} ${inv.Lease.tenant.lastName}`
+                        : "—"}
                     </td>
-                    <td className="px-6 py-4">{inv.lease_id}</td>
                     <td className="px-6 py-4">{inv.type}</td>
                     <td className="px-6 py-4 font-semibold text-gray-800">
                       {inv.amount.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4">
-                      {new Date(inv.dueDate).toLocaleDateString()}
-                    </td>
+                    <td className="px-6 py-4">{new Date(inv.dueDate).toLocaleDateString()}</td>
                     <td
                       className={`px-6 py-4 font-bold ${
                         inv.status === "PAID"

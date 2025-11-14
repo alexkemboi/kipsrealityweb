@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import FullInvoiceButton from "@/components/Dashboard/propertymanagerdash/invoice/CreateInvoice";
 import ManualInvoiceForm from "@/components/Dashboard/propertymanagerdash/invoice/ManualInvoice";
+import UtilityInvoice from "@/components/Dashboard/propertymanagerdash/invoice/UtilityInvoice";
+import ManualUtilityInvoice from "@/components/Dashboard/propertymanagerdash/invoice/ManualUtility";
 
 
 interface Lease {
@@ -310,6 +312,23 @@ export default function LeaseViewPage() {
 
           </div>
         </div>
+
+
+         {/* Utility Invoice Section */}
+              <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            🏢 Full Utility Invoice
+          </h2>
+  <div className="flex flex-col items-center text-center space-y-4">
+            <div>
+              <p className="text-lg text-gray-500 mb-4">Generate the full invoice for this lease.</p>
+            </div>
+               <UtilityInvoice leaseId={lease.id} />
+
+          </div>
+        </div>
+
+        
 
      {/* Manual Invoice Section */}
     <div className="bg-white rounded-xl shadow p-6">
