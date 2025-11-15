@@ -188,4 +188,32 @@ export async function generateManualUtilityInvoiceData(leaseId: string) {
   }
 }
 
- 
+ // src/lib/tenant.ts
+export async function fetchTenantsWithFinancials() {
+  const res = await fetch("/api/tenants", { cache: "no-store" });
+  const json = await res.json();
+  if (!res.ok || !json.success) {
+    throw new Error(json?.error || "Failed to fetch tenants");
+  }
+  return json.data;
+}
+
+export async function fetchInvoicesForTenant(tenantId: string) {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/tenants/${tenantId}/invoices`,
+      { cache: "no-store" }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok || !json.success) {
+      throw new Error(json?.error || "Failed to fetch tenant invoices");
+    }
+
+    return json.data;
+  } catch (error: any) {
+    console.error("fetchInvoicesForTenant ERROR:", error);
+    throw new Error(error?.message || "Unexpected error fetching invoices");
+  }
+}
