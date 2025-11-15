@@ -1,46 +1,55 @@
 // src/app/api/invoices/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const status = url.searchParams.get("status");
+    const rawStatus = url.searchParams.get("status"); // "PENDING,OVERDUE"
     const type = url.searchParams.get("type");
 
-    console.log("Filters received:", { status, type });
+    console.log("Filters received:", { rawStatus, type });
 
     const filters: any = {};
-    if (status) filters.status = status;
+
+    // ✅ FIX: Support multiple statuses
+    if (rawStatus) {
+      const statuses = rawStatus.split(",").map(s => s.trim());
+      filters.status = { in: statuses };
+    }
+
     if (type) filters.type = type;
 
     const invoices = await prisma.invoice.findMany({
-      where: filters,
+  where: filters,
+  include: {
+    Lease: {
       include: {
-        Lease: {
-          include: {
-            tenant: {
-              select: { id: true, firstName: true, lastName: true, email: true },
-            },
-            property: {
-              select: { id: true, name: true, address: true },
-            },
-          },
+        tenant: {
+          select: { id: true, firstName: true, lastName: true, email: true },
         },
+        property: {
+          select: { id: true, name: true, address: true, city: true },
+        },
+        unit: {
+          select: { id: true, unitNumber: true },
+        }
       },
-      orderBy: { createdAt: "desc" },
-    });
+    },
+  },
+  orderBy: { createdAt: "desc" },
+});
 
     console.log("Fetched invoices:", JSON.stringify(invoices, null, 2));
 
     return NextResponse.json(invoices);
   } catch (error) {
     console.error("Error fetching invoices:", error);
-    return NextResponse.json({ error: "Failed to fetch invoices" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch invoices" },
+      { status: 500 }
+    );
   }
 }
-
-
