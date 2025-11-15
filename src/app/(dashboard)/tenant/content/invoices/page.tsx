@@ -14,7 +14,6 @@ export default function TenantInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
-  const [payMethod, setPayMethod] = useState("CASH");
   const [reference, setReference] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -41,7 +40,11 @@ export default function TenantInvoices() {
       const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: invoice.amount, method: payMethod, reference }),
+        body: JSON.stringify({ 
+          amount: invoice.amount, 
+          method: "CREDIT_CARD", 
+          reference 
+        }),
       });
 
       const data = await res.json();
@@ -50,7 +53,6 @@ export default function TenantInvoices() {
         setShowPaymentModal(false);
         setPayingInvoice(null);
         setReference("");
-        setPayMethod("CASH");
         fetchInvoices();
       } else {
         toast.error(data.error || "Payment failed");
@@ -70,7 +72,6 @@ export default function TenantInvoices() {
     setShowPaymentModal(false);
     setPayingInvoice(null);
     setReference("");
-    setPayMethod("CASH");
   }
 
   async function viewReceipt(paymentId: string) {
@@ -154,26 +155,36 @@ export default function TenantInvoices() {
                         </div>
                       </div>
 
+                      {/* Info Banner */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <div className="flex gap-3">
+                          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="text-sm text-blue-800">
+                            <p className="font-semibold mb-1">Online Credit Card Payment</p>
+                            <p className="text-blue-700">You can pay the full invoice amount using your credit card. For cash payments or partial payments, please contact the property manager.</p>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Payment Form */}
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-2">Payment Method</label>
-                          <select 
-                            value={payMethod} 
-                            onChange={e => setPayMethod(e.target.value)} 
-                            className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                          >
-                            <option value="CASH">💵 Cash</option>
-                            <option value="BANK">🏦 Bank Transfer</option>
-                            <option value="CREDIT_CARD">💳 Credit Card</option>
-                          </select>
+                          <div className="w-full border border-slate-300 rounded-lg px-4 py-3 bg-slate-50 text-slate-900 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            <span className="font-medium">💳 Credit Card</span>
+                          </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">Reference Number (Optional)</label>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">Transaction Reference (Optional)</label>
                           <input 
                             type="text" 
-                            placeholder="e.g., Transaction ID or Receipt Number" 
+                            placeholder="e.g., Card Transaction ID" 
                             value={reference} 
                             onChange={e => setReference(e.target.value)} 
                             className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -198,7 +209,7 @@ export default function TenantInvoices() {
                   onClick={() => payingInvoice && payInvoice(payingInvoice)}
                   className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg"
                 >
-                  Confirm Payment
+                  Pay Full Amount
                 </Button>
               </div>
             </div>
@@ -261,7 +272,6 @@ export default function TenantInvoices() {
                   {invoices.map((inv) => {
                     const paidAmount = inv.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
                     const remaining = inv.amount - paidAmount;
-                    const isOverdue = inv.status === "OVERDUE";
 
                     return (
                       <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
