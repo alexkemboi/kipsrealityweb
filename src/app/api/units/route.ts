@@ -1,8 +1,8 @@
 // src/app/api/units/route.ts
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/Getcurrentuser"; 
 
-// Define a unit type
 type UnitPlaceholder = {
   id: string | null;
   unitNumber: string;
@@ -15,44 +15,27 @@ type UnitPlaceholder = {
 };
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const propertyId = searchParams.get("propertyId");
-  const organizationId = searchParams.get("organizationId");
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!organizationId) {
-    return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
-  }
+    const organizationId = user.organizationId;
+    const { searchParams } = new URL(req.url);
+    const propertyId = searchParams.get("propertyId");
 
-  // If propertyId is not provided, fetch all units for the organization
-  if (!propertyId) {
-    try {
+    // Fetch all units for the organization if no propertyId
+    if (!propertyId) {
       const units = await prisma.unit.findMany({
         where: {
-          property: {
-            organizationId
-          }
+          property: { organizationId },
         },
-        include: {
-          property: {
-            select: {
-              name: true,
-              address: true,
-              city: true
-            }
-          }
-        },
-        orderBy: {
-          unitNumber: 'asc'
-        }
+        include: { property: { select: { city: true } } },
+        orderBy: { unitNumber: "asc" },
       });
       return NextResponse.json(units);
-    } catch (error) {
-      console.error("Error fetching all units:", error);
-      return NextResponse.json({ error: "Failed to fetch units" }, { status: 500 });
     }
-  }
 
-  try {
+    // Fetch units for a specific property
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
       include: {
@@ -62,18 +45,15 @@ export async function GET(req: Request) {
       },
     });
 
-    if (!property) {
-      return NextResponse.json({ error: "Property not found" }, { status: 404 });
-    }
+    if (!property) return NextResponse.json({ error: "Property not found" }, { status: 404 });
 
     let allUnits: UnitPlaceholder[] = [];
 
     if (property.apartmentComplexDetail) {
-      // It's an apartment
       const totalUnits = property.apartmentComplexDetail.totalUnits ?? 0;
       const existingUnits = property.units || [];
       allUnits = Array.from({ length: totalUnits }, (_, i) => {
-        const expectedUnitNumber = (i + 1).toString(); // 1, 2, ...
+        const expectedUnitNumber = (i + 1).toString();
         const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
         return (
           existing || {
@@ -89,7 +69,6 @@ export async function GET(req: Request) {
         );
       });
     } else if (property.houseDetail) {
-      // It's a house → always 1 unit
       const existingUnit = property.units[0];
       allUnits = [
         existingUnit || {
@@ -111,3 +90,4 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Failed to fetch units" }, { status: 500 });
   }
 }
+

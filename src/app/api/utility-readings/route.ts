@@ -1,7 +1,7 @@
-// app/api/utility-readings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+// GET /api/utility-readings
 export async function GET() {
   try {
     const readings = await prisma.utility_reading.findMany({
@@ -51,16 +51,33 @@ export async function GET() {
   }
 }
 
-
 // POST /api/utility-readings -> Add new reading
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lease_utility_id, reading_value, readingDate, amount } = body;
+    const { lease_utility_id, reading_value, readingDate } = body;
 
     if (!lease_utility_id || reading_value === undefined) {
       return NextResponse.json({ success: false, error: "lease_utility_id and reading_value are required" }, { status: 400 });
     }
+
+    // Get previous reading for calculation
+    const lastReading = await prisma.utility_reading.findFirst({
+      where: { lease_utility_id },
+      orderBy: { readingDate: 'desc' },
+    });
+
+    const leaseUtility = await prisma.lease_utility.findUnique({
+      where: { id: lease_utility_id },
+      include: { utility: true }
+    });
+
+    if (!leaseUtility) {
+      return NextResponse.json({ success: false, error: "Lease utility not found" }, { status: 404 });
+    }
+
+    const consumption = lastReading ? reading_value - lastReading.reading_value : reading_value;
+    const amount = leaseUtility.utility.unitPrice ? consumption * leaseUtility.utility.unitPrice : 0;
 
     const newReading = await prisma.utility_reading.create({
       data: {

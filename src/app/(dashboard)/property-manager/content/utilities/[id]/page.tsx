@@ -1,17 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableHeader, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
-import { Toaster, toast } from "sonner";
-import { Loader2, Trash2, Edit2, Save, X, ArrowLeft, Plus, AlertCircle } from "lucide-react";
-import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Trash2, Edit2, Save, X, ArrowLeft, Plus, AlertCircle, Filter, Building2 } from "lucide-react";
 
 interface Lease {
   id: string;
@@ -27,7 +18,10 @@ interface Lease {
     unitNumber?: string;
     floor?: string;
   };
-  property?: { name: string };
+  property?: { 
+    id: string;
+    name: string;
+  };
   application?: { id: string };
 }
 
@@ -48,15 +42,26 @@ interface Utility {
   fixedAmount?: number;
 }
 
+interface Property {
+  id: string;
+  name: string;
+}
+
 export default function AssignUtilityPage() {
   const { id } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [utility, setUtility] = useState<Utility | null>(null);
   const [leases, setLeases] = useState<Lease[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [assigned, setAssigned] = useState<LeaseUtility[]>([]);
+  
+  const [selectedProperty, setSelectedProperty] = useState<string>(searchParams.get('property') || "all");
+  const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [selectedLease, setSelectedLease] = useState<string>("");
   const [responsibility, setResponsibility] = useState("true");
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -82,8 +87,6 @@ export default function AssignUtilityPage() {
 
       const utilRes = await fetch(`/api/utilities/${id}`);
       const utilData = await utilRes.json();
-      
-      console.log("Utility Response:", utilData);
 
       let utilityData = null;
       if (utilData?.success && utilData?.data) {
@@ -107,8 +110,6 @@ export default function AssignUtilityPage() {
 
       const leaseRes = await fetch("/api/lease");
       const leaseData = await leaseRes.json();
-      
-      console.log("Lease Response:", leaseData);
 
       if (leaseData?.success && leaseData?.data) {
         setLeases(leaseData.data);
@@ -116,10 +117,17 @@ export default function AssignUtilityPage() {
         setLeases(leaseData);
       }
 
+      const propRes = await fetch("/api/propertymanager");
+      const propData = await propRes.json();
+      
+      if (propData.success && propData.data) {
+        setProperties(propData.data);
+      } else if (Array.isArray(propData)) {
+        setProperties(propData);
+      }
+
       const leaseUtilRes = await fetch("/api/lease-utility");
       const leaseUtilData = await leaseUtilRes.json();
-      
-      console.log("Lease Utilities Response:", leaseUtilData);
 
       let assignedData = [];
       if (leaseUtilData?.success && leaseUtilData?.data) {
@@ -134,7 +142,6 @@ export default function AssignUtilityPage() {
     } catch (err) {
       console.error("Load data error:", err);
       setError("Failed to load data");
-      toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
     }
@@ -158,17 +165,17 @@ export default function AssignUtilityPage() {
 
   const handleSaveEdit = async () => {
     if (!editForm.name.trim()) {
-      toast.error("Please enter a utility name");
+      alert("Please enter a utility name");
       return;
     }
 
     if (editForm.type === "METERED" && (!editForm.unitPrice || parseFloat(editForm.unitPrice) <= 0)) {
-      toast.error("Please enter a valid unit price for metered utilities");
+      alert("Please enter a valid unit price for metered utilities");
       return;
     }
 
     if (editForm.type === "FIXED" && (!editForm.fixedAmount || parseFloat(editForm.fixedAmount) <= 0)) {
-      toast.error("Please enter a valid fixed amount");
+      alert("Please enter a valid fixed amount");
       return;
     }
 
@@ -189,16 +196,16 @@ export default function AssignUtilityPage() {
       const data = await res.json();
 
       if (data.success || res.ok) {
-        toast.success("Utility updated successfully!");
+        alert("Utility updated successfully!");
         const updatedUtility = data.data || data;
         setUtility(updatedUtility);
         setIsEditing(false);
       } else {
-        toast.error(data.error || "Failed to update utility");
+        alert(data.error || "Failed to update utility");
       }
     } catch (err) {
       console.error("Update error:", err);
-      toast.error("An error occurred while updating the utility");
+      alert("An error occurred while updating the utility");
     } finally {
       setIsSaving(false);
     }
@@ -206,13 +213,13 @@ export default function AssignUtilityPage() {
 
   const handleAssign = async () => {
     if (!selectedLease) {
-      toast.error("Please select a lease");
+      alert("Please select a lease");
       return;
     }
 
     const alreadyAssigned = assigned.some((a) => a.lease_id === selectedLease);
     if (alreadyAssigned) {
-      toast.error("This utility is already assigned to the selected lease");
+      alert("This utility is already assigned to the selected lease");
       return;
     }
 
@@ -232,17 +239,17 @@ export default function AssignUtilityPage() {
       const data = await res.json();
       
       if (data.success || res.ok) {
-        toast.success("Utility assigned successfully!");
+        alert("Utility assigned successfully!");
         const newAssignment = data.data || data;
         setAssigned((prev) => [...prev, newAssignment]);
         setSelectedLease("");
         setResponsibility("true");
       } else {
-        toast.error(data.error || "Failed to assign utility");
+        alert(data.error || "Failed to assign utility");
       }
     } catch (err) {
       console.error("Assign error:", err);
-      toast.error("An error occurred while assigning");
+      alert("An error occurred while assigning");
     } finally {
       setIsAssigning(false);
     }
@@ -263,14 +270,14 @@ export default function AssignUtilityPage() {
       const data = await res.json();
       
       if (data.success || res.ok) {
-        toast.success("Assignment removed successfully");
+        alert("Assignment removed successfully");
         setAssigned((prev) => prev.filter((a) => a.id !== assignmentId));
       } else {
-        toast.error(data.error || "Failed to unassign");
+        alert(data.error || "Failed to unassign");
       }
     } catch (err) {
       console.error("Unassign error:", err);
-      toast.error("Error while unassigning");
+      alert("Error while unassigning");
     } finally {
       setDeletingId(null);
     }
@@ -284,7 +291,37 @@ export default function AssignUtilityPage() {
     }).format(amount);
   };
 
-  const availableLeases = leases.filter((l) => !assigned.some((a) => a.lease_id === l.id));
+  // Filter leases by property and unit
+  const filteredLeases = leases.filter((l) => {
+    const propertyMatch = selectedProperty === "all" || l.property?.id === selectedProperty;
+    const unitMatch = selectedUnit === "all" || l.unit?.unitNumber === selectedUnit || l.unit?.number === selectedUnit;
+    return propertyMatch && unitMatch;
+  });
+
+  const availableLeases = filteredLeases.filter((l) => !assigned.some((a) => a.lease_id === l.id));
+
+  // Get unique units for the selected property
+  const availableUnits = Array.from(
+    new Set(
+      filteredLeases
+        .filter(l => selectedProperty === "all" || l.property?.id === selectedProperty)
+        .map(l => l.unit?.unitNumber || l.unit?.number)
+        .filter(Boolean)
+    )
+  );
+
+  // Group assigned leases by property
+  const assignedByProperty = assigned.reduce((acc, a) => {
+    const lease = leases.find((l) => l.id === a.lease_id);
+    const propertyId = a.Lease?.property?.id || lease?.property?.id || "unknown";
+    const propertyName = a.Lease?.property?.name || lease?.property?.name || "Unknown Property";
+    
+    if (!acc[propertyId]) {
+      acc[propertyId] = { name: propertyName, assignments: [] };
+    }
+    acc[propertyId].assignments.push({ ...a, lease });
+    return acc;
+  }, {} as Record<string, { name: string; assignments: Array<LeaseUtility & { lease?: Lease }> }>);
 
   if (isLoading) {
     return (
@@ -298,43 +335,42 @@ export default function AssignUtilityPage() {
   if (error || !utility) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
-        <Card className="max-w-2xl mx-auto border-slate-200 shadow-xl rounded-2xl">
-          <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="max-w-2xl mx-auto border border-slate-200 shadow-xl rounded-2xl bg-white">
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
               <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
             <p className="text-[#15386a]/70">{error || "Utility not found"}</p>
-            <Link href="/property-manager/content/utilities">
-              <Button variant="outline" className="border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
-                <ArrowLeft className="w-4 h-4 mr-2" />
+            <a href="/property-manager/content/utilities">
+              <button className="px-4 py-2 border border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
                 Back to Utilities
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+              </button>
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
-      <Toaster position="top-right" richColors />
-
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Back Button */}
         <div className="flex items-center gap-4">
-          <Link href="/property-manager/content/utilities">
-            <Button variant="ghost" size="sm" className="text-[#15386a] hover:text-[#0b1f3a] hover:bg-[#30D5C8]/5">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Utilities
-            </Button>
-          </Link>
+          <a href="/property-manager/content/utilities">
+            <button className="px-3 py-2 text-[#15386a] hover:text-[#0b1f3a] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" /> Back to Utilities
+            </button>
+          </a>
         </div>
 
-        {/* Utility Info */}
-        <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
+        {/* Utility Info Card */}
+        <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
+          <div className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <CardTitle className="text-2xl">{utility.name}</CardTitle>
+                <h2 className="text-2xl font-bold">{utility.name}</h2>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
                   utility.type === "FIXED" ? "bg-white/20 text-white" : "bg-[#30D5C8] text-[#0b1f3a]"
                 }`}>
@@ -342,58 +378,51 @@ export default function AssignUtilityPage() {
                 </span>
               </div>
               {!isEditing && (
-                <Button variant="outline" size="sm" onClick={handleEdit} className="bg-white/10 hover:bg-white/20 text-white border-white/30">
-                  <Edit2 className="w-4 h-4 mr-2" />
+                <button onClick={handleEdit} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg flex items-center gap-2">
+                  <Edit2 className="w-4 h-4" />
                   Edit
-                </Button>
+                </button>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="p-6 space-y-6">
+          </div>
+          
+          <div className="p-6 space-y-6">
             {isEditing ? (
               <div className="space-y-4 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 p-6 rounded-xl border-2 border-[#30D5C8]/20">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-name" className="text-[#0b1f3a] font-semibold">
+                  <label className="text-[#0b1f3a] font-semibold block">
                     Utility Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="edit-name"
+                  </label>
+                  <input
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                     placeholder="e.g., Electricity, Water, Gas"
                     disabled={isSaving}
-                    className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                    className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-type" className="text-[#0b1f3a] font-semibold">
+                  <label className="text-[#0b1f3a] font-semibold block">
                     Billing Type <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
+                  </label>
+                  <select
                     value={editForm.type}
-                    onValueChange={(v: "FIXED" | "METERED") => 
-                      setEditForm({ ...editForm, type: v, unitPrice: "", fixedAmount: "" })
-                    }
+                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "FIXED" | "METERED", unitPrice: "", fixedAmount: "" })}
                     disabled={isSaving}
+                    className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
                   >
-                    <SelectTrigger id="edit-type" className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FIXED">Fixed Amount</SelectItem>
-                      <SelectItem value="METERED">Metered</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <option value="FIXED">Fixed Amount</option>
+                    <option value="METERED">Metered</option>
+                  </select>
                 </div>
 
                 {editForm.type === "METERED" && (
                   <div className="space-y-2">
-                    <Label htmlFor="edit-unitPrice" className="text-[#0b1f3a] font-semibold">
+                    <label className="text-[#0b1f3a] font-semibold block">
                       Unit Price <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="edit-unitPrice"
+                    </label>
+                    <input
                       type="number"
                       step="0.01"
                       min="0"
@@ -401,18 +430,17 @@ export default function AssignUtilityPage() {
                       onChange={(e) => setEditForm({ ...editForm, unitPrice: e.target.value })}
                       placeholder="e.g., 12.50"
                       disabled={isSaving}
-                      className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
                     />
                   </div>
                 )}
 
                 {editForm.type === "FIXED" && (
                   <div className="space-y-2">
-                    <Label htmlFor="edit-fixedAmount" className="text-[#0b1f3a] font-semibold">
+                    <label className="text-[#0b1f3a] font-semibold block">
                       Fixed Amount <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="edit-fixedAmount"
+                    </label>
+                    <input
                       type="number"
                       step="0.01"
                       min="0"
@@ -420,29 +448,29 @@ export default function AssignUtilityPage() {
                       onChange={(e) => setEditForm({ ...editForm, fixedAmount: e.target.value })}
                       placeholder="e.g., 50.00"
                       disabled={isSaving}
-                      className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]"
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
                     />
                   </div>
                 )}
 
                 <div className="flex gap-3 pt-2">
-                  <Button onClick={handleSaveEdit} disabled={isSaving} className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20">
+                  <button onClick={handleSaveEdit} disabled={isSaving} className="px-4 py-2 bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white rounded-lg shadow-lg flex items-center gap-2 disabled:opacity-50">
                     {isSaving ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="w-4 h-4 mr-2" />
+                        <Save className="w-4 h-4" />
                         Save Changes
                       </>
                     )}
-                  </Button>
-                  <Button variant="outline" onClick={handleCancelEdit} disabled={isSaving} className="border-2 border-slate-300 text-[#0b1f3a] hover:bg-slate-50">
-                    <X className="w-4 h-4 mr-2" />
+                  </button>
+                  <button onClick={handleCancelEdit} disabled={isSaving} className="px-4 py-2 border-2 border-slate-300 text-[#0b1f3a] hover:bg-slate-50 rounded-lg flex items-center gap-2 disabled:opacity-50">
+                    <X className="w-4 h-4" />
                     Cancel
-                  </Button>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -461,100 +489,161 @@ export default function AssignUtilityPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Assign Utility */}
+        {/* Filters & Assign Utility Card */}
         {!isEditing && (
-          <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-[#30D5C8] to-[#30D5C8]/80 text-white">
-              <CardTitle className="flex items-center text-xl">
+          <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
+            <div className="bg-gradient-to-r from-[#30D5C8] to-[#30D5C8]/80 text-white p-6">
+              <h3 className="text-xl font-bold flex items-center">
                 <Plus className="w-5 h-5 mr-2" />
                 Assign Utility to Lease
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+              </h3>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Filters */}
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="w-5 h-5 text-[#15386a]" />
+                  <span className="font-semibold text-[#0b1f3a]">Filter Leases</span>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[#0b1f3a] font-semibold block mb-2">Property</label>
+                    <select
+                      value={selectedProperty}
+                      onChange={(e) => {
+                        setSelectedProperty(e.target.value);
+                        setSelectedUnit("all");
+                        setSelectedLease("");
+                      }}
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
+                    >
+                      <option value="all">All Properties</option>
+                      {properties.map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[#0b1f3a] font-semibold block mb-2">Unit</label>
+                    <select
+                      value={selectedUnit}
+                      onChange={(e) => {
+                        setSelectedUnit(e.target.value);
+                        setSelectedLease("");
+                      }}
+                      disabled={selectedProperty === "all"}
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="all">All Units</option>
+                      {availableUnits.map((unit) => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {(selectedProperty !== "all" || selectedUnit !== "all") && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedProperty("all");
+                        setSelectedUnit("all");
+                        setSelectedLease("");
+                      }}
+                      className="px-3 py-1 text-sm text-[#15386a] border border-[#15386a]/30 hover:bg-[#15386a]/5 rounded-lg"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Assignment Form */}
               {availableLeases.length === 0 ? (
                 <div className="text-center py-8 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 rounded-xl space-y-3">
                   <p className="text-[#15386a]/70">
                     {leases.length === 0
                       ? "No leases available. Create a lease first."
-                      : "All leases already have this utility assigned."}
+                      : filteredLeases.length === 0
+                      ? "No leases match the selected filters."
+                      : "All filtered leases already have this utility assigned."}
                   </p>
                   {leases.length === 0 && (
-                    <Link href="/property-manager/content/lease/new">
-                      <Button variant="outline" size="sm" className="border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5">
-                        <Plus className="w-4 h-4 mr-2" />
+                    <a href="/property-manager/content/lease/new">
+                      <button className="px-4 py-2 border border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2 mx-auto">
+                        <Plus className="w-4 h-4" />
                         Create Lease
-                      </Button>
-                    </Link>
+                      </button>
+                    </a>
                   )}
                 </div>
               ) : (
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="lease-select" className="text-[#0b1f3a] font-semibold">Select Lease</Label>
-                    <Select value={selectedLease} onValueChange={setSelectedLease} disabled={isAssigning}>
-                      <SelectTrigger id="lease-select" className="mt-2 border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
-                        <SelectValue placeholder="Choose a lease" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableLeases.map((l) => (
-                          <SelectItem key={l.id} value={l.id}>
-                            <div className="flex flex-col items-start">
-                              <span className="font-medium">
-                                Unit: {l.unit?.unitNumber ?? l.unit?.number ?? "N/A"}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Tenant: {l.tenant?.firstName ?? l.tenant?.name ?? "Unknown"} {l.tenant?.lastName ?? ""}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Rent: {formatCurrency(l.rentAmount)}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-[#0b1f3a] font-semibold block mb-2">Select Lease</label>
+                    <select
+                      value={selectedLease}
+                      onChange={(e) => setSelectedLease(e.target.value)}
+                      disabled={isAssigning}
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
+                    >
+                      <option value="">Choose a lease</option>
+                      {availableLeases.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.property?.name || "Unknown"} - Unit {l.unit?.unitNumber ?? l.unit?.number ?? "N/A"} - {l.tenant?.firstName ?? l.tenant?.name ?? "Unknown"}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
-                    <Label htmlFor="responsibility-select" className="text-[#0b1f3a] font-semibold">Who Pays?</Label>
-                    <Select value={responsibility} onValueChange={setResponsibility} disabled={isAssigning}>
-                      <SelectTrigger id="responsibility-select" className="mt-2 border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Tenant</SelectItem>
-                        <SelectItem value="false">Landlord</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <label className="text-[#0b1f3a] font-semibold block mb-2">Who Pays?</label>
+                    <select
+                      value={responsibility}
+                      onChange={(e) => setResponsibility(e.target.value)}
+                      disabled={isAssigning}
+                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
+                    >
+                      <option value="true">Tenant</option>
+                      <option value="false">Landlord</option>
+                    </select>
                   </div>
 
                   <div className="flex items-end">
-                    <Button onClick={handleAssign} className="w-full bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20" disabled={isAssigning}>
+                    <button
+                      onClick={handleAssign}
+                      disabled={isAssigning}
+                      className="w-full px-4 py-2 bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white rounded-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
                       {isAssigning ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Assigning...
+                          <Loader2 className="w-4 h-4 animate-spin" /> Assigning...
                         </>
                       ) : (
                         "Assign Utility"
                       )}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
-        {/* Assigned Leases */}
+        {/* Assigned Leases - Grouped by Property */}
         {!isEditing && (
-          <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
-              <CardTitle className="text-xl">Assigned Leases ({assigned.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+          <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
+            <div className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white p-6">
+              <h3 className="text-xl font-bold">Assigned Leases ({assigned.length})</h3>
+            </div>
+            
+            <div className="p-6">
               {assigned.length === 0 ? (
                 <div className="text-center py-12 space-y-4">
                   <div className="w-16 h-16 mx-auto bg-[#30D5C8]/10 rounded-full flex items-center justify-center">
@@ -566,76 +655,89 @@ export default function AssignUtilityPage() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-b-2 border-[#0b1f3a]/10 hover:bg-transparent">
-                        <TableHead className="text-[#0b1f3a] font-semibold">Unit</TableHead>
-                        <TableHead className="text-[#0b1f3a] font-semibold">Tenant</TableHead>
-                        <TableHead className="text-[#0b1f3a] font-semibold">Rent Amount</TableHead>
-                        <TableHead className="text-[#0b1f3a] font-semibold">Responsibility</TableHead>
-                        <TableHead className="text-right text-[#0b1f3a] font-semibold">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assigned.map((a) => {
-                        const lease = leases.find((l) => l.id === a.lease_id);
-                        return (
-                          <TableRow key={a.id} className="border-b border-slate-100 hover:bg-[#30D5C8]/5 transition-colors">
-                            <TableCell className="text-[#0b1f3a]">
-                              {a.Lease?.unit?.unitNumber ?? a.Lease?.unit?.number ?? lease?.unit?.unitNumber ?? lease?.unit?.number ?? "N/A"}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="text-[#0b1f3a]">
-                                  {a.Lease?.tenant?.firstName ?? a.Lease?.tenant?.name ?? lease?.tenant?.firstName ?? lease?.tenant?.name ?? "Unknown"}
-                                  {" "}
-                                  {a.Lease?.tenant?.lastName ?? lease?.tenant?.lastName ?? ""}
-                                </span>
-                                {(a.Lease?.tenant?.email || lease?.tenant?.email) && (
-                                  <span className="text-xs text-[#15386a]/70">
-                                    {a.Lease?.tenant?.email ?? lease?.tenant?.email}
+                <div className="space-y-6">
+                  {Object.entries(assignedByProperty).map(([propertyId, { name: propertyName, assignments }]) => (
+                    <div key={propertyId} className="border border-slate-200 rounded-xl overflow-hidden">
+                      <div className="bg-gradient-to-r from-[#15386a]/10 to-[#15386a]/5 px-4 py-3 border-b border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-5 h-5 text-[#15386a]" />
+                          <h4 className="font-bold text-[#0b1f3a]">{propertyName}</h4>
+                          <span className="ml-auto text-sm text-[#15386a]/70">
+                            {assignments.length} {assignments.length === 1 ? 'lease' : 'leases'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-slate-100 bg-slate-50">
+                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Unit</th>
+                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Tenant</th>
+                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Rent Amount</th>
+                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Responsibility</th>
+                              <th className="text-right p-3 text-[#0b1f3a] font-semibold text-sm">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {assignments.map((a) => (
+                              <tr key={a.id} className="border-b border-slate-100 hover:bg-[#30D5C8]/5 transition-colors">
+                                <td className="p-3 text-[#0b1f3a]">
+                                  {a.Lease?.unit?.unitNumber ?? a.Lease?.unit?.number ?? a.lease?.unit?.unitNumber ?? a.lease?.unit?.number ?? "N/A"}
+                                </td>
+                                <td className="p-3">
+                                  <div className="flex flex-col">
+                                    <span className="text-[#0b1f3a]">
+                                      {a.Lease?.tenant?.firstName ?? a.Lease?.tenant?.name ?? a.lease?.tenant?.firstName ?? a.lease?.tenant?.name ?? "Unknown"}
+                                      {" "}
+                                      {a.Lease?.tenant?.lastName ?? a.lease?.tenant?.lastName ?? ""}
+                                    </span>
+                                    {(a.Lease?.tenant?.email || a.lease?.tenant?.email) && (
+                                      <span className="text-xs text-[#15386a]/70">
+                                        {a.Lease?.tenant?.email ?? a.lease?.tenant?.email}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3 text-[#15386a]">
+                                  {formatCurrency(a.Lease?.rentAmount ?? a.lease?.rentAmount)}
+                                </td>
+                                <td className="p-3">
+                                  <span
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                      a.is_tenant_responsible 
+                                        ? "bg-[#30D5C8]/10 text-[#30D5C8]" 
+                                        : "bg-orange-100 text-orange-800"
+                                    }`}
+                                  >
+                                    {a.is_tenant_responsible ? "Tenant" : "Landlord"}
                                   </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-[#15386a]">{formatCurrency(a.Lease?.rentAmount ?? lease?.rentAmount)}</TableCell>
-                            <TableCell>
-                              <span
-                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                  a.is_tenant_responsible 
-                                    ? "bg-[#30D5C8]/10 text-[#30D5C8]" 
-                                    : "bg-orange-100 text-orange-800"
-                                }`}
-                              >
-                                {a.is_tenant_responsible ? "Tenant" : "Landlord"}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleUnassign(a.id)}
-                                disabled={deletingId === a.id}
-                                title="Remove Assignment"
-                                className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
-                              >
-                                {deletingId === a.id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                                </td>
+                                <td className="p-3 text-right">
+                                  <button
+                                    onClick={() => handleUnassign(a.id)}
+                                    disabled={deletingId === a.id}
+                                    title="Remove Assignment"
+                                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg disabled:opacity-50"
+                                  >
+                                    {deletingId === a.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>
