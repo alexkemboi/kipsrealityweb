@@ -23,24 +23,25 @@ export async function GET(req: Request) {
     if (type) filters.type = type;
 
     const invoices = await prisma.invoice.findMany({
-  where: filters,
-  include: {
-    Lease: {
+      where: filters,
       include: {
-        tenant: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+        payment: true, // ✅ ADD THIS - Include payment data for balance calculation
+        Lease: {
+          include: {
+            tenant: {
+              select: { id: true, firstName: true, lastName: true, email: true },
+            },
+            property: {
+              select: { id: true, name: true, address: true, city: true },
+            },
+            unit: {
+              select: { id: true, unitNumber: true, unitName: true }, // Added unitName
+            }
+          },
         },
-        property: {
-          select: { id: true, name: true, address: true, city: true },
-        },
-        unit: {
-          select: { id: true, unitNumber: true },
-        }
       },
-    },
-  },
-  orderBy: { createdAt: "desc" },
-});
+      orderBy: { createdAt: "desc" },
+    });
 
     console.log("Fetched invoices:", JSON.stringify(invoices, null, 2));
 

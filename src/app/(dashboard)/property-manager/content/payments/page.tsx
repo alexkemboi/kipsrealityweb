@@ -79,10 +79,16 @@ export default function PaymentsPage() {
   // Recording payment modal
   const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
   const [pendingInvoices, setPendingInvoices] = useState<Invoice[]>([]);
+  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<string>("");
   const [paymentAmount, setPaymentAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CREDIT_CARD">("CASH");
   const [paymentReference, setPaymentReference] = useState("");
+  
+  // Modal filters
+  const [modalPropertyFilter, setModalPropertyFilter] = useState<string>("");
+  const [modalUnitFilter, setModalUnitFilter] = useState<string>("");
+  const [modalUnits, setModalUnits] = useState<Unit[]>([]);
 
   useEffect(() => {
     fetchPayments();
@@ -141,13 +147,51 @@ export default function PaymentsPage() {
 
   async function fetchPendingInvoices() {
     try {
-      const res = await fetch("/api/invoices?status=PENDING");
+      const res = await fetch("/api/invoices?status=PENDING,OVERDUE");
       if (!res.ok) throw new Error("Failed to fetch invoices");
       const data: Invoice[] = await res.json();
       setPendingInvoices(data);
+      setFilteredInvoices(data);
     } catch (error) {
       console.error(error);
       toast.error("Failed to load pending invoices");
+    }
+  }
+
+  // Filter invoices when modal filters change
+  useEffect(() => {
+    let filtered = pendingInvoices;
+    
+    if (modalPropertyFilter) {
+      filtered = filtered.filter(inv => inv.Lease.property.id === modalPropertyFilter);
+    }
+    
+    if (modalUnitFilter) {
+      filtered = filtered.filter(inv => inv.Lease.unit.unitNumber === modalUnitFilter);
+    }
+    
+    setFilteredInvoices(filtered);
+  }, [modalPropertyFilter, modalUnitFilter, pendingInvoices]);
+
+  // Fetch units for modal property filter
+  useEffect(() => {
+    if (modalPropertyFilter) {
+      fetchUnitsForModal(modalPropertyFilter);
+    } else {
+      setModalUnits([]);
+      setModalUnitFilter("");
+    }
+  }, [modalPropertyFilter]);
+
+  async function fetchUnitsForModal(propertyId: string) {
+    try {
+      const res = await fetch(`/api/units?propertyId=${propertyId}`);
+      if (!res.ok) throw new Error("Failed to fetch units");
+      const data: Unit[] = await res.json();
+      setModalUnits(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load units");
     }
   }
 
@@ -162,70 +206,64 @@ export default function PaymentsPage() {
     setPaymentAmount("");
     setPaymentMethod("CASH");
     setPaymentReference("");
+    setModalPropertyFilter("");
+    setModalUnitFilter("");
+    setModalUnits([]);
   }
 
- async function recordPayment() {
-  if (!selectedInvoice) {
-    return toast.error("Please select an invoice");
-  }
+  async function recordPayment() {
+    if (!selectedInvoice) return toast.error("Please select an invoice");
+    
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) return toast.error("Please enter a valid amount");
 
-  const amount = parseFloat(paymentAmount);
-  if (isNaN(amount) || amount <= 0) {
-    return toast.error("Please enter a valid amount");
-  }
+    // Recalculate with the current state to ensure accuracy
+    const invoice = filteredInvoices.find(inv => inv.id === selectedInvoice) || 
+                    pendingInvoices.find(inv => inv.id === selectedInvoice);
+    if (!invoice) return toast.error("Invoice not found");
 
-  const invoice = pendingInvoices.find(inv => inv.id === selectedInvoice);
-  if (!invoice) {
-    return toast.error("Invoice not found");
-  }
+    const paidAmount = invoice.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const remaining = invoice.amount - paidAmount;
 
-  const paidAmount = invoice.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
-  const remaining = invoice.amount - paidAmount;
-
-  // Validate partial payments
-  if (paymentMethod === "CREDIT_CARD" && amount !== remaining) {
-    return toast.error(
-      `Credit card payments must be for the full remaining balance of KES ${remaining.toFixed(2)}`
-    );
-  }
-
-  if (paymentMethod === "CASH" && amount > remaining) {
-    return toast.error(
-      `Cash payment cannot exceed remaining balance of KES ${remaining.toFixed(2)}`
-    );
-  }
-
-  const VALID_PAYMENT_METHODS = ["CASH", "BANK", "CREDIT_CARD"];
-  if (!paymentMethod || !VALID_PAYMENT_METHODS.includes(paymentMethod)) {
-    return toast.error("Please select a valid payment method");
-  }
-
-  try {
-    const res = await fetch(`/api/invoices/${selectedInvoice}/payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount,
-        method: paymentMethod,
-        reference: paymentReference || undefined,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return toast.error(data.error || "Failed to record payment");
+    // Validate partial payments
+    if (paymentMethod === "CREDIT_CARD" && Math.abs(amount - remaining) > 0.01) {
+      return toast.error(`Credit card payments must be for the full remaining balance of KES ${remaining.toFixed(2)}`);
     }
 
-    toast.success("Payment recorded successfully");
-    closeRecordPaymentModal();
-    fetchPayments();
-  } catch (err) {
-    console.error("Payment error:", err);
-    toast.error("Failed to record payment due to network or server error");
-  }
-}
+    if (paymentMethod === "CASH" && amount > remaining) {
+      return toast.error(`Payment amount cannot exceed remaining balance of KES ${remaining.toFixed(2)}`);
+    }
 
+    try {
+      const res = await fetch(`/api/invoices/${selectedInvoice}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount,
+          method: paymentMethod,
+          reference: paymentReference || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const isPaidInFull = data.status === "PAID";
+        if (isPaidInFull) {
+          toast.success(`Payment recorded successfully! Invoice is now fully paid.`);
+        } else {
+          toast.success(`Partial payment of KES ${amount.toFixed(2)} recorded. Remaining: KES ${data.remaining.toFixed(2)}`);
+        }
+        closeRecordPaymentModal();
+        await fetchPayments(); // Refresh payments
+        await fetchPendingInvoices(); // Refresh pending invoices
+      } else {
+        toast.error(data.error || "Failed to record payment");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to record payment");
+    }
+  }
 
   async function generateReceipt(paymentId: string) {
     setGeneratingReceipt(paymentId);
@@ -336,7 +374,7 @@ export default function PaymentsPage() {
   };
 
   // Calculate remaining balance for selected invoice
-  const selectedInvoiceData = pendingInvoices.find(inv => inv.id === selectedInvoice);
+  const selectedInvoiceData = filteredInvoices.find(inv => inv.id === selectedInvoice);
   const paidSoFar = selectedInvoiceData?.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
   const remainingBalance = selectedInvoiceData ? selectedInvoiceData.amount - paidSoFar : 0;
 
@@ -380,6 +418,63 @@ export default function PaymentsPage() {
 
               <div className="px-6 py-6">
                 <div className="space-y-5">
+                  {/* Filter Section */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                      </svg>
+                      Filter Invoices
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-blue-900 mb-1.5">Property</label>
+                        <select
+                          value={modalPropertyFilter}
+                          onChange={(e) => setModalPropertyFilter(e.target.value)}
+                          className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        >
+                          <option value="">All Properties</option>
+                          {properties.map((p) => (
+                            <option key={p.id} value={p.id}>{p.city} - {p.address}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-blue-900 mb-1.5">Unit</label>
+                        <select
+                          value={modalUnitFilter}
+                          onChange={(e) => setModalUnitFilter(e.target.value)}
+                          disabled={!modalPropertyFilter}
+                          className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white disabled:bg-blue-100 disabled:cursor-not-allowed"
+                        >
+                          <option value="">All Units</option>
+                          {modalUnits.map((u) => (
+                            <option key={u.id} value={u.unitNumber}>
+                              {u.unitNumber} {u.unitName ? `- ${u.unitName}` : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    {(modalPropertyFilter || modalUnitFilter) && (
+                      <div className="mt-3 flex items-center justify-between text-xs">
+                        <span className="text-blue-700">
+                          Showing {filteredInvoices.length} of {pendingInvoices.length} invoices
+                        </span>
+                        <button
+                          onClick={() => {
+                            setModalPropertyFilter("");
+                            setModalUnitFilter("");
+                          }}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Clear filters
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Select Invoice */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Select Invoice *</label>
@@ -392,16 +487,21 @@ export default function PaymentsPage() {
                       className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     >
                       <option value="">Choose an invoice...</option>
-                      {pendingInvoices.map((inv) => {
+                      {filteredInvoices.map((inv) => {
                         const paid = inv.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
                         const remaining = inv.amount - paid;
                         return (
                           <option key={inv.id} value={inv.id}>
-                            #{inv.id.slice(0, 8)} - {inv.type} - {inv.Lease.property.city} Unit {inv.Lease.unit.unitNumber} - KES {remaining.toFixed(2)} remaining
+                            #{inv.id.slice(0, 8)} - {inv.type} - {inv.Lease.property.city} Unit {inv.Lease.unit.unitNumber} - Tenant: {inv.Lease.tenant.firstName} {inv.Lease.tenant.lastName} - KES {remaining.toFixed(2)} remaining
                           </option>
                         );
                       })}
                     </select>
+                    {filteredInvoices.length === 0 && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        No pending invoices found with current filters. Try adjusting your filters.
+                      </p>
+                    )}
                   </div>
 
                   {/* Show invoice details when selected */}

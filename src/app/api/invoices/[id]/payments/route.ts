@@ -37,7 +37,7 @@ export async function POST(
     const remaining = invoice.amount - paidAmount;
 
     // Validate payment doesn't exceed remaining balance
-    if (amount > remaining) {
+    if (amount > remaining + 0.01) { // Add small tolerance for floating point
       return NextResponse.json(
         { error: `Payment amount (${amount}) exceeds remaining balance (${remaining})` },
         { status: 400 }
@@ -56,20 +56,30 @@ export async function POST(
 
     // Calculate new total paid
     const newTotalPaid = paidAmount + amount;
-    const isPaidInFull = newTotalPaid >= invoice.amount;
+    const isPaidInFull = newTotalPaid >= invoice.amount - 0.01; // Small tolerance for floating point
 
-    // Update invoice status if fully paid
+    // Update invoice status based on payment
+    let newStatus = invoice.status;
     if (isPaidInFull) {
-      await prisma.invoice.update({
-        where: { id: invoiceId },
-        data: { status: "PAID" },
-      });
+      newStatus = "PAID";
+    } else if (invoice.status === "OVERDUE" || invoice.status === "PENDING") {
+      // Keep as PENDING or OVERDUE if partially paid
+      // Check if overdue
+      const now = new Date();
+      const dueDate = new Date(invoice.dueDate);
+      newStatus = now > dueDate ? "OVERDUE" : "PENDING";
     }
+
+    // Update invoice status
+    await prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: newStatus },
+    });
 
     return NextResponse.json({
       success: true,
       payment,
-      status: isPaidInFull ? "PAID" : "PENDING",
+      status: newStatus,
       totalPaid: newTotalPaid,
       remaining: invoice.amount - newTotalPaid,
     });
