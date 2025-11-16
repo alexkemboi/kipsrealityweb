@@ -33,35 +33,40 @@ export default function TenantInvoices() {
   }
 
   async function payInvoice(invoiceId: string) {
-    const invoice = invoices.find(i => i.id === invoiceId);
-    if (!invoice) return toast.error("Invoice not found");
+  const invoice = invoices.find(i => i.id === invoiceId);
+  if (!invoice) return toast.error("Invoice not found");
 
-    try {
-      const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          amount: invoice.amount, 
-          method: "CREDIT_CARD", 
-          reference 
-        }),
-      });
+  // Calculate remaining balance
+  const paidAmount = invoice.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const remaining = invoice.amount - paidAmount;
 
-      const data = await res.json();
-      if (res.ok) {
-        toast.success("Payment successful");
-        setShowPaymentModal(false);
-        setPayingInvoice(null);
-        setReference("");
-        fetchInvoices();
-      } else {
-        toast.error(data.error || "Payment failed");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Payment failed");
+  try {
+    const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        amount: remaining,  // <-- Send remaining, not full invoice.amount
+        method: "CREDIT_CARD", 
+        reference 
+      }),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      toast.success("Payment successful");
+      setShowPaymentModal(false);
+      setPayingInvoice(null);
+      setReference("");
+      fetchInvoices();
+    } else {
+      toast.error(data.error || "Payment failed");
     }
+  } catch (err) {
+    console.error(err);
+    toast.error("Payment failed");
   }
+}
+
 
   function openPaymentModal(invoiceId: string) {
     setPayingInvoice(invoiceId);
@@ -108,7 +113,7 @@ export default function TenantInvoices() {
 
         {/* Payment Modal */}
         {showPaymentModal && payingInvoice && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-in fade-in zoom-in duration-200">
               {/* Modal Header */}
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
@@ -130,7 +135,11 @@ export default function TenantInvoices() {
                 {(() => {
                   const invoice = invoices.find(i => i.id === payingInvoice);
                   if (!invoice) return null;
-                  
+
+                  // Calculate paid amount and remaining balance
+                  const paidAmount = invoice.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
+                  const remaining = invoice.amount - paidAmount;
+
                   return (
                     <>
                       {/* Invoice Details */}
@@ -149,8 +158,8 @@ export default function TenantInvoices() {
                         </div>
                         <div className="border-t border-slate-200 mt-3 pt-3">
                           <div className="flex justify-between items-center">
-                            <span className="text-base font-semibold text-slate-700">Amount Due</span>
-                            <span className="text-2xl font-bold text-blue-600">KES {invoice.amount.toFixed(2)}</span>
+                            <span className="text-base font-semibold text-slate-700">Balance Remaining</span>
+                            <span className="text-2xl font-bold text-blue-600">KES {remaining.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -163,7 +172,7 @@ export default function TenantInvoices() {
                           </svg>
                           <div className="text-sm text-blue-800">
                             <p className="font-semibold mb-1">Online Credit Card Payment</p>
-                            <p className="text-blue-700">You can pay the full invoice amount using your credit card. For cash payments or partial payments, please contact the property manager.</p>
+                            <p className="text-blue-700">You can pay the remaining balance using your credit card. For cash payments or partial payments, please contact the property manager.</p>
                           </div>
                         </div>
                       </div>
@@ -195,6 +204,7 @@ export default function TenantInvoices() {
                   );
                 })()}
               </div>
+
 
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex gap-3">
