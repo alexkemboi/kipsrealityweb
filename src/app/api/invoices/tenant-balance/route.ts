@@ -1,0 +1,45 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+
+export async function getTenantBalance(leaseId: string) {
+  try {
+    const leaseWithInvoices = await prisma.lease.findUnique({
+      where: { id: leaseId },
+      include: {
+        invoice: {
+          include: {
+            payment: true,
+          },
+        },
+      },
+    });
+
+    if (!leaseWithInvoices) {
+      throw new Error("Lease not found");
+    }
+
+    // Calculate totals
+    const totalInvoiced = leaseWithInvoices.invoice.reduce(
+      (sum, inv) => sum + inv.amount,
+      0
+    );
+
+    const totalPaid = leaseWithInvoices.invoice.reduce(
+      (sum, inv) => sum + inv.payment.reduce((pSum, p) => pSum + p.amount, 0),
+      0
+    );
+
+    const balance = totalInvoiced - totalPaid;
+
+    return {
+      leaseId,
+      tenant: leaseWithInvoices.tenantId,
+      totalInvoiced,
+      totalPaid,
+      balance,
+    };
+  } catch (error) {
+    console.error("Error calculating tenant balance:", error);
+    throw error;
+  }
+}

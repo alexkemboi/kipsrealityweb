@@ -2,12 +2,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// GET /api/utilities/:id -> Get utility info
+// app/api/utilities/[id]/route.ts
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const id = params.id;
     const utility = await prisma.utility.findUnique({ where: { id } });
-    if (!utility) return NextResponse.json({ success: false, error: "Utility not found" }, { status: 404 });
+
+    if (!utility) {
+      return NextResponse.json({ success: false, error: "Utility not found" }, { status: 404 });
+    }
+
+    // ✅ Return in expected frontend shape
     return NextResponse.json({ success: true, data: utility });
   } catch (error) {
     console.error(error);

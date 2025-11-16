@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 
 
+
 // System routes (common for all roles)
 export const systemRoutes = [
   { path: '/dashboard/profile', label: 'Profile', icon: User, badge: null },
@@ -171,13 +172,18 @@ export const routeConfig = {
     ],
     accounting: [
       { path: '/property-manager/accounting/invoicing', label: 'Rent Invoicing', icon: DollarSign },
-      { path: '/property-manager/accounting/late-fees', label: 'Late Fees', icon: DollarSign },
+      { path: '/property-manager/content/payments', label: 'Payment Records', icon: DollarSign },
       { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
     ],
     utilities: [
-      { path: '/property-manager/utilities/track', label: 'Track Usage', icon: BarChart3 },
-      { path: '/property-manager/utilities/allocate', label: 'Allocate Bills', icon: BarChart3 },
+      { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },
+      { path: '/property-manager/content/meter-readings', label: 'Allocate Bills', icon: BarChart3 },
       { path: '/property-manager/utilities/reports', label: 'Reports', icon: BarChart3 },
+    ],
+
+    invoice: [
+      { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
+      
     ],
     analytics: [
       { path: '/property-manager/analytics/revenue', label: 'Revenue Insights', icon: BarChart3 },
@@ -203,7 +209,7 @@ export const routeConfig = {
     payments: [
       { path: '/dashboard/tenant/pay-rent', label: 'Pay Rent (Stripe / Zelle / ACH)', icon: Calculator },
       { path: '/dashboard/tenant/payment-history', label: 'Payment History', icon: Calculator },
-      { path: '/dashboard/tenant/upcoming-invoices', label: 'Upcoming Invoices', icon: Calculator },
+      { path: '/tenant/content/invoices', label: 'Upcoming Invoices', icon: Calculator },
     ],
     maintenance: [
       { path: '/dashboard/tenant/submit-request', label: 'Submit Request', icon: Wrench },
