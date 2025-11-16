@@ -126,20 +126,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const leases = await prisma.lease.findMany({
-      where: {
-        property: {
-          manager: {
-            userId: user.id 
-          }
+    const url = new URL(req.url);
+    const propertyId = url.searchParams.get("propertyId");
+
+    const where: any = {
+      property: {
+        manager: {
+          userId: user.id
         }
-      },
+      }
+    };
+    if (propertyId) {
+      where.propertyId = propertyId;
+    }
+
+    const leases = await prisma.lease.findMany({
+      where,
       include: {
         tenant: true,
         property: true,
         unit: true,
         application: true
-
       },
       orderBy: {
         createdAt: "desc",

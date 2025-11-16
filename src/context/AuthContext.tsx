@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
             return null;
         }
-    };
+    };  
 
     const setStoredUser = (userData: User | null) => {
         if (userData) {

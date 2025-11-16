@@ -37,7 +37,6 @@ export default function VendorInviteForm() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch vendor invites
   useEffect(() => {
     const fetchInvites = async () => {
       setInitialLoading(true);
@@ -60,7 +59,6 @@ export default function VendorInviteForm() {
     fetchInvites();
   }, []);
 
-  // Filter invites by search and status
   useEffect(() => {
     let filtered = invites;
 
@@ -138,7 +136,6 @@ export default function VendorInviteForm() {
       toast.success("Vendor invite sent successfully!");
       setSuccessMessage("Invite sent successfully!");
 
-      // Reset form
       setEmail("");
       setFirstName("");
       setLastName("");
@@ -147,7 +144,6 @@ export default function VendorInviteForm() {
       setServiceType("");
       setIsModalOpen(false);
 
-      // Refresh invites
       const invitesRes = await fetch("/api/auth/invites/vendor");
       if (invitesRes.ok) {
         const invitesData = await invitesRes.json();
@@ -191,12 +187,11 @@ export default function VendorInviteForm() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header and Button */}
+    <div className="space-y-6 bg-white">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Vendor Management</h2>
-          <p className="text-gray-400 text-sm mt-1">Invite and manage service vendors</p>
+          <h2 className="text-2xl font-bold text-black">Vendor Management</h2>
+          <p className="text-black text-sm mt-1">Invite and manage service vendors</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -207,41 +202,36 @@ export default function VendorInviteForm() {
         </button>
       </div>
 
-      {/* Error and Success Messages */}
       {error && (
-        <div className="bg-red-900/20 border border-red-600 text-red-400 px-4 py-3 rounded-lg">
+        <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
       {successMessage && (
-        <div className="bg-emerald-900/20 border border-emerald-600 text-emerald-400 px-4 py-3 rounded-lg">
+        <div className="bg-emerald-100 border border-emerald-300 text-emerald-700 px-4 py-3 rounded-lg">
           {successMessage}
         </div>
       )}
 
-      {/* Invite Form Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 p-4">
-          <div className="bg-[#0f172a] border border-[#15386a] rounded-lg w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[#15386a]">
+          <div className="bg-white border border-gray-200 rounded-lg w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div>
-                <h3 className="text-xl font-bold text-white">Send Vendor Invite</h3>
-                <p className="text-gray-400 text-sm mt-1">Fill in the vendor details and send them an invitation to sign up.</p>
+                <h3 className="text-xl font-bold text-gray-900">Send Vendor Invite</h3>
+                <p className="text-gray-600 text-sm mt-1">Fill in the vendor details and send them an invitation to sign up.</p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-gray-500 hover:text-gray-900 transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
 
-            {/* Modal Body */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -249,14 +239,13 @@ export default function VendorInviteForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="vendor@example.com"
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                   required
                 />
               </div>
 
-              {/* First Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -264,14 +253,13 @@ export default function VendorInviteForm() {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="John"
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                   required
                 />
               </div>
 
-              {/* Last Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Last Name
                 </label>
                 <input
@@ -279,13 +267,12 @@ export default function VendorInviteForm() {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Doe"
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                 />
               </div>
 
-              {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone
                 </label>
                 <input
@@ -293,13 +280,12 @@ export default function VendorInviteForm() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 (555) 000-0000"
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                 />
               </div>
 
-              {/* Company Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Company Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -307,20 +293,19 @@ export default function VendorInviteForm() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="ABC Services Inc"
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                   required
                 />
               </div>
 
-              {/* Service Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Service Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={serviceType}
                   onChange={(e) => setServiceType(e.target.value)}
-                  className="w-full bg-[#0a1628] border border-[#15386a] text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+                  className="w-full bg-gray-50 border border-gray-300 text-gray-900 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
                   required
                 >
                   <option value="">Select a service type</option>
@@ -336,12 +321,11 @@ export default function VendorInviteForm() {
                 </select>
               </div>
 
-              {/* Modal Footer */}
               <div className="flex items-center gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 px-4 py-2 rounded bg-[#15386a] hover:bg-[#1a4585] text-white transition-colors"
+                  className="flex-1 px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 transition-colors"
                 >
                   Cancel
                 </button>
@@ -358,32 +342,30 @@ export default function VendorInviteForm() {
         </div>
       )}
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Total Invites</p>
-          <p className="text-3xl font-bold text-white">{invites.length}</p>
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm mb-1">Total Invites</p>
+          <p className="text-3xl font-bold text-gray-900">{invites.length}</p>
         </div>
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Pending Invites</p>
-          <p className="text-3xl font-bold text-yellow-400">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <p className="text-gray-600 text-sm mb-1">Pending Invites</p>
+          <p className="text-3xl font-bold text-yellow-600">
             {invites.filter((i) => !i.accepted).length}
           </p>
         </div>
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4 space-y-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <input
             type="text"
             placeholder="Search by email..."
-            className="flex-1 bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+            className="flex-1 bg-white border border-gray-300 text-gray-900 placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <select
-            className="bg-[#0a1628] border border-[#15386a] text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
+            className="bg-white border border-gray-300 text-gray-900 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-transparent min-w-40"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as "ALL" | "ACCEPTED" | "PENDING")}
           >
@@ -394,22 +376,21 @@ export default function VendorInviteForm() {
         </div>
       </div>
 
-      {/* Invites Table */}
       {initialLoading ? (
         <div className="flex justify-center items-center py-12">
-          <div className="text-gray-400">Loading invites...</div>
+          <div className="text-gray-600">Loading invites...</div>
         </div>
       ) : (
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#15386a]/50">
+              <thead className="bg-gray-100">
                 <tr>
-                  <th className="text-left p-3 text-gray-300 font-semibold text-sm">Email</th>
-                  <th className="text-left p-3 text-gray-300 font-semibold text-sm">Status</th>
-                  <th className="text-left p-3 text-gray-300 font-semibold text-sm">Created</th>
-                  <th className="text-left p-3 text-gray-300 font-semibold text-sm">Expires</th>
-                  <th className="text-left p-3 text-gray-300 font-semibold text-sm">Actions</th>
+                  <th className="text-left p-3 text-gray-700 font-semibold text-sm">Email</th>
+                  <th className="text-left p-3 text-gray-700 font-semibold text-sm">Status</th>
+                  <th className="text-left p-3 text-gray-700 font-semibold text-sm">Created</th>
+                  <th className="text-left p-3 text-gray-700 font-semibold text-sm">Expires</th>
+                  <th className="text-left p-3 text-gray-700 font-semibold text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -422,45 +403,45 @@ export default function VendorInviteForm() {
                     return (
                       <tr
                         key={invite.id}
-                        className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors"
+                        className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
                       >
-                        <td className="p-3 text-gray-200">{invite.email}</td>
+                        <td className="p-3 text-gray-900">{invite.email}</td>
                         <td className="p-3">
                           {isAccepted ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
                               <CheckCircle2 size={14} />
                               Accepted
                             </span>
                           ) : isExpired ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                               <Clock size={14} />
                               Expired
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
                               <Clock size={14} />
                               Pending
                             </span>
                           )}
                         </td>
-                        <td className="p-3 text-gray-200 text-sm">
+                        <td className="p-3 text-gray-900 text-sm">
                           {new Date(invite.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="p-3 text-gray-200 text-sm">
+                        <td className="p-3 text-gray-900 text-sm">
                           {new Date(invite.expiresAt).toLocaleDateString()}
                         </td>
                         <td className="p-3">
-                        <button 
-                          onClick={() => router.push(`/property-manager/vendors/${invite.id}`)}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-green-200 hover:bg-green-300 text-green-700 font-medium transition-colors"
-                        >
-                          View Details
-                        </button>
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <button 
+                            onClick={() => router.push(`/property-manager/vendors/${invite.id}`)}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-green-100 hover:bg-green-200 text-green-700 font-medium transition-colors"
+                          >
+                            View Details
+                          </button>
+                          <div className="flex items-center gap-2 flex-wrap mt-2">
                             {!isAccepted && !isExpired && (
                               <button
                                 onClick={() => copyToClipboard(inviteLink, invite.token)}
-                                className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-[#30D5C8]/20 hover:bg-[#30D5C8]/30 text-[#30D5C8] transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-700 transition-colors"
                               >
                                 {copiedToken === invite.token ? (
                                   <>
@@ -476,16 +457,15 @@ export default function VendorInviteForm() {
                               </button>
                             )}
 
-                            {/* Delete Confirmation Modal */}
                             {showDeleteConfirm === invite.id && (
                               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className="bg-[#0f172a] border border-[#15386a] rounded-lg p-6 max-w-sm shadow-xl">
-                                  <h4 className="text-white font-bold mb-2">Delete Invite?</h4>
-                                  <p className="text-gray-400 text-sm mb-4">This action cannot be undone. The vendor will not receive this invite.</p>
+                                <div className="bg-white border border-gray-200 rounded-lg p-6 max-w-sm shadow-xl">
+                                  <h4 className="text-gray-900 font-bold mb-2">Delete Invite?</h4>
+                                  <p className="text-gray-600 text-sm mb-4">This action cannot be undone. The vendor will not receive this invite.</p>
                                   <div className="flex gap-3">
                                     <button
                                       onClick={() => setShowDeleteConfirm(null)}
-                                      className="flex-1 px-3 py-2 rounded bg-[#15386a] hover:bg-[#1a4585] text-white text-sm transition-colors"
+                                      className="flex-1 px-3 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm transition-colors"
                                     >
                                       Cancel
                                     </button>
@@ -502,7 +482,7 @@ export default function VendorInviteForm() {
 
                             <button
                               onClick={() => setShowDeleteConfirm(invite.id)}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-colors"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -516,7 +496,7 @@ export default function VendorInviteForm() {
                     <td colSpan={5} className="text-center p-12">
                       <div className="flex flex-col items-center gap-2">
                         <svg
-                          className="w-12 h-12 text-gray-600"
+                          className="w-12 h-12 text-gray-400"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -528,7 +508,7 @@ export default function VendorInviteForm() {
                             d="M12 4.354a4 4 0 110 5.292M15 9H9m6 0a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <p className="text-gray-400 text-lg">No vendor invites yet</p>
+                        <p className="text-gray-600 text-lg">No vendor invites yet</p>
                         <p className="text-gray-500 text-sm">
                           Send your first vendor invite to get started
                         </p>

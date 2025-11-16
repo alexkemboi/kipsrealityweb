@@ -132,8 +132,8 @@ export default function VendorDetailsPage() {
 
   if (loading) {
     return (
-      <div className="bg-[#0f172a] flex justify-center items-center min-h-screen">
-        <div className="text-gray-400"> Loading vendor details...</div>
+      <div className="bg-white flex justify-center items-center min-h-screen">
+        <div className="text-black"> Loading vendor details...</div>
       </div>
     );
   }

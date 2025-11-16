@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
     const organizationId = url.searchParams.get("organizationId");
     const status = url.searchParams.get("status");
     const unassigned = url.searchParams.get("unassigned"); // expected "true" if present
+    const propertyId = url.searchParams.get("propertyId"); // NEW: get propertyId from query
 
     if (!organizationId) {
       return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
@@ -20,6 +21,9 @@ export async function GET(req: NextRequest) {
     if (unassigned === "true") {
       // requires migration that adds assigned_vendor_id to the schema
       where.assigned_vendor_id = null;
+    }
+    if (propertyId) {
+      where.propertyId = propertyId;
     }
 
     const requests = await (prisma as any).maintenanceRequest.findMany({
