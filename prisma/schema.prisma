@@ -410,6 +410,7 @@ model Property {
   houseDetail            HouseDetail?
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
+  OccupancyHistory       OccupancyHistory[]
   listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
   location               Location?               @relation(fields: [locationId], references: [id])
   manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
@@ -742,6 +743,18 @@ model InvoiceItem {
   invoice     invoice   @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "InvoiceItem_ibfk_1")
 
   @@index([invoiceId], map: "invoiceId")
+}
+
+model OccupancyHistory {
+  id            String   @id
+  propertyId    String
+  year          Int
+  month         Int
+  occupancyRate Decimal  @db.Decimal(5, 2)
+  createdAt     DateTime @default(now())
+  Property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_occupancy_property")
+
+  @@index([propertyId, year, month], map: "idx_occupancy_property_year_month")
 }
 
 enum UserRole {

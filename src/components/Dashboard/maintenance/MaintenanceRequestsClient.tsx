@@ -69,19 +69,21 @@ export default function MaintenanceRequestsClient(): ReactElement {
   const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [exportFormat, setExportFormat] = useState("");
 
-  useEffect(() => {
+  
     async function fetchRequests() {
       if (!organizationId) { setLoading(false); return; }
       try {
         const res = await fetch(`/api/maintenance?organizationId=${organizationId}`);
-        if (!res.ok) throw new Error("Failed to fetch requests");
+        if (!res.ok) console.error("Failed to fetch requests");
         const data = await res.json();
         setRequests(data);
       } catch (error) { console.error("Error fetching maintenance requests:", error); }
       finally { setLoading(false); }
     }
-    fetchRequests();
-  }, [organizationId]);
+    
+    useEffect(() => {
+  fetchRequests();
+}, [organizationId]);
 
   function flattenRequestsForExcel(data: Request[]) {
     const capFirst = (s?: string | null) => s && s.length > 0 ? s.charAt(0) + s.slice(1) : "";
@@ -140,7 +142,12 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
       {showForm && (
         <div className="mb-6">
-          <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
+          <CreateRequestForm organizationId={organizationId} 
+          onSuccess={() => {
+             fetchRequests();     
+             setShowForm(false);  
+            }}
+          />
         </div>
       )}
 
@@ -268,7 +275,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
                     </span>
                   </td>
                   <td className="p-2 text-gray-900">
-                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName ?? ""}
+                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName?.charAt(0) ?? ""}
                   </td>
                   <td className="p-2 text-gray-900">{r.category?.toLowerCase() ?? "standard"}</td>
                   <td className="p-2 text-gray-900">200/=</td>
