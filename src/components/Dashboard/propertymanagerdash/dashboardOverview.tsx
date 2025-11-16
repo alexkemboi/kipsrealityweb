@@ -612,7 +612,7 @@ if ( loading ) {
 									<CardContent className="p-6 flex flex-col justify-center">
 										<div className="w-full overflow-x-auto" style={{ height: 220 }}>
 											<div style={{ minWidth: 600, width: Math.max(600, rentData.length * 100) }}>
-												<ResponsiveContainer width={Math.max(600, rentData.length * 100)} height={200}>
+												<ResponsiveContainer width={Math.max(600, rentData.length * 60)} height={200}>
 													<LineChart
 														data={rentData}
 														margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
@@ -630,6 +630,7 @@ if ( loading ) {
 															tickLine={false}
 															interval={0}
 															minTickGap={0}
+															padding={{ left: 10, right: 10 }}
 														/>
 														<YAxis hide />
 														<Tooltip />
@@ -766,14 +767,14 @@ if ( loading ) {
 
 			<div className="flex flex-col md:flex-row gap-8">
 				{/* Pie Chart */}
-				<div className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-[1.02]">
-					<h4 className="text-white font-semibold mb-4 text-center text-lg">
+				{/* <div className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-[1.02]"> */}
+					{/* <h4 className="text-white font-semibold mb-4 text-center text-lg">
 						Property Distribution
-					</h4>
-					<div className="relative h-[40vh] flex justify-center items-center">
+					</h4> */}
+					{/* <div className="relative h-[40vh] flex justify-center items-center">
 						<PieChart />
-					</div>
-				</div>
+					</div> */}
+				{/* </div> */}
 			</div>	
 		</div>
 

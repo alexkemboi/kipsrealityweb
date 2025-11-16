@@ -66,6 +66,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [exportFormat, setExportFormat] = useState("");
 
   useEffect(() => {
@@ -98,7 +99,12 @@ export default function MaintenanceRequestsClient(): ReactElement {
     }));
   }
 
+  // Get unique property names for dropdown
+  const propertyNames = Array.from(new Set(requests.map(r => r.property?.name).filter(Boolean)));
+
   const filteredRequests = requests.filter((r) => {
+    // Filter by property name if selected
+    if (propertyFilter !== "all" && r.property?.name !== propertyFilter) return false;
     const search = searchTerm.trim().toLowerCase();
     if (search) {
       const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
@@ -107,6 +113,16 @@ export default function MaintenanceRequestsClient(): ReactElement {
     return true;
   });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] bg-white">
+        <svg className="animate-spin h-10 w-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+      </div>
+    );
+  }
   return (
     <div className="min-h-[400px] p-6 bg-white text-gray-900">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
@@ -157,6 +173,19 @@ export default function MaintenanceRequestsClient(): ReactElement {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+          {/* Property filter dropdown */}
+          <div>
+            <select
+              className="bg-white border border-gray-300 text-gray-900 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-w-40"
+              value={propertyFilter ?? "all"}
+              onChange={e => setPropertyFilter(e.target.value)}
+            >
+              <option value="all">All Properties</option>
+              {propertyNames.map(name => (
+                <option key={name} value={name ?? ''}>{name}</option>
+              ))}
+            </select>
           </div>
 
           {organizationId && (
