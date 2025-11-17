@@ -400,7 +400,7 @@ export default function PaymentsPage() {
 
         {/* Record Payment Modal */}
         {showRecordPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
+          <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
                 <div className="flex items-center justify-between">
@@ -645,7 +645,7 @@ export default function PaymentsPage() {
 
         {/* Receipt Modal */}
         {viewingReceipt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
+          <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-visible">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-800">Receipt Details</h2>
