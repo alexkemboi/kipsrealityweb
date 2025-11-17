@@ -4,7 +4,7 @@ import VendorInviteForm from "@/components/Dashboard/propertymanagerdash/vendors
 
 export default function VendorsPage() {
   return (
-    <div className="min-h-screen p-6 bg-[#0f172a]">
+    <div className="min-h-screen p-6 bg-white">
       <div className="max-w-7xl mx-auto">
          <VendorInviteForm />  
       </div>
