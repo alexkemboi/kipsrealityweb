@@ -11,6 +11,8 @@ export default function PropertyManagerPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
 
@@ -136,6 +138,8 @@ export default function PropertyManagerPage() {
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Details</th>
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Manager</th>
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Status</th>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700"> Actions
+</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -216,6 +220,42 @@ export default function PropertyManagerPage() {
                       <div className="text-xs text-gray-500">{p.isFurnished ? "Furnished" : "Unfurnished"}</div>
                     </div>
                   </td>
+                  <td className="py-5 px-6 relative" onClick={(e) => e.stopPropagation()}>
+  <div className="relative">
+    <button
+      onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)}
+      className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 text-sm"
+    >
+      ⋮ More
+    </button>
+
+    {/* Dropdown Menu */}
+    {openMenu === p.id && (
+      <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <button
+          onClick={() =>
+            (window.location.href =
+              `/property-manager/view-own-property/${p.id}/units?type=${p.type}`)
+          }
+          className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
+        >
+          View Units
+        </button>
+
+        <button
+          onClick={() =>
+            (window.location.href =
+              `/property-manager/view-own-property/${p.id}/manage_units_and_leases`)
+          }
+          className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
+        >
+          Manage Units & Leases
+        </button>
+      </div>
+    )}
+  </div>
+</td>
+
                 </tr>
               ))}
             </tbody>
