@@ -113,7 +113,8 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+import { NextRequest } from 'next/server';
+export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -124,22 +125,30 @@ export async function GET() {
       );
     }
 
-    // ✅ Fetch ONLY applications for units belonging to properties managed by this PR
-    const applications = await prisma.tenantapplication.findMany({
-    where: {
+    // Support filtering by propertyId if provided
+    const url = new URL(req.url);
+    const propertyId = url.searchParams.get("propertyId");
+
+    const where: any = {
       property: {
         manager: {
           userId: user.id
         }
       }
-    },
-    include: {
-      property: true,
-      unit: true,
-      user: true
-    },
-    orderBy: { createdAt: "desc" }
-  });
+    };
+    if (propertyId) {
+      where.propertyId = propertyId;
+    }
+
+    const applications = await prisma.tenantapplication.findMany({
+      where,
+      include: {
+        property: true,
+        unit: true,
+        user: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
 
     return NextResponse.json(applications, { status: 200 });
 

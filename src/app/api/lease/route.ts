@@ -115,13 +115,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch leases belonging to properties managed by the logged-in user
-    const leases = await prisma.lease.findMany({
-      where: {
-        property: {
-          manager: { userId: user.id },
+    const url = new URL(req.url);
+    const propertyId = url.searchParams.get("propertyId");
+
+    const where: any = {
+      property: {
+        manager: {
+          userId: user.id,
         },
       },
+    };
+
+    if (propertyId) {
+      where.propertyId = propertyId;
+    }
+
+    // Final merged + fixed query
+    const leases = await prisma.lease.findMany({
+      where,
       include: {
         tenant: true,
         property: true,
@@ -133,21 +144,23 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    // Calculate total invoiced, total paid, and balance for each lease
+    // Add financial summary
     const leasesWithFinancials = leases.map((lease) => {
-      const totalInvoiced = lease.invoice?.reduce(
-        (sum, inv) => sum + inv.amount,
-        0
-      ) ?? 0;
+      const totalInvoiced =
+        lease.invoice?.reduce((sum, inv) => sum + inv.amount, 0) ?? 0;
 
-      const totalPaid = lease.invoice?.reduce(
-        (sum, inv) =>
-          sum + inv.payment.reduce((paySum, pay) => paySum + pay.amount, 0),
-        0
-      ) ?? 0;
+      const totalPaid =
+        lease.invoice?.reduce(
+          (sum, inv) =>
+            sum +
+            inv.payment.reduce((paySum, pay) => paySum + pay.amount, 0),
+          0
+        ) ?? 0;
 
       const balance = totalInvoiced - totalPaid;
 
