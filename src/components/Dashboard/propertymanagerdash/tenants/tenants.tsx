@@ -300,7 +300,7 @@ export default function TenantLeasesPage() {
           </span>
         </td>
 
-        <td className="px-6 py-4 flex gap-2">
+        <td className="px-6 py-4 ">
           <button
             className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
             onClick={() => {
@@ -312,9 +312,7 @@ export default function TenantLeasesPage() {
           >
             View
           </button>
-          <button className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-sm">
-            Contact
-          </button>
+          
         </td>
       </tr>
     );

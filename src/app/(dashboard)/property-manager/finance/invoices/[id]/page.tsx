@@ -21,7 +21,7 @@ interface Invoice {
       lastName?: string;
     };
     property?: {
-      name?: string;
+      buildingName?: string | null;
     };
   };
 }
@@ -67,6 +67,10 @@ export default function InvoiceDetailsPage() {
         }, 0)
       : 0;
 
+
+      const buildingName =
+    invoice.Lease?.property?.buildingName ||
+    "—";
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-12 space-y-6">
       <div className="flex items-center mb-8">
@@ -125,7 +129,7 @@ export default function InvoiceDetailsPage() {
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-500 uppercase">Property</p>
-          <p className="text-gray-800">{invoice.Lease?.property?.name || "—"}</p>
+          <p className="text-gray-800">{buildingName}</p>
         </div>
       </div>
 

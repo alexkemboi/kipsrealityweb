@@ -18,7 +18,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
               select: { id: true, firstName: true, lastName: true, email: true },
             },
             property: {
-              select: { id: true, name: true, address: true },
+              select: {
+                id: true,
+                name: true,       // still fetched but not used
+                address: true,
+                apartmentComplexDetail: {
+                  select: {
+                    buildingName: true, 
+                  },
+                },
+              },
             },
             lease_utility: {
               include: {
@@ -44,8 +53,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       isTenantResponsible: lu.is_tenant_responsible,
     }));
 
-    return NextResponse.json({ ...invoice, utilities });
-  } catch (error) {
+const buildingName =
+      invoice.Lease?.property?.apartmentComplexDetail?.buildingName ?? null;
+
+    return NextResponse.json({
+      ...invoice,
+      buildingName,
+      utilities,
+    });  } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json({ error: "Failed to fetch invoice" }, { status: 500 });
   }
