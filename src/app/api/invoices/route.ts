@@ -1,11 +1,17 @@
 // src/app/api/invoices/route.ts
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { getCurrentUser } from "@/lib/Getcurrentuser";
+
 
 const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
+    const user = await getCurrentUser();
+        if (!user) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
     const url = new URL(req.url);
     const rawStatus = url.searchParams.get("status"); // "PENDING,OVERDUE"
     const type = url.searchParams.get("type");
