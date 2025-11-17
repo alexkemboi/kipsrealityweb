@@ -248,7 +248,6 @@ export default function TenantLeasesPage() {
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Contact</th>
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Lease Period</th>
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Rent / Deposit</th>
-                  <th className="px-6 py-3 text-sm font-semibold text-slate-700">Financial Summary</th>
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Status</th>
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Actions</th>
                 </tr>
@@ -292,17 +291,7 @@ export default function TenantLeasesPage() {
           )}
         </td>
 
-        <td className="px-6 py-4 space-y-1">
-          {lease.financialSummary && (
-            <>
-              <p className="text-sm">Invoiced: KES {lease.financialSummary.totalInvoiced.toLocaleString()}</p>
-              <p className="text-sm text-emerald-700">Paid: KES {lease.financialSummary.totalPaid.toLocaleString()}</p>
-              <p className={`text-sm font-semibold ${lease.financialSummary.balance > 0 ? "text-red-600" : "text-emerald-600"}`}>
-                Balance: KES {lease.financialSummary.balance.toLocaleString()}
-              </p>
-            </>
-          )}
-        </td>
+        
 
         <td className="px-6 py-4">
           <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
