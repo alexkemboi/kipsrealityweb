@@ -6,10 +6,12 @@ import { Search, Filter, Download, Phone, Calendar, Home, DollarSign, User } fro
 
 interface Tenant {
   id: string;
-  name?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   phone?: string | null;
 }
+
 
 interface Property {
   id: string;
@@ -69,13 +71,27 @@ export default function TenantLeasesPage() {
     }
     fetchLeases();
   }, []);
+   // Full name helper
+  const getTenantName = (tenant?: Tenant) => {
+    if (!tenant) return "Unnamed Tenant";
+    const full = [tenant.firstName, tenant.lastName].filter(Boolean).join(" ");
+    return full || tenant.email || "Unnamed Tenant";
+  };
 
   const filteredLeases = leases.filter((lease) => {
+    const name = getTenantName(lease.tenant).toLowerCase();
+    const email = lease.tenant?.email?.toLowerCase() || "";
+    const property = lease.property?.name?.toLowerCase() || "";
+    const unit = lease.unit?.unitNumber?.toLowerCase() || "";
+
     const matchesSearch =
-      lease.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.tenant?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.property?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.unit?.unitNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+      name.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      property.includes(searchTerm.toLowerCase()) ||
+      unit.includes(searchTerm.toLowerCase())
+
+
+
     const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -237,64 +253,84 @@ export default function TenantLeasesPage() {
                   <th className="px-6 py-3 text-sm font-semibold text-slate-700">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedLeases.map((lease) => (
-                  <tr key={lease.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="font-medium">{lease.tenant?.name || "Unnamed"}</p>
-                      <p className="text-sm text-slate-500">{lease.tenant?.email || "No email"}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      {lease.property?.name || "N/A"} - {lease.unit?.unitNumber || "N/A"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {lease.tenant?.phone || "No phone"}
-                    </td>
-                    <td className="px-6 py-4">
-                      {formatDate(lease.startDate)} - {formatDate(lease.endDate)}
-                      {isLeaseExpiringSoon(lease.endDate) && (
-                        <span className="inline-block mt-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                          Expiring Soon
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p>KES {lease.rentAmount?.toLocaleString()}</p>
-                      {lease.securityDeposit && <p className="text-sm text-slate-600">Deposit: KES {lease.securityDeposit.toLocaleString()}</p>}
-                    </td>
-                    <td className="px-6 py-4 space-y-1">
-                      {lease.financialSummary && (
-                        <>
-                          <p className="text-sm">Invoiced: KES {lease.financialSummary.totalInvoiced.toLocaleString()}</p>
-                          <p className="text-sm text-emerald-700">Paid: KES {lease.financialSummary.totalPaid.toLocaleString()}</p>
-                          <p className={`text-sm font-semibold ${lease.financialSummary.balance > 0 ? "text-red-600" : "text-emerald-600"}`}>
-                            Balance: KES {lease.financialSummary.balance.toLocaleString()}
-                          </p>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
-                        {lease.leaseStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 flex gap-2">
-<button
-  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-  onClick={() =>
-    lease.tenant?.id &&
-    router.push(
-      `/property-manager/content/tenants/${lease.tenant.id}`
-    )
-  }
-  disabled={!lease.tenant?.id} // disables if no tenant ID
->
-  View
-</button>                      <button className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-sm">Contact</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+             <tbody className="divide-y divide-slate-100">
+  {paginatedLeases.map((lease) => {
+    const tenant = lease.tenant;
+              const tenantName = getTenantName(tenant);
+    const tenantEmail = tenant?.email || "No email";
+
+    return (
+      <tr key={lease.id} className="hover:bg-slate-50 transition-colors">
+        <td className="px-6 py-4">
+                    <p className="font-medium">{tenantName}</p>
+          <p className="text-sm text-slate-500">{tenantEmail}</p>
+        </td>
+
+        <td className="px-6 py-4">
+          {lease.property?.name || "N/A"} - {lease.unit?.unitNumber || "N/A"}
+        </td>
+
+        <td className="px-6 py-4">
+          {tenant?.phone || "No phone"}
+        </td>
+
+        <td className="px-6 py-4">
+          {formatDate(lease.startDate)} - {formatDate(lease.endDate)}
+          {isLeaseExpiringSoon(lease.endDate) && (
+            <span className="inline-block mt-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+              Expiring Soon
+            </span>
+          )}
+        </td>
+
+        <td className="px-6 py-4">
+          <p>KES {lease.rentAmount?.toLocaleString()}</p>
+          {lease.securityDeposit && (
+            <p className="text-sm text-slate-600">
+              Deposit: KES {lease.securityDeposit.toLocaleString()}
+            </p>
+          )}
+        </td>
+
+        <td className="px-6 py-4 space-y-1">
+          {lease.financialSummary && (
+            <>
+              <p className="text-sm">Invoiced: KES {lease.financialSummary.totalInvoiced.toLocaleString()}</p>
+              <p className="text-sm text-emerald-700">Paid: KES {lease.financialSummary.totalPaid.toLocaleString()}</p>
+              <p className={`text-sm font-semibold ${lease.financialSummary.balance > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                Balance: KES {lease.financialSummary.balance.toLocaleString()}
+              </p>
+            </>
+          )}
+        </td>
+
+        <td className="px-6 py-4">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
+            {lease.leaseStatus}
+          </span>
+        </td>
+
+        <td className="px-6 py-4 flex gap-2">
+          <button
+            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            onClick={() => {
+              if (tenant?.id) {
+                router.push(`/property-manager/content/tenants/${tenant.id}`);
+              }
+            }}
+            disabled={!tenant?.id}
+          >
+            View
+          </button>
+          <button className="px-3 py-1 border border-slate-300 rounded hover:bg-slate-50 text-sm">
+            Contact
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
             </table>
 
             {/* Pagination */}
