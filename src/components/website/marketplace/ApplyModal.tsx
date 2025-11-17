@@ -1,7 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { ChangeEvent, useState, useCallback, memo } from "react";
 import { CheckCircle2, User, Briefcase, Home, FileCheck, X, AlertCircle } from "lucide-react";
 
 interface ApplyModalProps {
@@ -45,6 +44,52 @@ interface TenantFormData {
   consent: boolean;
 }
 
+// Memoized input component to prevent re-renders
+const InputField = memo(({ name, placeholder, type = "text", value, onChange, required = false }: any) => (
+  <div className="space-y-1.5">
+    <label className="block text-sm font-medium text-gray-700">
+      {placeholder} {required && <span className="text-red-500">*</span>}
+    </label>
+    <input
+      name={name}
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      required={required}
+      autoComplete="off"
+      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+    />
+  </div>
+));
+
+InputField.displayName = 'InputField';
+
+// Memoized select component
+const SelectField = memo(({ name, placeholder, value, options, onChange, required = false }: any) => (
+  <div className="space-y-1.5">
+    <label className="block text-sm font-medium text-gray-700">
+      {placeholder} {required && <span className="text-red-500">*</span>}
+    </label>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+    >
+      <option value="">Select {placeholder}</option>
+      {options.map((opt: any) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+));
+
+SelectField.displayName = 'SelectField';
+
 export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyModalProps) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -75,26 +120,26 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     consent: false,
   });
 
-  if (!open || !listing) return null;
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Memoize the input change handler
+  const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, type, value } = e.target;
     const checked = (e.target as HTMLInputElement).type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-  };
+  }, []);
 
-  const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
+  // Memoize the select change handler
+  const handleSelectChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+  const nextStep = useCallback(() => setStep((prev) => Math.min(prev + 1, 4)), []);
+  const prevStep = useCallback(() => setStep((prev) => Math.max(prev - 1, 1)), []);
 
-  const isStepValid = () => {
+  const isStepValid = useCallback(() => {
     switch (step) {
       case 1:
         return formData.fullName && formData.email && formData.phone && formData.dob;
@@ -107,9 +152,9 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
       default:
         return false;
     }
-  };
+  }, [step, formData]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!formData.consent) return;
 
     setLoading(true);
@@ -118,8 +163,8 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     try {
       const payload = {
         ...formData,
-        unitId: listing.unit?.id || listing.unitId || null,
-        propertyId: listing.unit?.property?.id || listing.property?.id || null,
+        unitId: listing?.unit?.id || listing?.unitId || null,
+        propertyId: listing?.unit?.property?.id || listing?.property?.id || null,
         monthlyIncome: formData.monthlyIncome ? parseFloat(formData.monthlyIncome) : null,
         occupants: formData.occupants ? Number(formData.occupants) : null,
       };
@@ -144,7 +189,9 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     } finally {
       setLoading(false);
     }
-  };
+  }, [formData, listing, onSubmit, onClose]);
+
+  if (!open || !listing) return null;
 
   const progress = (step / 4) * 100;
 
@@ -154,45 +201,6 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     { icon: Home, label: "Lease Details" },
     { icon: FileCheck, label: "References" },
   ];
-
-  const InputField = ({ name, placeholder, type = "text", value, required = false }: any) => (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-700">
-        {placeholder} {required && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={handleInputChange}
-        required={required}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-      />
-    </div>
-  );
-
-  const SelectField = ({ name, placeholder, value, options, required = false }: any) => (
-    <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-700">
-        {placeholder} {required && <span className="text-red-500">*</span>}
-      </label>
-      <select
-        name={name}
-        value={value}
-        onChange={handleSelectChange}
-        required={required}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-      >
-        <option value="">Select {placeholder}</option>
-        {options.map((opt: any) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
@@ -273,12 +281,12 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Personal Information</h3>
                   <p className="text-gray-600">Please provide your basic details to begin your application</p>
                 </div>
-                <InputField name="fullName" placeholder="Full Legal Name" value={formData.fullName} required />
-                <InputField name="email" type="email" placeholder="Email Address" value={formData.email} required />
-                <InputField name="phone" type="tel" placeholder="Phone Number" value={formData.phone} required />
-                <InputField name="dob" type="date" placeholder="Date of Birth" value={formData.dob} required />
-                <InputField name="ssn" placeholder="National ID / Passport Number" value={formData.ssn} />
-                <InputField name="address" placeholder="Current Address" value={formData.address} />
+                <InputField name="fullName" placeholder="Full Legal Name" value={formData.fullName} onChange={handleInputChange} required />
+                <InputField name="email" type="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} required />
+                <InputField name="phone" type="tel" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} required />
+                <InputField name="dob" type="date" placeholder="Date of Birth" value={formData.dob} onChange={handleInputChange} required />
+                <InputField name="ssn" placeholder="National ID / Passport Number" value={formData.ssn} onChange={handleInputChange} />
+                <InputField name="address" placeholder="Current Address" value={formData.address} onChange={handleInputChange} />
               </div>
             )}
 
@@ -288,10 +296,10 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">Employment Details</h3>
                   <p className="text-gray-600">Tell us about your current employment situation</p>
                 </div>
-                <InputField name="employerName" placeholder="Employer Name" value={formData.employerName} required />
-                <InputField name="jobTitle" placeholder="Job Title / Position" value={formData.jobTitle} required />
-                <InputField name="monthlyIncome" type="number" placeholder="Monthly Income (KES)" value={formData.monthlyIncome} required />
-                <InputField name="employmentDuration" placeholder="Employment Duration (e.g., 2 years)" value={formData.employmentDuration} />
+                <InputField name="employerName" placeholder="Employer Name" value={formData.employerName} onChange={handleInputChange} required />
+                <InputField name="jobTitle" placeholder="Job Title / Position" value={formData.jobTitle} onChange={handleInputChange} required />
+                <InputField name="monthlyIncome" type="number" placeholder="Monthly Income (KES)" value={formData.monthlyIncome} onChange={handleInputChange} required />
+                <InputField name="employmentDuration" placeholder="Employment Duration (e.g., 2 years)" value={formData.employmentDuration} onChange={handleInputChange} />
               </div>
             )}
 
@@ -305,6 +313,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   name="leaseType"
                   placeholder="Lease Type"
                   value={formData.leaseType}
+                  onChange={handleSelectChange}
                   options={[
                     { value: "long-term", label: "Long Term (12+ months)" },
                     { value: "short-term", label: "Short Term (1-11 months)" },
@@ -315,6 +324,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   name="occupancyType"
                   placeholder="Occupancy Type"
                   value={formData.occupancyType}
+                  onChange={handleSelectChange}
                   options={[
                     { value: "single", label: "Single Occupant" },
                     { value: "family", label: "Family" },
@@ -322,10 +332,10 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   ]}
                   required
                 />
-                <InputField name="moveInDate" type="date" placeholder="Preferred Move-in Date" value={formData.moveInDate} required />
-                <InputField name="leaseDuration" type="number" placeholder="Lease Duration (months)" value={formData.leaseDuration} required />
-                <InputField name="occupants" type="number" placeholder="Number of Occupants" value={formData.occupants} />
-                <InputField name="pets" placeholder="Pets (if any)" value={formData.pets} />
+                <InputField name="moveInDate" type="date" placeholder="Preferred Move-in Date" value={formData.moveInDate} onChange={handleInputChange} required />
+                <InputField name="leaseDuration" type="number" placeholder="Lease Duration (months)" value={formData.leaseDuration} onChange={handleInputChange} required />
+                <InputField name="occupants" type="number" placeholder="Number of Occupants" value={formData.occupants} onChange={handleInputChange} />
+                <InputField name="pets" placeholder="Pets (if any)" value={formData.pets} onChange={handleInputChange} />
               </div>
             )}
 
@@ -335,11 +345,11 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">References & Previous Landlord</h3>
                   <p className="text-gray-600">Provide references to support your application</p>
                 </div>
-                <InputField name="landlordName" placeholder="Previous Landlord Name" value={formData.landlordName} />
-                <InputField name="landlordContact" placeholder="Previous Landlord Contact" value={formData.landlordContact} />
-                <InputField name="reasonForMoving" placeholder="Reason for Moving" value={formData.reasonForMoving} />
-                <InputField name="referenceName" placeholder="Reference Name" value={formData.referenceName} />
-                <InputField name="referenceContact" placeholder="Reference Contact" value={formData.referenceContact} />
+                <InputField name="landlordName" placeholder="Previous Landlord Name" value={formData.landlordName} onChange={handleInputChange} />
+                <InputField name="landlordContact" placeholder="Previous Landlord Contact" value={formData.landlordContact} onChange={handleInputChange} />
+                <InputField name="reasonForMoving" placeholder="Reason for Moving" value={formData.reasonForMoving} onChange={handleInputChange} />
+                <InputField name="referenceName" placeholder="Reference Name" value={formData.referenceName} onChange={handleInputChange} />
+                <InputField name="referenceContact" placeholder="Reference Contact" value={formData.referenceContact} onChange={handleInputChange} />
 
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-8">
                   <label className="flex items-start gap-4 cursor-pointer group">

@@ -1,26 +1,28 @@
-// /app/api/invoice/[id]/payments/route.ts
+// /app/api/invoices/[id]/payments/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// Allowed payment methods based on your Prisma enum
 const VALID_PAYMENT_METHODS = ["CASH", "BANK", "CREDIT_CARD"] as const;
 
-export async function POST(req: Request, context: { params: { id: string } }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    // Await params correctly
-    const { id: invoiceId } = context.params;
-
+    const { id: invoiceId } = await params;
     const { amount, method, reference } = await req.json();
 
-    // Validate payment input
+    // Validate amount
     if (!amount || amount <= 0) {
       return NextResponse.json({ error: "Invalid payment amount" }, { status: 400 });
     }
-    if (!method || !VALID_PAYMENT_METHODS.includes(method as typeof VALID_PAYMENT_METHODS[number])) {
+
+    // Validate payment method
+    if (!VALID_PAYMENT_METHODS.includes(method)) {
       return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
     }
 
-    // Fetch invoice
+    // Get invoice with existing payments
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: { payment: true },
@@ -30,40 +32,72 @@ export async function POST(req: Request, context: { params: { id: string } }) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Reject if amount is less than invoice amount
-    if (amount < invoice.amount) {
+    // Calculate already paid amount
+    const paidAmount = invoice.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const remaining = invoice.amount - paidAmount;
+
+    // Validate payment doesn't exceed remaining balance
+    if (amount > remaining + 0.01) { // Add small tolerance for floating point
       return NextResponse.json(
-        { error: "Payment must be for the full invoice amount" },
+        { error: `Payment amount (${amount}) exceeds remaining balance (${remaining})` },
         { status: 400 }
       );
     }
 
-    // Record payment
+    // Create payment record
     const payment = await prisma.payment.create({
       data: {
         invoice_id: invoiceId,
         amount,
         method,
-        reference,
+        reference: reference || null,
       },
     });
 
-    // Update invoice status to PAID
+    // Calculate new total paid
+    const newTotalPaid = paidAmount + amount;
+    const isPaidInFull = newTotalPaid >= invoice.amount - 0.01; // Small tolerance for floating point
+
+    // Update invoice status based on payment
+    let newStatus = invoice.status;
+    if (isPaidInFull) {
+      newStatus = "PAID";
+    } else if (invoice.status === "OVERDUE" || invoice.status === "PENDING") {
+      // Keep as PENDING or OVERDUE if partially paid
+      // Check if overdue
+      const now = new Date();
+      const dueDate = new Date(invoice.dueDate);
+      newStatus = now > dueDate ? "OVERDUE" : "PENDING";
+    }
+
+    // Update invoice status
     await prisma.invoice.update({
       where: { id: invoiceId },
-      data: { status: "PAID" },
+      data: { status: newStatus },
     });
 
-    return NextResponse.json({ success: true, payment, status: "PAID" });
+    return NextResponse.json({
+      success: true,
+      payment,
+      status: newStatus,
+      totalPaid: newTotalPaid,
+      remaining: invoice.amount - newTotalPaid,
+    });
   } catch (error) {
     console.error("Error processing payment:", error);
-    return NextResponse.json({ error: "Failed to process payment" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to process payment" },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(req: Request, context: { params: { id: string } }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id: invoiceId } = context.params;
+    const { id: invoiceId } = await params;
 
     const payments = await prisma.payment.findMany({
       where: { invoice_id: invoiceId },
@@ -73,6 +107,9 @@ export async function GET(req: Request, context: { params: { id: string } }) {
     return NextResponse.json(payments);
   } catch (error) {
     console.error("Error fetching payments:", error);
-    return NextResponse.json({ error: "Failed to fetch payments" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch payments" },
+      { status: 500 }
+    );
   }
 }
