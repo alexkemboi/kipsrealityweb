@@ -40,6 +40,7 @@ interface Lease {
   securityDeposit?: number | null;
   leaseStatus: "DRAFT" | "SIGNED" | "PENDING" | string;
   financialSummary?: FinancialSummary;
+  buildingName?: string | null;
 }
 
 export default function TenantLeasesPage() {
@@ -266,7 +267,7 @@ export default function TenantLeasesPage() {
         </td>
 
         <td className="px-6 py-4">
-          {lease.property?.name || "N/A"} - {lease.unit?.unitNumber || "N/A"}
+          {lease.buildingName || "N/A"} - {lease.unit?.unitNumber || "N/A"}
         </td>
 
         <td className="px-6 py-4">

@@ -135,8 +135,13 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         tenant: true,
-        property: true,
-        unit: true,
+        property: {
+          include: {
+            apartmentComplexDetail: true,   
+            houseDetail: true
+          }
+        },
+         unit: true,
         application: true,
         invoice: {
           include: {
@@ -163,9 +168,14 @@ export async function GET(req: NextRequest) {
         ) ?? 0;
 
       const balance = totalInvoiced - totalPaid;
+        const buildingName =
+        lease.property?.apartmentComplexDetail?.buildingName ??
+        lease.property?.name ??
+        "N/A";
 
       return {
         ...lease,
+        buildingName,
         financialSummary: { totalInvoiced, totalPaid, balance },
       };
     });
