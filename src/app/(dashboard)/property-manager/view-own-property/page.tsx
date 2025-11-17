@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { getProperties } from "@/lib/property-manager";
 import { Building2, Home, MapPin, Bed, Bath, User, Building } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import PropertyForm from '@/components/website/PropertyManager/RegisterPropertyForm';
+
 
 export default function PropertyManagerPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   const { user } = useAuth();
 
@@ -75,6 +79,12 @@ export default function PropertyManagerPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {user?.organization && (
+          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+            <Building className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">{user.organization.name}</span>
+          </div>
+        )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -83,15 +93,39 @@ export default function PropertyManagerPage() {
             Managing {properties.length} {properties.length === 1 ? "property" : "properties"}
           </p>
         </div>
-        {user?.organization && (
-          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
-            <Building className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">{user.organization.name}</span>
-          </div>
-        )}
+        
+ {/* Add Property Button */}
+  <button
+    onClick={() => setIsModalOpen(true)}
+    className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition"
+  >
+    + Add Property
+  </button>
+
+
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+{/* Add Property Modal */}
+{isModalOpen && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-3xl p-6 relative">
+
+      {/* Close button */}
+      <button
+        onClick={() => setIsModalOpen(false)}
+        className="absolute top-4 right-4 text-gray-500 text-lg hover:text-gray-700"
+      >
+        ✕
+      </button>
+
+      {/* PropertyForm Component */}
+      <PropertyForm />
+    </div>
+  </div>
+)}
+
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
