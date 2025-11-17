@@ -172,19 +172,31 @@ export default function UtilitiesPage() {
       <Toaster position="top-right" richColors />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-4xl font-bold text-[#0b1f3a]">Utilities</h2>
-            <p className="text-[#15386a]/70 mt-2">
-              Manage utility types and pricing
-            </p>
-          </div>
+       <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-4xl font-bold text-[#0b1f3a]">Utilities</h2>
+          <p className="text-[#15386a]/70 mt-2">
+            Manage utility types and pricing
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          {/* Add Reading Button */}
+          <Link href="/property-manager/content/meter-readings">
+            <Button className="bg-[#15386a] hover:bg-[#15386a]/90 text-white shadow-lg shadow-[#15386a]/20 hover:shadow-xl transition-all">
+              <Plus className="mr-2 w-4 h-4" /> Reading
+            </Button>
+          </Link>
+
+          {/* Add Utility Button */}
           <Link href="/property-manager/content/utilities/new">
             <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20 hover:shadow-xl transition-all">
               <Plus className="mr-2 w-4 h-4" /> Add Utility
             </Button>
           </Link>
         </div>
+      </div>
+
 
         {/* Filters */}
         <Card className="border-slate-200 shadow-md rounded-xl">

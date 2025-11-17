@@ -140,8 +140,12 @@ export default function MeterReadingsPage() {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <div className="bg-[#30D5C8] p-3 rounded-xl">
-                <Zap className="w-8 h-8 text-[#0b1f3a]" />
+              <div>
+                <Link href="/property-manager/content/utilities">
+                                    <Button className="bg-[#0b1f3a] hover:bg-[#15386a] h-12 px-6">
+                                      <Zap className="w-4 h-4 mr-2" /> Go to Utilities
+                                    </Button>
+                  </Link>
               </div>
               <div>
                 <h1 className="text-3xl font-bold">Meter Readings</h1>
