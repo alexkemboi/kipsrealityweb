@@ -22,7 +22,6 @@ type Request = {
   property?: { address?: string | null; name?: string | null; city?: string | null };
   unit?: { unitNumber: string; unitName?: string | null };
   assignedVendor?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
-  // prisma relation currently named `vendors` on MaintenanceRequest model
   vendors?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
 };
 
@@ -67,6 +66,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [exportFormat, setExportFormat] = useState("");
 
   useEffect(() => {
@@ -99,7 +99,12 @@ export default function MaintenanceRequestsClient(): ReactElement {
     }));
   }
 
+  // Get unique property names for dropdown
+  const propertyNames = Array.from(new Set(requests.map(r => r.property?.name).filter(Boolean)));
+
   const filteredRequests = requests.filter((r) => {
+    // Filter by property name if selected
+    if (propertyFilter !== "all" && r.property?.name !== propertyFilter) return false;
     const search = searchTerm.trim().toLowerCase();
     if (search) {
       const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
@@ -108,12 +113,22 @@ export default function MaintenanceRequestsClient(): ReactElement {
     return true;
   });
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px] bg-white">
+        <svg className="animate-spin h-10 w-10 text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+      </div>
+    );
+  }
   return (
-    <div className="min-h-[400px] p-6 bg-[#0f172a]">
+    <div className="min-h-[400px] p-6 bg-white text-gray-900">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 sm:gap-0">
         <div>
-          <h1 className="text-2xl font-bold text-white">Maintenance Requests</h1>
-          <p className="text-gray-400 text-sm">Track property issues, repairs and service needs</p>
+          <h1 className="text-2xl font-bold">Maintenance Requests</h1>
+          <p className="text-gray-600 text-sm">Track property issues, repairs and service needs</p>
         </div>
         <button
           onClick={() => setShowForm((s) => !s)}
@@ -125,47 +140,58 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
       {showForm && (
         <div className="mb-6">
-          
-            <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
-          
+          <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Requests Assigned</p>
-          <p className="text-3xl font-bold text-white">{requests.length}</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-gray-600 text-sm mb-1">Requests Assigned</p>
+          <p className="text-3xl font-bold">{requests.length}</p>
         </div>
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Open Requests</p>
-          <p className="text-3xl font-bold text-yellow-400">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-gray-600 text-sm mb-1">Open Requests</p>
+          <p className="text-3xl font-bold text-yellow-600">
             {requests.filter((r) => (r.status ?? "").toLowerCase().includes("open")).length}
           </p>
         </div>
-        <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4">
-          <p className="text-gray-400 text-sm mb-1">Requests Completed</p>
-          <p className="text-3xl font-bold text-[#30D5C8]">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <p className="text-gray-600 text-sm mb-1">Requests Completed</p>
+          <p className="text-3xl font-bold text-emerald-600">
             {requests.filter((r) => !(r.status ?? "").toLowerCase().includes("open")).length}
           </p>
         </div>
       </div>
 
-      <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl p-4 mb-6">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <input
               type="text"
               placeholder="Search by property..."
-              className="w-full bg-[#0a1628] border border-[#15386a] text-white placeholder-gray-500 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent"
+              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+          {/* Property filter dropdown */}
+          <div>
+            <select
+              className="bg-white border border-gray-300 text-gray-900 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-w-40"
+              value={propertyFilter ?? "all"}
+              onChange={e => setPropertyFilter(e.target.value)}
+            >
+              <option value="all">All Properties</option>
+              {propertyNames.map(name => (
+                <option key={name} value={name ?? ''}>{name}</option>
+              ))}
+            </select>
           </div>
 
           {organizationId && (
             <div className="flex gap-2">
               <select
-                className="bg-emerald-600 border border-[#15386a] text-white p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#30D5C8] focus:border-transparent min-w-40"
+                className="bg-white border border-gray-300 text-gray-900 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent min-w-40"
                 value={exportFormat}
                 onChange={(e) => {
                   const value = e.target.value;
@@ -182,49 +208,47 @@ export default function MaintenanceRequestsClient(): ReactElement {
                   }
                 }}
               >
-                <option value="Export" className="bg-grey">Export</option>
-                <option value="Excel" className="bg-grey">Excel sheet</option>
-                <option value="CSV" className="bg-grey">CSV</option>
+                <option value="Export">Export</option>
+                <option value="Excel">Excel sheet</option>
+                <option value="CSV">CSV</option>
               </select>
-
-
             </div>
           )}
         </div>
       </div>
 
-      <div className="bg-[#15386a]/30 backdrop-blur-sm border border-[#15386a] rounded-xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#15386a]/50">
+            <thead className="bg-gray-100">
               <tr>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Title</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Description</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Property</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Address</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Priority</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Status</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Requested</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Category</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Cost</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Assign to</th>
-                <th className="text-left p-2 text-gray-300 font-semibold text-sm">Unit</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Title</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Description</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Property</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Address</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Priority</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Status</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Requested</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Category</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Cost</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Assign to</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Unit</th>
               </tr>
             </thead>
             <tbody>
               {filteredRequests.map((r) => (
-                <tr key={r.id} className="border-t border-[#15386a]/50 hover:bg-[#15386a]/20 transition-colors">
-                  <td className="p-2 text-gray-200">{r.title}</td>
-                  <td className="p-2 text-gray-200">
+                <tr key={r.id} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
+                  <td className="p-2 text-gray-900">{r.title}</td>
+                  <td className="p-2 text-gray-900">
                     {r.description.length > 15 ? `${r.description.slice(0, 15)}...` : r.description}
                   </td>
-                  <td className="p-2 text-gray-200">{r.property?.name}</td>
-                  <td className="p-2 text-gray-200">{r.property?.city}</td>
-                  <td className="p-2 text-gray-200">
+                  <td className="p-2 text-gray-900">{r.property?.name}</td>
+                  <td className="p-2 text-gray-900">{r.property?.city}</td>
+                  <td className="p-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold
-                        ${r.priority === "LOW" ? "bg-gray-300 text-gray-800"
-                          : r.priority === "NORMAL" ? "bg-green-200 text-green-800"
+                        ${r.priority === "LOW" ? "bg-gray-200 text-gray-800"
+                          : r.priority === "NORMAL" ? "bg-green-100 text-green-800"
                           : r.priority === "HIGH" ? "bg-green-600 text-white"
                           : r.priority === "URGENT" ? "bg-red-500 text-white"
                           : "bg-orange-400 text-white"}`}
@@ -236,54 +260,30 @@ export default function MaintenanceRequestsClient(): ReactElement {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
                         (r.status ?? "").toLowerCase().includes("open")
-                          ? "bg-yellow-500/20 text-yellow-400"
-                          : "bg-[#30D5C8]/20 text-[#30D5C8]"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-emerald-100 text-emerald-700"
                       }`}
                     >
                       {r.status}
                     </span>
                   </td>
-                  <td className="p-2 text-gray-200">
-                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName?.charAt(0) ?? ""}
+                  <td className="p-2 text-gray-900">
+                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName ?? ""}
                   </td>
-                  <td className="p-2 text-gray-200">{r.category?.toLowerCase() ?? "STANDARD".toLowerCase()}</td>
-                  <td className="p-2 text-gray-200">200/=</td>
-                  <td className="p-2 text-gray-200">
+                  <td className="p-2 text-gray-900">{r.category?.toLowerCase() ?? "standard"}</td>
+                  <td className="p-2 text-gray-900">200/=</td>
+                  <td className="p-2 text-gray-900">
                     {r.vendors ? (
                       r.vendors.companyName || `${r.vendors.user?.firstName ?? ""} ${r.vendors.user?.lastName ?? ""}`.trim()
                     ) : (
                       "-"
                     )}
                   </td>
-                  <td className="p-2 text-gray-200">
-                    {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber ? r.unit.unitNumber : "-"}
+                  <td className="p-2 text-gray-900">
+                    {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber ?? "-"}
                   </td>
-                  <td className="p-2"></td>
                 </tr>
               ))}
-              {filteredRequests.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center p-12">
-                    <div className="flex flex-col items-center gap-2">
-                      <svg
-                        className="w-12 h-12 text-gray-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                        />
-                      </svg>
-                      <p className="text-gray-400 text-lg">No requests found</p>
-                      <p className="text-gray-500 text-sm">Try adjusting your filters or create a new request</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
