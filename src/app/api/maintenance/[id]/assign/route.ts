@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       data: {
         assigned_vendor_id: vendorId,
         assigned_at: new Date(),
-        status: "IN_PROGRESS",
+        // status is NOT updated here
       },
     });
 

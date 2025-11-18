@@ -188,6 +188,15 @@ export default function VendorInviteForm() {
 
   return (
     <div className="space-y-6 bg-white">
+      <button
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 mb-4 text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-black">Vendor Management</h2>
@@ -480,12 +489,12 @@ export default function VendorInviteForm() {
                               </div>
                             )}
 
-                            <button
+                            {/* <button
                               onClick={() => setShowDeleteConfirm(invite.id)}
                               className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-red-100 hover:bg-red-200 text-red-700 transition-colors"
                             >
                               <Trash2 size={14} />
-                            </button>
+                            </button> */}
                           </div>
                         </td>
                       </tr>

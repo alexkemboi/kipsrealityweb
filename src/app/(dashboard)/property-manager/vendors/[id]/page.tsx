@@ -122,6 +122,8 @@ export default function VendorDetailsPage() {
       setOpenRequests((prev) => prev.filter((r) => r.id !== selectedRequest));
       setShowAssignModal(false);
       setSelectedRequest("");
+      // Redirect to the requests page
+      router.push("/property-manager/maintenance/requests");
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : "Failed to assign request";
       toast.error(errorMsg);

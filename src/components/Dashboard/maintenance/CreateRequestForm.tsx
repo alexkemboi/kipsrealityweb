@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ReactElement } from "react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -25,6 +26,7 @@ export default function CreateRequestForm({
   onSuccess?: () => void;
 }): ReactElement {
   const { user } = useAuth();
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [propertyId, setPropertyId] = useState("");
@@ -45,7 +47,7 @@ export default function CreateRequestForm({
       }
       try {
         const res = await fetch(`/api/properties?organizationId=${encodeURIComponent(orgId)}`);
-        if (!res.ok) throw new Error("Failed to load properties");
+        if (!res.ok) console.error("Failed to load properties");
         const data = await res.json();
         setProperties(data || []);
         if (data?.[0]) setPropertyId(data[0].id);
@@ -123,7 +125,7 @@ export default function CreateRequestForm({
       setPropertyId(properties[0]?.id ?? "");
       setCategory("STANDARD");
       if (onSuccess) onSuccess();
-      window.location.reload();
+      router.refresh(); // This triggers loading.tsx for the current route
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -162,11 +164,14 @@ export default function CreateRequestForm({
           className="mt-1 block w-full bg-white border border-gray-300 text-gray-900 p-3 rounded-lg disabled:opacity-60"
         >
           <option value="">Select unit</option>
-          {units.map((unit) => (
-            <option key={unit.id} value={unit.id}>
-              {unit.unitName || `Unit ${unit.unitNumber}`}
-            </option>
-          ))}
+          {units.map((unit) => {
+            const propertyName = properties.find(p => p.id === propertyId)?.name || "";
+            return (
+              <option key={unit.id} value={unit.id}>
+                {propertyName ? `${propertyName} · ` : ""}{unit.unitName || `Unit ${unit.unitNumber}`}
+              </option>
+            );
+          })}
         </select>
       </div>
 

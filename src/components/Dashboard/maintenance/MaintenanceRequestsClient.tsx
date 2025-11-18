@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Wrench } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { ReactElement } from "react";
 import CreateRequestForm from "./CreateRequestForm";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +26,7 @@ type Request = {
   unit?: { unitNumber: string; unitName?: string | null };
   assignedVendor?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
   vendors?: { user?: { firstName?: string; lastName?: string }; companyName?: string | null };
+  cost?: string;
 };
 
 function handleExcel(data: any, filename = "maintenance_requests.xlsx", username: string) {
@@ -60,6 +64,7 @@ function handleCSV(data: any, filename = "maintenance_requests.csv", username: s
 
 export default function MaintenanceRequestsClient(): ReactElement {
   const { user } = useAuth();
+  const router = useRouter();
   const loggedInUser = `${user?.firstName ?? ""}_${user?.lastName ?? ""}`;
   const organizationId = user?.organization?.id;
   const [requests, setRequests] = useState<Request[]>([]);
@@ -68,20 +73,23 @@ export default function MaintenanceRequestsClient(): ReactElement {
   const [searchTerm, setSearchTerm] = useState("");
   const [propertyFilter, setPropertyFilter] = useState<string>("all");
   const [exportFormat, setExportFormat] = useState("");
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  useEffect(() => {
+  
     async function fetchRequests() {
       if (!organizationId) { setLoading(false); return; }
       try {
         const res = await fetch(`/api/maintenance?organizationId=${organizationId}`);
-        if (!res.ok) throw new Error("Failed to fetch requests");
+        if (!res.ok) console.error("Failed to fetch requests");
         const data = await res.json();
         setRequests(data);
       } catch (error) { console.error("Error fetching maintenance requests:", error); }
       finally { setLoading(false); }
     }
-    fetchRequests();
-  }, [organizationId]);
+    
+    useEffect(() => {
+  fetchRequests();
+}, [organizationId]);
 
   function flattenRequestsForExcel(data: Request[]) {
     const capFirst = (s?: string | null) => s && s.length > 0 ? s.charAt(0) + s.slice(1) : "";
@@ -130,17 +138,47 @@ export default function MaintenanceRequestsClient(): ReactElement {
           <h1 className="text-2xl font-bold">Maintenance Requests</h1>
           <p className="text-gray-600 text-sm">Track property issues, repairs and service needs</p>
         </div>
-        <button
-          onClick={() => setShowForm((s) => !s)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white shadow"
-        >
-          Make Request
-        </button>
+        <div className="flex flex-row flex-wrap gap-2 items-center">
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+          >
+            Make Request
+          </button>
+          <Link href="/property-manager/maintenance/vendors" legacyBehavior>
+            <a className="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white shadow">
+              View Invites
+            </a>
+          </Link>
+          {/* <a
+            href="/property-manager/maintenance/vendors/add"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-gray-600 hover:bg-gray-700 text-white shadow"
+          >
+            Add Vendor
+          </a> */}
+        </div>
       </div>
 
       {showForm && (
-        <div className="mb-6">
-          <CreateRequestForm organizationId={organizationId} onSuccess={() => setShowForm(false)} />
+        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-gray-200 rounded-lg w-full max-w-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="mb-6 flex justify-between items-center">
+              <h3 className="text-2xl font-bold text-gray-900">Create Maintenance Request</h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-gray-500 hover:text-gray-900 text-xl font-bold"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <CreateRequestForm organizationId={organizationId}
+              onSuccess={() => {
+                fetchRequests();
+                setShowForm(false);
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -168,7 +206,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Search by property..."
+              placeholder="Search by description..."
               className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -224,15 +262,16 @@ export default function MaintenanceRequestsClient(): ReactElement {
               <tr>
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Title</th>
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Description</th>
-                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Property</th>
-                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Address</th>
+                {/* <th className="text-left p-2 text-gray-700 font-semibold text-sm">Property</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Address</th> */}
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Priority</th>
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Status</th>
-                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Requested</th>
-                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Category</th>
+                {/* <th className="text-left p-2 text-gray-700 font-semibold text-sm">Requested</th> */}
+                {/* <th className="text-left p-2 text-gray-700 font-semibold text-sm">Category</th> */}
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Cost</th>
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Assign to</th>
                 <th className="text-left p-2 text-gray-700 font-semibold text-sm">Unit</th>
+                <th className="text-left p-2 text-gray-700 font-semibold text-sm">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -242,8 +281,8 @@ export default function MaintenanceRequestsClient(): ReactElement {
                   <td className="p-2 text-gray-900">
                     {r.description.length > 15 ? `${r.description.slice(0, 15)}...` : r.description}
                   </td>
-                  <td className="p-2 text-gray-900">{r.property?.name}</td>
-                  <td className="p-2 text-gray-900">{r.property?.city}</td>
+                  {/* <td className="p-2 text-gray-900">{r.property?.name}</td>
+                  <td className="p-2 text-gray-900">{r.property?.city}</td> */}
                   <td className="p-2">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold
@@ -267,14 +306,16 @@ export default function MaintenanceRequestsClient(): ReactElement {
                       {r.status}
                     </span>
                   </td>
-                  <td className="p-2 text-gray-900">
-                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName ?? ""}
-                  </td>
-                  <td className="p-2 text-gray-900">{r.category?.toLowerCase() ?? "standard"}</td>
-                  <td className="p-2 text-gray-900">200/=</td>
+                  {/* <td className="p-2 text-gray-900">
+                    {r.requestedBy?.user?.firstName ?? "Unknown"} {r.requestedBy?.user?.lastName?.charAt(0) ?? ""}
+                  </td> */}
+                  {/* <td className="p-2 text-gray-900">{r.category?.toLowerCase() ?? "standard"}</td> */}
+                  <td className="p-2 text-gray-900">{r.cost ?? "-"}</td>
                   <td className="p-2 text-gray-900">
                     {r.vendors ? (
-                      r.vendors.companyName || `${r.vendors.user?.firstName ?? ""} ${r.vendors.user?.lastName ?? ""}`.trim()
+                      r.vendors.companyName
+                        ? r.vendors.companyName
+                        : `${r.vendors.user?.firstName ?? ""} ${r.vendors.user?.lastName ? r.vendors.user.lastName.charAt(0) + "." : ""}`.trim()
                     ) : (
                       "-"
                     )}
@@ -282,6 +323,44 @@ export default function MaintenanceRequestsClient(): ReactElement {
                   <td className="p-2 text-gray-900">
                     {r.unit?.unitName ? r.unit.unitName : r.unit?.unitNumber ?? "-"}
                   </td>
+                  <td className="p-2 text-gray-900"> 
+                    <button 
+                      onClick={() => setSelectedRequest(r)}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded text-xs bg-green-100 hover:bg-green-200 text-green-700 font-medium transition-colors"
+                    >
+                      View Details
+                    </button>
+                  </td>
+                      {selectedRequest && (
+                      <div className="fixed inset-0 bg-black/5 flex items-center justify-center z-50 p-4">
+
+                          <div className="bg-white border border-gray-200 rounded-lg w-full max-w-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
+                            <div className="mb-6 flex justify-between items-center">
+                              <h3 className="text-2xl font-bold text-gray-900">{`Maintenance Details for ${selectedRequest.property?.name ?? '-'} unit ${selectedRequest.unit?.unitName ?? selectedRequest.unit?.unitNumber ?? '-'}`}</h3>
+                              <button
+                                onClick={() => setSelectedRequest(null)}
+                                className="text-gray-500 hover:text-gray-900 text-xl font-bold"
+                                aria-label="Close"
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div className="space-y-3">
+                              <div><strong>Property:</strong> {selectedRequest.property?.name ?? '-'} ({selectedRequest.property?.address ?? ''} {selectedRequest.property?.city ?? ''})</div>
+                              <div><strong>Title:</strong> {selectedRequest.title}</div>
+                              <div><strong>Description:</strong> {selectedRequest.description}</div>
+                              <div><strong>Priority:</strong> {selectedRequest.priority}</div>
+                              <div><strong>Status:</strong> {selectedRequest.status}</div>
+                              <div><strong>Category:</strong> {selectedRequest.category ?? '-'}</div>
+                              <div><strong>Cost:</strong> {selectedRequest.cost ?? '-'}</div>
+                              <div><strong>Created At:</strong> {selectedRequest.createdAt ? new Date(selectedRequest.createdAt).toLocaleString() : '-'}</div>
+                              <div><strong>Unit:</strong> {selectedRequest.unit?.unitName ?? selectedRequest.unit?.unitNumber ?? '-'}</div>
+                              <div><strong>Requested By:</strong> {selectedRequest.requestedBy?.user ? `${selectedRequest.requestedBy.user.firstName ?? ''} ${selectedRequest.requestedBy.user.lastName ?? ''}` : '-'}</div>
+                              <div><strong>Assigned Vendor:</strong> {selectedRequest.vendors?.companyName ? selectedRequest.vendors.companyName : `${selectedRequest.vendors?.user?.firstName ?? ''} ${selectedRequest.vendors?.user?.lastName ?? ''}`}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                 </tr>
               ))}
             </tbody>

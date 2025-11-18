@@ -6,8 +6,7 @@ import { UpcomingLeasesCard } from './UpcomingLeasesCard';
 import dynamic from "next/dynamic";
 import { useAuth } from "@/context/AuthContext";
 import { CardContent } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import RentUtilitiesChart from "./RentUtilitiesChart";
+import OccupancyLineChart from "./OccupancyLineChart";
 import Link from "next/link";
 
 
@@ -19,31 +18,15 @@ const PieChart = dynamic(() => import("../../ApexCharts/PieChart"), { ssr: false
 const Dashboard = () => {
 
 	type Properties = {
-		id: String,
-		name: String,
-		city: String,
+		id: string,
+		name: string,
+		city: string,
 		units: number
 	}
 
 	interface Lease {
 		endDate?: string;
 	}
-
-	const rentData = [
-		{ month: "Jan", value: 10 },
-		{ month: "Feb", value: 25 },
-		{ month: "Mar", value: 40 },
-		{ month: "Apr", value: 60 },
-		{ month: "May", value: 55 },
-		{ month: "Jun", value: 90 },
-		{ month: "Jul", value: 80 },
-		{ month: "Aug", value: 70 },
-		{ month: "Sep", value: 65 },
-		{ month: "Oct", value: 75 },
-		{ month: "Nov", value: 85 },
-		{ month: "Dec", value: 95 },
-	];
-
 
 	function usePersistedNumber(key: string) {
   return useState<number | undefined>(() => {
@@ -490,12 +473,7 @@ useEffect(() => {
 		}
 	}, [selectedProperty, organizationId, token, myproperties]);
 
-	// if (!token) return <div>Loading dashboard…</div>;
-
 	
-if ( loading ) {
-  return <Loading />;
-}
 	return (
 		<div id="dashboard">
 			{/* Main Content */}
@@ -604,54 +582,7 @@ if ( loading ) {
 					{/* Lease Expirations — Calendar Icon */}
 					<UpcomingLeasesCard data={leasesData} />
 				</div>
-
-				{/* Loading State */}
-
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-									{/* Line Chart with horizontal scroll */}
-									<CardContent className="p-6 flex flex-col justify-center">
-										<div className="w-full overflow-x-auto" style={{ height: 220 }}>
-											<div style={{ minWidth: 600, width: Math.max(600, rentData.length * 100) }}>
-												<ResponsiveContainer width={Math.max(600, rentData.length * 60)} height={200}>
-													<LineChart
-														data={rentData}
-														margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
-													>
-														<defs>
-															<linearGradient id="rentGradient" x1="0" y1="0" x2="0" y2="1">
-																<stop offset="0%" stopColor="#4F46E5" stopOpacity={0.8} />
-																<stop offset="100%" stopColor="#60A5FA" stopOpacity={0.2} />
-															</linearGradient>
-														</defs>
-														<CartesianGrid strokeDasharray="3 3" vertical={false} />
-														<XAxis
-															dataKey="month"
-															axisLine={false}
-															tickLine={false}
-															interval={0}
-															minTickGap={0}
-															padding={{ left: 10, right: 10 }}
-														/>
-														<YAxis hide />
-														<Tooltip />
-														<Line
-															type="monotone"
-															dataKey="value"
-															stroke="#4F46E5"
-															strokeWidth={3}
-															dot={false}
-															fill="url(#rentGradient)"
-														/>
-													</LineChart>
-												</ResponsiveContainer>
-											</div>
-										</div>
-									</CardContent>
-									{/* Rent Utilities Chart, shrunk to match height */}
-									<div className="flex flex-col justify-center items-center h-[220px]">
-										<RentUtilitiesChart />
-									</div>
-								</div>
+								<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
 
 				{/* Tables Section */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-18">
@@ -763,18 +694,6 @@ if ( loading ) {
 						</button>
 					</div>
 				</div>
-			</div>
-
-			<div className="flex flex-col md:flex-row gap-8">
-				{/* Pie Chart */}
-				{/* <div className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-xl hover:shadow-blue-500/20 transition-all duration-500 hover:scale-[1.02]"> */}
-					{/* <h4 className="text-white font-semibold mb-4 text-center text-lg">
-						Property Distribution
-					</h4> */}
-					{/* <div className="relative h-[40vh] flex justify-center items-center">
-						<PieChart />
-					</div> */}
-				{/* </div> */}
 			</div>	
 		</div>
 
