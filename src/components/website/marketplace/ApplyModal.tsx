@@ -225,7 +225,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold">KES {listing.price.toLocaleString()}</p>
+              <p className="text-xl font-bold">usd {listing.price.toLocaleString()}</p>
               <p className="text-xs text-blue-200">per month</p>
             </div>
           </div>
@@ -298,7 +298,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                 </div>
                 <InputField name="employerName" placeholder="Employer Name" value={formData.employerName} onChange={handleInputChange} required />
                 <InputField name="jobTitle" placeholder="Job Title / Position" value={formData.jobTitle} onChange={handleInputChange} required />
-                <InputField name="monthlyIncome" type="number" placeholder="Monthly Income (KES)" value={formData.monthlyIncome} onChange={handleInputChange} required />
+                <InputField name="monthlyIncome" type="number" placeholder="Monthly Income " value={formData.monthlyIncome} onChange={handleInputChange} required />
                 <InputField name="employmentDuration" placeholder="Employment Duration (e.g., 2 years)" value={formData.employmentDuration} onChange={handleInputChange} />
               </div>
             )}
