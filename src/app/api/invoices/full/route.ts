@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   const lease = await prisma.lease.findUnique({ where: { id: lease_id } });
-  if (!lease || lease.leaseStatus !== 'ACTIVE') {
+  if (!lease ) {
     return NextResponse.json({ error: 'Active lease not found' }, { status: 404 });
   }
 
