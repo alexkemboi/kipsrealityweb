@@ -317,13 +317,13 @@ export default function PropertyManagerPage() {
             onClick={() => { setSelectedProperty(p); setEditModalOpen(true); setOpenMenu(null); }}
             className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
                           >
-           ✏️ Update Property
+            Update Property
             </button>
              <button
               onClick={() => { setSelectedProperty(p); setDeleteModalOpen(true); setOpenMenu(null); }}
             className="block w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600"
                           >
-                            🗑 Delete Property
+                            Delete Property
                </button>
       </div>
     )}
@@ -387,5 +387,4 @@ const Empty = () => (
     </div>
   </div>
 );
-
 
