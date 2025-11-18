@@ -103,6 +103,7 @@ export async function POST(req: Request) {
             propertyId: prop.id,
             numberOfFloors: propertyDetails.numberOfFloors || null,
             bedrooms: propertyDetails.bedrooms || null,
+            houseName: propertyDetails.houseName || null,
             bathrooms: propertyDetails.bathrooms || null,
             size: propertyDetails.size || null,
           },

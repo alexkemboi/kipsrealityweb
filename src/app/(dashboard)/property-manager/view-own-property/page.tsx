@@ -158,11 +158,22 @@ export default function PropertyManagerPage() {
                       )}
                       <div>
                         <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600">
-                          {p.type}
-                        </h2>
-                        {p.type?.toLowerCase() === "apartment" && p.details?.buildingName && (
-                          <p className="text-sm text-blue-600 font-medium mt-1">{p.details.buildingName}</p>
-                        )}
+  {p.type}
+</h2>
+
+{/* Show buildingName if type is apartment */}
+{p.type?.toLowerCase() === "apartment" && p.details?.buildingName && (
+  <p className="text-sm text-blue-600 font-medium mt-1">
+    {p.details.buildingName}
+  </p>
+)}
+
+{/* Show houseName if it exists */}
+{p.details?.houseName && (
+  <p className="text-sm text-blue-600 font-medium mt-1">
+    {p.details.houseName}
+  </p>
+)}
                       </div>
                     </div>
                   </td>
