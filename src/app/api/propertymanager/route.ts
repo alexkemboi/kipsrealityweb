@@ -163,8 +163,27 @@ export async function GET(req: Request) {
       where: whereClause,
       include: {
         propertyType: true,
-        apartmentComplexDetail: true,
-        houseDetail: true,
+         apartmentComplexDetail: {
+          select: {
+            id: true,
+            buildingName: true,
+            totalFloors: true,
+            totalUnits: true
+           
+          }
+        },
+        houseDetail: {
+          select: {
+            id: true,
+            houseName: true,
+            numberOfFloors: true,
+            bedrooms: true,
+            bathrooms: true,
+            size: true,
+            totalUnits: true
+           
+          }
+        },
         units: { include: { appliances: true } },
         manager: {
           select: {

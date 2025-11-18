@@ -56,31 +56,39 @@ export const fetchUnits = async (propertyId: string): Promise<Unit[]> => {
     };
   });
 } else if (property.houseDetail) {
-    // House: only 1 unit
-    const existing = property.units[0];
-    allUnits = [
-      {
-        id: existing?.id ?? `placeholder-1`,
-        propertyId: property.id,
-        complexDetailId: null,
-        houseDetailId: property.houseDetail.id,
-        unitNumber: existing?.unitNumber ?? "1",
-        unitName: existing?.unitName ?? null,
-        bedrooms: existing?.bedrooms ?? property.houseDetail.bedrooms ?? null,
-        bathrooms: existing?.bathrooms ?? property.houseDetail.bathrooms ?? null,
-        floorNumber: existing?.floorNumber ?? property.houseDetail.numberOfFloors ?? null,
-        rentAmount: existing?.rentAmount ?? null,
-        currency: existing?.currency ?? null,
-        isOccupied: existing?.isOccupied ?? false,
-        createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
-         appliances: existing?.appliances?.map(a => ({
+  const totalUnits = property.houseDetail.totalUnits ?? 1;
+  const existingUnits = property.units || [];
+
+  allUnits = Array.from({ length: totalUnits }, (_, i) => {
+    const expectedUnitNumber = (i + 1).toString(); // 1, 2, 3...
+    const existing = existingUnits.find(u => u.unitNumber === expectedUnitNumber);
+
+    const detail = property.houseDetail!;
+
+    return {
+      id: existing?.id ?? `placeholder-${expectedUnitNumber}`,
+      propertyId: property.id,
+      complexDetailId: null,
+      houseDetailId: detail.id,
+      unitNumber: existing?.unitNumber ?? expectedUnitNumber,
+      unitName: existing?.unitName ?? null,
+      bedrooms: existing?.bedrooms ?? detail.bedrooms ?? null,
+      bathrooms: existing?.bathrooms ?? detail.bathrooms ?? null,
+      floorNumber: existing?.floorNumber ?? detail.numberOfFloors ?? null,
+      rentAmount: existing?.rentAmount ?? null,
+      currency: existing?.currency ?? null,
+      isOccupied: existing?.isOccupied ?? false,
+      createdAt: existing?.createdAt instanceof Date ? existing.createdAt.toISOString() : now,
+      appliances:
+        existing?.appliances?.map(a => ({
           id: a.id,
           name: a.name,
           createdAt: a.createdAt instanceof Date ? a.createdAt.toISOString() : now,
         })) ?? [],
-      },
-    ];
-  }
+    };
+  });
+}
+
 
   return allUnits;
 };
