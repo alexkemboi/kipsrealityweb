@@ -145,7 +145,7 @@ export default function PropertyForm() {
 
            {/* House Fields */}
 {selectedPropertyTypeName === "house" && (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
  {/* House Name */}
   <div className="flex flex-col">
     <label

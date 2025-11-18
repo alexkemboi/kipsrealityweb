@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getProperties } from "@/lib/property-manager";
+import { getProperties, deleteProperty } from "@/lib/property-manager";
 import { Building2, Home, MapPin, Bed, Bath, User, Building } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import PropertyForm from '@/components/website/PropertyManager/RegisterPropertyForm';
+import EditPropertyForm from '@/components/website/PropertyManager/UpdatePropertyForm';
+
 
 
 export default function PropertyManagerPage() {
@@ -14,6 +16,9 @@ export default function PropertyManagerPage() {
   const [openMenu, setOpenMenu] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
 
 
   const { user } = useAuth();
@@ -126,6 +131,51 @@ export default function PropertyManagerPage() {
     </div>
   </div>
 )}
+
+ {/* Edit Property Modal */}
+        {editModalOpen && selectedProperty && (
+          <Modal close={() => setEditModalOpen(false)}>
+            <h2 className="text-xl font-semibold mb-4">Update Property</h2>
+            <EditPropertyForm
+              initialData={selectedProperty}
+              onSuccess={() => { setEditModalOpen(false); refreshProperties(); }}
+            />
+          </Modal>
+        )}
+
+        {/* Delete Property Modal */}
+        {deleteModalOpen && selectedProperty && (
+          <Modal close={() => setDeleteModalOpen(false)}>
+            <h2 className="text-xl font-semibold text-red-600">Confirm Delete</h2>
+            <p className="text-gray-700 mt-3">
+              Are you sure you want to delete <strong>{selectedProperty.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteProperty(selectedProperty.id);
+                    setDeleteModalOpen(false);
+                    refreshProperties();
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to delete property.");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </Modal>
+        )}
+
 
 
         <div className="overflow-x-auto">
@@ -262,6 +312,19 @@ export default function PropertyManagerPage() {
         >
           Manage Units & Leases
         </button>
+
+         <button
+            onClick={() => { setSelectedProperty(p); setEditModalOpen(true); setOpenMenu(null); }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
+                          >
+           ✏️ Update Property
+            </button>
+             <button
+              onClick={() => { setSelectedProperty(p); setDeleteModalOpen(true); setOpenMenu(null); }}
+            className="block w-full text-left px-4 py-2 text-sm hover:bg-red-50 text-red-600"
+                          >
+                            🗑 Delete Property
+               </button>
       </div>
     )}
   </div>
@@ -275,4 +338,54 @@ export default function PropertyManagerPage() {
       </div>
     </div>
   );
+ function refreshProperties() {
+    if (!user?.organizationUserId || !user?.organization?.id) return;
+    setLoading(true);
+    getProperties(user.organizationUserId, user.organization.id)
+      .then(setProperties)
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }
 }
+
+// Modal helper
+const Modal = ({ children, close }: { children: React.ReactNode; close: () => void }) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-3xl p-6 relative">
+      <button
+        onClick={close}
+        className="absolute top-4 right-4 text-gray-500 text-lg hover:text-gray-700"
+      >
+        ✕
+      </button>
+      {children}
+    </div>
+  </div>
+);
+
+const Loading = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-500">Loading properties...</p>
+    </div>
+  </div>
+);
+
+const Error = ({ message }: { message: string }) => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center text-red-500">{message}</div>
+  </div>
+);
+
+const Empty = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="text-center">
+      <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <p className="text-gray-500 text-lg">No properties found.</p>
+      <p className="text-gray-400 text-sm mt-2">Start by adding your first property.</p>
+    </div>
+  </div>
+);
+
+
