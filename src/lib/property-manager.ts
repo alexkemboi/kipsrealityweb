@@ -101,3 +101,71 @@ export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
     throw error;
   }
 };
+
+
+export const updateProperty = async (
+  id: string,
+  updatedData: PropertyPayload
+) => {
+  try {
+    const payload = {
+      id,
+      ...updatedData,
+      managerId: updatedData.manager?.orgUserId,
+      organizationId: updatedData.manager?.organizationId,
+    };
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `API Error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+      throw new Error("Failed to update property");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating property:", error);
+    throw error;
+  }
+};
+
+
+export const deleteProperty = async (id: string) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `API Error: ${response.status} ${response.statusText} - ${errorText}`
+      );
+      throw new Error("Failed to delete property");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting property:", error);
+    throw error;
+  }
+};

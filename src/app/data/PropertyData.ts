@@ -32,6 +32,7 @@ export interface HouseDetail {
   numberOfFloors?: number;
   bedrooms?: number;
   bathrooms?: number;
+ houseName?: string;
   size?: number;
     totalUnits?: number;
 

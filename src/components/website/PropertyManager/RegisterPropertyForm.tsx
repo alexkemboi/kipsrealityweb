@@ -17,7 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 export default function PropertyForm() {
   const { register, handleSubmit, watch, reset } = useForm<Property>({
     defaultValues: {
-      houseDetail: { numberOfFloors: 0, bedrooms: 0, bathrooms: 0, size: 0 },
+      houseDetail: { houseName: "",numberOfFloors: 0, bedrooms: 0, bathrooms: 0, size: 0 },
       apartmentComplexDetail: { buildingName: "", totalFloors: 0, totalUnits: 0 },
       applianceIds: [],
       isFurnished: false,
@@ -146,6 +146,22 @@ export default function PropertyForm() {
            {/* House Fields */}
 {selectedPropertyTypeName === "house" && (
   <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+ {/* House Name */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="houseName"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      House Name
+    </label>
+    <input
+      id="houseName"
+      {...register("houseDetail.houseName")}
+      placeholder="Enter house name"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
     {/* Number of Floors */}
     <div className="flex flex-col">
       <label

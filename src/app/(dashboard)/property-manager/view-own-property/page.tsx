@@ -1,22 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getProperties } from "@/lib/property-manager";
-import { Building2, Home, MapPin, Bed, Bath, User, Building } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { getProperties, deleteProperty } from "@/lib/property-manager";
+import { Building2, Home, MapPin, Bed, Bath, User, Building, MoreVertical, Eye, FileText, Edit, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import PropertyForm from '@/components/website/PropertyManager/RegisterPropertyForm';
-
+import EditPropertyForm from '@/components/website/PropertyManager/UpdatePropertyForm';
 
 export default function PropertyManagerPage() {
   const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [openMenu, setOpenMenu] = useState(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState<any | null>(null);
 
   const { user } = useAuth();
+  const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openMenu) {
+        const dropdownElement = dropdownRefs.current[openMenu];
+        if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+          setOpenMenu(null);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenu]);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -31,7 +51,6 @@ export default function PropertyManagerPage() {
           user.organizationUserId,     
           user.organization.id        
         );
-
         setProperties(data);
       } catch (err) {
         console.error(err);
@@ -40,7 +59,6 @@ export default function PropertyManagerPage() {
         setLoading(false);
       }
     };
-
 
     fetchProperties();
   }, [user]);
@@ -82,11 +100,12 @@ export default function PropertyManagerPage() {
   return (
     <div className="p-6 space-y-6">
       {user?.organization && (
-          <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
-            <Building className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">{user.organization.name}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-lg">
+          <Building className="w-5 h-5 text-blue-600" />
+          <span className="text-sm font-medium text-blue-900">{user.organization.name}</span>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -96,39 +115,77 @@ export default function PropertyManagerPage() {
           </p>
         </div>
         
- {/* Add Property Button */}
-  <button
-    onClick={() => setIsModalOpen(true)}
-    className="bg-blue-600 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-700 transition"
-  >
-    + Add Property
-  </button>
-
-
+        {/* Add Property Button */}
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2 font-medium"
+        >
+          <PlusIcon className="w-5 h-5" />
+          Add Property
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-{/* Add Property Modal */}
-{isModalOpen && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-3xl p-6 relative">
+        {/* Add Property Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-3xl p-6 relative">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 text-lg hover:text-gray-700 transition-colors"
+              >
+                ✕
+              </button>
+              <PropertyForm />
+            </div>
+          </div>
+        )}
 
-      {/* Close button */}
-      <button
-        onClick={() => setIsModalOpen(false)}
-        className="absolute top-4 right-4 text-gray-500 text-lg hover:text-gray-700"
-      >
-        ✕
-      </button>
+        {/* Edit Property Modal */}
+        {editModalOpen && selectedProperty && (
+          <Modal close={() => setEditModalOpen(false)}>
+            <h2 className="text-xl font-semibold mb-4">Update Property</h2>
+            <EditPropertyForm
+              initialData={selectedProperty}
+              onSuccess={() => { setEditModalOpen(false); refreshProperties(); }}
+            />
+          </Modal>
+        )}
 
-      {/* PropertyForm Component */}
-      <PropertyForm />
-    </div>
-  </div>
-)}
+        {/* Delete Property Modal */}
+        {deleteModalOpen && selectedProperty && (
+          <Modal close={() => setDeleteModalOpen(false)}>
+            <h2 className="text-xl font-semibold text-red-600">Confirm Delete</h2>
+            <p className="text-gray-700 mt-3">
+              Are you sure you want to delete <strong>{selectedProperty.name}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteProperty(selectedProperty.id);
+                    setDeleteModalOpen(false);
+                    refreshProperties();
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed to delete property.");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </Modal>
+        )}
 
-
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-screen">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -138,8 +195,7 @@ export default function PropertyManagerPage() {
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Details</th>
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Manager</th>
                 <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Status</th>
-                <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700"> Actions
-</th>
+                <th className="py-4 px-6 text-left text-sm font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -161,7 +217,14 @@ export default function PropertyManagerPage() {
                           {p.type}
                         </h2>
                         {p.type?.toLowerCase() === "apartment" && p.details?.buildingName && (
-                          <p className="text-sm text-blue-600 font-medium mt-1">{p.details.buildingName}</p>
+                          <p className="text-sm text-blue-600 font-medium mt-1">
+                            {p.details.buildingName}
+                          </p>
+                        )}
+                        {p.details?.houseName && (
+                          <p className="text-sm text-blue-600 font-medium mt-1">
+                            {p.details.houseName}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -221,41 +284,97 @@ export default function PropertyManagerPage() {
                     </div>
                   </td>
                   <td className="py-5 px-6 relative" onClick={(e) => e.stopPropagation()}>
-  <div className="relative">
-    <button
-      onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)}
-      className="px-3 py-1 bg-gray-100 rounded-md hover:bg-gray-200 text-sm"
-    >
-      ⋮ More
-    </button>
+                    <div 
+                      className="relative"
+                      ref={(el) => { dropdownRefs.current[p.id] = el; }}
+                    >
+                      <button
+                        onClick={() => setOpenMenu(openMenu === p.id ? null : p.id)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm text-gray-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                        <span>Actions</span>
+                      </button>
 
-    {/* Dropdown Menu */}
-    {openMenu === p.id && (
-      <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-        <button
-          onClick={() =>
-            (window.location.href =
-              `/property-manager/view-own-property/${p.id}/units?type=${p.type}`)
-          }
-          className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
-        >
-          View Units
-        </button>
+                      {/* Improved Dropdown Menu */}
+                      {openMenu === p.id && (
+                        <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                          {/* Header */}
+                          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                            <p className="text-sm font-semibold text-gray-800 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-500 capitalize mt-1">{p.type} • {p.city}</p>
+                          </div>
+                          
+                          <div className="py-2">
+                            {/* View Units */}
+                            <button
+                              onClick={() => {
+                                window.location.href = `/property-manager/view-own-property/${p.id}/units?type=${p.type}`;
+                                setOpenMenu(null);
+                              }}
+                              className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors group"
+                            >
+                              <Eye className="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-600" />
+                              <div className="text-left">
+                                <div className="font-medium">View Units</div>
+                                <div className="text-xs text-gray-500 group-hover:text-blue-600">Browse all property units</div>
+                              </div>
+                            </button>
 
-        <button
-          onClick={() =>
-            (window.location.href =
-              `/property-manager/view-own-property/${p.id}/manage_units_and_leases`)
-          }
-          className="block w-full text-left px-4 py-2 text-sm hover:bg-blue-50"
-        >
-          Manage Units & Leases
-        </button>
-      </div>
-    )}
-  </div>
-</td>
+                            {/* Manage Units & Leases */}
+                            <button
+                              onClick={() => {
+                                window.location.href = `/property-manager/view-own-property/${p.id}/manage_units_and_leases`;
+                                setOpenMenu(null);
+                              }}
+                              className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors group"
+                            >
+                              <FileText className="w-4 h-4 mr-3 text-gray-400 group-hover:text-blue-600" />
+                              <div className="text-left">
+                                <div className="font-medium">Manage Units & Leases</div>
+                                <div className="text-xs text-gray-500 group-hover:text-blue-600">Leases and contracts</div>
+                              </div>
+                            </button>
 
+                            {/* Divider */}
+                            <div className="border-t border-gray-100 my-1"></div>
+
+                            {/* Update Property */}
+                            <button
+                              onClick={() => { 
+                                setSelectedProperty(p); 
+                                setEditModalOpen(true); 
+                                setOpenMenu(null); 
+                              }}
+                              className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors group"
+                            >
+                              <Edit className="w-4 h-4 mr-3 text-gray-400 group-hover:text-green-600" />
+                              <div className="text-left">
+                                <div className="font-medium">Update Property</div>
+                                <div className="text-xs text-gray-500 group-hover:text-green-600">Edit property details</div>
+                              </div>
+                            </button>
+
+                            {/* Delete Property */}
+                            <button
+                              onClick={() => { 
+                                setSelectedProperty(p); 
+                                setDeleteModalOpen(true); 
+                                setOpenMenu(null); 
+                              }}
+                              className="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors group"
+                            >
+                              <Trash2 className="w-4 h-4 mr-3 text-red-400 group-hover:text-red-600" />
+                              <div className="text-left">
+                                <div className="font-medium">Delete Property</div>
+                                <div className="text-xs text-red-500 group-hover:text-red-600">Remove permanently</div>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -264,4 +383,36 @@ export default function PropertyManagerPage() {
       </div>
     </div>
   );
+
+  function refreshProperties() {
+    if (!user?.organizationUserId || !user?.organization?.id) return;
+    setLoading(true);
+    getProperties(user.organizationUserId, user.organization.id)
+      .then(setProperties)
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false));
+  }
 }
+
+// Plus Icon component
+const PlusIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+  </svg>
+);
+
+// Modal helper
+const Modal = ({ children, close }: { children: React.ReactNode; close: () => void }) => (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto w-full max-w-3xl p-6 relative">
+      <button
+        onClick={close}
+        className="absolute top-4 right-4 text-gray-500 text-lg hover:text-gray-700 transition-colors"
+      >
+        ✕
+      </button>
+      {children}
+    </div>
+  </div>
+);
+

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createManualInvoice } from "@/lib/Invoice";
 import { ManualInvoiceInput, Invoice } from "@/app/data/FinanceData";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 interface ManualInvoiceFormProps {
   leaseId: string;
