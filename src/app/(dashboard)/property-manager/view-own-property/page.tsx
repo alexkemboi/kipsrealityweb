@@ -219,7 +219,6 @@ export default function PropertyManagerPage() {
                   <tr
                     key={p.id}
                     className="hover:bg-blue-50 transition-colors duration-150 cursor-pointer group"
-                    onClick={() => window.location.href = `/property-manager/view-own-property/${p.id}`}
                   >
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
