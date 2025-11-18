@@ -312,25 +312,26 @@ model services {
 }
 
 model MaintenanceRequest {
-  id                 String           @id @default(uuid())
+  id                 String                    @id @default(uuid())
   organizationId     String
   propertyId         String
   requestedById      String
   title              String
   description        String
-  priority           Priority         @default(NORMAL)
-  status             RequestStatus    @default(OPEN)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  category           RequestCategory  @default(STANDARD)
+  priority           Priority                  @default(NORMAL)
+  status             MaintenanceRequest_status @default(OPEN)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  category           RequestCategory           @default(STANDARD)
   unitId             String?
   assigned_vendor_id String?
-  assigned_at        DateTime?        @db.DateTime(0)
-  organization       Organization     @relation(fields: [organizationId], references: [id])
-  property           Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy        OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
-  unit               Unit?            @relation(fields: [unitId], references: [id])
-  vendors            Vendor?          @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+  cost               Decimal?                  @db.Decimal(10, 2)
+  assigned_at        DateTime?                 @db.DateTime(0)
+  organization       Organization              @relation(fields: [organizationId], references: [id])
+  property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
+  requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
+  unit               Unit?                     @relation(fields: [unitId], references: [id])
+  vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
 
   @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
   @@index([propertyId], map: "MaintenanceRequest_propertyId_fkey")
@@ -442,6 +443,7 @@ model HouseDetail {
   bedrooms       Int?
   size           Float?
   totalUnits     Int?
+  houseName      String?  @db.VarChar(255)
   property       Property @relation(fields: [propertyId], references: [id])
 }
 
@@ -772,14 +774,6 @@ enum Priority {
   URGENT
 }
 
-enum RequestStatus {
-  OPEN
-  IN_PROGRESS
-  ON_HOLD
-  COMPLETED
-  CANCELLED
-}
-
 enum RequestCategory {
   EMERGENCY
   URGENT
@@ -827,4 +821,13 @@ enum invoice_status {
   PENDING
   PAID
   OVERDUE
+}
+
+enum MaintenanceRequest_status {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  REJECTED
 }

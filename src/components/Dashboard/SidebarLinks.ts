@@ -166,8 +166,7 @@ export const routeConfig = {
     ],
     maintenance: [
       { path: '/property-manager/maintenance/requests', label: 'Requests', icon: Wrench },
-      { path: '/property-manager/maintenance/vendors', label: 'Assign Vendors', icon: Wrench },
-      { path: '/property-manager/maintenance/analytics', label: 'Analytics', icon: Wrench },
+      // Removed 'Assign Vendors' and 'Analytics' links as requested
     ],
     accounting: [
       { path: '/property-manager/accounting/invoicing', label: 'Rent Invoicing', icon: DollarSign },

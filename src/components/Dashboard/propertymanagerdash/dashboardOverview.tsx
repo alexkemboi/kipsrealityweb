@@ -18,9 +18,9 @@ const PieChart = dynamic(() => import("../../ApexCharts/PieChart"), { ssr: false
 const Dashboard = () => {
 
 	type Properties = {
-		id: String,
-		name: String,
-		city: String,
+		id: string,
+		name: string,
+		city: string,
 		units: number
 	}
 
@@ -582,7 +582,7 @@ useEffect(() => {
 					{/* Lease Expirations — Calendar Icon */}
 					<UpcomingLeasesCard data={leasesData} />
 				</div>
-								<OccupancyLineChart/>
+								<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
 
 				{/* Tables Section */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-18">

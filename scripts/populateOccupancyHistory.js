@@ -1,11 +1,10 @@
-import { PrismaClient } from '@prisma/client';
-
+const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function populateOccupancyHistory() {
-  const properties = await prisma.property.findMany({});
+async function main() {
+  const properties = await prisma.property.findMany();
   const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
+  const month = new Date().getMonth() + 6;
 
   for (const property of properties) {
     // Get all units for this property
@@ -38,7 +37,7 @@ async function populateOccupancyHistory() {
   }
 }
 
-populateOccupancyHistory()
+main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
