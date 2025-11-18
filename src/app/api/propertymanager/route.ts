@@ -96,7 +96,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // 3. House handling
       else if (propertyType.name.toLowerCase() === "house" && propertyDetails) {
         const house = await tx.houseDetail.create({
           data: {
@@ -106,16 +105,21 @@ export async function POST(req: Request) {
             houseName: propertyDetails.houseName || null,
             bathrooms: propertyDetails.bathrooms || null,
             size: propertyDetails.size || null,
+            totalUnits: propertyDetails.totalUnits || null, // Store totalUnits
           },
         });
 
-        await tx.unit.create({
-          data: {
+        // Create multiple units for house based on totalUnits
+ const totalUnits = propertyDetails.totalUnits ?? 1; // FIX: Default to 1 if not provided
+        console.log(`Creating ${totalUnits} units for house property`); // Debug log
+                if (totalUnits > 0) {
+          const unitsData = Array.from({ length: totalUnits }, (_, i) => ({
             propertyId: prop.id,
             houseDetailId: house.id,
-            unitNumber: "1",
-          },
-        });
+            unitNumber: `${i + 1}`,
+          }));
+          await tx.unit.createMany({ data: unitsData });
+        }
       }
 
       return prop;
@@ -244,12 +248,19 @@ export async function PUT(req: Request) {
         propertyType: true,
         apartmentComplexDetail: true,
         houseDetail: true,
+        units: true, // Include units to manage unit count changes
       },
     });
 
     if (!property) {
       return NextResponse.json({ error: "Property not found" }, { status: 404 });
     }
+
+    if (!property.propertyType) {
+      throw new Error("Property type is missing or invalid.");
+    }
+
+    const type = property.propertyType.name.toLowerCase();
 
     const updated = await prisma.$transaction(async (tx) => {
       // ----- Update Main Property -----
@@ -265,12 +276,6 @@ export async function PUT(req: Request) {
           availabilityStatus,
         },
       });
-
-if (!property.propertyType) {
-  throw new Error("Property type is missing or invalid.");
-}
-
-const type = property.propertyType.name.toLowerCase();
 
       // ===== Update Apartment Details =====
       if (type === "apartment") {
@@ -294,8 +299,36 @@ const type = property.propertyType.name.toLowerCase();
             bathrooms: propertyDetails?.bathrooms ?? null,
             bedrooms: propertyDetails?.bedrooms ?? null,
             size: propertyDetails?.size ?? null,
+            totalUnits: propertyDetails?.totalUnits ?? null, // Update totalUnits
           },
         });
+
+        // Handle unit count changes for houses
+        if (propertyDetails?.totalUnits !== undefined) {
+          const currentUnitCount = property.units.length;
+          const newUnitCount = propertyDetails.totalUnits;
+
+          if (newUnitCount > currentUnitCount) {
+            // Add new units
+            const unitsToAdd = newUnitCount - currentUnitCount;
+            const unitsData = Array.from({ length: unitsToAdd }, (_, i) => ({
+              propertyId: id,
+              houseDetailId: property.houseDetail?.id,
+              unitNumber: `${currentUnitCount + i + 1}`,
+            }));
+            await tx.unit.createMany({ data: unitsData });
+          } else if (newUnitCount < currentUnitCount) {
+            // Remove excess units (remove from the end)
+            const unitsToRemove = currentUnitCount - newUnitCount;
+            const unitsToDelete = property.units
+              .sort((a, b) => parseInt(b.unitNumber) - parseInt(a.unitNumber))
+              .slice(0, unitsToRemove);
+            
+            for (const unit of unitsToDelete) {
+              await tx.unit.delete({ where: { id: unit.id } });
+            }
+          }
+        }
       }
 
       return updatedProperty;

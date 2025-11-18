@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState } from "react";
@@ -14,7 +13,12 @@ import { HomeIcon } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 
-export default function PropertyForm() {
+// Add onSuccess prop to the component
+interface PropertyFormProps {
+  onSuccess?: () => void;
+}
+
+export default function PropertyForm({ onSuccess }: PropertyFormProps) {
   const { register, handleSubmit, watch, reset } = useForm<Property>({
     defaultValues: {
       houseDetail: { houseName: "",numberOfFloors: 0, bedrooms: 0, bathrooms: 0, size: 0 },
@@ -87,6 +91,11 @@ export default function PropertyForm() {
       await postProperty(payload);
       toast.success("Property created successfully!");
       reset();
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error("Error creating property:", error);
       toast.error(error.message || "Failed to create property.");
@@ -94,7 +103,6 @@ export default function PropertyForm() {
       setLoading(false);
     }
   };
-
   return (
     <div className=" bg-gradient-to-b from-gray-50 to-gray-200">
       <Toaster position="top-center" reverseOrder={false} />
