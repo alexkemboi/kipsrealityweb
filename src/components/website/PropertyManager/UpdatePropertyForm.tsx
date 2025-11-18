@@ -194,7 +194,9 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
 
-            <div className="flex flex-col">
+
+            <div className="flex flex-row md:col-span-2 gap-12">
+            <div className="flex flex-col md:col-span-2">
               <label htmlFor="city" className="text-sm font-semibold text-gray-700 mb-1">
                 City *
               </label>
@@ -216,7 +218,9 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
                 placeholder="Enter full address"
                 className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </div>
+                 </div>
+             </div>
+
           </div>
         </div>
 
