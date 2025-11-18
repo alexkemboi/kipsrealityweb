@@ -178,7 +178,7 @@ export default function PropertyManagerPage() {
 
 
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-screen">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
