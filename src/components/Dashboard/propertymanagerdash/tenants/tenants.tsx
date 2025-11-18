@@ -12,7 +12,8 @@ import router from "next/router";
 // Types
 interface Tenant {
   id: string;
-  name?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   phone?: string | null;
 }
@@ -173,12 +174,26 @@ export default function EnhancedTenantDashboard() {
     }
   }, [selectedLeaseId, leases]);
 
+   // Full name helper
+  const getTenantName = (tenant?: Tenant) => {
+    if (!tenant) return "Unnamed Tenant";
+    const full = [tenant.firstName, tenant.lastName].filter(Boolean).join(" ");
+    return full || tenant.email || "Unnamed Tenant";
+  };
   // Filter functions
-  const filteredLeases = leases.filter((lease) => {
-    const matchesSearch = 
-      lease.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.tenant?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
+   const filteredLeases = leases.filter((lease) => {
+    const name = getTenantName(lease.tenant).toLowerCase();
+    const email = lease.tenant?.email?.toLowerCase() || "";
+    const property = lease.property?.name?.toLowerCase() || "";
+    const unit = lease.unit?.unitNumber?.toLowerCase() || "";
+
+    const matchesSearch =
+      name.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      property.includes(searchTerm.toLowerCase()) ||
+      unit.includes(searchTerm.toLowerCase());
+
+          const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -321,7 +336,7 @@ export default function EnhancedTenantDashboard() {
     if (activeTab === "tenants") {
       headers = ["Tenant Name", "Email", "Phone", "Property", "Unit", "Rent Amount", "Start Date", "End Date", "Status", "Balance"];
       data = filteredLeases.map(lease => [
-        lease.tenant?.name || "N/A",
+        lease.tenant?.firstName + " " + lease.tenant?.lastName || "N/A",
         lease.tenant?.email || "N/A",
         lease.tenant?.phone || "N/A",
         lease.property?.name || lease.property?.city || "N/A",
@@ -579,7 +594,6 @@ export default function EnhancedTenantDashboard() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tenant</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Property & Unit</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Monthly Rent</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Financial Summary</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -601,8 +615,11 @@ export default function EnhancedTenantDashboard() {
                               <User className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">{lease.tenant?.name || "Unnamed"}</p>
-                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
+<p className="font-semibold text-slate-900">
+  {lease.tenant?.firstName && lease.tenant?.lastName
+    ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
+    : "Unnamed"}
+</p>                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
                               {lease.tenant?.phone && (
                                 <p className="text-sm text-slate-500">{lease.tenant.phone}</p>
                               )}
@@ -617,24 +634,7 @@ export default function EnhancedTenantDashboard() {
                           <p className="font-semibold text-slate-900">KES {lease.rentAmount?.toLocaleString()}</p>
                           <p className="text-xs text-slate-500">/month</p>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Invoiced:</span>
-                              <span className="font-semibold text-slate-900">KES {(lease.financialSummary?.totalInvoiced || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Paid:</span>
-                              <span className="font-semibold text-green-600">KES {(lease.financialSummary?.totalPaid || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Balance:</span>
-                              <span className={`font-semibold ${(lease.financialSummary?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                KES {(lease.financialSummary?.balance || 0).toLocaleString()}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
+                       
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
                             {lease.leaseStatus}
