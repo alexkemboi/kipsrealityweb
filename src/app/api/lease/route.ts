@@ -173,9 +173,14 @@ export async function GET(req: NextRequest) {
         lease.property?.name ??
         "N/A";
 
+        const houseName =
+        lease.property?.houseDetail?.houseName ??
+        lease.property?.name ??
+        "N/A";
       return {
         ...lease,
         buildingName,
+        houseName,
         financialSummary: { totalInvoiced, totalPaid, balance },
       };
     });
