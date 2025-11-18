@@ -6,13 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
 import {
   ArrowLeft,
@@ -49,8 +43,10 @@ export default function NewMeterReadingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [initialReading, setInitialReading] = useState<number | null>(null);
-  const [previousReading, setPreviousReading] = useState<number | null>(null);
+  const [readingsMap, setReadingsMap] = useState<{
+    [leaseUtilityId: string]: { initial: number | null; previous: number | null };
+  }>({});
+
   const [consumption, setConsumption] = useState<number | null>(null);
 
   useEffect(() => {
@@ -65,9 +61,7 @@ export default function NewMeterReadingPage() {
       const data = await res.json();
 
       if (data.success) {
-        const metered = (data.data || []).filter(
-          (lu: LeaseUtility) => lu.utility.type === "METERED"
-        );
+        const metered = (data.data || []).filter((lu: LeaseUtility) => lu.utility.type === "METERED");
         setLeaseUtilities(metered);
         if (metered.length === 0) {
           setError("No metered utilities found. Please assign metered utilities to leases first.");
@@ -85,7 +79,10 @@ export default function NewMeterReadingPage() {
   };
 
   const selectedUtility = leaseUtilities.find((lu) => lu.id === selectedLU);
+  const selectedReadings = readingsMap[selectedLU] || { initial: null, previous: null };
+  const { initial: initialReading, previous: previousReading } = selectedReadings;
 
+  // Fetch readings per lease utility
   useEffect(() => {
     const fetchReadings = async () => {
       if (!selectedLU) return;
@@ -96,10 +93,15 @@ export default function NewMeterReadingPage() {
           const readings = (data.data || []).sort(
             (a: any, b: any) => new Date(a.readingDate).getTime() - new Date(b.readingDate).getTime()
           );
-          setInitialReading(readings[0]?.reading_value ?? null);
-          setPreviousReading(
-            readings.length > 1 ? readings[readings.length - 1]?.reading_value : readings[0]?.reading_value ?? 0
-          );
+
+          const initial = readings.length ? readings[0].reading_value : null;
+          const previous =
+            readings.length > 1 ? readings[readings.length - 1].reading_value : readings[0]?.reading_value || 0;
+
+          setReadingsMap((prev) => ({
+            ...prev,
+            [selectedLU]: { initial, previous },
+          }));
         }
       } catch (err) {
         console.error(err);
@@ -108,16 +110,16 @@ export default function NewMeterReadingPage() {
     fetchReadings();
   }, [selectedLU]);
 
+  // Calculate consumption
   useEffect(() => {
     const current = parseFloat(readingValue);
     if (!isNaN(current) && previousReading !== null) {
       const cons = current - previousReading;
       setConsumption(cons >= 0 ? cons : null);
-    } else {
-      setConsumption(null);
-    }
+    } else setConsumption(null);
   }, [readingValue, previousReading]);
 
+  // Calculate amount
   useEffect(() => {
     if (selectedUtility && selectedUtility.utility.unitPrice && consumption !== null) {
       setAmount(consumption * selectedUtility.utility.unitPrice);
@@ -246,7 +248,7 @@ export default function NewMeterReadingPage() {
                       </div>
                       Select Lease Utility <span className="text-red-500">*</span>
                     </Label>
-                    <Select value={selectedLU} onValueChange={setSelectedLU} disabled={isSubmitting}>
+                    <Select value={selectedLU} onValueChange={(val) => { setSelectedLU(val); setReadingValue(""); }}>
                       <SelectTrigger
                         id="lease-utility"
                         className="h-14 border-2 border-gray-300 hover:border-[#30D5C8] focus:border-[#30D5C8] transition-colors text-base bg-white shadow-sm"

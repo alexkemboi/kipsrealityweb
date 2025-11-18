@@ -96,22 +96,16 @@ export default function PropertyForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200">
+    <div className=" bg-gradient-to-b from-gray-50 to-gray-200">
       <Toaster position="top-center" reverseOrder={false} />
 
       {/* Banner */}
-      <section className="relative w-full bg-[#18181a] text-white py-28 text-center overflow-hidden mb-24">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-700/60 to-indigo-600/60 mix-blend-overlay" />
-        <div className="relative z-10">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">Register Your Property</h1>
-          <p className="text-white/80 text-lg max-w-2xl mx-auto">
-            Add your property to the marketplace.
-          </p>
-        </div>
+      <section className="relative w-full  text-white py-14 text-center overflow-hidden ">
+       
       </section>
 
       {/* Form Section */}
-      <main className="max-w-4xl mx-auto px-6 sm:px-8 -mt-20 mb-20">
+      <main className="max-w-4xl mx-auto px-6 sm:px-8 -mt-20 mb-8">
         <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl p-10 border border-white/20">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-blue-600 text-white rounded-full shadow-lg">
@@ -319,7 +313,6 @@ export default function PropertyForm() {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }

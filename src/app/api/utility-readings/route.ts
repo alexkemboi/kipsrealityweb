@@ -57,14 +57,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { lease_utility_id, reading_value, readingDate } = body;
 
-    if (!lease_utility_id || reading_value === undefined) {
-      return NextResponse.json({ success: false, error: "lease_utility_id and reading_value are required" }, { status: 400 });
+    if (!lease_utility_id || reading_value == null) {
+      return NextResponse.json(
+        { success: false, error: "lease_utility_id and reading_value are required" },
+        { status: 400 }
+      );
     }
 
-    // Get previous reading for calculation
-    const lastReading = await prisma.utility_reading.findFirst({
+    const previous = await prisma.utility_reading.findFirst({
       where: { lease_utility_id },
-      orderBy: { readingDate: 'desc' },
+      orderBy: { readingDate: "desc" }
     });
 
     const leaseUtility = await prisma.lease_utility.findUnique({
@@ -73,24 +75,35 @@ export async function POST(req: NextRequest) {
     });
 
     if (!leaseUtility) {
-      return NextResponse.json({ success: false, error: "Lease utility not found" }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: "Lease utility not found" },
+        { status: 404 }
+      );
     }
 
-    const consumption = lastReading ? reading_value - lastReading.reading_value : reading_value;
-    const amount = leaseUtility.utility.unitPrice ? consumption * leaseUtility.utility.unitPrice : 0;
+    const prevVal = previous?.reading_value ?? 0;
+    const consumption = reading_value - prevVal;
+
+    if (consumption < 0) {
+      return NextResponse.json(
+        { success: false, error: "Reading must be greater than previous reading" },
+        { status: 400 }
+      );
+    }
+
+    const amount = consumption * (leaseUtility.utility.unitPrice ?? 0);
 
     const newReading = await prisma.utility_reading.create({
       data: {
         lease_utility_id,
         reading_value,
-        readingDate: readingDate ? new Date(readingDate) : undefined,
-        amount
+        readingDate: readingDate ? new Date(readingDate) : new Date(),
+        amount,
       },
     });
 
     return NextResponse.json({ success: true, data: newReading });
   } catch (error: any) {
-    console.error(error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -2,8 +2,11 @@
 import { FullInvoiceInput, ManualInvoiceInput, ManualInvoiceItem,ManualUtilityItem, Invoice } from "@/app/data/FinanceData";
 
 
+
+
 export async function generateFullInvoice(data: FullInvoiceInput): Promise<Invoice> {
   try {
+    
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/full`,
       {
@@ -215,5 +218,29 @@ export async function fetchInvoicesForTenant(tenantId: string) {
   } catch (error: any) {
     console.error("fetchInvoicesForTenant ERROR:", error);
     throw new Error(error?.message || "Unexpected error fetching invoices");
+  }
+}
+
+// src/lib/Invoice.ts
+export async function downloadInvoicePDF(invoiceId: string) {
+  try {
+    const res = await fetch(`/api/invoices/${invoiceId}/download`);
+
+    if (!res.ok) {
+      throw new Error("Failed to download invoice");
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `invoice-${invoiceId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error downloading invoice PDF:", error);
+    throw error;
   }
 }

@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search, Filter, Download, Phone, Mail, Home, Calendar, DollarSign, User } from "lucide-react";
+import { 
+  User, Home, FileText, Mail, DollarSign, Calendar, 
+  Phone, Search, Eye, Download, Check, X,
+  AlertCircle, Plus, ExternalLink, TrendingUp,
+  Clock, CheckCircle, AlertTriangle
+} from "lucide-react";
+import router from "next/router";
 
+// Types
 interface Tenant {
   id: string;
   name?: string;
@@ -13,17 +20,22 @@ interface Tenant {
 interface Property {
   id: string;
   name: string;
+  city?: string;
+  address?: string;
 }
 
 interface Unit {
   id: string;
   unitNumber: string;
+  unitName?: string;
+  rentAmount?: number;
 }
 
 interface FinancialSummary {
   totalInvoiced: number;
   totalPaid: number;
   balance: number;
+  lastPaymentDate?: string;
 }
 
 interface Lease {
@@ -35,90 +47,341 @@ interface Lease {
   endDate: string;
   rentAmount: number;
   securityDeposit?: number | null;
-  leaseStatus: "DRAFT" | "SIGNED" | "PENDING" | string;
-  financialSummary?: FinancialSummary; 
+  leaseStatus: string;
+  financialSummary?: FinancialSummary;
+  application?: {
+    id: string;
+    fullName?: string;
+    email?: string;
+    phone?: string;
+  } | null;
 }
 
+interface Application {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  status: string;
+  property?: Property;
+  unit?: Unit;
+  moveInDate: string;
+  createdAt: string;
+  employerName?: string;
+  jobTitle?: string;
+  monthlyIncome?: number;
+  address?: string;
+  dob?: string;
+}
 
-export default function TenantLeasesPage() {
+interface Invite {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  accepted: boolean;
+  createdAt: string;
+  leaseId: string;
+  token: string;
+}
+
+export default function EnhancedTenantDashboard() {
+  const [activeTab, setActiveTab] = useState<"tenants" | "applications" | "invites">("tenants");
+    const [tenants, setTenants] = useState<Tenant[]>([]);
+
+  // Data states
   const [leases, setLeases] = useState<Lease[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  
+  // UI states
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  
+  // Invite form state
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteFirstName, setInviteFirstName] = useState("");
+  const [inviteLastName, setInviteLastName] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [selectedLeaseId, setSelectedLeaseId] = useState<string | null>(null);
+  const [inviteSending, setInviteSending] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
+  // Fetch all data
   useEffect(() => {
-    async function fetchLeases() {
+    async function fetchAllData() {
+      setLoading(true);
       try {
-        const res = await fetch("/api/lease");
-        if (!res.ok) {
-          throw new Error("Failed to fetch leases");
-        }
-        const data = await res.json();
-        setLeases(Array.isArray(data) ? data : []);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching leases:", err);
-        setError("Failed to load tenant data. Please try again.");
-        setLeases([]);
+        const [leasesRes, appsRes, invitesRes] = await Promise.all([
+          fetch("/api/lease"),
+          fetch("/api/tenant-application"),
+          fetch("/api/auth/invites/tenant")
+        ]);
+
+        const [leasesData, appsData, invitesData] = await Promise.all([
+          leasesRes.json(),
+          appsRes.json(),
+          invitesRes.json()
+        ]);
+
+        setLeases(Array.isArray(leasesData) ? leasesData : []);
+        setApplications(Array.isArray(appsData) ? appsData : []);
+        setInvites(invitesData.invites || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchLeases();
+    fetchAllData();
   }, []);
 
+  // Prefill form when lease is selected for invite
+  useEffect(() => {
+    if (selectedLeaseId) {
+      const lease = leases.find(l => l.id === selectedLeaseId);
+      
+      if (lease?.application) {
+        const fullName = lease.application.fullName || "";
+        const nameParts = fullName.trim().split(/\s+/);
+        const fName = nameParts[0] || "";
+        const lName = nameParts.slice(1).join(" ") || "";
+        
+        setInviteEmail(lease.application.email || "");
+        setInviteFirstName(fName);
+        setInviteLastName(lName);
+        setInvitePhone(lease.application.phone || "");
+      } else {
+        setInviteEmail("");
+        setInviteFirstName("");
+        setInviteLastName("");
+        setInvitePhone("");
+      }
+    } else {
+      setInviteEmail("");
+      setInviteFirstName("");
+      setInviteLastName("");
+      setInvitePhone("");
+    }
+  }, [selectedLeaseId, leases]);
+
+  // Filter functions
   const filteredLeases = leases.filter((lease) => {
     const matchesSearch = 
       lease.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.tenant?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.property?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.unit?.unitNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      lease.tenant?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
-    
     return matchesSearch && matchesStatus;
   });
 
-  const stats = {
-    total: leases.length,
-    signed: leases.filter(l => l.leaseStatus === "SIGNED").length,
-    pending: leases.filter(l => l.leaseStatus === "PENDING").length,
-    draft: leases.filter(l => l.leaseStatus === "DRAFT").length,
+  const filteredApplications = applications.filter((app) => {
+    const matchesSearch = 
+      app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "ALL" || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+  
+
+  const filteredInvites = invites.filter((invite) => {
+    const matchesSearch = 
+      invite.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invite.firstName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = 
+      statusFilter === "ALL" || 
+      (statusFilter === "ACCEPTED" && invite.accepted) ||
+      (statusFilter === "PENDING" && !invite.accepted);
+    return matchesSearch && matchesStatus;
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case "SIGNED":
-        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "APPROVED":
+      case "PAID":
+        return "bg-green-100 text-green-700 border-green-200";
       case "PENDING":
         return "bg-amber-100 text-amber-700 border-amber-200";
       case "DRAFT":
+      case "REJECTED":
         return "bg-slate-100 text-slate-700 border-slate-200";
+      case "OVERDUE":
+        return "bg-red-100 text-red-700 border-red-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
-  const isLeaseExpiringSoon = (endDate: string) => {
+  const copyInviteLink = async (token: string, email: string, leaseId: string) => {
+    const baseUrl = window.location.origin;
+    const inviteLink = `${baseUrl}/invite/tenant/accept?email=${encodeURIComponent(email)}&token=${token}&leaseId=${leaseId}`;
+    
     try {
-      const daysUntilExpiry = Math.ceil(
-        (new Date(endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
-    } catch {
-      return false;
+      await navigator.clipboard.writeText(inviteLink);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy link");
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return "Invalid date";
+  const validateInviteForm = () => {
+    if (!selectedLeaseId) {
+      setInviteError("Please select a lease");
+      return false;
     }
+    if (!inviteEmail.trim()) {
+      setInviteError("Email is required");
+      return false;
+    }
+    if (!inviteFirstName.trim()) {
+      setInviteError("First name is required");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail)) {
+      setInviteError("Please enter a valid email address");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSendInvite = async () => {
+    setInviteError(null);
+    setInviteSuccess(null);
+
+    if (!validateInviteForm()) {
+      return;
+    }
+
+    setInviteSending(true);
+    try {
+      const res = await fetch("/api/auth/invites/tenant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          firstName: inviteFirstName.trim(),
+          lastName: inviteLastName.trim(),
+          phone: invitePhone.trim(),
+          leaseId: selectedLeaseId
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send invite");
+      }
+
+      setInvites(prev => [data.tenant, ...prev]);
+      setInviteSuccess("Invite sent successfully!");
+      setTimeout(() => {
+        setInviteSuccess(null);
+        setShowInviteModal(false);
+        resetInviteForm();
+      }, 2000);
+    } catch (err) {
+      setInviteError(err instanceof Error ? err.message : "Failed to send invite");
+    } finally {
+      setInviteSending(false);
+    }
+  };
+
+  const resetInviteForm = () => {
+    setSelectedLeaseId(null);
+    setInviteEmail("");
+    setInviteFirstName("");
+    setInviteLastName("");
+    setInvitePhone("");
+    setInviteError(null);
+  };
+
+  const exportToCSV = () => {
+    let data: (string | number)[][] = [];
+    let headers: string[] = [];
+    let filename = "";
+
+    if (activeTab === "tenants") {
+      headers = ["Tenant Name", "Email", "Phone", "Property", "Unit", "Rent Amount", "Start Date", "End Date", "Status", "Balance"];
+      data = filteredLeases.map(lease => [
+        lease.tenant?.name || "N/A",
+        lease.tenant?.email || "N/A",
+        lease.tenant?.phone || "N/A",
+        lease.property?.name || lease.property?.city || "N/A",
+        lease.unit?.unitNumber || "N/A",
+        lease.rentAmount || "N/A",
+        formatDate(lease.startDate),
+        formatDate(lease.endDate),
+        lease.leaseStatus,
+        lease.financialSummary?.balance || "N/A"
+      ]);
+      filename = "tenants";
+    } else if (activeTab === "applications") {
+      headers = ["Full Name", "Email", "Phone", "Property", "Unit", "Move-in Date", "Status", "Monthly Income", "Submitted"];
+      data = filteredApplications.map(app => [
+        app.fullName,
+        app.email,
+        app.phone,
+        app.property?.name || app.property?.city || "N/A",
+        app.unit?.unitNumber || "N/A",
+        formatDate(app.moveInDate),
+        app.status,
+        app.monthlyIncome || "N/A",
+        formatDate(app.createdAt)
+      ]);
+      filename = "applications";
+    } else {
+      headers = ["Email", "Name", "Phone", "Status", "Created At"];
+      data = filteredInvites.map(invite => [
+        invite.email,
+        `${invite.firstName || ""} ${invite.lastName || ""}`.trim() || "N/A",
+        invite.phone || "N/A",
+        invite.accepted ? "Accepted" : "Pending",
+        formatDate(invite.createdAt)
+      ]);
+      filename = "invites";
+    }
+
+    const csvContent = [
+      headers.join(","),
+      ...data.map((row: (string | number)[]) => row.map((cell: string | number) => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Statistics
+  const stats = {
+    totalTenants: leases.length,
+    activeLeases: leases.filter(l => l.leaseStatus === "SIGNED").length,
+    totalRevenue: leases.reduce((sum, l) => sum + (l.financialSummary?.totalInvoiced || 0), 0),
+    totalPaid: leases.reduce((sum, l) => sum + (l.financialSummary?.totalPaid || 0), 0),
+    totalBalance: leases.reduce((sum, l) => sum + (l.financialSummary?.balance || 0), 0),
+    pendingApplications: applications.filter(a => a.status === "PENDING" || a.status === "Pending").length,
+    pendingInvites: invites.filter(i => !i.accepted).length,
   };
 
   if (loading) {
@@ -126,273 +389,744 @@ export default function TenantLeasesPage() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600 text-lg font-medium">Loading tenant data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="bg-white rounded-2xl shadow-lg border border-red-200 p-8 max-w-md text-center">
-          <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">⚠</span>
-          </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Error Loading Data</h2>
-          <p className="text-slate-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Retry
-          </button>
+          <p className="text-slate-600 text-lg font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Tenant Management</h1>
-              <p className="text-slate-600 mt-1">Manage and monitor all your tenants and leases</p>
+              <p className="text-slate-600 mt-1">Manage tenants, applications, invitations & payments</p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-              <Download className="w-4 h-4" />
-              Export Report
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Invite
             </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm font-medium">Total Tenants</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{stats.total}</p>
-              </div>
+            <div className="flex items-center gap-3">
               <div className="bg-blue-100 p-3 rounded-lg">
                 <User className="w-6 h-6 text-blue-600" />
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-600 text-sm font-medium">Active Leases</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-1">{stats.signed}</p>
-              </div>
-              <div className="bg-emerald-100 p-3 rounded-lg">
-                <Calendar className="w-6 h-6 text-emerald-600" />
+                <p className="text-sm text-slate-600">Total Tenants</p>
+                <p className="text-2xl font-bold text-slate-900">{stats.totalTenants}</p>
+                <p className="text-xs text-slate-500">{stats.activeLeases} active</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm font-medium">Pending</p>
-                <p className="text-3xl font-bold text-amber-600 mt-1">{stats.pending}</p>
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-3 rounded-lg">
+                <DollarSign className="w-6 h-6 text-green-600" />
               </div>
+              <div>
+                <p className="text-sm text-slate-600">Revenue</p>
+                <p className="text-2xl font-bold text-green-600">KES {(stats.totalRevenue / 1000).toFixed(0)}k</p>
+                <p className="text-xs text-slate-500">Paid: KES {(stats.totalPaid / 1000).toFixed(0)}k</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <div className="flex items-center gap-3">
               <div className="bg-amber-100 p-3 rounded-lg">
-                <Filter className="w-6 h-6 text-amber-600" />
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Pending Items</p>
+                <p className="text-2xl font-bold text-amber-600">{stats.pendingApplications + stats.pendingInvites}</p>
+                <p className="text-xs text-slate-500">Applications & Invites</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-slate-600 text-sm font-medium">Drafts</p>
-                <p className="text-3xl font-bold text-slate-600 mt-1">{stats.draft}</p>
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 p-3 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-red-600" />
               </div>
-              <div className="bg-slate-100 p-3 rounded-lg">
-                <DollarSign className="w-6 h-6 text-slate-600" />
+              <div>
+                <p className="text-sm text-slate-600">Outstanding Balance</p>
+                <p className="text-2xl font-bold text-red-600">KES {(stats.totalBalance / 1000).toFixed(0)}k</p>
+                <p className="text-xs text-slate-500">Total pending</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {/* Tabs */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setActiveTab("tenants");
+                setSearchTerm("");
+                setStatusFilter("ALL");
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeTab === "tenants"
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Active Tenants ({stats.totalTenants})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("applications");
+                setSearchTerm("");
+                setStatusFilter("ALL");
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeTab === "applications"
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Applications ({applications.length})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("invites");
+                setSearchTerm("");
+                setStatusFilter("ALL");
+              }}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeTab === "invites"
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Invites ({invites.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Search, Filters, and Export */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search by tenant name, email, property, or unit..."
+                placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
             </div>
-            
-            <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
-              >
-                <option value="ALL">All Status</option>
-                <option value="SIGNED">Signed</option>
-                <option value="PENDING">Pending</option>
-                <option value="DRAFT">Draft</option>
-              </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+            >
+              <option value="ALL">All Status</option>
+              {activeTab === "tenants" && (
+                <>
+                  <option value="SIGNED">Active</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="DRAFT">Draft</option>
+                </>
+              )}
+              {activeTab === "applications" && (
+                <>
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                </>
+              )}
+              {activeTab === "invites" && (
+                <>
+                  <option value="PENDING">Pending</option>
+                  <option value="ACCEPTED">Accepted</option>
+                </>
+              )}
+            </select>
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          </div>
+        </div>
 
-              <div className="flex border border-slate-300 rounded-lg overflow-hidden">
+        {/* Content Area - Tables */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* Active Tenants Table */}
+          {activeTab === "tenants" && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tenant</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Property & Unit</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Monthly Rent</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Financial Summary</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLeases.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-600">No tenants found</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLeases.map((lease) => (
+                      <tr key={lease.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue-100 p-2 rounded-lg">
+                              <User className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{lease.tenant?.name || "Unnamed"}</p>
+                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
+                              {lease.tenant?.phone && (
+                                <p className="text-sm text-slate-500">{lease.tenant.phone}</p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-slate-900">{lease.property?.name || lease.property?.city}</p>
+                          <p className="text-sm text-slate-500">Unit {lease.unit?.unitNumber}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-semibold text-slate-900">KES {lease.rentAmount?.toLocaleString()}</p>
+                          <p className="text-xs text-slate-500">/month</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Invoiced:</span>
+                              <span className="font-semibold text-slate-900">KES {(lease.financialSummary?.totalInvoiced || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Paid:</span>
+                              <span className="font-semibold text-green-600">KES {(lease.financialSummary?.totalPaid || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600">Balance:</span>
+                              <span className={`font-semibold ${(lease.financialSummary?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                KES {(lease.financialSummary?.balance || 0).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
+                            {lease.leaseStatus}
+                          </span>
+                        </td>
+                       <td className="px-6 py-4">
+  <div className="flex items-center gap-3">
+
+    {/* View Lease */}
+    <button
+      onClick={() => window.location.href=`/property-manager/content/lease/${lease.id}`}
+      className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all text-sm shadow-sm"
+    >
+      <Eye className="w-4 h-4" />
+      View
+    </button>
+
+    {/* Finance */}
+    <button
+      onClick={() =>
+        window.location.href=`/property-manager/content/tenants/${lease.tenant?.id}`
+      }
+      
+      className="flex items-center gap-2 bg-green-600 text-white px-3 py-1.5 
+                 rounded-lg hover:bg-green-700 transition-all text-sm shadow-sm"
+    >
+      💰 Finance
+    </button>
+
+  </div>
+</td>
+
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Applications Table */}
+          {activeTab === "applications" && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Applicant</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Property & Unit</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Employment</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Move-in Date</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredApplications.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-600">No applications found</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredApplications.map((app) => (
+                      <tr key={app.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-amber-100 p-2 rounded-lg">
+                              <FileText className="w-5 h-5 text-amber-600" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{app.fullName}</p>
+                              <p className="text-sm text-slate-500">{app.email}</p>
+                              <p className="text-sm text-slate-500">{app.phone}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-slate-900">{app.property?.name || app.property?.city}</p>
+                          <p className="text-sm text-slate-500">Unit {app.unit?.unitNumber}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-slate-900">{app.jobTitle || "N/A"}</p>
+                            <p className="text-xs text-slate-500">{app.employerName || "N/A"}</p>
+                            <p className="text-xs text-slate-600">KES {(app.monthlyIncome || 0).toLocaleString()}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-slate-700">{formatDate(app.moveInDate)}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(app.status)}`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => {
+                              setSelectedApplication(app);
+                              setShowDetailModal(true);
+                            }}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Review
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Invites Table */}
+          {activeTab === "invites" && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Created</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredInvites.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <Mail className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                        <p className="text-slate-600">No invites found</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInvites.map((invite) => (
+                      <tr key={invite.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-purple-100 p-2 rounded-lg">
+                              <Mail className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <p className="font-medium text-slate-900">{invite.email}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-slate-700">
+                            {invite.firstName || invite.lastName 
+                              ? `${invite.firstName || ""} ${invite.lastName || ""}`.trim() 
+                              : "N/A"}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-slate-700">{invite.phone || "N/A"}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${invite.accepted ? getStatusColor("APPROVED") : getStatusColor("PENDING")}`}>
+                            {invite.accepted ? "Accepted" : "Pending"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-slate-500">{formatDate(invite.createdAt)}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          {!invite.accepted && (
+                            <button
+                              onClick={() => copyInviteLink(invite.token, invite.email, invite.leaseId)}
+                              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                            >
+                              {copiedToken === invite.token ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="w-4 h-4" />
+                                  Copy Link
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Invite Modal */}
+        {showInviteModal && (
+          <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto ">
+            <div className="bg-white rounded-lg shadow-lg rounded-2xl max-w-md w-full">
+              {/* Modal Header */}
+              <div className="border-b bg-blue-700 border-slate-200 p-6">
+                <h2 className="text-2xl font-bold text-slate-100">Invite New Tenant</h2>
+                <p className="text-slate-100 mt-1">Send an invitation to a new tenant</p>
+              </div>
+
+              {/* Error Message */}
+              {inviteError && (
+                <div className="mx-6 mt-6 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{inviteError}</p>
+                  </div>
+                  <button
+                    onClick={() => setInviteError(null)}
+                    className="text-red-500 hover:text-red-700 flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {inviteSuccess && (
+                <div className="mx-6 mt-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <p className="font-medium text-sm">{inviteSuccess}</p>
+                </div>
+              )}
+
+              {/* Form Content */}
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Select Lease *</label>
+                  <select
+                    value={selectedLeaseId || ""}
+                    onChange={(e) => setSelectedLeaseId(e.target.value || null)}
+                    className="w-full border border-slate-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white text-slate-900"
+                    disabled={inviteSending}
+                  >
+                    <option value="">-- Select a lease ({leases.length} available) --</option>
+                    {leases.map(lease => {
+                      const unitNum = lease.unit?.unitNumber || "N/A";
+                      const unitName = lease.unit?.unitName || "";
+                      const city = lease.property?.city || "";
+                      const address = lease.property?.address || "No Address";
+                      const fullAddress = city && address !== city ? `${address}, ${city}` : address;
+                      const displayName = unitName ? `${unitNum} (${unitName})` : unitNum;
+                      
+                      return (
+                        <option key={lease.id} value={lease.id}>
+                          Unit {displayName} - {fullAddress}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {leases.length === 0 && (
+                    <p className="text-amber-600 text-xs mt-2">No leases available. Please create a lease first.</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Email Address *</label>
+                  <input
+                    type="email"
+                    placeholder="tenant@example.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="w-full border border-slate-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-slate-900"
+                    disabled={inviteSending}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">First Name *</label>
+                  <input
+                    type="text"
+                    placeholder="John"
+                    value={inviteFirstName}
+                    onChange={(e) => setInviteFirstName(e.target.value)}
+                    className="w-full border border-slate-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-slate-900"
+                    disabled={inviteSending}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    placeholder="Doe"
+                    value={inviteLastName}
+                    onChange={(e) => setInviteLastName(e.target.value)}
+                    className="w-full border border-slate-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-slate-900"
+                    disabled={inviteSending}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-900 mb-2">Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="+254 7XX XXX XXX"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    className="w-full border border-slate-300 px-4 py-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-slate-900"
+                    disabled={inviteSending}
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t border-slate-200 p-6 bg-slate-50 flex gap-3 justify-end">
                 <button
-                  onClick={() => setViewMode("grid")}
-                  className={`px-4 py-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white text-slate-600"}`}
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    resetInviteForm();
+                  }}
+                  className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors font-medium"
+                  disabled={inviteSending}
                 >
-                  Grid
+                  Cancel
                 </button>
                 <button
-                  onClick={() => setViewMode("list")}
-                  className={`px-4 py-2 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-slate-600"}`}
+                  onClick={handleSendInvite}
+                  disabled={inviteSending}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  List
+                  {inviteSending ? "Sending..." : "Send Invite"}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Tenants List */}
-        {!filteredLeases.length ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-            <User className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg">No tenants found matching your criteria.</p>
-          </div>
-        ) : (
-          <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" : "space-y-4"}>
-            {filteredLeases.map((lease) => (
-              <div
-                key={lease.id}
-                className="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
-              >
-                {/* Card Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold text-lg truncate">
-                        {lease.tenant?.name || lease.tenant?.email || "Unnamed Tenant"}
-                      </h3>
-                      {lease.tenant?.name && (
-                        <p className="text-blue-100 text-sm mt-1 truncate">{lease.tenant?.email || "No email"}</p>
-                      )}
+        {/* Application Detail Modal */}
+        {showDetailModal && selectedApplication && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">Application Details</h2>
+                  <p className="text-slate-600 mt-1">Complete review of tenant application</p>
+                </div>
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Status Banner */}
+                <div className={`p-4 rounded-lg border flex items-center justify-between ${
+                  selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
+                    ? "bg-green-50 border-green-200"
+                    : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
+                    ? "bg-red-50 border-red-200"
+                    : "bg-amber-50 border-amber-200"
+                }`}>
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Current Status</p>
+                    <p className={`text-lg font-bold ${
+                      selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
+                        ? "text-green-700"
+                        : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
+                        ? "text-red-700"
+                        : "text-amber-700"
+                    }`}>
+                      {selectedApplication.status}
+                    </p>
+                  </div>
+                  <span className={`inline-flex px-4 py-2 rounded-lg text-sm font-semibold border ${getStatusColor(selectedApplication.status)}`}>
+                    {selectedApplication.status}
+                  </span>
+                </div>
+
+                {/* Personal Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" />
+                    Personal Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Full Name</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.fullName}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border whitespace-nowrap ml-2 ${getStatusColor(lease.leaseStatus)}`}>
-                      {lease.leaseStatus}
-                    </span>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Date of Birth</p>
+                      <p className="text-slate-900 font-semibold mt-1">
+                        {selectedApplication.dob ? formatDate(selectedApplication.dob) : "N/A"}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Email</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.email}</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Phone</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.phone}</p>
+                    </div>
+                    <div className="col-span-2 bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Current Address</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.address || "N/A"}</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-5 space-y-4">
-                  {/* Property & Unit */}
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <div className="bg-slate-100 p-2 rounded-lg flex-shrink-0">
-                      <Home className="w-5 h-5 text-slate-600" />
+                {/* Property & Unit Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-emerald-600" />
+                    Property & Unit Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Property</p>
+                      <p className="text-slate-900 font-semibold mt-1">
+                        {selectedApplication.property?.name || selectedApplication.property?.city || "N/A"}
+                      </p>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm text-slate-500">Property & Unit</p>
-                      <p className="font-semibold truncate">{lease.property?.name || "N/A"} - {lease.unit?.unitNumber || "N/A"}</p>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Unit Number</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.unit?.unitNumber || "N/A"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Monthly Rent</p>
+                      <p className="text-slate-900 font-semibold mt-1">
+                        KES {(selectedApplication.unit?.rentAmount || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Desired Move-in Date</p>
+                      <p className="text-slate-900 font-semibold mt-1">{formatDate(selectedApplication.moveInDate)}</p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Contact Info */}
-                  <div className="flex items-center gap-4 text-slate-600">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Phone className="w-4 h-4 flex-shrink-0" />
-                      <span className="text-sm truncate">{lease.tenant?.phone || "No phone"}</span>
+                {/* Employment Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    Employment & Financial Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Employer Name</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.employerName || "N/A"}</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Job Title</p>
+                      <p className="text-slate-900 font-semibold mt-1">{selectedApplication.jobTitle || "N/A"}</p>
+                    </div>
+                    <div className="col-span-2 bg-green-50 border border-green-200 p-4 rounded-lg">
+                      <p className="text-sm text-slate-600 font-medium">Monthly Income</p>
+                      <p className="text-green-700 font-bold text-xl mt-1">
+                        KES {(selectedApplication.monthlyIncome || 0).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-2">
+                        Rent-to-Income Ratio: {selectedApplication.unit?.rentAmount && selectedApplication.monthlyIncome
+                          ? ((selectedApplication.unit.rentAmount / selectedApplication.monthlyIncome) * 100).toFixed(1)
+                          : "N/A"}%
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Lease Period */}
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-4 h-4 text-slate-600" />
-                      <span className="text-sm font-medium text-slate-700">Lease Period</span>
-                    </div>
-                    <div className="text-sm text-slate-600">
-                      {formatDate(lease.startDate)} - {formatDate(lease.endDate)}
-                    </div>
-                    {isLeaseExpiringSoon(lease.endDate) && (
-                      <span className="inline-block mt-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                        Expiring Soon
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Financial Info */}
-<div className="border-t border-slate-200 pt-4 space-y-2">
-  <div className="flex justify-between items-center">
-    <span className="text-slate-600 text-sm">Monthly Rent</span>
-    <span className="font-bold text-slate-900">
-      KES {lease.rentAmount?.toLocaleString() || 0}
-    </span>
-  </div>
-
-  {lease.securityDeposit && (
-    <div className="flex justify-between items-center">
-      <span className="text-slate-600 text-sm">Security Deposit</span>
-      <span className="font-semibold text-slate-700">
-        KES {lease.securityDeposit.toLocaleString()}
-      </span>
-    </div>
-  )}
-
-  {/* Financial Summary Section */}
-  {lease.financialSummary && (
-    <div className="mt-3 bg-slate-50 rounded-lg p-3 space-y-2">
-      <div className="flex justify-between text-sm">
-        <span className="text-slate-600">Total Invoiced</span>
-        <span className="font-medium text-slate-800">
-          KES {lease.financialSummary.totalInvoiced.toLocaleString()}
-        </span>
-      </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-slate-600">Total Paid</span>
-        <span className="font-medium text-emerald-700">
-          KES {lease.financialSummary.totalPaid.toLocaleString()}
-        </span>
-      </div>
-      <div className="flex justify-between text-sm">
-        <span className="text-slate-600">Balance</span>
-        <span
-          className={`font-bold ${
-            lease.financialSummary.balance > 0
-              ? "text-red-600"
-              : "text-emerald-600"
-          }`}
-        >
-          KES {lease.financialSummary.balance.toLocaleString()}
-        </span>
-      </div>
-    </div>
-  )}
-</div>
-
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                      View Details
-                    </button>
-                    <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
-                      Contact
-                    </button>
-                  </div>
+                {/* Submission Info */}
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <p className="text-sm text-slate-600 font-medium">Application Submitted</p>
+                  <p className="text-slate-900 font-semibold mt-1">{formatDate(selectedApplication.createdAt)}</p>
                 </div>
               </div>
-            ))}
+
+              {/* Modal Footer */}
+              <div className="border-t border-slate-200 p-6 bg-slate-50 flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="px-6 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-100 transition-colors font-medium"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => window.location.href = `/property-manager/content/applications`}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Manage Application
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
