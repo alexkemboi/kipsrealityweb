@@ -7,10 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    
-    const receipt = await prisma.receipt.findUnique({
-      where: { id },
+    const { id: paymentId } = await params;
+
+    const receipt = await prisma.receipt.findFirst({
+      where: { payment_id: paymentId },
       include: {
         payment: {
           include: {
@@ -20,12 +20,12 @@ export async function GET(
                   include: {
                     property: true,
                     unit: true,
-                    tenant: true, // Just include the full tenant object
-                  }
-                }
-              }
-            }
-          }
+                    tenant: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });

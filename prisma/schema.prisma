@@ -682,16 +682,21 @@ model lease_utility {
 }
 
 model payment {
-  id         String         @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  invoice_id String         @db.Char(36)
-  amount     Float          @db.Float
-  method     payment_method
-  reference  String?        @db.VarChar(100)
-  paidOn     DateTime?      @default(now()) @db.DateTime(0)
-  createdAt  DateTime?      @default(now()) @db.DateTime(0)
-  updatedAt  DateTime?      @default(now()) @db.DateTime(0)
-  invoice    invoice        @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "payment_ibfk_1")
-  receipt    receipt[]
+  id               String             @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  invoice_id       String             @db.Char(36)
+  amount           Float              @db.Float
+  method           payment_method
+  reference        String?            @db.VarChar(100)
+  paidOn           DateTime?          @default(now()) @db.DateTime(0)
+  createdAt        DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?          @default(now()) @db.DateTime(0)
+  is_reversed      Boolean            @default(false)
+  reversed_at      DateTime?          @db.DateTime(0)
+  reversal_reason  String?            @db.VarChar(255)
+  reversed_by      String?            @db.VarChar(100)
+  invoice          invoice            @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "payment_ibfk_1")
+  payment_reversal payment_reversal[]
+  receipt          receipt[]
 
   @@index([invoice_id], map: "invoice_id")
 }
@@ -757,6 +762,20 @@ model OccupancyHistory {
   Property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_occupancy_property")
 
   @@index([propertyId, year, month], map: "idx_occupancy_property_year_month")
+}
+
+model payment_reversal {
+  id          String   @id @db.Char(36)
+  payment_id  String   @db.Char(36)
+  invoice_id  String   @db.Char(36)
+  amount      Float    @db.Float
+  reason      String?  @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  reversed_by String?  @db.VarChar(100)
+  metadata    Json?
+  payment     payment  @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reversal_payment")
+
+  @@index([payment_id], map: "idx_payment_id")
 }
 
 enum UserRole {
