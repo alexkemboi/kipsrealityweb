@@ -1223,13 +1223,14 @@ export default function EnhancedTenantDashboard() {
                                   </>
                                 )}
                                 {(selectedApplication.status === "Approved" || selectedApplication.status === "APPROVED") && (
-                                  <button
-                                    onClick={() => proceedToLease(selectedApplication)}
-                                    className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                    Proceed to Lease Signing
-                                  </button>
+                                                                <button
+                                onClick={() => proceedToLease(selectedApplication as unknown as TenantApplication)}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                              >
+                                <FileText className="h-4 w-4" />
+                                Proceed to Lease Signing
+                              </button>
+
                                 )}
                               </div>
               </div>

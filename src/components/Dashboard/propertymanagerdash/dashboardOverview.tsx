@@ -523,7 +523,7 @@ useEffect(() => {
 											+ Add Property
 										</button>
 									</Link>
-									<Link href="/property-manager/content/invites" passHref>
+									<Link href="/property-manager/content/tenants" passHref>
 										<button
 											className="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
 											type="button"
