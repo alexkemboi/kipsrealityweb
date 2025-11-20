@@ -5,9 +5,32 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 
 // Types
-interface Receipt { id: string; receiptNo: string; issuedOn: string; payment_id: string; invoice_id: string; }
-interface Payment { id: string; amount: number; method: string; reference?: string; paidOn?: string; receipt?: Receipt[]; }
-interface Lease { id: string; }
+interface Receipt { id: string; receiptNo: string; issuedOn: string; payment_id: string; payment: Payment; invoice_id: string; }
+interface Payment { id: string; amount: number; method: string; reference?: string; paidOn?: string; is_reversed?: boolean; invoice: Invoice; receipt?: Receipt[]; }
+interface Lease {
+  id: string;
+  property: Property;
+  unit: Unit;
+  tenant: Tenant;
+}
+interface Property {
+  id: string;
+  city: string;
+  address: string;
+}
+
+interface Unit {
+  id: string;
+  unitNumber: string;
+  unitName: string | null;
+}
+
+interface Tenant {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+}
 interface Invoice { id: string; lease_id: string; amount: number; dueDate: string; status: "PENDING" | "PAID" | "OVERDUE"; type: string; Lease: Lease; payment: Payment[]; }
 
 export default function TenantInvoices() {
@@ -16,6 +39,8 @@ export default function TenantInvoices() {
   const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
   const [reference, setReference] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [viewingReceipt, setViewingReceipt] = useState<Receipt | null>(null);
+
 
   useEffect(() => { fetchInvoices(); }, []);
 
@@ -33,40 +58,42 @@ export default function TenantInvoices() {
   }
 
   async function payInvoice(invoiceId: string) {
-  const invoice = invoices.find(i => i.id === invoiceId);
-  if (!invoice) return toast.error("Invoice not found");
+    const invoice = invoices.find(i => i.id === invoiceId);
+    if (!invoice) return toast.error("Invoice not found");
 
-  // Calculate remaining balance
-  const paidAmount = invoice.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const remaining = invoice.amount - paidAmount;
+    // Only consider non-reversed payments
+    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
+    const remaining = invoice.amount - paidAmount;
 
-  try {
-    const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        amount: remaining,  // <-- Send remaining, not full invoice.amount
-        method: "CREDIT_CARD", 
-        reference 
-      }),
-    });
+    if (remaining <= 0) return toast.error("Invoice already fully paid");
 
-    const data = await res.json();
-    if (res.ok) {
-      toast.success("Payment successful");
-      setShowPaymentModal(false);
-      setPayingInvoice(null);
-      setReference("");
-      fetchInvoices();
-    } else {
-      toast.error(data.error || "Payment failed");
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          amount: remaining, 
+          method: "CREDIT_CARD", 
+          reference 
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Payment successful");
+        setShowPaymentModal(false);
+        setPayingInvoice(null);
+        setReference("");
+        await fetchInvoices();
+      } else {
+        toast.error(data.error || "Payment failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment failed");
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Payment failed");
   }
-}
-
 
   function openPaymentModal(invoiceId: string) {
     setPayingInvoice(invoiceId);
@@ -80,16 +107,83 @@ export default function TenantInvoices() {
   }
 
   async function viewReceipt(paymentId: string) {
+  try {
+    const res = await fetch(`/api/receipt/${paymentId}`);
+    if (!res.ok) throw new Error("Receipt not found");
+    const receipt: Receipt = await res.json();
+    setViewingReceipt(receipt); // store receipt for modal
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Failed to fetch receipt");
+  }
+}
+
+ function printReceipt() {
+    window.print();
+  }
+
+  async function downloadReceipt() {
+    if (!viewingReceipt) return;
+
     try {
-      const res = await fetch(`/api/receipt/${paymentId}`);
-      if (!res.ok) throw new Error("Receipt not found");
-      const receipt: Receipt = await res.json();
-      alert(`Receipt No: ${receipt.receiptNo}\nIssued On: ${new Date(receipt.issuedOn).toLocaleDateString()}`);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch receipt");
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const element = document.getElementById('receipt-content');
+      if (!element) return toast.error('Receipt content not found');
+
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.style.width = '800px';
+      container.style.background = 'white';
+      document.body.appendChild(container);
+
+      const cloned = element.cloneNode(true) as HTMLElement;
+      cloned.style.transform = 'scale(1)';
+      cloned.style.opacity = '1';
+      container.appendChild(cloned);
+
+      const allElements = cloned.querySelectorAll<HTMLElement>('*');
+      allElements.forEach(el => {
+        const styles = window.getComputedStyle(el);
+        ['backgroundColor', 'color', 'borderColor'].forEach(prop => {
+          const value = styles.getPropertyValue(prop);
+          if (value.includes('oklch')) {
+            el.style.setProperty(prop, '#ffffff', 'important');
+          }
+        });
+      });
+
+      toast.loading('Generating PDF...');
+
+      const canvas = await html2canvas(cloned, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pageWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pdfHeight);
+      pdf.save(`Receipt_${viewingReceipt.receiptNo}.pdf`);
+
+      toast.dismiss();
+      toast.success('Receipt downloaded successfully!');
+
+      document.body.removeChild(container);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.dismiss();
+      toast.error('Failed to download receipt');
     }
   }
+
 
   const summary = {
     total: invoices.length,
@@ -97,7 +191,7 @@ export default function TenantInvoices() {
     overdue: invoices.filter(i => i.status === "OVERDUE").length,
     paid: invoices.filter(i => i.status === "PAID").length,
     totalAmount: invoices.reduce((sum, inv) => {
-      const paidAmount = inv.payment.reduce((s, p) => s + (p.amount || 0), 0);
+      const paidAmount = inv.payment.filter(p => !p.is_reversed).reduce((s, p) => s + p.amount, 0);
       return sum + (inv.amount - paidAmount);
     }, 0)
   };
@@ -135,10 +229,8 @@ export default function TenantInvoices() {
                 {(() => {
                   const invoice = invoices.find(i => i.id === payingInvoice);
                   if (!invoice) return null;
-
-                  // Calculate paid amount and remaining balance
-                  const paidAmount = invoice.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
-                  const remaining = invoice.amount - paidAmount;
+                  const paidAmount = invoice.payment.filter(p => !p.is_reversed).reduce((sum, p) => sum + p.amount, 0);
+                  const remaining = invoice.amount - paidAmount;
 
                   return (
                     <>
@@ -226,6 +318,360 @@ export default function TenantInvoices() {
           </div>
         )}
 
+        {/* Receipt Modal */}
+        {viewingReceipt && (
+          <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-visible my-8">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                <h2 className="text-xl font-bold text-slate-800">Receipt Details</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={downloadReceipt}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download PDF
+                  </button>
+                  <button
+                    onClick={printReceipt}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print
+                  </button>
+                  <button
+                    onClick={() => setViewingReceipt(null)}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+                <div className="p-8" id="receipt-content">
+                  {/* Use inline styles for PDF generation - these render properly in PDFs */}
+                  <div style={{
+                    width: '100%',
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    backgroundColor: 'white',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#1a1a1a'
+                  }}>
+                    {/* Header Section */}
+                    <div style={{
+                      textAlign: 'center',
+                      borderBottom: '3px solid #2563eb',
+                      paddingBottom: '20px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#2563eb',
+                        marginBottom: '8px',
+                        letterSpacing: '1px'
+                      }}>
+                        PAYMENT RECEIPT
+                      </div>
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#64748b',
+                        marginTop: '8px'
+                      }}>
+                        Official Payment Confirmation
+                      </div>
+                    </div>
+
+                    {/* Receipt Number & Date */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '30px',
+                      padding: '15px',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '8px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                          Receipt No.
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
+                          {viewingReceipt.receiptNo}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                          Issue Date
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                          {new Date(viewingReceipt.issuedOn).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Details Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '20px',
+                      marginBottom: '30px'
+                    }}>
+                      {/* Left Column - Tenant Info */}
+                      <div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#1e293b',
+                          marginBottom: '15px',
+                          borderBottom: '2px solid #e2e8f0',
+                          paddingBottom: '8px'
+                        }}>
+                          TENANT INFORMATION
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Name
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.tenant.firstName} {viewingReceipt.payment.invoice.Lease.tenant.lastName}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Email
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.tenant.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column - Property Details */}
+                      <div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#1e293b',
+                          marginBottom: '15px',
+                          borderBottom: '2px solid #e2e8f0',
+                          paddingBottom: '8px'
+                        }}>
+                          PROPERTY DETAILS
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Property
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.property.city}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>
+                            {viewingReceipt.payment.invoice.Lease.property.address}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Unit Number
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.unit.unitNumber}
+                            {viewingReceipt.payment.invoice.Lease.unit.unitName && 
+                              ` - ${viewingReceipt.payment.invoice.Lease.unit.unitName}`
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Invoice Details */}
+                    <div style={{
+                      backgroundColor: '#f8fafc',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px'
+                      }}>
+                        INVOICE DETAILS
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Number</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          #{viewingReceipt.payment.invoice.id.slice(0, 8)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Type</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.type}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Due Date</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {new Date(viewingReceipt.payment.invoice.dueDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Amount</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          KES {viewingReceipt.payment.invoice.amount.toFixed(2)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Status</div>
+                        <div style={{ 
+                          fontSize: '13px', 
+                          fontWeight: 'bold',
+                          color: viewingReceipt.payment.invoice.status === 'PAID' ? '#10b981' : '#f59e0b'
+                        }}>
+                          {viewingReceipt.payment.invoice.status}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Information */}
+                    <div style={{
+                      backgroundColor: '#eff6ff',
+                      border: '2px solid #2563eb',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px'
+                      }}>
+                        PAYMENT INFORMATION
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment ID</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          #{viewingReceipt.payment.id.slice(0, 12)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Date</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.paidOn 
+                            ? new Date(viewingReceipt.payment.paidOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) 
+                            : 'N/A'}
+                        </div>
+
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Method</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.method === 'CASH' ? '💵 Cash' : '💳 Credit Card'}
+                        </div>
+                      </div>
+                      {viewingReceipt.payment.reference && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ fontSize: '13px', color: '#1e40af' }}>Reference Number</div>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.reference}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Amount Paid - Prominent */}
+                    <div style={{
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      padding: '25px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{ fontSize: '14px', marginBottom: '8px', opacity: 0.9 }}>
+                        AMOUNT PAID
+                      </div>
+                      <div style={{ fontSize: '48px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                        KES {viewingReceipt.payment.amount.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{
+                      borderTop: '2px solid #e2e8f0',
+                      paddingTop: '20px',
+                      marginTop: '40px'
+                    }}>
+                      <div style={{
+                        textAlign: 'center',
+                        fontSize: '11px',
+                        color: '#64748b',
+                        lineHeight: '1.6'
+                      }}>
+                        <div style={{ marginBottom: '8px', fontWeight: '600' }}>
+                          Thank you for your payment!
+                        </div>
+                        <div style={{ marginBottom: '4px' }}>
+                          This is an official receipt for the payment received.
+                        </div>
+                        <div style={{ marginBottom: '4px' }}>
+                          Please keep this receipt for your records.
+                        </div>
+                        <div style={{ marginTop: '15px', fontSize: '10px', color: '#94a3b8' }}>
+                          Generated on {new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Verification Code */}
+                    <div style={{
+                      marginTop: '20px',
+                      textAlign: 'center',
+                      padding: '15px',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '8px'
+                    }}>
+                      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px' }}>
+                        RECEIPT VERIFICATION CODE
+                      </div>
+                      <div style={{
+                        fontFamily: 'monospace',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        letterSpacing: '2px'
+                      }}>
+                        {viewingReceipt.receiptNo}-{viewingReceipt.payment.id.slice(0, 8).toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                </div>            </div>
+          </div>
+        )}
+
+
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
@@ -280,7 +726,7 @@ export default function TenantInvoices() {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {invoices.map((inv) => {
-                    const paidAmount = inv.payment.reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const paidAmount = inv.payment.filter(p => !p.is_reversed).reduce((sum, p) => sum + (p.amount || 0), 0);
                     const remaining = inv.amount - paidAmount;
 
                     return (
@@ -319,6 +765,7 @@ export default function TenantInvoices() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-2">
+                            {/* Show Pay Now button only if invoice is pending */}
                             {inv.status === "PENDING" && (
                               <Button 
                                 onClick={() => openPaymentModal(inv.id)} 
@@ -327,20 +774,26 @@ export default function TenantInvoices() {
                                 Pay Now
                               </Button>
                             )}
-                            {inv.status === "PAID" && inv.payment.map(pmt =>
-                              pmt.receipt?.map(rcpt =>
-                                <Button 
-                                  key={rcpt.id} 
-                                  onClick={() => viewReceipt(pmt.id)}
-                                  variant="outline"
-                                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                                >
-                                  View Receipt
-                                </Button>
+
+                            {/* Show View Receipt for any payment that has receipts */}
+                            {inv.payment
+                              .filter(pmt => pmt.receipt && pmt.receipt.length > 0)
+                              .map(pmt =>
+                                pmt.receipt!.map(rcpt => (
+                                  <Button 
+                                    key={rcpt.id} 
+                                    onClick={() => viewReceipt(pmt.id)}
+                                    variant="outline"
+                                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                  >
+                                    View Receipt
+                                  </Button>
+                                ))
                               )
-                            )}
+                            }
                           </div>
                         </td>
+
                       </tr>
                     );
                   })}

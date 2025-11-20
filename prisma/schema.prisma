@@ -312,25 +312,26 @@ model services {
 }
 
 model MaintenanceRequest {
-  id                 String           @id @default(uuid())
+  id                 String                    @id @default(uuid())
   organizationId     String
   propertyId         String
   requestedById      String
   title              String
   description        String
-  priority           Priority         @default(NORMAL)
-  status             RequestStatus    @default(OPEN)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  category           RequestCategory  @default(STANDARD)
+  priority           Priority                  @default(NORMAL)
+  status             MaintenanceRequest_status @default(OPEN)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  category           RequestCategory           @default(STANDARD)
   unitId             String?
   assigned_vendor_id String?
-  assigned_at        DateTime?        @db.DateTime(0)
-  organization       Organization     @relation(fields: [organizationId], references: [id])
-  property           Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy        OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
-  unit               Unit?            @relation(fields: [unitId], references: [id])
-  vendors            Vendor?          @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+  cost               Decimal?                  @db.Decimal(10, 2)
+  assigned_at        DateTime?                 @db.DateTime(0)
+  organization       Organization              @relation(fields: [organizationId], references: [id])
+  property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
+  requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
+  unit               Unit?                     @relation(fields: [unitId], references: [id])
+  vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
 
   @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
   @@index([propertyId], map: "MaintenanceRequest_propertyId_fkey")
@@ -410,6 +411,7 @@ model Property {
   houseDetail            HouseDetail?
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
+  OccupancyHistory       OccupancyHistory[]
   listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
   location               Location?               @relation(fields: [locationId], references: [id])
   manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
@@ -441,6 +443,7 @@ model HouseDetail {
   bedrooms       Int?
   size           Float?
   totalUnits     Int?
+  houseName      String?  @db.VarChar(255)
   property       Property @relation(fields: [propertyId], references: [id])
 }
 
@@ -679,16 +682,21 @@ model lease_utility {
 }
 
 model payment {
-  id         String         @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  invoice_id String         @db.Char(36)
-  amount     Float          @db.Float
-  method     payment_method
-  reference  String?        @db.VarChar(100)
-  paidOn     DateTime?      @default(now()) @db.DateTime(0)
-  createdAt  DateTime?      @default(now()) @db.DateTime(0)
-  updatedAt  DateTime?      @default(now()) @db.DateTime(0)
-  invoice    invoice        @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "payment_ibfk_1")
-  receipt    receipt[]
+  id               String             @id @default(dbgenerated("(uuid())")) @db.Char(36)
+  invoice_id       String             @db.Char(36)
+  amount           Float              @db.Float
+  method           payment_method
+  reference        String?            @db.VarChar(100)
+  paidOn           DateTime?          @default(now()) @db.DateTime(0)
+  createdAt        DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?          @default(now()) @db.DateTime(0)
+  is_reversed      Boolean            @default(false)
+  reversed_at      DateTime?          @db.DateTime(0)
+  reversal_reason  String?            @db.VarChar(255)
+  reversed_by      String?            @db.VarChar(100)
+  invoice          invoice            @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "payment_ibfk_1")
+  payment_reversal payment_reversal[]
+  receipt          receipt[]
 
   @@index([invoice_id], map: "invoice_id")
 }
@@ -744,6 +752,32 @@ model InvoiceItem {
   @@index([invoiceId], map: "invoiceId")
 }
 
+model OccupancyHistory {
+  id            String   @id
+  propertyId    String
+  year          Int
+  month         Int
+  occupancyRate Decimal  @db.Decimal(5, 2)
+  createdAt     DateTime @default(now())
+  Property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_occupancy_property")
+
+  @@index([propertyId, year, month], map: "idx_occupancy_property_year_month")
+}
+
+model payment_reversal {
+  id          String   @id @db.Char(36)
+  payment_id  String   @db.Char(36)
+  invoice_id  String   @db.Char(36)
+  amount      Float    @db.Float
+  reason      String?  @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.DateTime(0)
+  reversed_by String?  @db.VarChar(100)
+  metadata    Json?
+  payment     payment  @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reversal_payment")
+
+  @@index([payment_id], map: "idx_payment_id")
+}
+
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -757,14 +791,6 @@ enum Priority {
   NORMAL
   HIGH
   URGENT
-}
-
-enum RequestStatus {
-  OPEN
-  IN_PROGRESS
-  ON_HOLD
-  COMPLETED
-  CANCELLED
 }
 
 enum RequestCategory {
@@ -814,4 +840,13 @@ enum invoice_status {
   PENDING
   PAID
   OVERDUE
+}
+
+enum MaintenanceRequest_status {
+  OPEN
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+  REJECTED
 }

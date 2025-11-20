@@ -60,8 +60,6 @@ const SideBarComponent = () => {
       link: "/maintenance",
       subItems: [
         { text: "New Requests", link: "/maintenance/requests" },
-        { text: "Assign Vendors", link: "/maintenance/vendors" },
-        { text: "Maintenance Analytics", link: "/maintenance/analytics" },
       ],
     },
     {

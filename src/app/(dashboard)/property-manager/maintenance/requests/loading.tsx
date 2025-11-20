@@ -2,7 +2,7 @@
 
 export default function Loading() {
   return (
-    <div className="min-h-[400px] p-6 bg-[#0f172a] flex items-center justify-center">
+    <div className="min-h-[400px] p-6 bg-white flex items-center justify-center">
       <div className="flex flex-col items-center">
         <div className="relative">
           {/* Outer spinner */}

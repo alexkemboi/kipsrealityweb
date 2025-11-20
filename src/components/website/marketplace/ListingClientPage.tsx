@@ -119,7 +119,7 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
                 <h3 className="font-semibold text-xl text-gray-900">{item.title}</h3>
                 <p className="text-gray-600 text-sm line-clamp-3">{item.description}</p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="text-blue-600 font-semibold">KES {item.price.toLocaleString()}</span>
+                  <span className="text-blue-600 font-semibold">usd {item.price.toLocaleString()}</span>
                 </div>
                 <div className="mt-5">
                   <button

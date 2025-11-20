@@ -27,6 +27,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                     buildingName: true, 
                   },
                 },
+                houseDetail: {
+                  select: {
+                    houseName: true, 
+                  },
+                },
               },
             },
             lease_utility: {

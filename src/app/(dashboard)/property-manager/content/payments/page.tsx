@@ -1,9 +1,10 @@
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@mui/material";
 
 interface Property {
   id: string;
@@ -48,6 +49,7 @@ interface Payment {
   paidOn: string;
   reference?: string;
   invoice: Invoice;
+  is_reversed?: boolean;
 }
 
 interface FullReceipt {
@@ -90,18 +92,13 @@ export default function PaymentsPage() {
   const [modalUnitFilter, setModalUnitFilter] = useState<string>("");
   const [modalUnits, setModalUnits] = useState<Unit[]>([]);
 
-  useEffect(() => {
-    fetchPayments();
-    fetchProperties();
-  }, []);
+  // Payment reversal state
+  const [showReverseModal, setShowReverseModal] = useState(false);
+  const [paymentToReverse, setPaymentToReverse] = useState<Payment | null>(null);
+  const [reversalReason, setReversalReason] = useState("");
 
-  useEffect(() => {
-    if (selectedProperty) fetchUnits(selectedProperty);
-    else setUnits([]);
-    fetchPayments();
-  }, [selectedProperty, selectedUnit]);
-
-  async function fetchPayments() {
+  // Memoized fetch functions to prevent infinite loops
+  const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
@@ -119,9 +116,9 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedProperty, selectedUnit]);
 
-  async function fetchProperties() {
+  const fetchProperties = useCallback(async () => {
     try {
       const res = await fetch("/api/propertymanager");
       if (!res.ok) throw new Error("Failed to fetch properties");
@@ -131,9 +128,9 @@ export default function PaymentsPage() {
       console.error(error);
       toast.error("Failed to load properties");
     }
-  }
+  }, []);
 
-  async function fetchUnits(propertyId: string) {
+  const fetchUnits = useCallback(async (propertyId: string) => {
     try {
       const res = await fetch(`/api/units?propertyId=${propertyId}`);
       if (!res.ok) throw new Error("Failed to fetch units");
@@ -143,9 +140,9 @@ export default function PaymentsPage() {
       console.error(error);
       toast.error("Failed to load units");
     }
-  }
+  }, []);
 
-  async function fetchPendingInvoices() {
+  const fetchPendingInvoices = useCallback(async () => {
     try {
       const res = await fetch("/api/invoices?status=PENDING,OVERDUE");
       if (!res.ok) throw new Error("Failed to fetch invoices");
@@ -156,7 +153,39 @@ export default function PaymentsPage() {
       console.error(error);
       toast.error("Failed to load pending invoices");
     }
-  }
+  }, []);
+
+  const fetchUnitsForModal = useCallback(async (propertyId: string) => {
+    try {
+      const res = await fetch(`/api/units?propertyId=${propertyId}`);
+      if (!res.ok) throw new Error("Failed to fetch units");
+      const data: Unit[] = await res.json();
+      setModalUnits(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load units");
+    }
+  }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchPayments();
+    fetchProperties();
+  }, [fetchPayments, fetchProperties]);
+
+  // Handle property/unit filter changes
+  useEffect(() => {
+    if (selectedProperty) {
+      fetchUnits(selectedProperty);
+    } else {
+      setUnits([]);
+    }
+  }, [selectedProperty, fetchUnits]);
+
+  // Fetch payments when filters change
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   // Filter invoices when modal filters change
   useEffect(() => {
@@ -181,19 +210,7 @@ export default function PaymentsPage() {
       setModalUnits([]);
       setModalUnitFilter("");
     }
-  }, [modalPropertyFilter]);
-
-  async function fetchUnitsForModal(propertyId: string) {
-    try {
-      const res = await fetch(`/api/units?propertyId=${propertyId}`);
-      if (!res.ok) throw new Error("Failed to fetch units");
-      const data: Unit[] = await res.json();
-      setModalUnits(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load units");
-    }
-  }
+  }, [modalPropertyFilter, fetchUnitsForModal]);
 
   function openRecordPaymentModal() {
     setShowRecordPaymentModal(true);
@@ -217,15 +234,14 @@ export default function PaymentsPage() {
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) return toast.error("Please enter a valid amount");
 
-    // Recalculate with the current state to ensure accuracy
     const invoice = filteredInvoices.find(inv => inv.id === selectedInvoice) || 
                     pendingInvoices.find(inv => inv.id === selectedInvoice);
     if (!invoice) return toast.error("Invoice not found");
 
-    const paidAmount = invoice.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
-    // Validate partial payments
     if (paymentMethod === "CREDIT_CARD" && Math.abs(amount - remaining) > 0.01) {
       return toast.error(`Credit card payments must be for the full remaining balance of KES ${remaining.toFixed(2)}`);
     }
@@ -254,8 +270,8 @@ export default function PaymentsPage() {
           toast.success(`Partial payment of KES ${amount.toFixed(2)} recorded. Remaining: KES ${data.remaining.toFixed(2)}`);
         }
         closeRecordPaymentModal();
-        await fetchPayments(); // Refresh payments
-        await fetchPendingInvoices(); // Refresh pending invoices
+        await fetchPayments();
+        await fetchPendingInvoices();
       } else {
         toast.error(data.error || "Failed to record payment");
       }
@@ -264,6 +280,47 @@ export default function PaymentsPage() {
       toast.error("Failed to record payment");
     }
   }
+
+  function openReverseModal(payment: Payment) {
+    setPaymentToReverse(payment);
+    setShowReverseModal(true);
+  }
+
+  function closeReverseModal() {
+    setPaymentToReverse(null);
+    setShowReverseModal(false);
+    setReversalReason("");
+  }
+
+async function reversePayment() {
+  if (!paymentToReverse) return;
+
+  if (!reversalReason) {
+    toast.error("Please provide a reason for reversal");
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/payments/${paymentToReverse.id}/reversal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reversalReason }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to reverse payment");
+
+    toast.success("Payment reversed successfully!");
+
+    // Close modal and refresh data
+    closeReverseModal();
+    await fetchPayments(); // This will refresh the payments list
+    
+  } catch (err: any) {
+    console.error(err);
+    toast.error(err.message || "Failed to reverse payment");
+  }
+}
 
   async function generateReceipt(paymentId: string) {
     setGeneratingReceipt(paymentId);
@@ -367,15 +424,17 @@ export default function PaymentsPage() {
     }
   }
 
-  const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-  const paymentMethods = {
-    CASH: payments.filter(p => p.method === "CASH").length,
-    CREDIT_CARD: payments.filter(p => p.method === "CREDIT_CARD").length,
-  };
+    // Filter out reversed payments for calculations
+    const validPay = payments.filter(p => !p.is_reversed);
+    const totalAmount = validPay.reduce((sum, p) => sum + p.amount, 0);
+    const paymentMethods = {
+      CASH: validPay.filter(p => p.method === "CASH").length,
+      CREDIT_CARD: validPay.filter(p => p.method === "CREDIT_CARD").length,
+    };
 
-  // Calculate remaining balance for selected invoice
   const selectedInvoiceData = filteredInvoices.find(inv => inv.id === selectedInvoice);
-  const paidSoFar = selectedInvoiceData?.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const validPayments = selectedInvoiceData?.payment?.filter(p => !p.is_reversed) || [];
+  const paidSoFar = validPayments.reduce((sum, p) => sum + p.amount, 0);
   const remainingBalance = selectedInvoiceData ? selectedInvoiceData.amount - paidSoFar : 0;
 
   return (
@@ -401,7 +460,7 @@ export default function PaymentsPage() {
         {/* Record Payment Modal */}
         {showRecordPaymentModal && (
           <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all my-8">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-white">Record Payment</h2>
@@ -482,13 +541,14 @@ export default function PaymentsPage() {
                       value={selectedInvoice}
                       onChange={(e) => {
                         setSelectedInvoice(e.target.value);
-                        setPaymentAmount(""); // Reset amount when invoice changes
+                        setPaymentAmount("");
                       }}
                       className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     >
                       <option value="">Choose an invoice...</option>
                       {filteredInvoices.map((inv) => {
-                        const paid = inv.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                        const validPayments = inv.payment?.filter(p => !p.is_reversed) || [];
+                        const paid = validPayments.reduce((sum, p) => sum + p.amount, 0);
                         const remaining = inv.amount - paid;
                         return (
                           <option key={inv.id} value={inv.id}>
@@ -496,7 +556,7 @@ export default function PaymentsPage() {
                           </option>
                         );
                       })}
-                    </select>
+                                          </select>
                     {filteredInvoices.length === 0 && (
                       <p className="text-xs text-amber-600 mt-1">
                         No pending invoices found with current filters. Try adjusting your filters.
@@ -529,7 +589,6 @@ export default function PaymentsPage() {
                       value={paymentMethod}
                       onChange={(e) => {
                         setPaymentMethod(e.target.value as "CASH" | "CREDIT_CARD");
-                        // Auto-fill full amount for credit card
                         if (e.target.value === "CREDIT_CARD" && selectedInvoiceData) {
                           setPaymentAmount(remainingBalance.toString());
                         }
@@ -646,7 +705,7 @@ export default function PaymentsPage() {
         {/* Receipt Modal */}
         {viewingReceipt && (
           <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-visible">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-visible my-8">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
                 <h2 className="text-xl font-bold text-slate-800">Receipt Details</h2>
                 <div className="flex gap-2">
@@ -677,34 +736,375 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              <div className="p-8" id="receipt-content">
-                <div className="text-center mb-8 pb-6 border-b-2 border-slate-200">
-                  <div className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg mb-3">
-                    <h3 className="text-2xl font-bold text-white">PAYMENT RECEIPT</h3>
-                  </div>
-                  <div className="text-3xl font-bold text-slate-800 mb-2">{viewingReceipt.receiptNo}</div>
-                  <div className="text-sm text-slate-600">
-                    Issued on {new Date(viewingReceipt.issuedOn).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    }                    )}
-                  </div>
-                </div>
+                <div className="p-8" id="receipt-content">
+                  {/* Use inline styles for PDF generation - these render properly in PDFs */}
+                  <div style={{
+                    width: '100%',
+                    maxWidth: '800px',
+                    margin: '0 auto',
+                    backgroundColor: 'white',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#1a1a1a'
+                  }}>
+                    {/* Header Section */}
+                    <div style={{
+                      textAlign: 'center',
+                      borderBottom: '3px solid #2563eb',
+                      paddingBottom: '20px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#2563eb',
+                        marginBottom: '8px',
+                        letterSpacing: '1px'
+                      }}>
+                        PAYMENT RECEIPT
+                      </div>
+                      <div style={{
+                        fontSize: '14px',
+                        color: '#64748b',
+                        marginTop: '8px'
+                      }}>
+                        Official Payment Confirmation
+                      </div>
+                    </div>
 
-                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg p-6 text-center">
-                  <div className="text-white text-sm font-medium mb-2">Amount Paid</div>
-                  <div className="text-white text-5xl font-bold">KES {viewingReceipt.payment.amount.toFixed(2)}</div>
-                </div>
+                    {/* Receipt Number & Date */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '30px',
+                      padding: '15px',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '8px'
+                    }}>
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                          Receipt No.
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
+                          {viewingReceipt.receiptNo}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                          Issue Date
+                        </div>
+                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                          {new Date(viewingReceipt.issuedOn).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-200 text-center">
-                  <p className="text-xs text-slate-500">
-                    This is an official receipt for the payment received. Keep this for your records.
-                  </p>
-                  <p className="text-xs text-slate-400 mt-2">
-                    Generated on {new Date().toLocaleDateString()}
-                  </p>
+                    {/* Payment Details Grid */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '20px',
+                      marginBottom: '30px'
+                    }}>
+                      {/* Left Column - Tenant Info */}
+                      <div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#1e293b',
+                          marginBottom: '15px',
+                          borderBottom: '2px solid #e2e8f0',
+                          paddingBottom: '8px'
+                        }}>
+                          TENANT INFORMATION
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Name
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.tenant.firstName} {viewingReceipt.payment.invoice.Lease.tenant.lastName}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Email
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.tenant.email}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column - Property Details */}
+                      <div>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          color: '#1e293b',
+                          marginBottom: '15px',
+                          borderBottom: '2px solid #e2e8f0',
+                          paddingBottom: '8px'
+                        }}>
+                          PROPERTY DETAILS
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Property
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.property.city}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#64748b' }}>
+                            {viewingReceipt.payment.invoice.Lease.property.address}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                            Unit Number
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.invoice.Lease.unit.unitNumber}
+                            {viewingReceipt.payment.invoice.Lease.unit.unitName && 
+                              ` - ${viewingReceipt.payment.invoice.Lease.unit.unitName}`
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Invoice Details */}
+                    <div style={{
+                      backgroundColor: '#f8fafc',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px'
+                      }}>
+                        INVOICE DETAILS
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Number</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          #{viewingReceipt.payment.invoice.id.slice(0, 8)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Type</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.type}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Due Date</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {new Date(viewingReceipt.payment.invoice.dueDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Amount</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          KES {viewingReceipt.payment.invoice.amount.toFixed(2)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Status</div>
+                        <div style={{ 
+                          fontSize: '13px', 
+                          fontWeight: 'bold',
+                          color: viewingReceipt.payment.invoice.status === 'PAID' ? '#10b981' : '#f59e0b'
+                        }}>
+                          {viewingReceipt.payment.invoice.status}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Information */}
+                    <div style={{
+                      backgroundColor: '#eff6ff',
+                      border: '2px solid #2563eb',
+                      padding: '20px',
+                      borderRadius: '8px',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px'
+                      }}>
+                        PAYMENT INFORMATION
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment ID</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          #{viewingReceipt.payment.id.slice(0, 12)}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Date</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {new Date(viewingReceipt.payment.paidOn).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Method</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.method === 'CASH' ? '💵 Cash' : '💳 Credit Card'}
+                        </div>
+                      </div>
+                      {viewingReceipt.payment.reference && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <div style={{ fontSize: '13px', color: '#1e40af' }}>Reference Number</div>
+                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                            {viewingReceipt.payment.reference}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Amount Paid - Prominent */}
+                    <div style={{
+                      backgroundColor: '#10b981',
+                      color: 'white',
+                      padding: '25px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      marginBottom: '30px'
+                    }}>
+                      <div style={{ fontSize: '14px', marginBottom: '8px', opacity: 0.9 }}>
+                        AMOUNT PAID
+                      </div>
+                      <div style={{ fontSize: '48px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                        KES {viewingReceipt.payment.amount.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div style={{
+                      borderTop: '2px solid #e2e8f0',
+                      paddingTop: '20px',
+                      marginTop: '40px'
+                    }}>
+                      <div style={{
+                        textAlign: 'center',
+                        fontSize: '11px',
+                        color: '#64748b',
+                        lineHeight: '1.6'
+                      }}>
+                        <div style={{ marginBottom: '8px', fontWeight: '600' }}>
+                          Thank you for your payment!
+                        </div>
+                        <div style={{ marginBottom: '4px' }}>
+                          This is an official receipt for the payment received.
+                        </div>
+                        <div style={{ marginBottom: '4px' }}>
+                          Please keep this receipt for your records.
+                        </div>
+                        <div style={{ marginTop: '15px', fontSize: '10px', color: '#94a3b8' }}>
+                          Generated on {new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Verification Code */}
+                    <div style={{
+                      marginTop: '20px',
+                      textAlign: 'center',
+                      padding: '15px',
+                      backgroundColor: '#f8fafc',
+                      borderRadius: '8px'
+                    }}>
+                      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px' }}>
+                        RECEIPT VERIFICATION CODE
+                      </div>
+                      <div style={{
+                        fontFamily: 'monospace',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        letterSpacing: '2px'
+                      }}>
+                        {viewingReceipt.receiptNo}-{viewingReceipt.payment.id.slice(0, 8).toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                </div>            </div>
+          </div>
+        )}
+
+        {/* Reverse Payment Modal */}
+        {showReverseModal && paymentToReverse && (
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                 </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Reverse Payment</h3>
+                  <p className="text-sm text-slate-600">This action cannot be undone</p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800">
+                  Are you sure you want to reverse payment <span className="font-bold">#{paymentToReverse.id.slice(0, 8)}</span> of{' '}
+                  <span className="font-bold">KES {paymentToReverse.amount.toFixed(2)}</span>?
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Reason for Reversal *
+                </label>
+                <textarea
+                  value={reversalReason}
+                  onChange={(e) => setReversalReason(e.target.value)}
+                  placeholder="Enter the reason for reversing this payment..."
+                  rows={3}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button 
+                  onClick={closeReverseModal} 
+                  variant="outline"
+                  className="px-4 py-2 border-2 border-slate-300 hover:bg-slate-100"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={reversePayment} 
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold"
+                >
+                  Reverse Payment
+                </Button>
               </div>
             </div>
           </div>
@@ -765,8 +1165,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <div className="text-xs text-blue-100">Average Payment</div>
-                <div className="text-2xl font-bold text-white">KES {payments.length > 0 ? (totalAmount / payments.length).toFixed(2) : '0.00'}</div>
-              </div>
+                <div className="text-2xl font-bold text-white">KES {validPayments.length > 0 ? (totalAmount / validPayments.length).toFixed(2) : '0.00'}</div>              </div>
             </div>
           </div>
         </div>
@@ -899,25 +1298,59 @@ export default function PaymentsPage() {
                         <div className="text-xs text-slate-500">Unit {p.invoice.Lease?.unit?.unitNumber ?? "N/A"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Button
-                          onClick={() => generateReceipt(p.id)}
-                          disabled={generatingReceipt === p.id}
-                          className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white text-sm font-medium px-4 py-2"
-                        >
-                          {generatingReceipt === p.id ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                              Generating...
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-2">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              Generate Receipt
-                            </span>
-                          )}
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-2 text-sm">
+                              Actions ▾
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          <DropdownMenuContent className="w-48 bg-white shadow-lg border border-slate-200 rounded-lg">
+                            <DropdownMenuItem
+                              onClick={() => generateReceipt(p.id)}
+                              className="cursor-pointer hover:bg-slate-50"
+                            >
+                              📄 Generate Receipt
+                            </DropdownMenuItem>
+
+                            {p.method === "CASH" && !p.is_reversed && (
+                              <DropdownMenuItem
+                                onClick={() => openReverseModal(p)}
+                                className="cursor-pointer text-red-600 hover:bg-red-50"
+                              >
+                                ↩️ Reverse Payment
+                              </DropdownMenuItem>
+                            )}
+
+                            {p.is_reversed && (
+                              <DropdownMenuItem disabled className="opacity-50">
+                                Already Reversed
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            p.is_reversed 
+                              ? 'bg-gradient-to-br from-red-500 to-red-600' 
+                              : 'bg-gradient-to-br from-blue-500 to-blue-600'
+                          }`}>
+                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">#{p.id.slice(0, 8)}</div>
+                            {p.is_reversed && (
+                              <div className="text-xs text-red-600 font-semibold">REVERSED</div>
+                            )}
+                            {p.reference && (
+                              <div className="text-xs text-slate-500">Ref: {p.reference}</div>
+                            )}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}

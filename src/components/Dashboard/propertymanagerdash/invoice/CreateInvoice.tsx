@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { generateFullInvoice } from "@/lib/Invoice";
 import { FullInvoiceInput, Invoice } from "@/app/data/FinanceData";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 
 export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,7 @@ export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
 
     try {
       const invoice: Invoice = await generateFullInvoice(payload);
-      toast.success(`Invoice created: ${invoice.id}`);
+      toast.success(`Invoice created successfully!!`);
     } catch (err: any) {
       toast.error(err.message || "Failed to generate invoice");
     } finally {

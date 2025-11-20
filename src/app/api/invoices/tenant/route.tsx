@@ -23,7 +23,9 @@ export async function GET(req: Request) {
       },
       orderBy: { dueDate: "asc" },
       include: {
-        payment: true,
+         payment: {
+          include: { receipt: true } 
+        },
         Lease: true,
       },
     });

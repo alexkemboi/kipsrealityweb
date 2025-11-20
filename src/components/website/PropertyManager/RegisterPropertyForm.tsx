@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useEffect, useState } from "react";
@@ -14,10 +13,15 @@ import { HomeIcon } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 
-export default function PropertyForm() {
+// Add onSuccess prop to the component
+interface PropertyFormProps {
+  onSuccess?: () => void;
+}
+
+export default function PropertyForm({ onSuccess }: PropertyFormProps) {
   const { register, handleSubmit, watch, reset } = useForm<Property>({
     defaultValues: {
-      houseDetail: { numberOfFloors: 0, bedrooms: 0, bathrooms: 0, size: 0 },
+      houseDetail: { houseName: "",numberOfFloors: 0, bedrooms: 0, bathrooms: 0, size: 0 },
       apartmentComplexDetail: { buildingName: "", totalFloors: 0, totalUnits: 0 },
       applianceIds: [],
       isFurnished: false,
@@ -87,6 +91,11 @@ export default function PropertyForm() {
       await postProperty(payload);
       toast.success("Property created successfully!");
       reset();
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error("Error creating property:", error);
       toast.error(error.message || "Failed to create property.");
@@ -94,7 +103,6 @@ export default function PropertyForm() {
       setLoading(false);
     }
   };
-
   return (
     <div className=" bg-gradient-to-b from-gray-50 to-gray-200">
       <Toaster position="top-center" reverseOrder={false} />
@@ -145,7 +153,23 @@ export default function PropertyForm() {
 
            {/* House Fields */}
 {selectedPropertyTypeName === "house" && (
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+ {/* House Name */}
+  <div className="flex flex-col">
+    <label
+      htmlFor="houseName"
+      className="text-sm font-semibold text-gray-700 mb-1"
+    >
+      House Name
+    </label>
+    <input
+      id="houseName"
+      {...register("houseDetail.houseName")}
+      placeholder="Enter house name"
+      className="border border-gray-300 rounded-xl p-3 w-full focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+
     {/* Number of Floors */}
     <div className="flex flex-col">
       <label

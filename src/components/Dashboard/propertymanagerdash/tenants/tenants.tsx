@@ -8,11 +8,13 @@ import {
   Clock, CheckCircle, AlertTriangle
 } from "lucide-react";
 import router from "next/router";
+import { TenantApplication } from "../../type";
 
 // Types
 interface Tenant {
   id: string;
-  name?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   email: string;
   phone?: string | null;
 }
@@ -113,6 +115,8 @@ export default function EnhancedTenantDashboard() {
   const [inviteSending, setInviteSending] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  
 
   // Fetch all data
   useEffect(() => {
@@ -173,12 +177,26 @@ export default function EnhancedTenantDashboard() {
     }
   }, [selectedLeaseId, leases]);
 
+   // Full name helper
+  const getTenantName = (tenant?: Tenant) => {
+    if (!tenant) return "Unnamed Tenant";
+    const full = [tenant.firstName, tenant.lastName].filter(Boolean).join(" ");
+    return full || tenant.email || "Unnamed Tenant";
+  };
   // Filter functions
-  const filteredLeases = leases.filter((lease) => {
-    const matchesSearch = 
-      lease.tenant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lease.tenant?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
+   const filteredLeases = leases.filter((lease) => {
+    const name = getTenantName(lease.tenant).toLowerCase();
+    const email = lease.tenant?.email?.toLowerCase() || "";
+    const property = lease.property?.name?.toLowerCase() || "";
+    const unit = lease.unit?.unitNumber?.toLowerCase() || "";
+
+    const matchesSearch =
+      name.includes(searchTerm.toLowerCase()) ||
+      email.includes(searchTerm.toLowerCase()) ||
+      property.includes(searchTerm.toLowerCase()) ||
+      unit.includes(searchTerm.toLowerCase());
+
+          const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -189,6 +207,56 @@ export default function EnhancedTenantDashboard() {
     const matchesStatus = statusFilter === "ALL" || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Handle Approve
+    async function handleApprove(appId: string) {
+      try {
+        const res = await fetch(`/api/tenant-application/${appId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "APPROVED" }),
+        });
+        
+        if (res.ok) {
+          setApplications((prev) =>
+            prev.map((app) => (app.id === appId ? { ...app, status: "Approved" } : app))
+          );
+          setShowModal(false);
+          alert("Application approved! You can now proceed to lease signing.");
+        }
+      } catch (err) {
+        console.error("Error approving application:", err);
+        alert("Failed to approve application");
+      }
+    }
+  
+    // Handle Reject
+    async function handleReject(appId: string) {
+      try {
+        const res = await fetch(`/api/tenant-application/${appId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "REJECTED" }),
+        });
+        
+        if (res.ok) {
+          setApplications((prev) =>
+            prev.map((app) => (app.id === appId ? { ...app, status: "Rejected" } : app))
+          );
+          setShowModal(false);
+        }
+      } catch (err) {
+        console.error("Error rejecting application:", err);
+        alert("Failed to reject application");
+      }
+    }
+  
+  
+    function proceedToLease(app: TenantApplication) {
+      // Navigate to lease signing page with application data
+      const userId = app.id || app.id;
+      window.location.href = `/property-manager/content/lease/create?applicationId=${app.id}&tenantId=${userId}`;
+    }
   
 
   const filteredInvites = invites.filter((invite) => {
@@ -321,7 +389,7 @@ export default function EnhancedTenantDashboard() {
     if (activeTab === "tenants") {
       headers = ["Tenant Name", "Email", "Phone", "Property", "Unit", "Rent Amount", "Start Date", "End Date", "Status", "Balance"];
       data = filteredLeases.map(lease => [
-        lease.tenant?.name || "N/A",
+        lease.tenant?.firstName + " " + lease.tenant?.lastName || "N/A",
         lease.tenant?.email || "N/A",
         lease.tenant?.phone || "N/A",
         lease.property?.name || lease.property?.city || "N/A",
@@ -579,7 +647,6 @@ export default function EnhancedTenantDashboard() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tenant</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Property & Unit</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Monthly Rent</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Financial Summary</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -601,8 +668,11 @@ export default function EnhancedTenantDashboard() {
                               <User className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">{lease.tenant?.name || "Unnamed"}</p>
-                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
+<p className="font-semibold text-slate-900">
+  {lease.tenant?.firstName && lease.tenant?.lastName
+    ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
+    : "Unnamed"}
+</p>                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
                               {lease.tenant?.phone && (
                                 <p className="text-sm text-slate-500">{lease.tenant.phone}</p>
                               )}
@@ -630,11 +700,12 @@ export default function EnhancedTenantDashboard() {
                             <div className="flex justify-between">
                               <span className="text-slate-600">Balance:</span>
                               <span className={`font-semibold ${(lease.financialSummary?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                KES {(lease.financialSummary?.balance || 0).toLocaleString()}
+                                usd {(lease.financialSummary?.balance || 0).toLocaleString()}
                               </span>
                             </div>
                           </div>
                         </td>
+                       
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
                             {lease.leaseStatus}
@@ -803,25 +874,37 @@ export default function EnhancedTenantDashboard() {
                           <p className="text-sm text-slate-500">{formatDate(invite.createdAt)}</p>
                         </td>
                         <td className="px-6 py-4">
-                          {!invite.accepted && (
-                            <button
-                              onClick={() => copyInviteLink(invite.token, invite.email, invite.leaseId)}
-                              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                            >
-                              {copiedToken === invite.token ? (
-                                <>
-                                  <Check className="w-4 h-4" />
-                                  Copied!
-                                </>
-                              ) : (
-                                <>
-                                  <ExternalLink className="w-4 h-4" />
-                                  Copy Link
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </td>
+  {!invite.accepted && (
+    <button
+      disabled={!invite?.leaseId}
+      onClick={() =>
+        copyInviteLink(
+          invite.token,
+          invite.email,
+          invite.leaseId // safe now
+        )
+      }
+      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors
+        ${!invite?.leaseId
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-blue-600 text-white hover:bg-blue-700"}
+      `}
+    >
+      {copiedToken === invite.token ? (
+        <>
+          <Check className="w-4 h-4" />
+          Copied!
+        </>
+      ) : (
+        <>
+          <ExternalLink className="w-4 h-4" />
+          Copy Link
+        </>
+      )}
+    </button>
+  )}
+</td>
+
                       </tr>
                     ))
                   )}
@@ -1119,12 +1202,37 @@ export default function EnhancedTenantDashboard() {
                 >
                   Close
                 </button>
-                <button
-                  onClick={() => window.location.href = `/property-manager/content/applications`}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Manage Application
-                </button>
+                <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3 justify-end">
+                                
+                                {(selectedApplication.status === "Pending" || selectedApplication.status === "PENDING") && (
+                                  <>
+                                    <button
+                                      onClick={() => handleReject(selectedApplication.id)}
+                                      className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                      <X className="h-4 w-4" />
+                                      Reject
+                                    </button>
+                                    <button
+                                      onClick={() => handleApprove(selectedApplication.id)}
+                                      className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                      Approve
+                                    </button>
+                                  </>
+                                )}
+                                {(selectedApplication.status === "Approved" || selectedApplication.status === "APPROVED") && (
+                                                                <button
+                                onClick={() => proceedToLease(selectedApplication as unknown as TenantApplication)}
+                                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                              >
+                                <FileText className="h-4 w-4" />
+                                Proceed to Lease Signing
+                              </button>
+
+                                )}
+                              </div>
               </div>
             </div>
           </div>

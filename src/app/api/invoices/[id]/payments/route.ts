@@ -10,19 +10,30 @@ export async function POST(
 ) {
   try {
     const { id: invoiceId } = await params;
-    const { amount, method, reference } = await req.json();
+    const body = await req.json();
+    const { amount, method, reference } = body;
 
-    // Validate amount
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid payment amount" }, { status: 400 });
+    console.log("Payment request:", { invoiceId, amount, method, reference, body });
+
+    // Validation checks with specific error messages
+    if (!amount) {
+      return NextResponse.json({ error: "Amount is required" }, { status: 400 });
     }
 
-    // Validate payment method
+    if (amount <= 0) {
+      return NextResponse.json({ error: "Amount must be greater than 0" }, { status: 400 });
+    }
+
+    if (!method) {
+      return NextResponse.json({ error: "Payment method is required" }, { status: 400 });
+    }
+
     if (!VALID_PAYMENT_METHODS.includes(method)) {
-      return NextResponse.json({ error: "Invalid payment method" }, { status: 400 });
+      return NextResponse.json({ 
+        error: `Invalid payment method: ${method}. Must be one of: ${VALID_PAYMENT_METHODS.join(", ")}` 
+      }, { status: 400 });
     }
 
-    // Get invoice with existing payments
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
       include: { payment: true },
@@ -32,49 +43,63 @@ export async function POST(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Calculate already paid amount
-    const paidAmount = invoice.payment?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    // ✅ Filter out reversed payments (same as frontend)
+    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
-    // Validate payment doesn't exceed remaining balance
-    if (amount > remaining + 0.01) { // Add small tolerance for floating point
+    console.log("Invoice details:", {
+      invoiceAmount: invoice.amount,
+      totalPayments: invoice.payment?.length,
+      validPayments: validPayments.length,
+      paidAmount,
+      remaining,
+      newPayment: amount,
+    });
+
+    if (amount > remaining + 0.01) {
       return NextResponse.json(
-        { error: `Payment amount (${amount}) exceeds remaining balance (${remaining})` },
+        {
+          error: `Payment amount (${amount}) exceeds remaining balance (${remaining.toFixed(2)})`,
+          details: {
+            invoiceAmount: invoice.amount,
+            alreadyPaid: paidAmount,
+            remaining: remaining,
+            attemptedPayment: amount,
+          }
+        },
         { status: 400 }
       );
     }
 
-    // Create payment record
     const payment = await prisma.payment.create({
       data: {
         invoice_id: invoiceId,
-        amount,
+        amount: parseFloat(amount.toString()),
         method,
         reference: reference || null,
       },
     });
 
-    // Calculate new total paid
     const newTotalPaid = paidAmount + amount;
-    const isPaidInFull = newTotalPaid >= invoice.amount - 0.01; // Small tolerance for floating point
+    const isPaidInFull = newTotalPaid >= invoice.amount - 0.01;
 
-    // Update invoice status based on payment
     let newStatus = invoice.status;
+
     if (isPaidInFull) {
       newStatus = "PAID";
-    } else if (invoice.status === "OVERDUE" || invoice.status === "PENDING") {
-      // Keep as PENDING or OVERDUE if partially paid
-      // Check if overdue
+    } else {
       const now = new Date();
       const dueDate = new Date(invoice.dueDate);
       newStatus = now > dueDate ? "OVERDUE" : "PENDING";
     }
 
-    // Update invoice status
     await prisma.invoice.update({
       where: { id: invoiceId },
       data: { status: newStatus },
     });
+
+    console.log("Payment successful:", { payment, newStatus, newTotalPaid });
 
     return NextResponse.json({
       success: true,
@@ -86,7 +111,10 @@ export async function POST(
   } catch (error) {
     console.error("Error processing payment:", error);
     return NextResponse.json(
-      { error: "Failed to process payment" },
+      { 
+        error: "Failed to process payment",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
