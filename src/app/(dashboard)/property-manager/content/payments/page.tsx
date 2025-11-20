@@ -459,7 +459,7 @@ async function reversePayment() {
 
         {/* Record Payment Modal */}
         {showRecordPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
+          <div className="fixed inset-0  bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-auto">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full transform transition-all my-8">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
                 <div className="flex items-center justify-between">
@@ -1057,7 +1057,7 @@ async function reversePayment() {
 
         {/* Reverse Payment Modal */}
         {showReverseModal && paymentToReverse && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">

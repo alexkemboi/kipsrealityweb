@@ -111,7 +111,7 @@ export default function NewUtilityPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 bg-white">
                 <Label htmlFor="type" className="text-[#0b1f3a] font-semibold">
                   Billing Type <span className="text-red-500">*</span>
                 </Label>
@@ -120,10 +120,10 @@ export default function NewUtilityPage() {
                   onValueChange={(v) => setForm({ ...form, type: v, unitPrice: "", fixedAmount: "" })}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger id="type" className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a]">
+                  <SelectTrigger id="type" className="border-2 border-slate-200 focus:border-[#30D5C8] text-[#0b1f3a] bg-white">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="text-[#0b1f3a] bg-white">
                     <SelectItem value="FIXED">Fixed Amount (Same charge each period)</SelectItem>
                     <SelectItem value="METERED">Metered (Based on usage)</SelectItem>
                   </SelectContent>
