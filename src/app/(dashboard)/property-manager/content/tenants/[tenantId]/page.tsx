@@ -314,6 +314,8 @@ const handleGenerateUtilityInvoice = async () => {
       toast.error(err.message || "Failed to generate full invoice");
     }
   }}
+    className="bg-blue-600 text-white mr-4 mb-4"
+
 >
   Generate Full Invoice
 </Button>
@@ -333,37 +335,19 @@ const handleGenerateUtilityInvoice = async () => {
       toast.error(err.message || "Failed to generate utility invoice");
     }
   }}
-  className="bg-orange-600"
+  className="bg-blue-600 text-white mr-4"
 >
   Generate Utility Invoice
 </Button>
 
 <Button
-  className="bg-gray-700"
+  className="bg-blue-600 text-white"
   onClick={() => setShowManualModal(true)}
 >
   Create Manual Invoice
 </Button>
 
-<Button
-  onClick={async () => {
-    if (!lease) return toast.error("Tenant lease not found");
-    try {
-      toast.loading("Generating Utility Invoice...");
-      await generateUtilityInvoice(lease.id); // only pass lease.id
-      toast.dismiss();
-      toast.success("Utility Invoice Created!");
-      // Refresh invoices
-      setInvoices(await fetchInvoicesForTenant(tenantId));
-    } catch (err: any) {
-      toast.dismiss();
-      toast.error(err.message || "Failed to generate utility invoice");
-    }
-  }}
-  className="bg-orange-600"
->
-  Generate Utility Invoice
-</Button>
+
 
         {groupedInvoices.length === 0 ? (
           <div className="bg-white rounded-lg border-2 border-gray-200 py-16 text-center">
@@ -638,21 +622,18 @@ const handleGenerateUtilityInvoice = async () => {
           </div>
         )}
       </div>
-       {showManualModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-    <div className="bg-white p-6 rounded-lg w-[400px]">
-      <h2 className="text-xl font-semibold mb-4">Create Manual Invoice</h2>
+      {showManualModal && (
+  <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50">
+    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-lg w-full max-w-md relative">
+      {/* Close button */}
+      <button
+        onClick={() => setShowManualModal(false)}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+      >
+        ✕
+      </button>
 
-      <label className="block text-sm font-medium mb-1">Invoice Type</label>
-     <select
-  value={manualType}
-  onChange={(e) => setManualType(e.target.value as "RENT" | "UTILITY")}
-  className="w-full border p-2 rounded mb-3"
->
-  <option value="RENT">Rent</option>
-  <option value="UTILITY">Utility</option>
-</select>
-
+      <h2 className="text-xl text-blue-500 font-semibold mb-4">Create Manual Invoice</h2>
 
       <label className="block text-sm font-medium mb-1">Amount</label>
       <input
@@ -675,7 +656,7 @@ const handleGenerateUtilityInvoice = async () => {
           Cancel
         </Button>
 
-        <Button
+        <Button variant="outline"
           disabled={loadingManual}
           onClick={async () => {
             try {
@@ -683,19 +664,16 @@ const handleGenerateUtilityInvoice = async () => {
               toast.loading("Creating invoice...");
 
               await createManualInvoice({
-                lease_id: lease.id,
-                type: manualType,
+                lease_id: lease!.id,
+                type: "RENT",
                 amount: Number(manualAmount),
                 dueDate: manualDate,
               });
 
               toast.dismiss();
-              toast.success("Manual invoice created!");
-
-              // Refresh invoices
+              toast.success("Manual rent invoice created!");
               const updated = await fetchInvoicesForTenant(tenantId);
               setInvoices(updated);
-
               setShowManualModal(false);
             } catch (err: any) {
               toast.dismiss();
@@ -711,6 +689,9 @@ const handleGenerateUtilityInvoice = async () => {
     </div>
   </div>
 )}
+
+
+
     </div>
 
     
