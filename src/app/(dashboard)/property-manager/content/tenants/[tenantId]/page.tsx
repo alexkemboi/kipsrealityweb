@@ -2,10 +2,13 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { fetchInvoicesForTenant, downloadInvoicePDF } from "@/lib/Invoice";
+import { fetchInvoicesForTenant, downloadInvoicePDF, generateFullInvoice, generateUtilityInvoice, createManualInvoice } from "@/lib/Invoice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { fetchLeaseForTenant } from "@/lib/InvoiceLease";
+
+
 import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, ChevronDown, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -73,11 +76,18 @@ export default function TenantInvoicesPage() {
   const tenantId = (params as any).tenantId;
 
   const [invoices, setInvoices] = useState<any[]>([]);
+    const [lease, setLease] = useState<any | null>(null); 
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(new Set());
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showManualModal, setShowManualModal] = useState(false);
+const [manualAmount, setManualAmount] = useState<number | "">("");
+const [manualDate, setManualDate] = useState("");
+const [manualType, setManualType] = useState<"RENT" | "UTILITY">("RENT");
+const [loadingManual, setLoadingManual] = useState(false);
+
 
   useEffect(() => {
     if (!tenantId) return;
@@ -86,6 +96,9 @@ export default function TenantInvoicesPage() {
         setLoading(true);
         const data = await fetchInvoicesForTenant(tenantId);
         setInvoices(data);
+         const tenantLease = await fetchLeaseForTenant(tenantId);
+        setLease(tenantLease);
+
       } catch (err: any) {
         console.error(err);
         toast.error(err.message || "Failed to load invoices");
@@ -102,6 +115,8 @@ export default function TenantInvoicesPage() {
     );
   }, [invoices, statusFilter]);
 
+
+
   const groupedInvoices = useMemo(() => groupInvoicesByDate(filteredInvoices), [filteredInvoices]);
 
   const financialSummary = useMemo(() => {
@@ -114,6 +129,47 @@ export default function TenantInvoicesPage() {
 
     return { totalBilled, totalPaid, balance };
   }, [filteredInvoices]);
+const handleGenerateUtilityInvoice = async () => {
+    if (!lease) return toast.error("Tenant lease not found");
+
+    try {
+      toast.loading("Generating Utility Invoice...");
+      await generateUtilityInvoice(lease.id);
+      toast.dismiss();
+      toast.success("Utility Invoice Created!");
+      setInvoices(await fetchInvoicesForTenant(tenantId));
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message || "Failed to generate utility invoice");
+    }
+  };
+
+  const handleCreateManualInvoice = async () => {
+    if (!lease) return toast.error("Tenant lease not found");
+
+    try {
+      setLoadingManual(true);
+      toast.loading("Creating invoice...");
+
+      await createManualInvoice({
+        lease_id: lease.id,
+        type: manualType,
+        amount: Number(manualAmount),
+        dueDate: manualDate,
+      });
+
+      toast.dismiss();
+      toast.success("Manual invoice created!");
+      setInvoices(await fetchInvoicesForTenant(tenantId));
+      setShowManualModal(false);
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message);
+    } finally {
+      setLoadingManual(false);
+    }
+  };
+
 
   const toggleInvoiceExpansion = (invoiceId: string) => {
     const newExpanded = new Set(expandedInvoices);
@@ -140,6 +196,13 @@ export default function TenantInvoicesPage() {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-10 w-64 mb-8 bg-gray-300" />
+          <div className="flex gap-4 mt-4">
+
+ 
+
+</div>
+
+
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead>
@@ -235,6 +298,73 @@ export default function TenantInvoicesPage() {
           </div>
         )}
 
+
+                <Button
+  onClick={async () => {
+    if (!lease) return toast.error("Tenant lease not found");
+    try {
+      toast.loading("Generating Full Invoice...");
+      await generateFullInvoice({ lease_id: lease.id, type: "RENT" });
+      toast.dismiss();
+      toast.success("Full Invoice Created!");
+      // Refresh invoices
+      setInvoices(await fetchInvoicesForTenant(tenantId));
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message || "Failed to generate full invoice");
+    }
+  }}
+>
+  Generate Full Invoice
+</Button>
+
+
+  <Button
+  onClick={async () => {
+    if (!lease) return toast.error("Tenant lease not found");
+    try {
+      toast.loading("Generating Utility Invoice...");
+      await generateUtilityInvoice(lease.id); // <-- pass lease.id, not { tenantId }
+      toast.dismiss();
+      toast.success("Utility Invoice Created!");
+      setInvoices(await fetchInvoicesForTenant(tenantId));
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message || "Failed to generate utility invoice");
+    }
+  }}
+  className="bg-orange-600"
+>
+  Generate Utility Invoice
+</Button>
+
+<Button
+  className="bg-gray-700"
+  onClick={() => setShowManualModal(true)}
+>
+  Create Manual Invoice
+</Button>
+
+<Button
+  onClick={async () => {
+    if (!lease) return toast.error("Tenant lease not found");
+    try {
+      toast.loading("Generating Utility Invoice...");
+      await generateUtilityInvoice(lease.id); // only pass lease.id
+      toast.dismiss();
+      toast.success("Utility Invoice Created!");
+      // Refresh invoices
+      setInvoices(await fetchInvoicesForTenant(tenantId));
+    } catch (err: any) {
+      toast.dismiss();
+      toast.error(err.message || "Failed to generate utility invoice");
+    }
+  }}
+  className="bg-orange-600"
+>
+  Generate Utility Invoice
+</Button>
+
         {groupedInvoices.length === 0 ? (
           <div className="bg-white rounded-lg border-2 border-gray-200 py-16 text-center">
             <FileText className="mx-auto h-16 w-16 text-gray-300 mb-4" />
@@ -274,6 +404,7 @@ export default function TenantInvoicesPage() {
 
                   return (
                     <React.Fragment key={groupId}>
+              
                       {/* Group Header Row */}
                       <tr className="bg-blue-50 border-b border-blue-100">
                         <td colSpan={7} className="px-6 py-3"> {/* Updated colSpan to 7 */}
@@ -507,6 +638,83 @@ export default function TenantInvoicesPage() {
           </div>
         )}
       </div>
+       {showManualModal && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded-lg w-[400px]">
+      <h2 className="text-xl font-semibold mb-4">Create Manual Invoice</h2>
+
+      <label className="block text-sm font-medium mb-1">Invoice Type</label>
+     <select
+  value={manualType}
+  onChange={(e) => setManualType(e.target.value as "RENT" | "UTILITY")}
+  className="w-full border p-2 rounded mb-3"
+>
+  <option value="RENT">Rent</option>
+  <option value="UTILITY">Utility</option>
+</select>
+
+
+      <label className="block text-sm font-medium mb-1">Amount</label>
+      <input
+        type="number"
+        value={manualAmount}
+        onChange={(e) => setManualAmount(Number(e.target.value))}
+        className="w-full border p-2 rounded mb-3"
+      />
+
+      <label className="block text-sm font-medium mb-1">Due Date</label>
+      <input
+        type="date"
+        value={manualDate}
+        onChange={(e) => setManualDate(e.target.value)}
+        className="w-full border p-2 rounded mb-4"
+      />
+
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={() => setShowManualModal(false)}>
+          Cancel
+        </Button>
+
+        <Button
+          disabled={loadingManual}
+          onClick={async () => {
+            try {
+              setLoadingManual(true);
+              toast.loading("Creating invoice...");
+
+              await createManualInvoice({
+                lease_id: lease.id,
+                type: manualType,
+                amount: Number(manualAmount),
+                dueDate: manualDate,
+              });
+
+              toast.dismiss();
+              toast.success("Manual invoice created!");
+
+              // Refresh invoices
+              const updated = await fetchInvoicesForTenant(tenantId);
+              setInvoices(updated);
+
+              setShowManualModal(false);
+            } catch (err: any) {
+              toast.dismiss();
+              toast.error(err.message);
+            } finally {
+              setLoadingManual(false);
+            }
+          }}
+        >
+          Create
+        </Button>
+      </div>
     </div>
+  </div>
+)}
+    </div>
+
+    
   );
+ 
+
 }

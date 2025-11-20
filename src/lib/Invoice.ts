@@ -244,3 +244,18 @@ export async function downloadInvoicePDF(invoiceId: string) {
     throw error;
   }
 }
+
+
+// src/lib/lease.ts
+export async function fetchLeaseForTenant(tenantId: string) {
+  const res = await fetch(`/api/lease?tenantId=${tenantId}`);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch lease for tenant");
+  }
+
+  const data = await res.json();
+
+  // Assume one lease per tenant — use data[0]
+  return data[0] || null;
+}
