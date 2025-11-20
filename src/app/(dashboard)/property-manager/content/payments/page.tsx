@@ -1313,14 +1313,14 @@ async function reversePayment() {
                               📄 Generate Receipt
                             </DropdownMenuItem>
 
-                            {p.method === "CASH" && !p.is_reversed && (
+                            
                               <DropdownMenuItem
                                 onClick={() => openReverseModal(p)}
                                 className="cursor-pointer text-red-600 hover:bg-red-50"
                               >
                                 ↩️ Reverse Payment
                               </DropdownMenuItem>
-                            )}
+                            
 
                             {p.is_reversed && (
                               <DropdownMenuItem disabled className="opacity-50">

@@ -5,8 +5,15 @@ import {
   User, Home, FileText, Mail, DollarSign, Calendar, 
   Phone, Search, Eye, Download, Check, X,
   AlertCircle, Plus, ExternalLink, TrendingUp,
-  Clock, CheckCircle, AlertTriangle
+  Clock, CheckCircle, AlertTriangle,
+  Edit
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import router from "next/router";
 import { TenantApplication } from "../../type";
 
@@ -41,6 +48,7 @@ interface FinancialSummary {
 }
 
 interface Lease {
+  invoice: any;
   id: string;
   tenant?: Tenant;
   property?: Property;
@@ -116,6 +124,18 @@ export default function EnhancedTenantDashboard() {
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [formData, setFormData] = useState({
+    firstName: selectedTenant?.firstName || "",
+    lastName: selectedTenant?.lastName || "",
+    email: selectedTenant?.email || "",
+    phone: selectedTenant?.phone || "",
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+ 
+
   
 
   // Fetch all data
@@ -207,6 +227,55 @@ export default function EnhancedTenantDashboard() {
     const matchesStatus = statusFilter === "ALL" || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+
+
+  // Handle input changes
+ const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  setFormData({ ...formData, [e.target.name]: e.target.value });
+};
+
+
+  const openEditModal = (tenant?: Tenant) => {
+  if (!tenant) return;
+
+  setSelectedTenant(tenant);
+
+  setFormData({
+    firstName: tenant.firstName || "",
+    lastName: tenant.lastName || "",
+    email: tenant.email || "",
+    phone: tenant.phone || "",
+  });
+
+  setIsEditModalOpen(true);
+};
+
+
+
+  // Submit edited tenant details
+  const handleSave = async () => {
+  if (!selectedTenant) return;
+
+  setIsSaving(true);
+  try {
+    const res = await fetch(`/api/tenants/${selectedTenant.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    if (!res.ok) throw new Error("Failed to update tenant");
+
+    setIsEditModalOpen(false);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update tenant");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   // Handle Approve
     async function handleApprove(appId: string) {
@@ -442,15 +511,40 @@ export default function EnhancedTenantDashboard() {
   };
 
   // Statistics
-  const stats = {
-    totalTenants: leases.length,
-    activeLeases: leases.filter(l => l.leaseStatus === "SIGNED").length,
-    totalRevenue: leases.reduce((sum, l) => sum + (l.financialSummary?.totalInvoiced || 0), 0),
-    totalPaid: leases.reduce((sum, l) => sum + (l.financialSummary?.totalPaid || 0), 0),
-    totalBalance: leases.reduce((sum, l) => sum + (l.financialSummary?.balance || 0), 0),
-    pendingApplications: applications.filter(a => a.status === "PENDING" || a.status === "Pending").length,
+ const stats = leases.reduce(
+  (acc, lease) => {
+    acc.totalTenants = leases.length;
+    if (lease.leaseStatus === "SIGNED") acc.activeLeases++;
+
+    // Sum invoiced across all invoices
+    const totalInvoiced = lease.invoice?.reduce((sum: any, inv: { amount: any; }) => sum + (inv.amount || 0), 0) || 0;
+
+    // Sum paid ignoring reversed payments
+    const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
+      const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
+      return sum + paid;
+    }, 0) || 0;
+
+    const balance = totalInvoiced - totalPaid;
+
+    acc.totalRevenue += totalInvoiced;
+    acc.totalPaid += totalPaid;
+    acc.totalBalance += balance;
+
+    return acc;
+  },
+  {
+    totalTenants: 0,
+    activeLeases: 0,
+    totalRevenue: 0,
+    totalPaid: 0,
+    totalBalance: 0,
+    pendingApplications: applications.filter(a => a.status.toLowerCase() === "pending").length,
     pendingInvites: invites.filter(i => !i.accepted).length,
-  };
+  }
+);
+
+
 
   if (loading) {
     return (
@@ -668,12 +762,12 @@ export default function EnhancedTenantDashboard() {
                               <User className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-<p className="font-semibold text-slate-900">
-  {lease.tenant?.firstName && lease.tenant?.lastName
-    ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
-    : "Unnamed"}
-</p>                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
-                              {lease.tenant?.phone && (
+                              <p className="font-semibold text-slate-900">
+                                {lease.tenant?.firstName && lease.tenant?.lastName
+                                  ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
+                                  : "Unnamed"}
+                              </p>                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
+                                                            {lease.tenant?.phone && (
                                 <p className="text-sm text-slate-500">{lease.tenant.phone}</p>
                               )}
                             </div>
@@ -689,56 +783,84 @@ export default function EnhancedTenantDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Invoiced:</span>
-                              <span className="font-semibold text-slate-900">KES {(lease.financialSummary?.totalInvoiced || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Paid:</span>
-                              <span className="font-semibold text-green-600">KES {(lease.financialSummary?.totalPaid || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-600">Balance:</span>
-                              <span className={`font-semibold ${(lease.financialSummary?.balance || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                usd {(lease.financialSummary?.balance || 0).toLocaleString()}
-                              </span>
-                            </div>
+                            {(() => {
+                              // Calculate adjusted totals considering reversed payments
+                              const totalInvoiced = lease.invoice?.reduce((sum: any, inv: { amount: any; }) => sum + (inv.amount || 0), 0) || 0;
+                              const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
+                                const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
+                                return sum + paid;
+                              }, 0) || 0;
+                              const balance = totalInvoiced - totalPaid;
+
+                              return (
+                                <>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Invoiced:</span>
+                                    <span className="font-semibold text-slate-900">
+                                      KES {totalInvoiced.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Paid:</span>
+                                    <span className="font-semibold text-green-600">
+                                      KES {totalPaid.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-600">Balance:</span>
+                                    <span className={`font-semibold ${balance > 0 ? "text-red-600" : "text-green-600"}`}>
+                                      KES {balance.toLocaleString()}
+                                    </span>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                         </td>
+
                        
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
                             {lease.leaseStatus}
                           </span>
                         </td>
-                       <td className="px-6 py-4">
-  <div className="flex items-center gap-3">
+                        <td className="px-6 py-4">
+                        <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="inline-flex justify-center w-full rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Actions
+                          </button>
+                        </DropdownMenuTrigger>
 
-    {/* View Lease */}
-    <button
-      onClick={() => window.location.href=`/property-manager/content/lease/${lease.id}`}
-      className="flex items-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all text-sm shadow-sm"
-    >
-      <Eye className="w-4 h-4" />
-      View
-    </button>
+                        <DropdownMenuContent align="end" className="w-48 bg-white shadow-lg rounded-md border border-slate-200">
+                          <DropdownMenuItem
+                            onClick={() => window.location.href = `/property-manager/content/lease/${lease.id}`}
+                            className="flex items-center gap-2"
+                          >
+                            <Eye className="w-4 h-4" /> View Lease
+                          </DropdownMenuItem>
 
-    {/* Finance */}
-    <button
-      onClick={() =>
-        window.location.href=`/property-manager/content/tenants/${lease.tenant?.id}`
-      }
-      
-      className="flex items-center gap-2 bg-green-600 text-white px-3 py-1.5 
-                 rounded-lg hover:bg-green-700 transition-all text-sm shadow-sm"
-    >
-      💰 Finance
-    </button>
+                          <DropdownMenuItem
+                            onClick={() => window.location.href = `/property-manager/content/tenants/${lease.tenant?.id}`}
+                            className="flex items-center gap-2"
+                          >
+                            <DollarSign className="w-4 h-4" /> Finance
+                          </DropdownMenuItem>
 
-  </div>
-</td>
+                          <DropdownMenuItem
+                            onClick={() => lease.tenant && openEditModal(lease.tenant)}
+                            className="flex items-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" /> Edit Tenant
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    
+                      </td>
 
-                      </tr>
+                    </tr>
                     ))
                   )}
                 </tbody>
@@ -874,36 +996,36 @@ export default function EnhancedTenantDashboard() {
                           <p className="text-sm text-slate-500">{formatDate(invite.createdAt)}</p>
                         </td>
                         <td className="px-6 py-4">
-  {!invite.accepted && (
-    <button
-      disabled={!invite?.leaseId}
-      onClick={() =>
-        copyInviteLink(
-          invite.token,
-          invite.email,
-          invite.leaseId // safe now
-        )
-      }
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors
-        ${!invite?.leaseId
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-blue-600 text-white hover:bg-blue-700"}
-      `}
-    >
-      {copiedToken === invite.token ? (
-        <>
-          <Check className="w-4 h-4" />
-          Copied!
-        </>
-      ) : (
-        <>
-          <ExternalLink className="w-4 h-4" />
-          Copy Link
-        </>
-      )}
-    </button>
-  )}
-</td>
+                        {!invite.accepted && (
+                          <button
+                            disabled={!invite?.leaseId}
+                            onClick={() =>
+                              copyInviteLink(
+                                invite.token,
+                                invite.email,
+                                invite.leaseId // safe now
+                              )
+                            }
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors
+                              ${!invite?.leaseId
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-blue-600 text-white hover:bg-blue-700"}
+                            `}
+                          >
+                            {copiedToken === invite.token ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink className="w-4 h-4" />
+                                Copy Link
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </td>
 
                       </tr>
                     ))
@@ -913,6 +1035,112 @@ export default function EnhancedTenantDashboard() {
             </div>
           )}
         </div>
+
+         {/* Edit Tenant Modal */}
+          {isEditModalOpen && selectedTenant && (
+            <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl border border-gray-200">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">Edit Tenant</h2>
+                  <button
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="text-gray-400 hover:text-gray-600 text-2xl"
+                    disabled={isSaving}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Form */}
+                <div className="space-y-4">
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      placeholder="Enter first name"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
+                      disabled={isSaving}
+                    />
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      placeholder="Enter last name"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
+                      disabled={isSaving}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Enter email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
+                      disabled={isSaving}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      placeholder="Enter phone number"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+    
 
         {/* Invite Modal */}
         {showInviteModal && (
@@ -1240,4 +1468,8 @@ export default function EnhancedTenantDashboard() {
       </div>
     </div>
   );
+}
+
+function setSelectedTenant(tenant: Tenant) {
+  throw new Error("Function not implemented.");
 }

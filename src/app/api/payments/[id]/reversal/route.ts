@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { NextResponse } from "next/server";
+import { invoice_status } from "@prisma/client"; // Prisma enum for invoice status
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const { id } = params;
@@ -27,51 +28,53 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     if (!payment) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
     if (payment.is_reversed) return NextResponse.json({ error: "Payment already reversed" }, { status: 400 });
 
-    // Use a transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
-      // Mark payment as reversed
-      const reversedPayment = await tx.payment.update({
-        where: { id },
-        data: {
-          is_reversed: true,
-          reversed_at: new Date(),
-          reversal_reason: reason,
-          reversed_by: currentUser.id,
-        },
-      });
+    // Transaction with timeout increased
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1️⃣ Mark the payment as reversed
+        const reversedPayment = await tx.payment.update({
+          where: { id },
+          data: {
+            is_reversed: true,
+            reversed_at: new Date(),
+            reversal_reason: reason,
+            reversed_by: currentUser.id,
+          },
+        });
 
-      // Recalculate invoice totals excluding reversed payments
-      const payments = await tx.payment.findMany({
-        where: { invoice_id: payment.invoice_id, is_reversed: false },
-      });
+        // 2️⃣ Aggregate total paid for the invoice excluding reversed payments
+        const totalPaidAgg = await tx.payment.aggregate({
+          _sum: { amount: true },
+          where: { invoice_id: payment.invoice_id, is_reversed: false },
+        });
+        const totalPaid = totalPaidAgg._sum.amount || 0;
 
-      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-      const remaining = payment.invoice.amount - totalPaid;
+        // 3️⃣ Calculate remaining balance
+        const remaining = payment.invoice.amount - totalPaid;
 
-      // Determine new status
-      let newStatus = payment.invoice.status;
-      if (totalPaid >= payment.invoice.amount - 0.01) {
-        newStatus = "PAID";
-      } else if (new Date() > new Date(payment.invoice.dueDate)) {
-        newStatus = "OVERDUE";
-      } else {
-        newStatus = "PENDING";
-      }
+        // 4️⃣ Determine new invoice status (use enum)
+        let newStatus: invoice_status;
+        const now = new Date();
+        if (totalPaid >= payment.invoice.amount - 0.01) newStatus = invoice_status.PAID;
+        else if (now > new Date(payment.invoice.dueDate)) newStatus = invoice_status.OVERDUE;
+        else newStatus = invoice_status.PENDING;
 
-      // Update invoice with new status and totals
-      const updatedInvoice = await tx.invoice.update({
-        where: { id: payment.invoice_id },
-        data: { status: newStatus },
-      });
+        // 5️⃣ Update invoice with new status
+        const updatedInvoice = await tx.invoice.update({
+          where: { id: payment.invoice_id },
+          data: { status: newStatus },
+        });
 
-      return {
-        reversedPayment,
-        totalPaid,
-        remaining,
-        status: newStatus,
-        invoiceAmount: updatedInvoice.amount,
-      };
-    });
+        return {
+          reversedPayment,
+          totalPaid,
+          remaining,
+          status: newStatus,
+          invoiceAmount: updatedInvoice.amount,
+        };
+      },
+      { timeout: 15000 } // 15s transaction timeout
+    );
 
     return NextResponse.json({
       success: true,
@@ -79,7 +82,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       message: `Payment reversed. Invoice status: ${result.status}. Remaining balance: KES ${result.remaining.toFixed(2)}`,
     });
   } catch (err: any) {
-    console.error(err);
+    console.error("Payment reversal error:", err);
     return NextResponse.json({ error: err.message || "Failed to reverse payment" }, { status: 500 });
   }
 }
