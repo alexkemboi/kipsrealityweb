@@ -200,7 +200,7 @@ export const routeConfig = {
       { path: '/dashboard/tenant', label: 'Overview', icon: LayoutDashboard },
     ],
     lease: [
-      { path: '/dashboard/tenant/lease-details', label: 'View Lease Details', icon: Users },
+      { path: '/tenant/content/lease', label: 'View Lease Details', icon: Users },
       { path: '/dashboard/tenant/renew-terminate', label: 'Renew / Terminate Request', icon: Users },
       { path: '/dashboard/tenant/insurance-upload', label: 'Insurance Upload', icon: Users },
     ],
