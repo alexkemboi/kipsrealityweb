@@ -1,3 +1,5 @@
+//src/components/Dashboard/propertymanagerdash/tenants/Lease-Signing.tsx
+//lease creation form with steps
 "use client";
 
 import { useEffect, useState } from "react";

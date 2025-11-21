@@ -607,8 +607,8 @@ model Tenantapplication {
 }
 
 model Lease {
-  id                       String            @id @default(uuid())
-  applicationId            String            @unique
+  id                       String                  @id @default(uuid())
+  applicationId            String                  @unique
   tenantId                 String?
   propertyId               String
   unitId                   String
@@ -616,9 +616,9 @@ model Lease {
   endDate                  DateTime
   rentAmount               Float
   securityDeposit          Float?
-  leaseStatus              LeaseStatus       @default(DRAFT)
-  createdAt                DateTime          @default(now())
-  updatedAt                DateTime          @updatedAt
+  leaseStatus              Lease_leaseStatus?      @default(DRAFT)
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
   earlyTerminationFee      Float?
   gracePeriodDays          Int?
   landlordResponsibilities String?
@@ -627,26 +627,49 @@ model Lease {
   lateFeeFlat              Float?
   leaseTerm                String?
   paymentDueDay            Int?
-  paymentFrequency         String            @default("MONTHLY")
-  tenantPaysElectric       Boolean           @default(true)
-  tenantPaysInternet       Boolean           @default(false)
-  tenantPaysTrash          Boolean           @default(false)
-  tenantPaysWater          Boolean           @default(false)
+  paymentFrequency         String                  @default("MONTHLY")
+  tenantPaysElectric       Boolean                 @default(true)
+  tenantPaysInternet       Boolean                 @default(false)
+  tenantPaysTrash          Boolean                 @default(false)
+  tenantPaysWater          Boolean                 @default(false)
   tenantResponsibilities   String?
   tenantSignedAt           DateTime?
   terminationNoticeDays    Int?
   usageType                String?
-  invites                  Invite[]          @relation("LeaseInvites")
-  application              Tenantapplication @relation(fields: [applicationId], references: [id])
-  property                 Property          @relation(fields: [propertyId], references: [id])
-  tenant                   User?             @relation(fields: [tenantId], references: [id])
-  unit                     Unit              @relation(fields: [unitId], references: [id])
+  hasRenewalOption         Boolean?                @default(false)
+  renewalNoticeDays        Int?
+  renewalTermMonths        Int?
+  renewalRentIncrease      Float?                  @db.Float
+  autoRenew                Boolean?                @default(false)
+  hasRentEscalation        Boolean?                @default(false)
+  escalationType           Lease_escalationType?
+  escalationRate           Float?                  @db.Float
+  escalationFrequency      String?                 @db.VarChar(20)
+  nextEscalationDate       DateTime?               @db.DateTime(0)
+  documentVersion          Int?                    @default(1)
+  lastDocumentUpdate       DateTime?               @db.DateTime(0)
+  complianceCheckDate      DateTime?               @db.DateTime(0)
+  complianceStatus         Lease_complianceStatus? @default(PENDING)
+  complianceNotes          String?                 @db.Text
+  invites                  Invite[]                @relation("LeaseInvites")
+  application              Tenantapplication       @relation(fields: [applicationId], references: [id])
+  property                 Property                @relation(fields: [propertyId], references: [id])
+  tenant                   User?                   @relation(fields: [tenantId], references: [id])
+  unit                     Unit                    @relation(fields: [unitId], references: [id])
+  LeaseAmendment           LeaseAmendment[]
+  LeaseAuditLog            LeaseAuditLog[]
+  LeaseDocument            LeaseDocument[]
+  LeaseNotification        LeaseNotification[]
+  LeaseRenewal             LeaseRenewal[]
+  RentEscalation           RentEscalation[]
   invoice                  invoice[]
   lease_utility            lease_utility[]
 
   @@index([propertyId], map: "Lease_propertyId_fkey")
   @@index([tenantId], map: "Lease_tenantId_fkey")
   @@index([unitId], map: "Lease_unitId_fkey")
+  @@index([endDate], map: "idx_lease_endDate")
+  @@index([leaseStatus], map: "idx_lease_leaseStatus")
 }
 
 model invoice {
@@ -778,6 +801,122 @@ model payment_reversal {
   @@index([payment_id], map: "idx_payment_id")
 }
 
+model LeaseAmendment {
+  id             String                       @id
+  leaseId        String
+  amendmentType  LeaseAmendment_amendmentType
+  effectiveDate  DateTime                     @db.DateTime(0)
+  description    String?                      @db.Text
+  changes        Json?
+  previousValues Json?
+  status         LeaseAmendment_status?       @default(PENDING)
+  createdBy      String
+  createdAt      DateTime?                    @default(now()) @db.DateTime(0)
+  approvedBy     String?
+  approvedAt     DateTime?                    @db.DateTime(0)
+  executedBy     String?
+  executedAt     DateTime?                    @db.DateTime(0)
+  documentUrl    String?                      @db.Text
+  Lease          Lease                        @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaseAmendment_ibfk_1")
+
+  @@index([leaseId], map: "idx_leaseAmendment_leaseId")
+  @@index([status], map: "idx_leaseAmendment_status")
+}
+
+model LeaseAuditLog {
+  id          String    @id
+  leaseId     String
+  action      String    @db.Text
+  performedBy String
+  performedAt DateTime? @default(now()) @db.DateTime(0)
+  changes     Json?
+  ipAddress   String?   @db.VarChar(50)
+  userAgent   String?   @db.Text
+  Lease       Lease     @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaseAuditLog_ibfk_1")
+
+  @@index([leaseId], map: "idx_leaseAuditLog_leaseId")
+  @@index([performedAt], map: "idx_leaseAuditLog_performedAt")
+}
+
+model LeaseDocument {
+  id           String                     @id
+  leaseId      String
+  documentType LeaseDocument_documentType
+  fileName     String                     @db.Text
+  fileUrl      String                     @db.Text
+  fileSize     Int?
+  mimeType     String?                    @db.Text
+  version      Int?                       @default(1)
+  uploadedBy   String
+  uploadedAt   DateTime?                  @default(now()) @db.DateTime(0)
+  isSigned     Boolean?                   @default(false)
+  signedAt     DateTime?                  @db.DateTime(0)
+  description  String?                    @db.Text
+  Lease        Lease                      @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaseDocument_ibfk_1")
+
+  @@index([documentType], map: "idx_leaseDocument_documentType")
+  @@index([leaseId], map: "idx_leaseDocument_leaseId")
+}
+
+model LeaseNotification {
+  id               String                             @id
+  leaseId          String
+  notificationType LeaseNotification_notificationType
+  recipientEmail   String
+  recipientRole    String?                            @db.VarChar(20)
+  subject          String?                            @db.Text
+  message          String?                            @db.Text
+  scheduledFor     DateTime                           @db.DateTime(0)
+  sentAt           DateTime?                          @db.DateTime(0)
+  status           LeaseNotification_status?          @default(PENDING)
+  metadata         Json?
+  createdAt        DateTime?                          @default(now()) @db.DateTime(0)
+  Lease            Lease                              @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaseNotification_ibfk_1")
+
+  @@index([leaseId], map: "idx_leaseNotification_leaseId")
+  @@index([scheduledFor], map: "idx_leaseNotification_scheduledFor")
+  @@index([status], map: "idx_leaseNotification_status")
+}
+
+model LeaseRenewal {
+  id                 String                       @id
+  leaseId            String
+  renewalType        LeaseRenewal_renewalType
+  oldEndDate         DateTime                     @db.DateTime(0)
+  newEndDate         DateTime                     @db.DateTime(0)
+  oldRentAmount      Float                        @db.Float
+  newRentAmount      Float                        @db.Float
+  notificationSentAt DateTime?                    @db.DateTime(0)
+  tenantResponseAt   DateTime?                    @db.DateTime(0)
+  tenantResponse     LeaseRenewal_tenantResponse?
+  negotiationNotes   String?                      @db.Text
+  executedAt         DateTime?                    @db.DateTime(0)
+  executedBy         String?
+  status             LeaseRenewal_status?         @default(PENDING)
+  createdAt          DateTime?                    @default(now()) @db.DateTime(0)
+  Lease              Lease                        @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "LeaseRenewal_ibfk_1")
+
+  @@index([leaseId], map: "idx_leaseRenewal_leaseId")
+  @@index([status], map: "idx_leaseRenewal_status")
+}
+
+model RentEscalation {
+  id              String                        @id
+  leaseId         String
+  effectiveDate   DateTime                      @db.DateTime(0)
+  previousRent    Float                         @db.Float
+  newRent         Float                         @db.Float
+  escalationType  RentEscalation_escalationType
+  escalationRate  Float?                        @db.Float
+  calculationNote String?                       @db.Text
+  appliedAt       DateTime?                     @default(now()) @db.DateTime(0)
+  appliedBy       String
+  Lease           Lease                         @relation(fields: [leaseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "RentEscalation_ibfk_1")
+
+  @@index([effectiveDate], map: "idx_rentEscalation_effectiveDate")
+  @@index([leaseId], map: "idx_rentEscalation_leaseId")
+}
+
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -813,13 +952,6 @@ enum ApplicationStatus {
   UNDER_REVIEW
 }
 
-enum LeaseStatus {
-  DRAFT
-  ACTIVE
-  SIGNED
-  CANCELLED
-}
-
 enum invoice_type {
   RENT
   UTILITY
@@ -849,4 +981,109 @@ enum MaintenanceRequest_status {
   COMPLETED
   CANCELLED
   REJECTED
+}
+
+enum LeaseAmendment_amendmentType {
+  RENT_CHANGE
+  TERM_EXTENSION
+  UTILITY_CHANGE
+  RESPONSIBILITY_CHANGE
+  TENANT_CHANGE
+  OTHER
+}
+
+enum LeaseDocument_documentType {
+  LEASE_AGREEMENT
+  ADDENDUM
+  AMENDMENT
+  RENEWAL_NOTICE
+  TERMINATION_NOTICE
+  INSPECTION_REPORT
+  PROOF_OF_INSURANCE
+  OTHER
+}
+
+enum LeaseRenewal_renewalType {
+  AUTO
+  MANUAL
+  RENEGOTIATED
+}
+
+enum RentEscalation_escalationType {
+  FIXED
+  PERCENTAGE
+  INDEX
+  MARKET
+}
+
+enum LeaseAmendment_status {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTED
+}
+
+enum Lease_leaseStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SIGNED
+  ACTIVE
+  EXPIRING_SOON
+  EXPIRED
+  TERMINATED
+  RENEWED
+}
+
+enum LeaseNotification_status {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum LeaseRenewal_tenantResponse {
+  ACCEPT
+  DECLINE
+  NEGOTIATE
+  NO_RESPONSE
+}
+
+enum LeaseRenewal_status {
+  PENDING
+  NOTICE_SENT
+  TENANT_RESPONDED
+  NEGOTIATING
+  APPROVED
+  EXECUTED
+  DECLINED
+}
+
+enum Lease_escalationType {
+  FIXED
+  PERCENTAGE
+  INDEX
+  MARKET
+}
+
+enum Lease_complianceStatus {
+  PENDING
+  COMPLIANT
+  NON_COMPLIANT
+  UNDER_REVIEW
+}
+
+enum LeaseNotification_notificationType {
+  RENEWAL_REMINDER
+  EXPIRY_WARNING
+  RENT_DUE
+  LATE_PAYMENT
+  ESCALATION_NOTICE
+  COMPLIANCE_CHECK
+  DOCUMENT_REQUIRED
+  MAINTENANCE_SCHEDULED
+  LEASE_SIGNED
+  CUSTOM
+  AMENDMENT_PROPOSED
+  AMENDMENT_EXECUTED
 }
