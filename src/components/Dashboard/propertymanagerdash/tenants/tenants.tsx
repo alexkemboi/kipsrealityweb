@@ -1282,7 +1282,7 @@ export default function EnhancedTenantDashboard() {
 
         {/* Application Detail Modal */}
         {showDetailModal && selectedApplication && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               {/* Modal Header */}
               <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex justify-between items-start">
