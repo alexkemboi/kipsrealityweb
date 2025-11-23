@@ -1,202 +1,111 @@
-// src/app/api/invoices/[id]/download/route.ts
-import { NextRequest, NextResponse } from "next/server";
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  context: { params: Promise<{ groupId: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { groupId } = await context.params;
+    
+    // Parse groupId (format: lease_id-date)
+    const [leaseId, dateString] = decodeURIComponent(groupId).split('-');
+    const dueDate = new Date(dateString);
 
-    // Fetch invoice with related data
-    const invoice = await prisma.invoice.findUnique({
-      where: { id },
+    // Fetch all invoices for this lease and due date
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        lease_id: leaseId,
+        dueDate: {
+          gte: new Date(dueDate.setHours(0, 0, 0, 0)),
+          lt: new Date(dueDate.setHours(23, 59, 59, 999))
+        }
+      },
       include: {
+        InvoiceItem: true,
+        payment: true,
         Lease: {
           include: {
             tenant: true,
             property: true,
-            unit: true,
-          },
-        },
-        InvoiceItem: true,
+            unit: true
+          }
+        }
       },
+      orderBy: { type: 'asc' }
     });
 
-    if (!invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    if (!invoices.length) {
+      return NextResponse.json(
+        { success: false, error: "No invoices found for this group" },
+        { status: 404 }
+      );
     }
 
-    // Create a new PDFDocument
-    const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+    // Generate simple text content
+    const textContent = generateTextContent(invoices, dateString);
     
-    // Embed fonts
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    // Convert to Blob for download
+    const blob = new Blob([textContent], { type: 'text/plain' });
     
-    const { width, height } = page.getSize();
-    let yPosition = height - 50;
-    
-    // Title
-    page.drawText('INVOICE', {
-      x: 50,
-      y: yPosition,
-      size: 20,
-      font: boldFont,
-      color: rgb(0, 0, 0),
-    });
-    
-    yPosition -= 40;
-    
-    // Invoice details
-    page.drawText(`Invoice ID: ${invoice.id}`, {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 20;
-    page.drawText(`Date Issued: ${invoice.createdAt?.toDateString()}`, {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 20;
-    page.drawText(`Due Date: ${invoice.dueDate.toDateString()}`, {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 40;
-    
-    // Tenant Information
-    page.drawText('Tenant Information:', {
-      x: 50,
-      y: yPosition,
-      size: 14,
-      font: boldFont,
-    });
-    
-    yPosition -= 20;
-    page.drawText(
-      `${invoice.Lease.tenant?.firstName || ''} ${invoice.Lease.tenant?.lastName || ''}`,
-      {
-        x: 50,
-        y: yPosition,
-        size: 12,
-        font: font,
-      }
-    );
-    
-    yPosition -= 20;
-    page.drawText(invoice.Lease.tenant?.email || '', {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 40;
-    
-    // Property Details
-    page.drawText('Property Details:', {
-      x: 50,
-      y: yPosition,
-      size: 14,
-      font: boldFont,
-    });
-    
-    yPosition -= 20;
-    page.drawText(invoice.Lease.property?.name || '', {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 20;
-    page.drawText(invoice.Lease.property?.address || '', {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 20;
-    page.drawText(`Unit: ${invoice.Lease.unit?.unitNumber || ''}`, {
-      x: 50,
-      y: yPosition,
-      size: 12,
-      font: font,
-    });
-    
-    yPosition -= 40;
-    
-    // Invoice Items
-    page.drawText('Invoice Items:', {
-      x: 50,
-      y: yPosition,
-      size: 14,
-      font: boldFont,
-    });
-    
-    yPosition -= 30;
-    invoice.InvoiceItem.forEach((item) => {
-      page.drawText(`${item.description}`, {
-        x: 50,
-        y: yPosition,
-        size: 12,
-        font: font,
-      });
-      
-      page.drawText(`KES ${item.amount}`, {
-        x: 400,
-        y: yPosition,
-        size: 12,
-        font: font,
-      });
-      
-      yPosition -= 20;
-    });
-    
-    yPosition -= 20;
-    
-    // Total Amount
-    page.drawText(`Total Amount: KES ${Number(invoice.amount).toLocaleString()}`, {
-      x: 350,
-      y: yPosition,
-      size: 14,
-      font: boldFont,
-    });
-
-    // Serialize the PDFDocument to bytes
-    const pdfBytes = await pdfDoc.save();
-
-    // Convert Uint8Array to Buffer for NextResponse
-    const pdfBuffer = Buffer.from(pdfBytes);
-
-    return new NextResponse(pdfBuffer, {
-      status: 200,
+    return new Response(blob, {
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=invoice-${invoice.id}.pdf`,
+        'Content-Type': 'text/plain',
+        'Content-Disposition': `attachment; filename="invoice-${dateString}.txt"`,
       },
     });
-  } catch (error) {
-    console.error("Error generating invoice PDF:", error);
+
+  } catch (error: any) {
+    console.error("Error fetching combined invoice:", error);
     return NextResponse.json(
-      { error: "Failed to generate invoice PDF" },
+      { success: false, error: error.message || "Failed to fetch combined invoice" },
       { status: 500 }
     );
   }
+}
+
+function generateTextContent(invoices: any[], dateString: string): string {
+  const tenant = invoices[0]?.Lease?.tenant;
+  const property = invoices[0]?.Lease?.property;
+  const unit = invoices[0]?.Lease?.unit;
+  
+  // Fixed: Added proper types for reduce functions
+  const totalAmount = invoices.reduce((sum: number, inv: any) => sum + inv.amount, 0);
+  const totalPaid = invoices.reduce((sum: number, inv: any) => 
+    sum + inv.payment.reduce((pSum: number, p: any) => pSum + p.amount, 0), 0
+  );
+
+  let content = `
+COMBINED INVOICE
+=================
+
+Tenant: ${tenant?.firstName || 'N/A'} ${tenant?.lastName || 'N/A'}
+Property: ${property?.name || 'N/A'}
+Unit: ${unit?.unitNumber || 'N/A'}
+Due Date: ${dateString}
+
+INVOICE BREAKDOWN:
+`;
+
+  invoices.forEach((invoice: any) => {
+    content += `
+${invoice.type} INVOICE:
+  Amount: KES ${invoice.amount.toLocaleString()}
+  Status: ${invoice.status}
+  Items:${invoice.InvoiceItem.length > 0 ? '' : ' None'}
+${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: KES ${item.amount.toLocaleString()}`).join('\n')}
+`;
+  });
+
+  content += `
+SUMMARY:
+========
+Total Amount: KES ${totalAmount.toLocaleString()}
+Total Paid: KES ${totalPaid.toLocaleString()}
+Balance Due: KES ${(totalAmount - totalPaid).toLocaleString()}
+
+Generated on: ${new Date().toLocaleDateString()}
+`;
+
+  return content;
 }

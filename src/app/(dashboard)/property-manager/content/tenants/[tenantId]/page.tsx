@@ -7,10 +7,137 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchLeaseForTenant } from "@/lib/InvoiceLease";
+import { GroupedInvoice, Invoice, Payment, InvoiceItem } from "@/app/data/FinanceData";
 
-
-import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, ChevronDown, ChevronRight } from "lucide-react";
+import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, ChevronDown, ChevronRight, Home, Zap, FileBarChart, ChevronUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// PDF Generator function
+// PDF Generator function with proper null checking
+async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
+  // Dynamically import jsPDF to reduce bundle size
+  const { jsPDF } = await import('jspdf');
+  
+  const doc = new jsPDF();
+  
+  // Set up PDF styling
+  doc.setFont('helvetica');
+  doc.setFontSize(20);
+  doc.setTextColor(40, 40, 40);
+  
+  // Title
+  doc.text('COMBINED INVOICE', 105, 20, { align: 'center' });
+  
+  // Tenant Information
+  doc.setFontSize(12);
+  doc.text(`Tenant: ${groupData.tenant?.firstName || ''} ${groupData.tenant?.lastName || ''}`, 20, 40);
+  doc.text(`Property: ${groupData.property?.name || ''}`, 20, 50);
+  doc.text(`Due Date: ${groupData.dueDate}`, 20, 70);
+  
+  // Line separator
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 80, 190, 80);
+  
+  let yPosition = 90;
+  
+  // Invoice Breakdown
+  doc.setFontSize(14);
+  doc.text('INVOICE BREAKDOWN', 20, yPosition);
+  yPosition += 15;
+  
+  // Safe iteration with null checking
+  (groupData.invoices || []).forEach((invoice: any) => {
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${invoice.type || 'INVOICE'}`, 20, yPosition);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Amount: KES ${(invoice.amount || 0).toLocaleString()}`, 140, yPosition);
+    yPosition += 7;
+    
+    doc.text(`Status: ${invoice.status || 'PENDING'}`, 20, yPosition);
+    yPosition += 10;
+    
+    // Invoice Items with null checking
+    const invoiceItems = invoice.InvoiceItem || [];
+    if (invoiceItems.length > 0) {
+      invoiceItems.forEach((item: any) => {
+        doc.text(`• ${item.description || 'Item'}`, 25, yPosition);
+        doc.text(`KES ${(item.amount || 0).toLocaleString()}`, 140, yPosition);
+        yPosition += 6;
+      });
+    } else {
+      doc.text('• No items', 25, yPosition);
+      yPosition += 6;
+    }
+    
+    yPosition += 10;
+    
+    // Page break if needed
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 20;
+    }
+  });
+  
+  // Summary Section
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, yPosition, 190, yPosition);
+  yPosition += 15;
+  
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SUMMARY', 20, yPosition);
+  yPosition += 15;
+  
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Total Amount:', 20, yPosition);
+  doc.text(`KES ${(groupData.totalAmount || 0).toLocaleString()}`, 140, yPosition);
+  yPosition += 10;
+  
+  doc.text('Total Paid:', 20, yPosition);
+  doc.text(`KES ${(groupData.totalPaid || 0).toLocaleString()}`, 140, yPosition);
+  yPosition += 10;
+  
+  doc.setFont('helvetica', 'bold');
+  doc.text('Balance Due:', 20, yPosition);
+  doc.text(`KES ${((groupData.totalAmount || 0) - (groupData.totalPaid || 0)).toLocaleString()}`, 140, yPosition);
+  
+  // Footer
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 280);
+  
+  return doc.output('blob');
+}
+
+// Combined PDF download function with better error handling
+async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
+  try {
+    // Validate data before generating PDF
+    if (!groupData || !groupData.invoices || groupData.invoices.length === 0) {
+      throw new Error("No invoice data available for PDF generation");
+    }
+
+    const pdfBlob = await generateCombinedInvoicePDF(groupData);
+    
+    // Download the PDF
+    const url = window.URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `combined-invoice-${groupId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (error) {
+    console.error("Error generating combined invoice PDF:", error);
+    throw error;
+  }
+}
 
 function getStatusColor(status: string) {
   switch (status?.toLowerCase()) {
@@ -38,56 +165,72 @@ function formatDate(dateString: string) {
   });
 }
 
-function groupInvoicesByDate(invoices: any[]) {
-  const groups: { [key: string]: any[] } = {};
-  
-  invoices.forEach((invoice) => {
-    const dateKey = invoice.dueDate 
-      ? new Date(invoice.dueDate).toISOString().split('T')[0]
-      : 'no-date';
-    
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
-    }
-    groups[dateKey].push(invoice);
+function formatGroupDate(dateKey: string) {
+  if (!dateKey || dateKey === "no-date") return "No Due Date";
+  return new Date(dateKey).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
   });
-
-  // Convert to array and sort by date (most recent first)
-  return Object.entries(groups)
-    .map(([date, items]) => ({
-      date,
-      items: items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }))
-    .sort((a, b) => {
-      if (a.date === 'no-date') return 1;
-      if (b.date === 'no-date') return -1;
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
 }
 
 // Helper function to calculate invoice balance
-function calculateInvoiceBalance(invoice: any): number {
-  const totalPaid = invoice.payments?.reduce((sum: number, payment: any) => sum + (payment.amount || 0), 0) || 0;
+function calculateInvoiceBalance(invoice: Invoice): number {
+  const payments = invoice.payment || [];
+  const totalPaid = payments.reduce((sum: number, payment: Payment) => 
+    sum + (payment.amount || 0), 0);
   return (invoice.amount || 0) - totalPaid;
+}
+
+// Helper function to calculate group balance
+function calculateGroupBalance(group: GroupedInvoice): number {
+  const totalPaid = group.invoices.reduce((sum, invoice) => {
+    const payments = invoice.payment || [];
+    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) => 
+      paymentSum + (payment.amount || 0), 0);
+    return sum + invoicePaid;
+  }, 0);
+  
+  return (group.totalAmount || 0) - totalPaid;
+}
+
+// Helper function to calculate total paid for a group
+function calculateGroupTotalPaid(group: GroupedInvoice): number {
+  return group.invoices.reduce((sum, invoice) => {
+    const payments = invoice.payment || [];
+    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) => 
+      paymentSum + (payment.amount || 0), 0);
+    return sum + invoicePaid;
+  }, 0);
+}
+
+// Helper function to determine group status
+function getGroupStatus(group: GroupedInvoice): string {
+  const balance = calculateGroupBalance(group);
+  const dueDate = group.date === "no-date" ? null : new Date(group.date);
+  const today = new Date();
+  
+  if (balance <= 0) return "paid";
+  if (dueDate && dueDate < today) return "overdue";
+  return "pending";
 }
 
 export default function TenantInvoicesPage() {
   const params = useParams();
   const tenantId = (params as any).tenantId;
 
-  const [invoices, setInvoices] = useState<any[]>([]);
-    const [lease, setLease] = useState<any | null>(null); 
+  const [groupedInvoices, setGroupedInvoices] = useState<GroupedInvoice[]>([]);
+  const [lease, setLease] = useState<any | null>(null); 
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(new Set());
+  
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showManualModal, setShowManualModal] = useState(false);
-const [manualAmount, setManualAmount] = useState<number | "">("");
-const [manualDate, setManualDate] = useState("");
-const [manualType, setManualType] = useState<"RENT" | "UTILITY">("RENT");
-const [loadingManual, setLoadingManual] = useState(false);
-
+  const [manualAmount, setManualAmount] = useState<number | "">("");
+  const [manualDate, setManualDate] = useState("");
+  const [manualType, setManualType] = useState<"RENT" | "UTILITY">("RENT");
+  const [loadingManual, setLoadingManual] = useState(false);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -95,10 +238,9 @@ const [loadingManual, setLoadingManual] = useState(false);
       try {
         setLoading(true);
         const data = await fetchInvoicesForTenant(tenantId);
-        setInvoices(data);
-         const tenantLease = await fetchLeaseForTenant(tenantId);
+        setGroupedInvoices(data);
+        const tenantLease = await fetchLeaseForTenant(tenantId);
         setLease(tenantLease);
-
       } catch (err: any) {
         console.error(err);
         toast.error(err.message || "Failed to load invoices");
@@ -108,28 +250,35 @@ const [loadingManual, setLoadingManual] = useState(false);
     })();
   }, [tenantId]);
 
-  const filteredInvoices = useMemo(() => {
-    if (statusFilter === "all") return invoices;
-    return invoices.filter(invoice => 
-      invoice.status?.toLowerCase() === statusFilter.toLowerCase()
-    );
-  }, [invoices, statusFilter]);
+  // Filter grouped invoices by status
+  const filteredGroups = useMemo(() => {
+    if (statusFilter === "all") return groupedInvoices;
+    
+    return groupedInvoices.filter(group => {
+      const groupStatus = getGroupStatus(group);
+      return groupStatus === statusFilter.toLowerCase();
+    });
+  }, [groupedInvoices, statusFilter]);
 
-
-
-  const groupedInvoices = useMemo(() => groupInvoicesByDate(filteredInvoices), [filteredInvoices]);
-
+  // Calculate financial summary from grouped invoices
   const financialSummary = useMemo(() => {
-    const totalBilled = filteredInvoices.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
-    const totalPaid = filteredInvoices.reduce(
-      (sum, inv) => sum + (inv.payments || []).reduce((ps: number, p: any) => ps + (p.amount ?? 0), 0),
-      0
-    );
+    const totalBilled = filteredGroups.reduce((sum, group) => sum + (group.totalAmount || 0), 0);
+    
+    const totalPaid = filteredGroups.reduce((sum, group) => {
+      return sum + calculateGroupTotalPaid(group);
+    }, 0);
+    
     const balance = totalBilled - totalPaid;
 
     return { totalBilled, totalPaid, balance };
-  }, [filteredInvoices]);
-const handleGenerateUtilityInvoice = async () => {
+  }, [filteredGroups]);
+
+  // Calculate total invoice count across all groups
+  const totalInvoiceCount = useMemo(() => {
+    return filteredGroups.reduce((count, group) => count + group.invoices.length, 0);
+  }, [filteredGroups]);
+
+  const handleGenerateUtilityInvoice = async () => {
     if (!lease) return toast.error("Tenant lease not found");
 
     try {
@@ -137,7 +286,7 @@ const handleGenerateUtilityInvoice = async () => {
       await generateUtilityInvoice(lease.id);
       toast.dismiss();
       toast.success("Utility Invoice Created!");
-      setInvoices(await fetchInvoicesForTenant(tenantId));
+      setGroupedInvoices(await fetchInvoicesForTenant(tenantId));
     } catch (err: any) {
       toast.dismiss();
       toast.error(err.message || "Failed to generate utility invoice");
@@ -160,7 +309,7 @@ const handleGenerateUtilityInvoice = async () => {
 
       toast.dismiss();
       toast.success("Manual invoice created!");
-      setInvoices(await fetchInvoicesForTenant(tenantId));
+      setGroupedInvoices(await fetchInvoicesForTenant(tenantId));
       setShowManualModal(false);
     } catch (err: any) {
       toast.dismiss();
@@ -168,17 +317,6 @@ const handleGenerateUtilityInvoice = async () => {
     } finally {
       setLoadingManual(false);
     }
-  };
-
-
-  const toggleInvoiceExpansion = (invoiceId: string) => {
-    const newExpanded = new Set(expandedInvoices);
-    if (newExpanded.has(invoiceId)) {
-      newExpanded.delete(invoiceId);
-    } else {
-      newExpanded.add(invoiceId);
-    }
-    setExpandedInvoices(newExpanded);
   };
 
   const toggleGroupExpansion = (groupId: string) => {
@@ -196,18 +334,11 @@ const handleGenerateUtilityInvoice = async () => {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-7xl mx-auto">
           <Skeleton className="h-10 w-64 mb-8 bg-gray-300" />
-          <div className="flex gap-4 mt-4">
-
- 
-
-</div>
-
-
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  {[1, 2, 3, 4, 5, 6, 7].map((i) => ( // Added one more for balance column
+                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                     <th key={i} className="px-6 py-4 text-left">
                       <Skeleton className="h-4 w-20 bg-gray-300" />
                     </th>
@@ -217,7 +348,7 @@ const handleGenerateUtilityInvoice = async () => {
               <tbody>
                 {[1, 2, 3, 4, 5].map((row) => (
                   <tr key={row} className="border-b border-gray-100">
-                    {[1, 2, 3, 4, 5, 6, 7].map((cell) => ( // Added one more for balance column
+                    {[1, 2, 3, 4, 5, 6, 7].map((cell) => (
                       <td key={cell} className="px-6 py-4">
                         <Skeleton className="h-4 w-24 bg-gray-300" />
                       </td>
@@ -241,18 +372,22 @@ const handleGenerateUtilityInvoice = async () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Tenant Billing</h1>
             <p className="text-gray-600">View and manage all your invoices and payments</p>
           </div>
-          {invoices.length > 0 && (
+          {groupedInvoices.length > 0 && (
             <div className="mt-4 lg:mt-0 flex gap-4 items-center">
               <div className="bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200">
+                <div className="text-sm text-gray-600">Billing Periods</div>
+                <div className="text-2xl font-bold text-gray-900">{filteredGroups.length}</div>
+              </div>
+              <div className="bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200">
                 <div className="text-sm text-gray-600">Total Invoices</div>
-                <div className="text-2xl font-bold text-gray-900">{filteredInvoices.length}</div>
+                <div className="text-2xl font-bold text-gray-900">{totalInvoiceCount}</div>
               </div>
             </div>
           )}
         </div>
 
         {/* Filters and Summary */}
-        {invoices.length > 0 && (
+        {groupedInvoices.length > 0 && (
           <div className="mb-6 space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
               <div className="flex items-center gap-4">
@@ -298,58 +433,44 @@ const handleGenerateUtilityInvoice = async () => {
           </div>
         )}
 
+        {/* Action Buttons */}
+        <div className="mb-6">
+          <Button
+            onClick={async () => {
+              if (!lease) return toast.error("Tenant lease not found");
+              try {
+                toast.loading("Generating Full Invoice...");
+                await generateFullInvoice({ lease_id: lease.id, type: "RENT" });
+                toast.dismiss();
+                toast.success("Full Invoice Created!");
+                setGroupedInvoices(await fetchInvoicesForTenant(tenantId));
+              } catch (err: any) {
+                toast.dismiss();
+                toast.error(err.message || "Failed to generate full invoice");
+              }
+            }}
+            className="bg-blue-600 text-white mr-4 mb-4"
+          >
+            Generate Full Invoice
+          </Button>
 
-                <Button
-  onClick={async () => {
-    if (!lease) return toast.error("Tenant lease not found");
-    try {
-      toast.loading("Generating Full Invoice...");
-      await generateFullInvoice({ lease_id: lease.id, type: "RENT" });
-      toast.dismiss();
-      toast.success("Full Invoice Created!");
-      // Refresh invoices
-      setInvoices(await fetchInvoicesForTenant(tenantId));
-    } catch (err: any) {
-      toast.dismiss();
-      toast.error(err.message || "Failed to generate full invoice");
-    }
-  }}
-    className="bg-blue-600 text-white mr-4 mb-4"
+          <Button
+            onClick={handleGenerateUtilityInvoice}
+            className="bg-blue-600 text-white mr-4"
+          >
+            Generate Utility Invoice
+          </Button>
 
->
-  Generate Full Invoice
-</Button>
+          <Button
+            className="bg-blue-600 text-white"
+            onClick={() => setShowManualModal(true)}
+          >
+            Create Manual Invoice
+          </Button>
+        </div>
 
-
-  <Button
-  onClick={async () => {
-    if (!lease) return toast.error("Tenant lease not found");
-    try {
-      toast.loading("Generating Utility Invoice...");
-      await generateUtilityInvoice(lease.id); // <-- pass lease.id, not { tenantId }
-      toast.dismiss();
-      toast.success("Utility Invoice Created!");
-      setInvoices(await fetchInvoicesForTenant(tenantId));
-    } catch (err: any) {
-      toast.dismiss();
-      toast.error(err.message || "Failed to generate utility invoice");
-    }
-  }}
-  className="bg-blue-600 text-white mr-4"
->
-  Generate Utility Invoice
-</Button>
-
-<Button
-  className="bg-blue-600 text-white"
-  onClick={() => setShowManualModal(true)}
->
-  Create Manual Invoice
-</Button>
-
-
-
-        {groupedInvoices.length === 0 ? (
+        {/* COMBINED INVOICES TABLE */}
+        {filteredGroups.length === 0 ? (
           <div className="bg-white rounded-lg border-2 border-gray-200 py-16 text-center">
             <FileText className="mx-auto h-16 w-16 text-gray-300 mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -366,254 +487,303 @@ const handleGenerateUtilityInvoice = async () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr className="border-b border-gray-200">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Invoice Details</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Due Date</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Balance</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Billing Period</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Invoice Types</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Total Amount</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount Paid</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Balance Due</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Payments</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {groupedInvoices.map((group) => {
-                  const groupId = `group-${group.date}`;
+                {filteredGroups.map((group, index) => {
+              const groupId = `group-${group.leaseId}-${group.date}-${index}`;
                   const isGroupExpanded = expandedGroups.has(groupId);
-                  const groupTotal = group.items.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
-                  const groupPaid = group.items.reduce(
-                    (sum, inv) => sum + (inv.payments || []).reduce((ps: number, p: any) => ps + (p.amount ?? 0), 0),
-                    0
-                  );
-                  const groupBalance = groupTotal - groupPaid;
+                  const groupBalance = calculateGroupBalance(group);
+                  const groupTotalPaid = calculateGroupTotalPaid(group);
+                  const groupStatus = getGroupStatus(group);
+                  
+                  // Separate invoices by type for display
+                  const rentInvoice = group.invoices.find((inv: Invoice) => inv.type === "RENT");
+                  const utilityInvoice = group.invoices.find((inv: Invoice) => inv.type === "UTILITY");
+
+                  // Prepare data for combined PDF
+                const combinedInvoiceData = {
+  leaseId: group.leaseId,
+  dueDate: group.date, // Use group.date here
+  invoices: group.invoices || [],
+  totalAmount: group.totalAmount || 0,
+  totalPaid: groupTotalPaid || 0,
+   tenant: group.tenant || {},    // directly from group
+  property: group.property || {}, // directly from group
+  unit: group.unit || {},        
+};
 
                   return (
                     <React.Fragment key={groupId}>
-              
-                      {/* Group Header Row */}
+                      {/* GROUP HEADER ROW */}
                       <tr className="bg-blue-50 border-b border-blue-100">
-                        <td colSpan={7} className="px-6 py-3"> {/* Updated colSpan to 7 */}
-                          <button
-                            onClick={() => toggleGroupExpansion(groupId)}
-                            className="flex items-center gap-3 text-left w-full hover:bg-blue-100 rounded-lg px-3 py-2 transition-colors"
-                          >
-                            {isGroupExpanded ? (
-                              <ChevronDown className="h-5 w-5 text-blue-600" />
-                            ) : (
-                              <ChevronRight className="h-5 w-5 text-blue-600" />
-                            )}
-                            <div className="flex items-center gap-4">
-                              <Calendar className="h-5 w-5 text-blue-600" />
-                              <div>
-                                <div className="font-semibold text-gray-900">
-                                  Due Date: {formatDate(group.date)}
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  {group.items.length} invoice(s) • Total: {formatCurrency(groupTotal)} • Balance: {formatCurrency(groupBalance)}
-                                </div>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Calendar className="h-5 w-5 text-blue-600" />
+                            <div>
+                              <div className="font-semibold text-gray-900">
+  {formatGroupDate(group.date)}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {group.invoices.length} invoice(s)
                               </div>
                             </div>
-                          </button>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            {rentInvoice && (
+                              <div className="flex items-center gap-1">
+                                <Home className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-medium text-blue-700">Rent</span>
+                              </div>
+                            )}
+                            {utilityInvoice && (
+                              <div className="flex items-center gap-1">
+                                <Zap className="h-4 w-4 text-orange-500" />
+                                <span className="text-sm font-medium text-orange-700">Utilities</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-gray-400" />
+                            <span className="font-semibold text-gray-900">
+                              {formatCurrency(group.totalAmount)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-green-400" />
+                            <span className="font-semibold text-green-600">
+                              {formatCurrency(groupTotalPaid)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className={`flex items-center gap-2 ${
+                            groupBalance > 0 ? "text-red-600" : "text-green-600"
+                          }`}>
+                            <AlertCircle className={`h-4 w-4 ${
+                              groupBalance > 0 ? "text-red-500" : "text-green-500"
+                            }`} />
+                            <span className="font-semibold">
+                              {formatCurrency(groupBalance)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <Badge className={getStatusColor(groupStatus)}>
+                            {groupStatus.charAt(0).toUpperCase() + groupStatus.slice(1)}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex items-center gap-2"
+                              onClick={() => toggleGroupExpansion(groupId)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              {isGroupExpanded ? "Hide" : "Details"}
+                            </Button>
+                            
+                            {/* Combined PDF Download Button */}
+                            <Button
+                              size="sm"
+                              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  setDownloadingId(`combined-${groupId}`);
+await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.date}`);
+                                  toast.success("Combined PDF downloaded successfully");
+                                } catch (error: any) {
+                                  toast.error(error.message || "Failed to download combined PDF");
+                                } finally {
+                                  setDownloadingId(null);
+                                }
+                              }}
+                              disabled={downloadingId === `combined-${groupId}`}
+                            >
+                              <Download className="h-4 w-4" />
+                              Combined PDF
+                            </Button>
+
+                            {/* Individual download buttons */}
+                            {rentInvoice && (
+                              <Button
+                                size="sm"
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    setDownloadingId(rentInvoice.id);
+                                    await downloadInvoicePDF(rentInvoice.id);
+                                    toast.success("Rent invoice downloaded");
+                                  } catch (error: any) {
+                                    toast.error(error.message || "Failed to download rent invoice");
+                                  } finally {
+                                    setDownloadingId(null);
+                                  }
+                                }}
+                                disabled={downloadingId === rentInvoice.id}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {utilityInvoice && (
+                              <Button
+                                size="sm"
+                                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    setDownloadingId(utilityInvoice.id);
+                                    await downloadInvoicePDF(utilityInvoice.id);
+                                    toast.success("Utilities invoice downloaded");
+                                  } catch (error: any) {
+                                    toast.error(error.message || "Failed to download utilities invoice");
+                                  } finally {
+                                    setDownloadingId(null);
+                                  }
+                                }}
+                                disabled={downloadingId === utilityInvoice.id}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
 
-                      {/* Group Invoice Rows */}
-                      {isGroupExpanded && group.items.map((invoice) => {
-                        const isExpanded = expandedInvoices.has(invoice.id);
-                        const invoiceBalance = calculateInvoiceBalance(invoice);
-                        
-                        return (
-                          <React.Fragment key={invoice.id}>
-                            <tr 
-                              className="hover:bg-gray-50 transition-colors cursor-pointer"
-                              onClick={() => toggleInvoiceExpansion(invoice.id)}
-                            >
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-3">
-                                  <FileText className="h-5 w-5 text-blue-600" />
-                                  <div>
-                                    <div className="font-medium text-gray-900">
-                                      {invoice.type} Invoice
+                      {/* EXPANDED DETAILS ROW */}
+                      {isGroupExpanded && (
+                        <tr className="bg-gray-50">
+                          <td colSpan={7} className="px-6 py-4">
+                            <div className="space-y-6">
+                              {/* Invoice Breakdown */}
+                              <div>
+                                <h4 className="font-semibold text-gray-900 mb-3">Invoice Breakdown</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Rent Invoice Details */}
+                                  {rentInvoice && (
+                                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                          <Home className="h-4 w-4 text-blue-600" />
+                                          <span className="font-semibold text-blue-900">Rent Invoice</span>
+                                        </div>
+                                        <Badge className={getStatusColor(rentInvoice.status)}>
+                                          {rentInvoice.status}
+                                        </Badge>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-gray-600">Amount:</span>
+                                          <span className="font-semibold">{formatCurrency(rentInvoice.amount)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-gray-600">Balance:</span>
+                                          <span className={`font-semibold ${
+                                            calculateInvoiceBalance(rentInvoice) > 0 ? "text-red-600" : "text-green-600"
+                                          }`}>
+                                            {formatCurrency(calculateInvoiceBalance(rentInvoice))}
+                                          </span>
+                                        </div>
+                                      </div>
                                     </div>
-                                    
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-gray-400" />
-                                  <span className="text-sm text-gray-900">
-                                    {formatDate(invoice.dueDate)}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <DollarSign className="h-4 w-4 text-gray-400" />
-                                  <span className="font-semibold text-gray-900">
-                                    {formatCurrency(invoice.amount)}
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className={`flex items-center gap-2 ${
-                                  invoiceBalance > 0 ? "text-red-600" : "text-green-600"
-                                }`}>
-                                  <AlertCircle className={`h-4 w-4 ${
-                                    invoiceBalance > 0 ? "text-red-500" : "text-green-500"
-                                  }`} />
-                                  <span className="font-semibold">
-                                    {formatCurrency(invoiceBalance)}
-                                  </span>
-                                </div>
-                                {invoiceBalance > 0 && (
-                                  <div className="text-xs text-red-500 mt-1">
-                                    Outstanding
-                                  </div>
-                                )}
-                                {invoiceBalance <= 0 && (
-                                  <div className="text-xs text-green-500 mt-1">
-                                    Paid in full
-                                  </div>
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                <Badge 
-                                  variant="outline" 
-                                  className={`${getStatusColor(invoice.status)} font-medium border`}
-                                >
-                                  {invoice.status}
-                                </Badge>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="text-sm text-gray-900">
-                                  {invoice.payments?.length || 0} payment(s)
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                  Total: {formatCurrency(
-                                    invoice.payments?.reduce((sum: number, p: any) => sum + (p.amount ?? 0), 0) || 0
+                                  )}
+
+                                  {/* Utility Invoice Details */}
+                                  {utilityInvoice && (
+                                    <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2">
+                                          <Zap className="h-4 w-4 text-orange-600" />
+                                          <span className="font-semibold text-orange-900">Utilities Invoice</span>
+                                        </div>
+                                        <Badge className={getStatusColor(utilityInvoice.status)}>
+                                          {utilityInvoice.status}
+                                        </Badge>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-gray-600">Amount:</span>
+                                          <span className="font-semibold">{formatCurrency(utilityInvoice.amount)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-gray-600">Balance:</span>
+                                          <span className={`font-semibold ${
+                                            calculateInvoiceBalance(utilityInvoice) > 0 ? "text-red-600" : "text-green-600"
+                                          }`}>
+                                            {formatCurrency(calculateInvoiceBalance(utilityInvoice))}
+                                          </span>
+                                        </div>
+                                        {utilityInvoice.InvoiceItem && utilityInvoice.InvoiceItem.length > 0 && (
+                                          <div className="mt-2">
+                                            <div className="text-xs font-medium text-gray-600 mb-1">Items:</div>
+                                            {utilityInvoice.InvoiceItem.map((item: InvoiceItem) => (
+                                              <div key={item.id} className="flex justify-between text-xs">
+                                                <span className="text-gray-500">{item.description}</span>
+                                                <span>{formatCurrency(item.amount)}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   )}
                                 </div>
-                              </td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="flex items-center gap-2"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleInvoiceExpansion(invoice.id);
-                                    }}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                    Details
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                                    disabled={downloadingId === invoice.id}
-                                    onClick={async (e) => {
-                                      e.stopPropagation();
-                                      try {
-                                        setDownloadingId(invoice.id);
-                                        await downloadInvoicePDF(invoice.id);
-                                        toast.success("Invoice downloaded successfully");
-                                      } catch (err: any) {
-                                        console.error(err);
-                                        toast.error(err.message || "Failed to download invoice");
-                                      } finally {
-                                        setDownloadingId(null);
-                                      }
-                                    }}
-                                  >
-                                    {downloadingId === invoice.id ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                                    ) : (
-                                      <Download className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                            
-                            {/* Expanded Details Row */}
-                            {isExpanded && (
-                              <tr className="bg-blue-50">
-                                <td colSpan={7} className="px-6 py-4"> {/* Updated colSpan to 7 */}
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {/* Invoice Items */}
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                        <FileText className="h-4 w-4" />
-                                        Invoice Items
-                                      </h4>
-                                      <div className="space-y-2">
-                                        {invoice.invoiceItems?.length ? (
-                                          invoice.invoiceItems.map((item: any) => (
-                                            <div
-                                              key={item.id}
-                                              className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200"
-                                            >
-                                              <div>
-                                                <div className="font-medium text-gray-900">{item.description}</div>
-                                                {item.notes && (
-                                                  <div className="text-sm text-gray-500 mt-1">{item.notes}</div>
-                                                )}
-                                              </div>
-                                              <span className="font-semibold text-gray-900">
-                                                {formatCurrency(item.amount)}
-                                              </span>
-                                            </div>
-                                          ))
-                                        ) : (
-                                          <div className="text-sm text-gray-500 italic p-3 bg-white rounded-lg border border-gray-200">
-                                            No line items
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
+                              </div>
 
-                                    {/* Payments */}
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                        <CreditCard className="h-4 w-4" />
-                                        Payment History
-                                      </h4>
-                                      <div className="space-y-2">
-                                        {invoice.payments?.length ? (
-                                          invoice.payments.map((payment: any) => (
-                                            <div
-                                              key={payment.id}
-                                              className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200"
-                                            >
-                                              <div>
-                                                <div className="font-medium text-gray-900 capitalize">
-                                                  {payment.method} Payment
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                  {payment.reference && `Ref: ${payment.reference}`}
-                                                  {payment.paymentDate && ` • ${formatDate(payment.paymentDate)}`}
-                                                </div>
-                                              </div>
-                                              <span className="font-semibold text-green-600">
-                                                {formatCurrency(payment.amount)}
-                                              </span>
+                              {/* Combined Payment History */}
+                              <div>
+                                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                  <CreditCard className="h-4 w-4 text-green-600" />
+                                  Payment History
+                                </h4>
+                                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                  <div className="space-y-2">
+                                    {group.invoices.flatMap((invoice: Invoice) => invoice.payment || []).length > 0 ? (
+                                      group.invoices.flatMap((invoice: Invoice) => invoice.payment || []).map((payment: Payment) => (
+                                        <div key={payment.id} className="flex justify-between items-center p-3 bg-green-50 rounded border border-green-200">
+                                          <div>
+                                            <div className="font-medium text-gray-900 capitalize">
+                                              {payment.method} Payment
                                             </div>
-                                          ))
-                                        ) : (
-                                          <div className="text-sm text-gray-500 italic p-3 bg-white rounded-lg border border-gray-200">
-                                            No payments recorded
+                                            <div className="text-sm text-gray-500">
+                                              {payment.reference && `Ref: ${payment.reference}`}
+                                              {payment.paidOn && ` • ${formatDate(payment.paidOn)}`}
+                                            </div>
                                           </div>
-                                        )}
+                                          <span className="font-semibold text-green-600">
+                                            {formatCurrency(payment.amount)}
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="text-sm text-gray-500 italic p-3 bg-white rounded border border-gray-200">
+                                        No payments recorded for this billing period
                                       </div>
-                                    </div>
+                                    )}
                                   </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </React.Fragment>
                   );
                 })}
@@ -621,81 +791,63 @@ const handleGenerateUtilityInvoice = async () => {
             </table>
           </div>
         )}
-      </div>
-      {showManualModal && (
-  <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50">
-    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-lg w-full max-w-md relative">
-      {/* Close button */}
-      <button
-        onClick={() => setShowManualModal(false)}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-      >
-        ✕
-      </button>
 
-      <h2 className="text-xl text-blue-500 font-semibold mb-4">Create Manual Invoice</h2>
+        {/* Manual Invoice Modal */}
+        {showManualModal && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/50">
+            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-lg w-full max-w-md relative">
+              <button
+                onClick={() => setShowManualModal(false)}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
 
-      <label className="block text-sm font-medium mb-1">Amount</label>
-      <input
-        type="number"
-        value={manualAmount}
-        onChange={(e) => setManualAmount(Number(e.target.value))}
-        className="w-full border p-2 rounded mb-3"
-      />
+              <h2 className="text-xl text-blue-500 font-semibold mb-4">Create Manual Invoice</h2>
 
-      <label className="block text-sm font-medium mb-1">Due Date</label>
-      <input
-        type="date"
-        value={manualDate}
-        onChange={(e) => setManualDate(e.target.value)}
-        className="w-full border p-2 rounded mb-4"
-      />
+              <label className="block text-sm font-medium mb-1">Type</label>
+              <select
+                value={manualType}
+                onChange={(e) => setManualType(e.target.value as "RENT" | "UTILITY")}
+                className="w-full border p-2 rounded mb-3"
+              >
+                <option value="RENT">Rent</option>
+                <option value="UTILITY">Utility</option>
+              </select>
 
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setShowManualModal(false)}>
-          Cancel
-        </Button>
+              <label className="block text-sm font-medium mb-1">Amount</label>
+              <input
+                type="number"
+                value={manualAmount}
+                onChange={(e) => setManualAmount(Number(e.target.value))}
+                className="w-full border p-2 rounded mb-3"
+              />
 
-        <Button variant="outline"
-          disabled={loadingManual}
-          onClick={async () => {
-            try {
-              setLoadingManual(true);
-              toast.loading("Creating invoice...");
+              <label className="block text-sm font-medium mb-1">Due Date</label>
+              <input
+                type="date"
+                value={manualDate}
+                onChange={(e) => setManualDate(e.target.value)}
+                className="w-full border p-2 rounded mb-4"
+              />
 
-              await createManualInvoice({
-                lease_id: lease!.id,
-                type: "RENT",
-                amount: Number(manualAmount),
-                dueDate: manualDate,
-              });
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setShowManualModal(false)}>
+                  Cancel
+                </Button>
 
-              toast.dismiss();
-              toast.success("Manual rent invoice created!");
-              const updated = await fetchInvoicesForTenant(tenantId);
-              setInvoices(updated);
-              setShowManualModal(false);
-            } catch (err: any) {
-              toast.dismiss();
-              toast.error(err.message);
-            } finally {
-              setLoadingManual(false);
-            }
-          }}
-        >
-          Create
-        </Button>
+                <Button 
+                  variant="outline"
+                  disabled={loadingManual}
+                  onClick={handleCreateManualInvoice}
+                >
+                  {loadingManual ? "Creating..." : "Create"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-)}
-
-
-
-    </div>
-
-    
   );
- 
-
 }

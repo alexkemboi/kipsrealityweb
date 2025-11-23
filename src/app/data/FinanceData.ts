@@ -1,4 +1,28 @@
 // types/finance.ts
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  method: string; // or use a union type if you know the possible values
+  reference?: string;
+  paidOn?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  is_reversed: boolean;
+  reversed_at?: string;
+  reversal_reason?: string;
+  reversed_by?: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  amount: number;
+  notes?: string;
+  // Add other InvoiceItem fields from your Prisma model if needed
+}
+
 export interface Invoice {
   id: string;
   lease_id: string;
@@ -8,6 +32,8 @@ export interface Invoice {
   status: "PENDING" | "PAID" | "OVERDUE";
   createdAt: string;
   updatedAt: string;
+  InvoiceItem: InvoiceItem[];
+  payment: Payment[];
   Lease?: {
     tenant?: {
       firstName?: string;
@@ -88,3 +114,24 @@ export interface UtilityItem {
   amount?: number;
 }
 
+export interface GroupedInvoice {
+  leaseId: string;
+  date: string;
+  totalAmount: number;
+  invoices: Invoice[];
+  totalPaid?: number;        // optional, if you track payments per group
+  tenant?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  property?: {
+    id?: string;
+    name?: string;
+    address?: string;
+  };
+  unit?: {
+    id?: string;
+    unitNumber?: string;
+  };
+}

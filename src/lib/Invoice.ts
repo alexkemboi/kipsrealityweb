@@ -1,5 +1,5 @@
 // src/lib/finance.ts
-import { FullInvoiceInput, ManualInvoiceInput, ManualInvoiceItem,ManualUtilityItem, Invoice } from "@/app/data/FinanceData";
+import { FullInvoiceInput, ManualInvoiceInput, ManualInvoiceItem,ManualUtilityItem, Invoice, GroupedInvoice } from "@/app/data/FinanceData";
 
 
 
@@ -72,7 +72,7 @@ interface InvoiceFilters {
   type?: "RENT" | "UTILITY";
 }
 
-export async function fetchInvoices(filters?: InvoiceFilters): Promise<Invoice[]> {
+export async function fetchInvoices(filters?: InvoiceFilters): Promise<GroupedInvoice[]> {
   try {
     const params = new URLSearchParams();
 
@@ -201,7 +201,7 @@ export async function fetchTenantsWithFinancials() {
   return json.data;
 }
 
-export async function fetchInvoicesForTenant(tenantId: string) {
+export async function fetchInvoicesForTenant(tenantId: string): Promise<GroupedInvoice[]> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/tenants/${tenantId}/invoices`,
@@ -214,7 +214,8 @@ export async function fetchInvoicesForTenant(tenantId: string) {
       throw new Error(json?.error || "Failed to fetch tenant invoices");
     }
 
-    return json.data;
+    // JSON now contains grouped invoices
+    return json.data as GroupedInvoice[];
   } catch (error: any) {
     console.error("fetchInvoicesForTenant ERROR:", error);
     throw new Error(error?.message || "Unexpected error fetching invoices");

@@ -34,11 +34,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 },
               },
             },
-            lease_utility: {
-              include: {
-                utility: true, // get the related utility details
-              },
-            },
+           lease_utility: {
+  include: {
+    utility: true,
+    utility_reading: {
+      orderBy: { readingDate: "desc" },
+      take: 1, 
+    },
+  },
+},
+
           },
         },
       },
