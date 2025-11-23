@@ -145,10 +145,8 @@ export default function MaintenanceRequestsClient(): ReactElement {
           >
             Make Request
           </button>
-          <Link href="/property-manager/maintenance/vendors" legacyBehavior>
-            <a className="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white shadow">
-              View Invites
-            </a>
+          <Link href="/property-manager/maintenance/vendors" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white shadow">
+            View Invites
           </Link>
           {/* <a
             href="/property-manager/maintenance/vendors/add"

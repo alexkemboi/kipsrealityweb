@@ -45,7 +45,7 @@ const Dashboard = () => {
 	const [selectedProperty, setSelectedProperty] = useState('all');
 	const [myproperties, setMyProperties] = useState<Properties[]>([])
 	const [token, setToken] = useState<string | null>(null);
-	const [loading, setLoading] = useState(false);;
+	const [loading, setLoading] = useState(false);
 	const [pendingMaintenance, setPendingMaintenance] = usePersistedNumber('dashboard_pendingMaintenance');
     const [occupancyRate, setOccupancyRate] = usePersistedNumber('dashboard_occupancyRate');
     const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
