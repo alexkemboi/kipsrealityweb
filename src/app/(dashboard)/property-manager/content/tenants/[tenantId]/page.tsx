@@ -12,105 +12,114 @@ import { GroupedInvoice, Invoice, Payment, InvoiceItem } from "@/app/data/Financ
 import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, ChevronDown, ChevronRight, Home, Zap, FileBarChart, ChevronUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// PDF Generator function
 // PDF Generator function with proper null checking
 async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
-  // Dynamically import jsPDF to reduce bundle size
   const { jsPDF } = await import('jspdf');
-  
   const doc = new jsPDF();
-  
-  // Set up PDF styling
+
   doc.setFont('helvetica');
   doc.setFontSize(20);
   doc.setTextColor(40, 40, 40);
-  
+
   // Title
   doc.text('COMBINED INVOICE', 105, 20, { align: 'center' });
-  
-  // Tenant Information
+
+  // Tenant Info
   doc.setFontSize(12);
   doc.text(`Tenant: ${groupData.tenant?.firstName || ''} ${groupData.tenant?.lastName || ''}`, 20, 40);
   doc.text(`Property: ${groupData.property?.name || ''}`, 20, 50);
   doc.text(`Due Date: ${groupData.dueDate}`, 20, 70);
-  
-  // Line separator
+
   doc.setDrawColor(200, 200, 200);
   doc.line(20, 80, 190, 80);
-  
+
   let yPosition = 90;
-  
-  // Invoice Breakdown
+
   doc.setFontSize(14);
   doc.text('INVOICE BREAKDOWN', 20, yPosition);
   yPosition += 15;
-  
-  // Safe iteration with null checking
+
   (groupData.invoices || []).forEach((invoice: any) => {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text(`${invoice.type || 'INVOICE'}`, 20, yPosition);
-    
+
     doc.setFont('helvetica', 'normal');
     doc.text(`Amount: KES ${(invoice.amount || 0).toLocaleString()}`, 140, yPosition);
     yPosition += 7;
-    
+
     doc.text(`Status: ${invoice.status || 'PENDING'}`, 20, yPosition);
     yPosition += 10;
-    
-    // Invoice Items with null checking
-    const invoiceItems = invoice.InvoiceItem || [];
-    if (invoiceItems.length > 0) {
-      invoiceItems.forEach((item: any) => {
-        doc.text(`• ${item.description || 'Item'}`, 25, yPosition);
-        doc.text(`KES ${(item.amount || 0).toLocaleString()}`, 140, yPosition);
+
+    // --- Only show utility breakdown for UTILITY invoices ---
+    if (invoice.type === "UTILITY" && invoice.utilities && invoice.utilities.length > 0) {
+      doc.setFont('helvetica', 'italic');
+      doc.text('Utility Breakdown:', 25, yPosition);
+      yPosition += 7;
+
+      invoice.utilities.forEach((u: any) => {
+        // Only show "METERED" or "FIXED"
+        const typeLabel = u.type?.toUpperCase() === "METERED" ? "METERED" : "FIXED";
+
+        let utilityLine = `${u.name} (${typeLabel})`;
+
+        // Only include fixedAmount for fixed utilities
+        if (typeLabel === "FIXED" && u.fixedAmount !== undefined) {
+          utilityLine += ` • KES ${u.fixedAmount.toLocaleString()}`;
+        }
+
+        // Only include unitPrice for metered utilities
+        if (typeLabel === "METERED" && u.unitPrice !== undefined) {
+          utilityLine += ` • KES ${u.unitPrice.toLocaleString()}`;
+        }
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(utilityLine, 30, yPosition);
         yPosition += 6;
       });
-    } else {
-      doc.text('• No items', 25, yPosition);
-      yPosition += 6;
+
+      yPosition += 10; // extra spacing after utilities
     }
-    
-    yPosition += 10;
-    
+
     // Page break if needed
     if (yPosition > 250) {
       doc.addPage();
       yPosition = 20;
     }
   });
-  
-  // Summary Section
+
+  // --- Summary Section ---
   doc.setDrawColor(200, 200, 200);
   doc.line(20, yPosition, 190, yPosition);
   yPosition += 15;
-  
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('SUMMARY', 20, yPosition);
   yPosition += 15;
-  
+
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
   doc.text('Total Amount:', 20, yPosition);
   doc.text(`KES ${(groupData.totalAmount || 0).toLocaleString()}`, 140, yPosition);
   yPosition += 10;
-  
+
   doc.text('Total Paid:', 20, yPosition);
   doc.text(`KES ${(groupData.totalPaid || 0).toLocaleString()}`, 140, yPosition);
   yPosition += 10;
-  
+
   doc.setFont('helvetica', 'bold');
   doc.text('Balance Due:', 20, yPosition);
   doc.text(`KES ${((groupData.totalAmount || 0) - (groupData.totalPaid || 0)).toLocaleString()}`, 140, yPosition);
-  
+
   // Footer
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
   doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 280);
-  
+
   return doc.output('blob');
 }
+
 
 // Combined PDF download function with better error handling
 async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
