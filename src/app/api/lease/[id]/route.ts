@@ -43,10 +43,10 @@ export async function PATCH(
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> } // ✅ Added Promise
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = await context.params; // ✅ Added await
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token");
 
@@ -105,22 +105,16 @@ export async function GET(
     }
 
     // 🧮 Balance calculation
-    const totalInvoiced = lease.invoice.reduce(
-      (sum, inv) => sum + inv.amount,
-      0
-    );
-
+    const totalInvoiced = lease.invoice.reduce((sum, inv) => sum + inv.amount, 0);
     const totalPaid = lease.invoice.reduce(
-      (sum, inv) =>
-        sum + inv.payment.reduce((pSum, p) => pSum + p.amount, 0),
+      (sum, inv) => sum + inv.payment.reduce((pSum, p) => pSum + p.amount, 0),
       0
     );
-
     const balance = totalInvoiced - totalPaid;
 
     console.log("Determined role:", userRole);
 
-    //  Return all lease data plus computed balance
+    // Return all lease data plus computed balance
     return NextResponse.json({
       ...lease,
       userRole,
@@ -132,9 +126,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching lease:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch lease" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch lease" }, { status: 500 });
   }
 }
