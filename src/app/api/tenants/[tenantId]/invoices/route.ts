@@ -45,6 +45,12 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
         unitNumber: true,
       },
     },
+     lease_utility: {
+              include: {
+                utility: true,
+                utility_reading: { orderBy: { readingDate: "desc" }, take: 1 },
+              },
+            },
   },
 },
       },
@@ -95,8 +101,16 @@ Lease: inv.Lease ? {
       }
     : undefined,
 } : undefined,
+  utilities: inv.Lease?.lease_utility?.map((lu) => ({
+        id: lu.utility.id,
+        name: lu.utility.name,
+        type: lu.utility.type,
+        fixedAmount: lu.utility.fixedAmount ?? 0,
+        unitPrice: lu.utility.unitPrice ?? 0,
+        isTenantResponsible: lu.is_tenant_responsible,
+        lastReading: lu.utility_reading?.[0]?.reading_value ?? null,
+      })),
     }));
-
     // Group by lease_id + dueDate
  // Group by lease_id + dueDate
 const grouped: { [key: string]: any } = {};
@@ -118,6 +132,8 @@ safeInvoices.forEach((invoice) => {
   }
 
   grouped[groupKey].invoices.push(invoice);
+
+  
   grouped[groupKey].totalAmount += invoice.amount;
   grouped[groupKey].totalPaid += invoice.payments?.reduce(
     (sum: number, p: any) => sum + (p.amount ?? 0),

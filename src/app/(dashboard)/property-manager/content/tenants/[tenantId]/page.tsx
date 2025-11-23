@@ -730,17 +730,23 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                                             {formatCurrency(calculateInvoiceBalance(utilityInvoice))}
                                           </span>
                                         </div>
-                                        {utilityInvoice.InvoiceItem && utilityInvoice.InvoiceItem.length > 0 && (
-                                          <div className="mt-2">
-                                            <div className="text-xs font-medium text-gray-600 mb-1">Items:</div>
-                                            {utilityInvoice.InvoiceItem.map((item: InvoiceItem) => (
-                                              <div key={item.id} className="flex justify-between text-xs">
-                                                <span className="text-gray-500">{item.description}</span>
-                                                <span>{formatCurrency(item.amount)}</span>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )}
+                                     {utilityInvoice.utilities && utilityInvoice.utilities.length > 0 && (
+  <div className="mt-2">
+    <div className="text-xs font-medium text-gray-600 mb-1">Utility Details:</div>
+    {utilityInvoice.utilities.map((u) => (
+      <div key={u.id} className="flex justify-between text-xs">
+        <span className="text-gray-500">{u.name} ({u.type})</span>
+        <span>
+          {u.fixedAmount !== undefined ? `Fixed: ${formatCurrency(u.fixedAmount)}` : ''}
+          {u.unitPrice !== undefined ? ` • Unit Price: ${formatCurrency(u.unitPrice)}` : ''}
+          {u.isTenantResponsible !== undefined ? ` • Tenant Responsible: ${u.isTenantResponsible ? "Yes" : "No"}` : ''}
+        </span>
+      </div>
+    ))}
+  </div>
+)}
+
+
                                       </div>
                                     </div>
                                   )}
