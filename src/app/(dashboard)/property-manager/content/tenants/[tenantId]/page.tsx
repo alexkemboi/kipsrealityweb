@@ -13,112 +13,209 @@ import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye,
 import { Skeleton } from "@/components/ui/skeleton";
 
 // PDF Generator function with proper null checking
+// PDF Generator function with improved UI only (logic untouched)
+// PDF Generator function with improved UI design
+// PDF Generator function with simplified design
 async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
-  const { jsPDF } = await import('jspdf');
+  const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
 
-  doc.setFont('helvetica');
-  doc.setFontSize(20);
-  doc.setTextColor(40, 40, 40);
+  // === MODERN HEADER WITH COLOR ===
+  doc.setFillColor(59, 130, 246); // Blue background
+  doc.rect(0, 0, 210, 40, 'F');
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(255, 255, 255);
+  doc.text("COMBINED INVOICE", 105, 25, { align: "center" });
 
-  // Title
-  doc.text('COMBINED INVOICE', 105, 20, { align: 'center' });
+  // === BILLED TO SECTION ONLY ===
+  let y = 55;
 
-  // Tenant Info
+  // Billed To Details - Full width
+  doc.setFillColor(249, 250, 251); // Light gray background
+  doc.roundedRect(15, y, 180, 35, 3, 3, "F");
+  
   doc.setFontSize(12);
-  doc.text(`Tenant: ${groupData.tenant?.firstName || ''} ${groupData.tenant?.lastName || ''}`, 20, 40);
-  doc.text(`Property: ${groupData.property?.name || ''}`, 20, 50);
-  doc.text(`Due Date: ${groupData.dueDate}`, 20, 70);
+  doc.setTextColor(75, 85, 99);
+  doc.setFont("helvetica", "bold");
+  doc.text("BILLED TO", 25, y + 8);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(31, 41, 55);
+  doc.text(`${groupData.tenant?.firstName || ""} ${groupData.tenant?.lastName || ""}`, 25, y + 16);
+  doc.text(`${groupData.property?.name || ""}`, 25, y + 24);
+  doc.text(`Billing Period: ${formatGroupDate(groupData.dueDate)}`, 120, y + 16);
 
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 80, 190, 80);
+  y += 50;
 
-  let yPosition = 90;
+  // === INVOICE BREAKDOWN SECTION ===
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(31, 41, 55);
+  doc.text("INVOICE BREAKDOWN", 20, y);
 
-  doc.setFontSize(14);
-  doc.text('INVOICE BREAKDOWN', 20, yPosition);
-  yPosition += 15;
+  y += 12;
 
-  (groupData.invoices || []).forEach((invoice: any) => {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${invoice.type || 'INVOICE'}`, 20, yPosition);
+  // Table Header
+  doc.setFillColor(59, 130, 246);
+  doc.roundedRect(20, y, 170, 10, 2, 2, "F");
+  
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("INVOICE TYPE", 25, y + 7);
+  doc.text("AMOUNT", 100, y + 7);
+  doc.text("STATUS", 150, y + 7);
 
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Amount: KES ${(invoice.amount || 0).toLocaleString()}`, 140, yPosition);
-    yPosition += 7;
+  y += 15;
 
-    doc.text(`Status: ${invoice.status || 'PENDING'}`, 20, yPosition);
-    yPosition += 10;
-
-    // --- Only show utility breakdown for UTILITY invoices ---
-    if (invoice.type === "UTILITY" && invoice.utilities && invoice.utilities.length > 0) {
-      doc.setFont('helvetica', 'italic');
-      doc.text('Utility Breakdown:', 25, yPosition);
-      yPosition += 7;
-
-      invoice.utilities.forEach((u: any) => {
-        // Only show "METERED" or "FIXED"
-        const typeLabel = u.type?.toUpperCase() === "METERED" ? "METERED" : "FIXED";
-
-        let utilityLine = `${u.name} (${typeLabel})`;
-
-        // Only include fixedAmount for fixed utilities
-        if (typeLabel === "FIXED" && u.fixedAmount !== undefined) {
-          utilityLine += ` • KES ${u.fixedAmount.toLocaleString()}`;
-        }
-
-        // Only include unitPrice for metered utilities
-        if (typeLabel === "METERED" && u.unitPrice !== undefined) {
-          utilityLine += ` • KES ${u.unitPrice.toLocaleString()}`;
-        }
-
-        doc.setFont('helvetica', 'normal');
-        doc.text(utilityLine, 30, yPosition);
-        yPosition += 6;
-      });
-
-      yPosition += 10; // extra spacing after utilities
+  // Invoice Items
+  (groupData.invoices || []).forEach((invoice: any, index: number) => {
+    // Alternate row background
+    if (index % 2 === 0) {
+      doc.setFillColor(249, 250, 251);
+      doc.rect(20, y - 4, 170, 8, 'F');
     }
 
-    // Page break if needed
-    if (yPosition > 250) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(31, 41, 55);
+    doc.text(`${invoice.type}`, 25, y);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`KES ${invoice.amount?.toLocaleString() || "0"}`, 100, y);
+
+    // Status with color coding
+    const status = invoice.status?.toLowerCase();
+    if (status === "paid") {
+      doc.setTextColor(34, 197, 94); // Green
+    } else if (status === "overdue") {
+      doc.setTextColor(239, 68, 68); // Red
+    } else {
+      doc.setTextColor(245, 158, 11); // Yellow
+    }
+    doc.text(status?.toUpperCase() || "PENDING", 150, y);
+
+    doc.setTextColor(31, 41, 55); // Reset color
+    y += 8;
+
+    // === UTILITY BREAKDOWN (for utility invoices) ===
+    if (invoice.type === "UTILITY" && invoice.utilities?.length > 0) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8);
+      doc.text("Utility Details:", 28, y);
+      y += 5;
+
+      invoice.utilities.forEach((u: any, utilIndex: number) => {
+        const utilType = u.type?.toUpperCase() === "METERED" ? "METERED" : "FIXED";
+        let line = `• ${u.name} (${utilType})`;
+        
+        if (utilType === "FIXED" && u.fixedAmount) {
+          line += ` - KES ${u.fixedAmount.toLocaleString()}`;
+        } else if (utilType === "METERED" && u.unitPrice) {
+          line += ` - KES ${u.unitPrice.toLocaleString()}/unit`;
+        }
+
+        doc.setFont("helvetica", "normal");
+        doc.text(line, 30, y);
+        y += 4;
+      });
+      y += 4;
+    }
+
+    y += 8; // Space between invoices
+
+    // Page break check
+    if (y > 250) {
       doc.addPage();
-      yPosition = 20;
+      y = 30;
+      // Recreate table header on new page
+      doc.setFillColor(59, 130, 246);
+      doc.roundedRect(20, y, 170, 10, 2, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.text("INVOICE TYPE", 25, y + 7);
+      doc.text("AMOUNT", 100, y + 7);
+      doc.text("STATUS", 150, y + 7);
+      y += 15;
     }
   });
 
-  // --- Summary Section ---
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, yPosition, 190, yPosition);
-  yPosition += 15;
+  // === SIMPLIFIED PAYMENT SUMMARY ===
+  y += 10;
+  
+  // Summary header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(31, 41, 55);
+  doc.text("PAYMENT SUMMARY", 20, y);
+  y += 15;
 
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SUMMARY', 20, yPosition);
-  yPosition += 15;
+  // White background summary card - Only Balance Due
+  const balanceDue = (groupData.totalAmount || 0) - (groupData.totalPaid || 0);
+  
+  doc.setFillColor(255, 255, 255); // White background
+  doc.roundedRect(20, y - 5, 170, 20, 5, 5, "F");
+  
+  doc.setDrawColor(226, 232, 240); // Light border
+  doc.setLineWidth(0.5);
+  doc.roundedRect(20, y - 5, 170, 20, 5, 5, "S");
 
+  // Only show Balance Due
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Total Amount:', 20, yPosition);
-  doc.text(`KES ${(groupData.totalAmount || 0).toLocaleString()}`, 140, yPosition);
-  yPosition += 10;
+  doc.setTextColor(31, 41, 55);
+  doc.text("BALANCE DUE:", 30, y + 5);
+  
+  doc.setTextColor(239, 68, 68); // Red color for balance due
+  doc.text(`KES ${balanceDue.toLocaleString()}`, 150, y + 5, { align: "right" });
 
-  doc.text('Total Paid:', 20, yPosition);
-  doc.text(`KES ${(groupData.totalPaid || 0).toLocaleString()}`, 140, yPosition);
-  yPosition += 10;
+  y += 30;
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Balance Due:', 20, yPosition);
-  doc.text(`KES ${((groupData.totalAmount || 0) - (groupData.totalPaid || 0)).toLocaleString()}`, 140, yPosition);
+  // === PAYMENT INSTRUCTIONS ===
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(31, 41, 55);
+  doc.text("PAYMENT INSTRUCTIONS", 20, y);
+  y += 8;
 
-  // Footer
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 280);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(75, 85, 99);
+  
+  const instructions = [
+    "• Please pay the balance due by the billing period end date",
+    "• Late payments may incur additional charges",
+    "• Contact property management for payment issues",
+    "• Keep this invoice for your records"
+  ];
 
-  return doc.output('blob');
+  instructions.forEach((instruction, index) => {
+    doc.text(instruction, 25, y + (index * 5));
+  });
+
+  // === FOOTER ===
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    
+    // Footer line
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 285, 190, 285);
+    
+    // Footer text
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(8);
+    doc.setTextColor(156, 163, 175);
+    doc.text(`Generated on ${new Date().toLocaleDateString()} • Page ${i} of ${pageCount}`, 105, 290, { align: "center" });
+    doc.text("Thank you for your business!", 105, 295, { align: "center" });
+  }
+
+  return doc.output("blob");
 }
+
+
+
+// Helper function for date formatting in PDF
 
 
 // Combined PDF download function with better error handling
@@ -135,7 +232,7 @@ async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
     const url = window.URL.createObjectURL(pdfBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `combined-invoice-${groupId}.pdf`;
+    a.download = `invoice-${groupData.tenant?.firstName || ""} ${groupData.tenant?.lastName || ""}.pdf`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -610,7 +707,7 @@ export default function TenantInvoicesPage() {
                             {/* Combined PDF Download Button */}
                             <Button
                               size="sm"
-                              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+                              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 try {
@@ -629,49 +726,7 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                               Combined PDF
                             </Button>
 
-                            {/* Individual download buttons */}
-                            {rentInvoice && (
-                              <Button
-                                size="sm"
-                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    setDownloadingId(rentInvoice.id);
-                                    await downloadInvoicePDF(rentInvoice.id);
-                                    toast.success("Rent invoice downloaded");
-                                  } catch (error: any) {
-                                    toast.error(error.message || "Failed to download rent invoice");
-                                  } finally {
-                                    setDownloadingId(null);
-                                  }
-                                }}
-                                disabled={downloadingId === rentInvoice.id}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {utilityInvoice && (
-                              <Button
-                                size="sm"
-                                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    setDownloadingId(utilityInvoice.id);
-                                    await downloadInvoicePDF(utilityInvoice.id);
-                                    toast.success("Utilities invoice downloaded");
-                                  } catch (error: any) {
-                                    toast.error(error.message || "Failed to download utilities invoice");
-                                  } finally {
-                                    setDownloadingId(null);
-                                  }
-                                }}
-                                disabled={downloadingId === utilityInvoice.id}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            )}
+                          
                           </div>
                         </td>
                       </tr>
