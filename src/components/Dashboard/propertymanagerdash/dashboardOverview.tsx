@@ -19,9 +19,15 @@ const Dashboard = () => {
 
 	type Properties = {
 		id: string,
-		name: string,
+		name?: string,
 		city: string,
-		units: number
+		units: number,
+		apartmentComplexDetail?: { buildingName?: string } | null,
+		houseDetail?: { houseName?: string } | null
+	}
+
+	function getPropertyDisplayName(property: Properties): string {
+		return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || '';
 	}
 
 	interface Lease {
@@ -47,8 +53,11 @@ const Dashboard = () => {
 	const [token, setToken] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 	const [pendingMaintenance, setPendingMaintenance] = usePersistedNumber('dashboard_pendingMaintenance');
-    const [occupancyRate, setOccupancyRate] = usePersistedNumber('dashboard_occupancyRate');
-    const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
+	// Use a unique key per user for occupancy rate
+	const userId = user?.id || 'unknown';
+	const occupancyKey = `dashboard_occupancyRate_${userId}`;
+	const [occupancyRate, setOccupancyRate] = usePersistedNumber(occupancyKey);
+	const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
     const [availableProperties, setAvailableProperties] = usePersistedNumber('dashboard_availableProperties');
 	const [ReactApexChart, setChart] = useState(null);
 	const [propertyUnits, setPropertyUnits] = useState<{ [propertyId: string]: number }>({});
@@ -57,6 +66,45 @@ const Dashboard = () => {
 	const [leasesData, setLeasesData] = useState<Lease[]>([]);
 	const [upcomingLeases, setUpcomingLeases] = useState<any[]>([]);
 	const [tenants, setTenants] = useState(0);
+	// Fetch rent collected dynamically for all or selected property
+	useEffect(() => {
+		async function fetchRentCollected() {
+			if (!organizationId || !token) return;
+			let propertyId = '';
+			if (selectedProperty !== 'all') {
+				const found = myproperties.find((p) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
+				if (found) {
+					propertyId = String(found.id);
+				} else {
+					propertyId = String(selectedProperty);
+				}
+			}
+			const url = selectedProperty === 'all'
+				? `/api/payments?`
+				: `/api/payments?&propertyId=${propertyId}`;
+			try {
+				const res = await fetch(url, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (!res.ok) {
+					setRentCollected(undefined);
+					localStorage.setItem('dashboard_rentCollected', '');
+					return;
+				}
+				const data = await res.json();
+				// Sum all payment amounts
+				const total = Array.isArray(data)
+					? data.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
+					: 0;
+				setRentCollected(total);
+				localStorage.setItem('dashboard_rentCollected', String(total));
+			} catch (error) {
+				setRentCollected(undefined);
+				localStorage.setItem('dashboard_rentCollected', '');
+			}
+		}
+		fetchRentCollected();
+	}, [selectedProperty, organizationId, token, myproperties]);
 	// Compute and sort upcoming expiring leases
 	useEffect(() => {
 		if (!leasesData || leasesData.length === 0) {
@@ -84,13 +132,14 @@ const Dashboard = () => {
 				// Get tenant name, unit name or number
 								// Show property name as the main label (top), and unit name/number as the secondary label (bottom)
 								let propertyLabel = '';
-								if ((lease as any).property && typeof (lease as any).property === 'object' && (lease as any).property.name) {
-									propertyLabel = (lease as any).property.name;
+								if ((lease as any).property && typeof (lease as any).property === 'object') {
+									const prop = (lease as any).property;
+									propertyLabel = prop.apartmentComplexDetail?.buildingName || prop.houseDetail?.houseName || prop.name || '';
 								} else if ((lease as any).propertyName) {
 									propertyLabel = (lease as any).propertyName;
 								} else if ((lease as any).propertyId && myproperties.length > 0) {
 									const found = myproperties.find((p: any) => p.id === (lease as any).propertyId);
-									if (found) propertyLabel = String(found.name);
+									if (found) propertyLabel = getPropertyDisplayName(found);
 								}
 								let unitLabel = (lease as any).unitNumber || (lease as any).unitName || (lease as any).unit_number || (lease as any).unit || '—';
 								return {
@@ -111,7 +160,7 @@ useEffect(() => {
 			let propertyId = '';
 			if (selectedProperty !== 'all') {
 				// Always resolve the propertyId from myproperties
-				const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+				const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 				if (found) {
 					propertyId = String(found.id);
 				} else {
@@ -127,7 +176,7 @@ useEffect(() => {
 			if (!res.ok) {
 				setTenantApplications([]);
 				setOccupancyRate(undefined);
-				localStorage.setItem('dashboard_occupancyRate', '');
+				localStorage.setItem(occupancyKey, '');
 				return;
 			}
 
@@ -154,12 +203,12 @@ useEffect(() => {
 					: 0;
 
 			setOccupancyRate(rate);
-			localStorage.setItem('dashboard_occupancyRate', String(rate));
+			localStorage.setItem(occupancyKey, String(rate));
 
 		} catch (error) {
 			console.error('Error fetching tenant applications:', error);
 			setOccupancyRate(undefined);
-			localStorage.setItem('dashboard_occupancyRate', '');
+			localStorage.setItem(occupancyKey, '');
 		}
 	}
 
@@ -260,7 +309,7 @@ useEffect(() => {
 			if (selectedProperty !== 'all') {
 				// If selectedProperty is a name, find the property object and use its id
 				const found = myproperties.find(
-					(p: any) => p.id === selectedProperty || p.name === selectedProperty
+					(p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty
 				);
 				if (found) {
 					propertyId = String(found.id);
@@ -335,7 +384,7 @@ useEffect(() => {
 				let url: string;
 				let propertyId = '';
 				if (selectedProperty !== 'all') {
-					const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+					const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 					if (found) {
 						propertyId = String(found.id);
 					} else {
@@ -440,7 +489,7 @@ useEffect(() => {
 			try {
 				let propertyId = '';
 				if (selectedProperty !== 'all') {
-					const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+					const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 					if (found) {
 						propertyId = String(found.id);
 					} else {
@@ -504,7 +553,7 @@ useEffect(() => {
 										<option value="all">Properties available ( {myproperties.length} )</option>
 										{myproperties.map((property) => (
 											<option key={property.id.toString()} value={property.id.toString()} className="z-50">
-												{property.name}
+												{getPropertyDisplayName(property)}
 											</option>
 										))}
 									</select>
@@ -653,8 +702,8 @@ useEffect(() => {
 									}
 									// Get property name and unit
 									let propertyName = '';
-									if (request.property && typeof request.property === 'object' && request.property.name) {
-										propertyName = request.property.name;
+									if (request.property && typeof request.property === 'object') {
+										propertyName = request.property.apartmentComplexDetail?.buildingName || request.property.houseDetail?.houseName || request.property.name || '';
 									} else if (request.propertyName) {
 										propertyName = request.propertyName;
 									}
