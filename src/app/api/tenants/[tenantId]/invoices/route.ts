@@ -23,36 +23,46 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
       include: {
         InvoiceItem: true,
         payment: true,
-       Lease: {
-  include: {
-    tenant: {
-      select: {
-        firstName: true,
-        lastName: true,
-        email: true,
-      }
-    },
-    property: {
-      select: {
-        id: true,
-        name: true,
-        address: true,
-      },
-    },
-    unit: {
-      select: {
-        id: true,
-        unitNumber: true,
-      },
-    },
-     lease_utility: {
+        Lease: {
+          include: {
+            tenant: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+              }
+            },
+            property: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+                apartmentComplexDetail: {
+                  select: {
+                    buildingName: true
+                  }
+                },
+                houseDetail: {
+                  select: {
+                    houseName: true
+                  }
+                }
+              },
+            },
+            unit: {
+              select: {
+                id: true,
+                unitNumber: true,
+              },
+            },
+            lease_utility: {
               include: {
                 utility: true,
                 utility_reading: { orderBy: { readingDate: "desc" }, take: 1 },
               },
             },
-  },
-},
+          },
+        },
       },
       orderBy: { dueDate: "desc" },
     });
@@ -79,29 +89,39 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
         method: p.method,
         reference: p.reference,
       })),
-Lease: inv.Lease ? {
-  tenant: inv.Lease.tenant
-    ? {
-        firstName: inv.Lease.tenant.firstName,
-        lastName: inv.Lease.tenant.lastName,
-        email: inv.Lease.tenant.email,
-      }
-    : undefined,
-  property: inv.Lease.property
-    ? {
-        id: inv.Lease.property.id,
-        name: inv.Lease.property.name,
-        address: inv.Lease.property.address,
-      }
-    : undefined,
-  unit: inv.Lease.unit
-    ? {
-        id: inv.Lease.unit.id,
-        unitNumber: inv.Lease.unit.unitNumber,
-      }
-    : undefined,
-} : undefined,
-  utilities: inv.Lease?.lease_utility?.map((lu) => ({
+      Lease: inv.Lease ? {
+        tenant: inv.Lease.tenant
+          ? {
+              firstName: inv.Lease.tenant.firstName,
+              lastName: inv.Lease.tenant.lastName,
+              email: inv.Lease.tenant.email,
+            }
+          : undefined,
+        property: inv.Lease.property
+          ? {
+              id: inv.Lease.property.id,
+              name: inv.Lease.property.name,
+              address: inv.Lease.property.address,
+              apartmentComplexDetail: inv.Lease.property.apartmentComplexDetail
+                ? {
+                    buildingName: inv.Lease.property.apartmentComplexDetail.buildingName,
+                  }
+                : undefined,
+              houseDetail: inv.Lease.property.houseDetail
+                ? {
+                    houseName: inv.Lease.property.houseDetail.houseName,
+                  }
+                : undefined,
+            }
+          : undefined,
+        unit: inv.Lease.unit
+          ? {
+              id: inv.Lease.unit.id,
+              unitNumber: inv.Lease.unit.unitNumber,
+            }
+          : undefined,
+      } : undefined,
+      utilities: inv.Lease?.lease_utility?.map((lu) => ({
         id: lu.utility.id,
         name: lu.utility.name,
         type: lu.utility.type,
@@ -111,36 +131,34 @@ Lease: inv.Lease ? {
         lastReading: lu.utility_reading?.[0]?.reading_value ?? null,
       })),
     }));
+
     // Group by lease_id + dueDate
- // Group by lease_id + dueDate
-const grouped: { [key: string]: any } = {};
-safeInvoices.forEach((invoice) => {
-  const dateKey = invoice.dueDate ? invoice.dueDate.split("T")[0] : "no-date";
-  const groupKey = `${invoice.lease_id}-${dateKey}`;
+    const grouped: { [key: string]: any } = {};
+    safeInvoices.forEach((invoice) => {
+      const dateKey = invoice.dueDate ? invoice.dueDate.split("T")[0] : "no-date";
+      const groupKey = `${invoice.lease_id}-${dateKey}`;
 
-  if (!grouped[groupKey]) {
-    grouped[groupKey] = {
-      lease_id: invoice.lease_id,
-      date: dateKey,
-      invoices: [],
-      totalAmount: 0,
-      totalPaid: 0,
-      tenant: invoice.Lease?.tenant || {},      
-      property: invoice.Lease?.property || {},  
-      unit: invoice.Lease?.unit || {},          
-    };
-  }
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          lease_id: invoice.lease_id,
+          date: dateKey,
+          invoices: [],
+          totalAmount: 0,
+          totalPaid: 0,
+          tenant: invoice.Lease?.tenant || {},      
+          property: invoice.Lease?.property || {},  
+          unit: invoice.Lease?.unit || {},          
+        };
+      }
 
-  grouped[groupKey].invoices.push(invoice);
+      grouped[groupKey].invoices.push(invoice);
 
-  
-  grouped[groupKey].totalAmount += invoice.amount;
-  grouped[groupKey].totalPaid += invoice.payments?.reduce(
-    (sum: number, p: any) => sum + (p.amount ?? 0),
-    0
-  ) ?? 0;
-});
-
+      grouped[groupKey].totalAmount += invoice.amount;
+      grouped[groupKey].totalPaid += invoice.payments?.reduce(
+        (sum: number, p: any) => sum + (p.amount ?? 0),
+        0
+      ) ?? 0;
+    });
 
     const result = Object.values(grouped).sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
