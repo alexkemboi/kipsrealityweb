@@ -98,12 +98,31 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json(invoicesWithFinancials);
-  } catch (error) {
-    console.error("Error fetching invoices:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch invoices" },
-      { status: 500 }
-    );
+ const grouped = Object.values(
+  invoicesWithFinancials.reduce((acc: any, inv) => {
+    const dateKey = inv.dueDate.toISOString().split("T")[0];
+    const leaseKey = inv.Lease?.id || "unknown";
+    const groupKey = `${leaseKey}-${dateKey}`;
+
+    if (!acc[groupKey]) {
+      acc[groupKey] = {
+        leaseId: leaseKey,
+        dueDate: inv.dueDate,
+        totalAmount: 0,
+        invoices: [],
+      };
+    }
+
+    acc[groupKey].totalAmount += inv.amount;
+    acc[groupKey].invoices.push(inv);
+
+    return acc;
+  }, {})
+);
+
+return NextResponse.json(grouped);
+  } catch (err) {
+    console.error("GET /api/invoices error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
