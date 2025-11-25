@@ -12,11 +12,21 @@ export async function GET(req: NextRequest) {
 
     const properties = await prisma.property.findMany({
       where: { organizationId },
-      select: { 
-        id: true, 
-        name: true, 
-        address: true, 
+      select: {
+        id: true,
+        name: true,
+        address: true,
         city: true,
+        apartmentComplexDetail: {
+          select: {
+            buildingName: true
+          }
+        },
+        houseDetail: {
+          select: {
+            houseName: true
+          }
+        },
         units: {
           select: {
             id: true,

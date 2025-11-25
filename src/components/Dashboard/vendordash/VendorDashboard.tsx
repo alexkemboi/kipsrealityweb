@@ -222,7 +222,7 @@ export default function VendorDashboard() {
                     const res = await fetch(`/api/maintenance/${selectedRequest.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ status: "IN_PROGRESS", amount: Number(chargeAmount) })
+                      body: JSON.stringify({ status: "IN_PROGRESS", cost: Number(chargeAmount) })
                     });
                     if (!res.ok) throw new Error("Failed to update request");
                     setShowModal(false);
