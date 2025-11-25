@@ -1,13 +1,38 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+// Helper function - same as rent invoice calculation
+function calculateNextDueDate(lease: { paymentFrequency: string; paymentDueDay?: number }) {
+  const now = new Date();
+  const day = lease.paymentDueDay || now.getDate();
+  const nextDate = new Date(now.getFullYear(), now.getMonth(), day);
+
+  if (lease.paymentFrequency === 'MONTHLY') {
+    if (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 1);
+  } else if (lease.paymentFrequency === 'QUARTERLY') {
+    if (nextDate < now) nextDate.setMonth(nextDate.getMonth() + 3);
+  } else if (lease.paymentFrequency === 'YEARLY') {
+    if (nextDate < now) nextDate.setFullYear(nextDate.getFullYear() + 1);
+  }
+
+  return nextDate;
+}
+
 // POST /api/invoices/utilities/:leaseId -> Generate utility invoice
 export async function POST(_req: Request, context: { params: Promise<{ leaseId: string }> }) {
   try {
     const { leaseId } = await context.params;
 
-    // Check if lease exists
-    const leaseExists = await prisma.lease.findUnique({ where: { id: leaseId } });
+    // Check if lease exists and get payment details
+    const leaseExists = await prisma.lease.findUnique({ 
+      where: { id: leaseId },
+      select: {
+        id: true,
+        paymentFrequency: true,
+        paymentDueDay: true
+      }
+    });
+    
     if (!leaseExists) {
       return NextResponse.json(
         { success: false, error: "Lease not found for the given ID." },
@@ -54,13 +79,19 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
 
     const totalAmount = items.reduce((sum, i) => sum + i.amount, 0);
 
+    // Calculate due date using the same logic as rent invoices
+    const dueDate = calculateNextDueDate({
+      paymentFrequency: leaseExists.paymentFrequency,
+      paymentDueDay: leaseExists.paymentDueDay ?? undefined,
+    });
+
     // Create invoice
     const invoice = await prisma.invoice.create({
       data: {
         lease_id: leaseId,
         type: "UTILITY",
         amount: totalAmount,
-        dueDate: new Date(new Date().setDate(new Date().getDate() + 7)), // due in 7 days
+        dueDate: dueDate, // Now uses same logic as rent invoices
         InvoiceItem: {
           create: items.map((i) => ({
             description: i.name,
