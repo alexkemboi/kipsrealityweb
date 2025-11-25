@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["localhost"],
+    domains: ["localhost","i.postimg.cc"],
 
     remotePatterns: [
       {
@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
         hostname: "plus.unsplash.com",
         pathname: "/**",
       },
+      { protocol: "https", hostname: "i.postimg.cc", pathname: "/**" },
     ],
 
     // Optional: configure allowed quality values (Next.js 16)
