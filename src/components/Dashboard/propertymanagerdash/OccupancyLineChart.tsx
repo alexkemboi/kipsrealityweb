@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { CardContent } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -11,7 +10,7 @@ const COLORS = [
 
 interface OccupancyLineChartProps {
 	selectedProperty: string;
-	myproperties: Array<{ id: string; name: string }>;
+	myproperties: Array<{ id: string; name?: string }>;
 }
 
 const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedProperty, myproperties }) => {
@@ -67,6 +66,11 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 		fetchOccupancyHistory();
 	}, [selectedProperty, myproperties]);
 
+	// Helper to get display name for a property
+	function getPropertyDisplayName(property: { name?: string; apartmentComplexDetail?: { buildingName?: string } | null; houseDetail?: { houseName?: string } | null }): string {
+		return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || '';
+	}
+
 	// Get property IDs for lines
 	const propertyIds = selectedProperty === "all"
 		? myproperties.map(p => p.id)
@@ -97,14 +101,18 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 								/>
 								<YAxis domain={[0, 100]} tickFormatter={tick => `${tick}%`} />
 								<Tooltip />
-								<Legend />
+								<Legend formatter={(value) => {
+									// value is the propertyId (dataKey)
+									const prop = myproperties.find(p => p.id === value);
+									return prop ? getPropertyDisplayName(prop) : value;
+								}} />
 								{selectedProperty === "all"
 									? myproperties.map((property, idx) => (
 										<Line
 											key={property.id}
 											type="monotone"
 											dataKey={property.id}
-											name={property.name}
+											name={getPropertyDisplayName(property)}
 											stroke={COLORS[idx % COLORS.length] || "#000"}
 											strokeWidth={3}
 											dot={false}
@@ -125,7 +133,7 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 				</div>
 			</CardContent>
 			<div className="flex flex-col justify-center items-center h-[270px]">
-				<RentUtilitiesChart />
+				<RentUtilitiesChart selectedProperty={selectedProperty} myproperties={myproperties} />
 			</div>
 		</div>
 	);

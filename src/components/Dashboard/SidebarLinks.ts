@@ -155,39 +155,35 @@ export const routeConfig = {
     properties: [
       { path: '/property-manager/view-own-property', label: 'Manage Property', icon: Building2 },
       { path: '/property-manager/content/lease', label: 'Manage Leases', icon: Building2 },
-      { path: '/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
+      // { path: '/property-manager/properties/vacancy', label: 'Vacancy Tracker', icon: Building2 },
     ],
     tenants: [
       // { path: '/property-manager/content/invites', label: 'Invites', icon: Users },
       // { path: '/property-manager/content/tenantapplication', label: 'Applications', icon: Users },
       { path: '/property-manager/content/tenants', label: 'My tenants', icon: Users },
-      { path: '/property-manager/tenants/moves', label: 'Move-ins / Move-outs', icon: Users },
-      { path: '/property-manager/tenants/communication', label: 'Communication', icon: Users },
+      // { path: '/property-manager/tenants/moves', label: 'Move-ins / Move-outs', icon: Users },
+      // { path: '/property-manager/tenants/communication', label: 'Communication', icon: Users },
     ],
     maintenance: [
       { path: '/property-manager/maintenance/requests', label: 'Requests', icon: Wrench },
       // Removed 'Assign Vendors' and 'Analytics' links as requested
     ],
     accounting: [
-      { path: '/property-manager/accounting/invoicing', label: 'Rent Invoicing', icon: DollarSign },
+       { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
       { path: '/property-manager/content/payments', label: 'Payment Records', icon: DollarSign },
-      { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
+      // { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
     ],
     utilities: [
       { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },
-      { path: '/property-manager/content/meter-readings', label: 'Allocate Bills', icon: BarChart3 },
-      { path: '/property-manager/utilities/reports', label: 'Reports', icon: BarChart3 },
+      // { path: '/property-manager/content/meter-readings', label: 'Allocate Bills', icon: BarChart3 },
+      // { path: '/property-manager/utilities/reports', label: 'Reports', icon: BarChart3 },
     ],
 
-    invoice: [
-      { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
-      
-    ],
-    analytics: [
-      { path: '/property-manager/analytics/revenue', label: 'Revenue Insights', icon: BarChart3 },
-      { path: '/property-manager/analytics/satisfaction', label: 'Tenant Satisfaction', icon: BarChart3 },
-      { path: '/property-manager/analytics/occupancy', label: 'Occupancy', icon: BarChart3 },
-    ],
+    // analytics: [
+    //   { path: '/property-manager/analytics/revenue', label: 'Revenue Insights', icon: BarChart3 },
+    //   { path: '/property-manager/analytics/satisfaction', label: 'Tenant Satisfaction', icon: BarChart3 },
+    //   { path: '/property-manager/analytics/occupancy', label: 'Occupancy', icon: BarChart3 },
+    // ],
     settings: [
       { path: '/property-manager/settings/integrations', label: 'Integrations', icon: Settings },
       { path: '/property-manager/settings/notifications', label: 'Notifications', icon: Settings },

@@ -1,5 +1,32 @@
 "use client"
 import React, { useEffect, useState } from "react";
+// Skeleton Family
+const SkeletonBlock = ({ height = '24px', width = '100%', className = '' }) => (
+	<div
+		className={`bg-gray-200 animate-pulse rounded ${className}`}
+		style={{ height, width }}
+	/>
+);
+
+const SkeletonCard = () => (
+	<div className="bg-white rounded-xl shadow-2xl p-4 flex flex-col gap-2">
+		<div className="flex items-center gap-3 mb-2">
+			<SkeletonBlock height="24px" width="24px" className="rounded-full!" />
+			<SkeletonBlock height="16px" width="80px" />
+		</div>
+		<SkeletonBlock height="32px" width="100px" />
+	</div>
+);
+
+const SkeletonListItem = () => (
+	<div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+		<div className="flex-1">
+			<SkeletonBlock height="16px" width="120px" />
+			<SkeletonBlock height="12px" width="80px" className="mt-2" />
+		</div>
+		<SkeletonBlock height="20px" width="60px" />
+	</div>
+);
 import Loading from "./loading";
 import { Users, Calendar, AlertCircle, Home, Wrench, ChevronDown, TrendingUp, DollarSign } from 'lucide-react';
 import { UpcomingLeasesCard } from './UpcomingLeasesCard';
@@ -19,9 +46,15 @@ const Dashboard = () => {
 
 	type Properties = {
 		id: string,
-		name: string,
+		name?: string,
 		city: string,
-		units: number
+		units: number,
+		apartmentComplexDetail?: { buildingName?: string } | null,
+		houseDetail?: { houseName?: string } | null
+	}
+
+	function getPropertyDisplayName(property: Properties): string {
+		return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || '';
 	}
 
 	interface Lease {
@@ -45,10 +78,13 @@ const Dashboard = () => {
 	const [selectedProperty, setSelectedProperty] = useState('all');
 	const [myproperties, setMyProperties] = useState<Properties[]>([])
 	const [token, setToken] = useState<string | null>(null);
-	const [loading, setLoading] = useState(false);;
+	const [loading, setLoading] = useState(false);
 	const [pendingMaintenance, setPendingMaintenance] = usePersistedNumber('dashboard_pendingMaintenance');
-    const [occupancyRate, setOccupancyRate] = usePersistedNumber('dashboard_occupancyRate');
-    const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
+	// Use a unique key per user for occupancy rate
+	const userId = user?.id || 'unknown';
+	const occupancyKey = `dashboard_occupancyRate_${userId}`;
+	const [occupancyRate, setOccupancyRate] = usePersistedNumber(occupancyKey);
+	const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
     const [availableProperties, setAvailableProperties] = usePersistedNumber('dashboard_availableProperties');
 	const [ReactApexChart, setChart] = useState(null);
 	const [propertyUnits, setPropertyUnits] = useState<{ [propertyId: string]: number }>({});
@@ -57,6 +93,49 @@ const Dashboard = () => {
 	const [leasesData, setLeasesData] = useState<Lease[]>([]);
 	const [upcomingLeases, setUpcomingLeases] = useState<any[]>([]);
 	const [tenants, setTenants] = useState(0);
+	// Add state for how many items to show
+	const [upcomingLeasesToShow, setUpcomingLeasesToShow] = useState(5);
+	const [maintenanceToShow, setMaintenanceToShow] = useState(5);
+
+	// Fetch rent collected dynamically for all or selected property
+	useEffect(() => {
+		async function fetchRentCollected() {
+			if (!organizationId || !token) return;
+			let propertyId = '';
+			if (selectedProperty !== 'all') {
+				const found = myproperties.find((p) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
+				if (found) {
+					propertyId = String(found.id);
+				} else {
+					propertyId = String(selectedProperty);
+				}
+			}
+			const url = selectedProperty === 'all'
+				? `/api/payments?`
+				: `/api/payments?&propertyId=${propertyId}`;
+			try {
+				const res = await fetch(url, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (!res.ok) {
+					setRentCollected(undefined);
+					localStorage.setItem('dashboard_rentCollected', '');
+					return;
+				}
+				const data = await res.json();
+				// Sum all payment amounts
+				const total = Array.isArray(data)
+					? data.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
+					: 0;
+				setRentCollected(total);
+				localStorage.setItem('dashboard_rentCollected', String(total));
+			} catch (error) {
+				setRentCollected(undefined);
+				localStorage.setItem('dashboard_rentCollected', '');
+			}
+		}
+		fetchRentCollected();
+	}, [selectedProperty, organizationId, token, myproperties]);
 	// Compute and sort upcoming expiring leases
 	useEffect(() => {
 		if (!leasesData || leasesData.length === 0) {
@@ -84,13 +163,14 @@ const Dashboard = () => {
 				// Get tenant name, unit name or number
 								// Show property name as the main label (top), and unit name/number as the secondary label (bottom)
 								let propertyLabel = '';
-								if ((lease as any).property && typeof (lease as any).property === 'object' && (lease as any).property.name) {
-									propertyLabel = (lease as any).property.name;
+								if ((lease as any).property && typeof (lease as any).property === 'object') {
+									const prop = (lease as any).property;
+									propertyLabel = prop.apartmentComplexDetail?.buildingName || prop.houseDetail?.houseName || prop.name || '';
 								} else if ((lease as any).propertyName) {
 									propertyLabel = (lease as any).propertyName;
 								} else if ((lease as any).propertyId && myproperties.length > 0) {
 									const found = myproperties.find((p: any) => p.id === (lease as any).propertyId);
-									if (found) propertyLabel = String(found.name);
+									if (found) propertyLabel = getPropertyDisplayName(found);
 								}
 								let unitLabel = (lease as any).unitNumber || (lease as any).unitName || (lease as any).unit_number || (lease as any).unit || '—';
 								return {
@@ -111,7 +191,7 @@ useEffect(() => {
 			let propertyId = '';
 			if (selectedProperty !== 'all') {
 				// Always resolve the propertyId from myproperties
-				const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+				const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 				if (found) {
 					propertyId = String(found.id);
 				} else {
@@ -127,7 +207,7 @@ useEffect(() => {
 			if (!res.ok) {
 				setTenantApplications([]);
 				setOccupancyRate(undefined);
-				localStorage.setItem('dashboard_occupancyRate', '');
+				localStorage.setItem(occupancyKey, '');
 				return;
 			}
 
@@ -154,12 +234,12 @@ useEffect(() => {
 					: 0;
 
 			setOccupancyRate(rate);
-			localStorage.setItem('dashboard_occupancyRate', String(rate));
+			localStorage.setItem(occupancyKey, String(rate));
 
 		} catch (error) {
 			console.error('Error fetching tenant applications:', error);
 			setOccupancyRate(undefined);
-			localStorage.setItem('dashboard_occupancyRate', '');
+			localStorage.setItem(occupancyKey, '');
 		}
 	}
 
@@ -260,7 +340,7 @@ useEffect(() => {
 			if (selectedProperty !== 'all') {
 				// If selectedProperty is a name, find the property object and use its id
 				const found = myproperties.find(
-					(p: any) => p.id === selectedProperty || p.name === selectedProperty
+					(p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty
 				);
 				if (found) {
 					propertyId = String(found.id);
@@ -335,7 +415,7 @@ useEffect(() => {
 				let url: string;
 				let propertyId = '';
 				if (selectedProperty !== 'all') {
-					const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+					const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 					if (found) {
 						propertyId = String(found.id);
 					} else {
@@ -440,7 +520,7 @@ useEffect(() => {
 			try {
 				let propertyId = '';
 				if (selectedProperty !== 'all') {
-					const found = myproperties.find((p: any) => p.id === selectedProperty || p.name === selectedProperty);
+					const found = myproperties.find((p: any) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
 					if (found) {
 						propertyId = String(found.id);
 					} else {
@@ -476,7 +556,6 @@ useEffect(() => {
 	
 	return (
 		<div id="dashboard">
-			{/* Main Content */}
 			<div className="relative z-20 container mx-auto px-6 py-2 bg-white">
 				{/* Welcome Section */}
 				<div className="mb-8">
@@ -500,11 +579,10 @@ useEffect(() => {
 										onChange={(e) => setSelectedProperty(e.target.value)}
 										className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
 									>
-										{/* Default "All Properties" option */}
 										<option value="all">Properties available ( {myproperties.length} )</option>
 										{myproperties.map((property) => (
 											<option key={property.id.toString()} value={property.id.toString()} className="z-50">
-												{property.name}
+												{getPropertyDisplayName(property)}
 											</option>
 										))}
 									</select>
@@ -539,50 +617,53 @@ useEffect(() => {
 
 				{/* Metrics Section */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-
-					{/* Occupancy Rate — Home Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								 <Home
-                                    className="w-6 h-6 text-blue-600 drop-shadow-lg"
-                                    style={{ filter: 'drop-shadow(0 2px 6px #3b82f6aa)' }}
-                                />
-							
-							<p className="text-sm text-gray-600">Occupancy</p>
-						</div>
-						<p className="text-2xl font-semibold">{occupancyRate}% <small className="text-sm text-gray-400">{`(${tenants} tenants)`}</small></p>
-					</div>
-
-					{/* Rent Collected — DollarSign Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								<DollarSign className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #a78bfaaa)' }} />
-							
-							<p className="text-sm text-gray-600">Rent Collected</p>
-						</div>
-						<p className="text-2xl font-semibold">
-                          {rentCollected !== undefined ? `$${rentCollected.toLocaleString()}` : 0}
-                        </p>
-					</div>
-
-					{/* Pending Maintenance — Wrench Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								<Wrench className="w-6 h-6  text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #ec4899aa)' }} />
-							
-							<p className="text-sm text-gray-600">Pending Maintenance</p>
-						</div>
-						<p className="text-2xl font-semibold">{pendingMaintenance}</p>
-					</div>
-
-					{/* Lease Expirations — Calendar Icon */}
-					<UpcomingLeasesCard data={leasesData} />
+					{loading ? (
+						<>
+							<SkeletonCard />
+							<SkeletonCard />
+							<SkeletonCard />
+							<SkeletonCard />
+						</>
+					) : (
+						<>
+							{/* Occupancy Rate — Home Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<Home className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #3b82f6aa)' }} />
+									<p className="text-sm text-gray-600">Occupancy</p>
+								</div>
+								<p className="text-2xl font-semibold">{occupancyRate}% <small className="text-sm text-gray-400">{`(${tenants} tenants)`}</small></p>
+							</div>
+							{/* Rent Collected — DollarSign Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<DollarSign className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #a78bfaaa)' }} />
+									<p className="text-sm text-gray-600">Rent Collected</p>
+								</div>
+								<p className="text-2xl font-semibold">
+									{rentCollected !== undefined ? `$${rentCollected.toLocaleString()}` : 0}
+								</p>
+							</div>
+							{/* Pending Maintenance — Wrench Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<Wrench className="w-6 h-6  text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #ec4899aa)' }} />
+									<p className="text-sm text-gray-600">Pending Maintenance</p>
+								</div>
+								<p className="text-2xl font-semibold">{pendingMaintenance}</p>
+							</div>
+							{/* Lease Expirations — Calendar Icon */}
+							<UpcomingLeasesCard data={leasesData} />
+						</>
+					)}
 				</div>
-								<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
+
+				{/* Skeleton for Line Chart */}
+				{loading ? (
+					<SkeletonBlock height="220px" className="my-8 w-full" />
+				) : (
+					<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
+				)}
 
 				{/* Tables Section */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-18">
@@ -593,10 +674,16 @@ useEffect(() => {
 							<Calendar className="text-purple-600" size={20} />
 						</div>
 						<div className="space-y-3">
-							{upcomingLeases.length === 0 ? (
+							{loading ? (
+								<>
+									<SkeletonListItem />
+									<SkeletonListItem />
+									<SkeletonListItem />
+								</>
+							) : upcomingLeases.length === 0 ? (
 								<p className="text-gray-500 text-sm text-center py-4">No upcoming leases expiring soon</p>
 							) : (
-								upcomingLeases.map((lease, index) => (
+								upcomingLeases.slice(0, upcomingLeasesToShow).map((lease, index) => (
 									<div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
 										<div className="flex-1">
 											<p className="font-medium text-gray-900 text-sm">
@@ -616,6 +703,16 @@ useEffect(() => {
 								))
 							)}
 						</div>
+						{upcomingLeasesToShow < upcomingLeases.length ? (
+							<button
+								className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+								onClick={() => setUpcomingLeasesToShow(upcomingLeasesToShow + 5)}
+							>
+								View More Renewals →
+							</button>
+						) : upcomingLeases.length > 0 && upcomingLeases.length > 5 ? (
+							<p className="w-full mt-4 text-center text-xs text-gray-400">No more upcoming leases</p>
+						) : null}
 						<button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
 							View All Renewals →
 						</button>
@@ -628,10 +725,16 @@ useEffect(() => {
 							<AlertCircle className="text-orange-600" size={20} />
 						</div>
 						<div className="space-y-3">
-							{maintenanceRequests.length === 0 ? (
+							{loading ? (
+								<>
+									<SkeletonListItem />
+									<SkeletonListItem />
+									<SkeletonListItem />
+								</>
+							) : maintenanceRequests.length === 0 ? (
 								<p className="text-gray-500 text-sm text-center py-4">No pending maintenance requests</p>
 							) : (
-								maintenanceRequests.map((request, index) => {
+								maintenanceRequests.slice(0, maintenanceToShow).map((request, index) => {
 									// Calculate how long ago
 									let ago = '';
 									if (request.createdAt) {
@@ -653,8 +756,8 @@ useEffect(() => {
 									}
 									// Get property name and unit
 									let propertyName = '';
-									if (request.property && typeof request.property === 'object' && request.property.name) {
-										propertyName = request.property.name;
+									if (request.property && typeof request.property === 'object') {
+										propertyName = request.property.apartmentComplexDetail?.buildingName || request.property.houseDetail?.houseName || request.property.name || '';
 									} else if (request.propertyName) {
 										propertyName = request.propertyName;
 									}
@@ -679,9 +782,9 @@ useEffect(() => {
 												<p className="text-xs text-gray-600">{propertyName}{unitLabel ? ` • Unit ${unitLabel}` : ''} • {ago}</p>
 											</div>
 											<span className={`text-xs px-3 py-1 rounded-full font-medium ${request.priority === 'HIGH' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-													request.priority === 'LOW' || request.priority === 'NORMAL' ? 'bg-orange-100 text-orange-700' :
-														'bg-gray-200 text-gray-700'
-												}`}>
+														request.priority === 'LOW' || request.priority === 'NORMAL' ? 'bg-orange-100 text-orange-700' :
+															'bg-gray-200 text-gray-700'
+													}`}>
 												{request.priority || (request.priority_level ? request.priority_level : '—')}
 											</span>
 										</div>
@@ -689,14 +792,23 @@ useEffect(() => {
 								})
 							)}
 						</div>
+						{maintenanceToShow < maintenanceRequests.length ? (
+							<button
+								className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+								onClick={() => setMaintenanceToShow(maintenanceToShow + 5)}
+							>
+								View More Pending Requests →
+							</button>
+						) : maintenanceRequests.length > 0 && maintenanceRequests.length > 5 ? (
+							<p className="w-full mt-4 text-center text-xs text-gray-400">No more pending requests</p>
+						) : null}
 						<button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
 							View All pending Requests →
 						</button>
 					</div>
 				</div>
-			</div>	
+			</div>  
 		</div>
-
 	);
 };
 

@@ -18,6 +18,11 @@ type Property = {
   units: Unit[];
 };
 
+// Helper to get property display name
+function getPropertyDisplayName(property: any): string {
+  return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || property?.address || property?.city || property?.id || '-';
+}
+
 export default function CreateRequestForm({
   organizationId,
   onSuccess,
@@ -149,7 +154,7 @@ export default function CreateRequestForm({
           <option value="">Select property</option>
           {properties.map((p) => (
             <option key={p.id ?? ""} value={p.id ?? ""}>
-              {p.name ?? p.address ?? p.id}
+              {getPropertyDisplayName(p)}
             </option>
           ))}
         </select>
