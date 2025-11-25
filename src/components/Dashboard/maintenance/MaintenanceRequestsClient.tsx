@@ -62,6 +62,11 @@ function handleCSV(data: any, filename = "maintenance_requests.csv", username: s
   saveAs(blob, `${username}_${filename}`);
 }
 
+// Helper to get property display name
+function getPropertyDisplayName(property: any): string {
+  return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || property?.address || property?.city || property?.id || '-';
+}
+
 export default function MaintenanceRequestsClient(): ReactElement {
   const { user } = useAuth();
   const router = useRouter();
@@ -108,11 +113,11 @@ export default function MaintenanceRequestsClient(): ReactElement {
   }
 
   // Get unique property names for dropdown
-  const propertyNames = Array.from(new Set(requests.map(r => r.property?.name).filter(Boolean)));
+  const propertyNames = Array.from(new Set(requests.map(r => getPropertyDisplayName(r.property)).filter(Boolean)));
 
   const filteredRequests = requests.filter((r) => {
     // Filter by property name if selected
-    if (propertyFilter !== "all" && r.property?.name !== propertyFilter) return false;
+    if (propertyFilter !== "all" && getPropertyDisplayName(r.property) !== propertyFilter) return false;
     const search = searchTerm.trim().toLowerCase();
     if (search) {
       const prop = `${r.property?.address ?? ""} ${r.property?.city ?? ""}`.toLowerCase();
@@ -146,7 +151,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
             Make Request
           </button>
           <Link href="/property-manager/maintenance/vendors" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white shadow">
-            View Invites
+            Assign vendors
           </Link>
           {/* <a
             href="/property-manager/maintenance/vendors/add"
@@ -334,7 +339,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
 
                           <div className="bg-white border border-gray-200 rounded-lg w-full max-w-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto">
                             <div className="mb-6 flex justify-between items-center">
-                              <h3 className="text-2xl font-bold text-gray-900">{`Maintenance Details for ${selectedRequest.property?.name ?? '-'} unit ${selectedRequest.unit?.unitName ?? selectedRequest.unit?.unitNumber ?? '-'}`}</h3>
+                              <h3 className="text-2xl font-bold text-gray-900">{`Maintenance Details for ${getPropertyDisplayName(selectedRequest.property) ?? '-'} unit ${selectedRequest.unit?.unitName ?? selectedRequest.unit?.unitNumber ?? '-'}`}</h3>
                               <button
                                 onClick={() => setSelectedRequest(null)}
                                 className="text-gray-500 hover:text-gray-900 text-xl font-bold"
@@ -344,7 +349,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
                               </button>
                             </div>
                             <div className="space-y-3">
-                              <div><strong>Property:</strong> {selectedRequest.property?.name ?? '-'} ({selectedRequest.property?.address ?? ''} {selectedRequest.property?.city ?? ''})</div>
+                              <div><strong>Property:</strong> {getPropertyDisplayName(selectedRequest.property) ?? '-'} ({selectedRequest.property?.address ?? ''} {selectedRequest.property?.city ?? ''})</div>
                               <div><strong>Title:</strong> {selectedRequest.title}</div>
                               <div><strong>Description:</strong> {selectedRequest.description}</div>
                               <div><strong>Priority:</strong> {selectedRequest.priority}</div>

@@ -1,5 +1,32 @@
 "use client"
 import React, { useEffect, useState } from "react";
+// Skeleton Family
+const SkeletonBlock = ({ height = '24px', width = '100%', className = '' }) => (
+	<div
+		className={`bg-gray-200 animate-pulse rounded ${className}`}
+		style={{ height, width }}
+	/>
+);
+
+const SkeletonCard = () => (
+	<div className="bg-white rounded-xl shadow-2xl p-4 flex flex-col gap-2">
+		<div className="flex items-center gap-3 mb-2">
+			<SkeletonBlock height="24px" width="24px" className="rounded-full!" />
+			<SkeletonBlock height="16px" width="80px" />
+		</div>
+		<SkeletonBlock height="32px" width="100px" />
+	</div>
+);
+
+const SkeletonListItem = () => (
+	<div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+		<div className="flex-1">
+			<SkeletonBlock height="16px" width="120px" />
+			<SkeletonBlock height="12px" width="80px" className="mt-2" />
+		</div>
+		<SkeletonBlock height="20px" width="60px" />
+	</div>
+);
 import Loading from "./loading";
 import { Users, Calendar, AlertCircle, Home, Wrench, ChevronDown, TrendingUp, DollarSign } from 'lucide-react';
 import { UpcomingLeasesCard } from './UpcomingLeasesCard';
@@ -66,6 +93,10 @@ const Dashboard = () => {
 	const [leasesData, setLeasesData] = useState<Lease[]>([]);
 	const [upcomingLeases, setUpcomingLeases] = useState<any[]>([]);
 	const [tenants, setTenants] = useState(0);
+	// Add state for how many items to show
+	const [upcomingLeasesToShow, setUpcomingLeasesToShow] = useState(5);
+	const [maintenanceToShow, setMaintenanceToShow] = useState(5);
+
 	// Fetch rent collected dynamically for all or selected property
 	useEffect(() => {
 		async function fetchRentCollected() {
@@ -525,7 +556,6 @@ useEffect(() => {
 	
 	return (
 		<div id="dashboard">
-			{/* Main Content */}
 			<div className="relative z-20 container mx-auto px-6 py-2 bg-white">
 				{/* Welcome Section */}
 				<div className="mb-8">
@@ -549,7 +579,6 @@ useEffect(() => {
 										onChange={(e) => setSelectedProperty(e.target.value)}
 										className="w-full appearance-none bg-white border border-gray-300 rounded-lg px-4 py-3 pr-10 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer"
 									>
-										{/* Default "All Properties" option */}
 										<option value="all">Properties available ( {myproperties.length} )</option>
 										{myproperties.map((property) => (
 											<option key={property.id.toString()} value={property.id.toString()} className="z-50">
@@ -588,50 +617,53 @@ useEffect(() => {
 
 				{/* Metrics Section */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-
-					{/* Occupancy Rate — Home Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								 <Home
-                                    className="w-6 h-6 text-blue-600 drop-shadow-lg"
-                                    style={{ filter: 'drop-shadow(0 2px 6px #3b82f6aa)' }}
-                                />
-							
-							<p className="text-sm text-gray-600">Occupancy</p>
-						</div>
-						<p className="text-2xl font-semibold">{occupancyRate}% <small className="text-sm text-gray-400">{`(${tenants} tenants)`}</small></p>
-					</div>
-
-					{/* Rent Collected — DollarSign Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								<DollarSign className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #a78bfaaa)' }} />
-							
-							<p className="text-sm text-gray-600">Rent Collected</p>
-						</div>
-						<p className="text-2xl font-semibold">
-                          {rentCollected !== undefined ? `$${rentCollected.toLocaleString()}` : 0}
-                        </p>
-					</div>
-
-					{/* Pending Maintenance — Wrench Icon */}
-					<div className="bg-white rounded-xl shadow-2xl p-4">
-						<div className="flex items-center gap-3 mb-2">
-							
-								<Wrench className="w-6 h-6  text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #ec4899aa)' }} />
-							
-							<p className="text-sm text-gray-600">Pending Maintenance</p>
-						</div>
-						<p className="text-2xl font-semibold">{pendingMaintenance}</p>
-					</div>
-
-					{/* Lease Expirations — Calendar Icon */}
-					<UpcomingLeasesCard data={leasesData} />
+					{loading ? (
+						<>
+							<SkeletonCard />
+							<SkeletonCard />
+							<SkeletonCard />
+							<SkeletonCard />
+						</>
+					) : (
+						<>
+							{/* Occupancy Rate — Home Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<Home className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #3b82f6aa)' }} />
+									<p className="text-sm text-gray-600">Occupancy</p>
+								</div>
+								<p className="text-2xl font-semibold">{occupancyRate}% <small className="text-sm text-gray-400">{`(${tenants} tenants)`}</small></p>
+							</div>
+							{/* Rent Collected — DollarSign Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<DollarSign className="w-6 h-6 text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #a78bfaaa)' }} />
+									<p className="text-sm text-gray-600">Rent Collected</p>
+								</div>
+								<p className="text-2xl font-semibold">
+									{rentCollected !== undefined ? `$${rentCollected.toLocaleString()}` : 0}
+								</p>
+							</div>
+							{/* Pending Maintenance — Wrench Icon */}
+							<div className="bg-white rounded-xl shadow-2xl p-4">
+								<div className="flex items-center gap-3 mb-2">
+									<Wrench className="w-6 h-6  text-blue-600 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 6px #ec4899aa)' }} />
+									<p className="text-sm text-gray-600">Pending Maintenance</p>
+								</div>
+								<p className="text-2xl font-semibold">{pendingMaintenance}</p>
+							</div>
+							{/* Lease Expirations — Calendar Icon */}
+							<UpcomingLeasesCard data={leasesData} />
+						</>
+					)}
 				</div>
-								<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
+
+				{/* Skeleton for Line Chart */}
+				{loading ? (
+					<SkeletonBlock height="220px" className="my-8 w-full" />
+				) : (
+					<OccupancyLineChart selectedProperty={selectedProperty} myproperties={myproperties} />
+				)}
 
 				{/* Tables Section */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-18">
@@ -642,10 +674,16 @@ useEffect(() => {
 							<Calendar className="text-purple-600" size={20} />
 						</div>
 						<div className="space-y-3">
-							{upcomingLeases.length === 0 ? (
+							{loading ? (
+								<>
+									<SkeletonListItem />
+									<SkeletonListItem />
+									<SkeletonListItem />
+								</>
+							) : upcomingLeases.length === 0 ? (
 								<p className="text-gray-500 text-sm text-center py-4">No upcoming leases expiring soon</p>
 							) : (
-								upcomingLeases.map((lease, index) => (
+								upcomingLeases.slice(0, upcomingLeasesToShow).map((lease, index) => (
 									<div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
 										<div className="flex-1">
 											<p className="font-medium text-gray-900 text-sm">
@@ -665,6 +703,16 @@ useEffect(() => {
 								))
 							)}
 						</div>
+						{upcomingLeasesToShow < upcomingLeases.length ? (
+							<button
+								className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+								onClick={() => setUpcomingLeasesToShow(upcomingLeasesToShow + 5)}
+							>
+								View More Renewals →
+							</button>
+						) : upcomingLeases.length > 0 && upcomingLeases.length > 5 ? (
+							<p className="w-full mt-4 text-center text-xs text-gray-400">No more upcoming leases</p>
+						) : null}
 						<button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
 							View All Renewals →
 						</button>
@@ -677,10 +725,16 @@ useEffect(() => {
 							<AlertCircle className="text-orange-600" size={20} />
 						</div>
 						<div className="space-y-3">
-							{maintenanceRequests.length === 0 ? (
+							{loading ? (
+								<>
+									<SkeletonListItem />
+									<SkeletonListItem />
+									<SkeletonListItem />
+								</>
+							) : maintenanceRequests.length === 0 ? (
 								<p className="text-gray-500 text-sm text-center py-4">No pending maintenance requests</p>
 							) : (
-								maintenanceRequests.map((request, index) => {
+								maintenanceRequests.slice(0, maintenanceToShow).map((request, index) => {
 									// Calculate how long ago
 									let ago = '';
 									if (request.createdAt) {
@@ -728,9 +782,9 @@ useEffect(() => {
 												<p className="text-xs text-gray-600">{propertyName}{unitLabel ? ` • Unit ${unitLabel}` : ''} • {ago}</p>
 											</div>
 											<span className={`text-xs px-3 py-1 rounded-full font-medium ${request.priority === 'HIGH' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-													request.priority === 'LOW' || request.priority === 'NORMAL' ? 'bg-orange-100 text-orange-700' :
-														'bg-gray-200 text-gray-700'
-												}`}>
+														request.priority === 'LOW' || request.priority === 'NORMAL' ? 'bg-orange-100 text-orange-700' :
+															'bg-gray-200 text-gray-700'
+													}`}>
 												{request.priority || (request.priority_level ? request.priority_level : '—')}
 											</span>
 										</div>
@@ -738,14 +792,23 @@ useEffect(() => {
 								})
 							)}
 						</div>
+						{maintenanceToShow < maintenanceRequests.length ? (
+							<button
+								className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+								onClick={() => setMaintenanceToShow(maintenanceToShow + 5)}
+							>
+								View More Pending Requests →
+							</button>
+						) : maintenanceRequests.length > 0 && maintenanceRequests.length > 5 ? (
+							<p className="w-full mt-4 text-center text-xs text-gray-400">No more pending requests</p>
+						) : null}
 						<button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium">
 							View All pending Requests →
 						</button>
 					</div>
 				</div>
-			</div>	
+			</div>  
 		</div>
-
 	);
 };
 

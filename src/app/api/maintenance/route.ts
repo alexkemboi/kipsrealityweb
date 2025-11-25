@@ -33,11 +33,18 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { createdAt: "desc" },
       include: {
-        property: { select: { id: true, name: true, address: true, city: true } },
+        property: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            city: true,
+            apartmentComplexDetail: { select: { buildingName: true } },
+            houseDetail: { select: { houseName: true } },
+          }
+        },
         requestedBy: { include: { user: { select: { firstName: true, lastName: true, email: true } } } },
         unit: { select: { id: true, unitNumber: true, unitName: true } },
-        // include assigned vendor if available (added after migration)
-        // relation name in schema is `vendors` (mapped to assigned_vendor_id)
         vendors: { include: { user: { select: { firstName: true, lastName: true } } } },
       },
     });
