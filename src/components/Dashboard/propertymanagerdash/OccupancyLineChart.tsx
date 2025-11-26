@@ -77,6 +77,12 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 		: [];
 	console.log("[OccupancyLineChart] propertyIds:", propertyIds);
 
+	// Ensure myproperties passed to RentUtilitiesChart always has name as string
+	const safeMyProperties = myproperties.map(p => ({
+		...p,
+		name: p.name ?? ''
+	}));
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
 			<CardContent className="p-2 flex flex-col justify-center">
@@ -102,7 +108,6 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 								<YAxis domain={[0, 100]} tickFormatter={tick => `${tick}%`} />
 								<Tooltip />
 								<Legend formatter={(value) => {
-									// value is the propertyId (dataKey)
 									const prop = myproperties.find(p => p.id === value);
 									return prop ? getPropertyDisplayName(prop) : value;
 								}} />
@@ -133,7 +138,7 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 				</div>
 			</CardContent>
 			<div className="flex flex-col justify-center items-center h-[270px]">
-				<RentUtilitiesChart selectedProperty={selectedProperty} myproperties={myproperties} />
+				<RentUtilitiesChart selectedProperty={selectedProperty} myproperties={safeMyProperties} />
 			</div>
 		</div>
 	);
