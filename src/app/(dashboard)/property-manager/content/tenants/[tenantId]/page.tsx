@@ -6,6 +6,7 @@ import { fetchInvoicesForTenant, downloadInvoicePDF, generateFullInvoice, genera
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { fetchLeaseForTenant } from "@/lib/InvoiceLease";
 import { GroupedInvoice, Invoice, Payment, InvoiceItem } from "@/app/data/FinanceData";
 
@@ -13,9 +14,7 @@ import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye,
 import { Skeleton } from "@/components/ui/skeleton";
 
 // PDF Generator function with proper null checking
-// PDF Generator function with improved UI only (logic untouched)
-// PDF Generator function with improved UI design
-// PDF Generator function with simplified design
+
 async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF();
@@ -29,12 +28,51 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   doc.setTextColor(255, 255, 255);
   doc.text("COMBINED INVOICE", 105, 25, { align: "center" });
 
-  // === BILLED TO SECTION ONLY ===
   let y = 55;
 
-  // Billed To Details - Full width
+  // === PROPERTY & UNIT INFORMATION ===
+  if (groupData.property || groupData.unit) {
+    doc.setFillColor(249, 250, 251); // Light gray background
+    doc.roundedRect(15, y, 180, 30, 3, 3, "F"); // Increased height to 30
+    
+    doc.setFontSize(12);
+    doc.setTextColor(75, 85, 99);
+    doc.setFont("helvetica", "bold");
+    doc.text("PROPERTY DETAILS", 25, y + 8);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(31, 41, 55);
+    
+    // Determine property name based on property type
+    const propertyName = getPropertyDisplayName(groupData.property);
+    
+    // Property name
+    if (propertyName) {
+      doc.text("Property Name: " + propertyName, 25, y + 16);
+    }
+    
+    // Property address
+    if (groupData.property?.address) {
+      doc.setFontSize(10);
+      doc.text(`Address: ${groupData.property.address}`, 25, y + 22);
+      doc.setFontSize(12);
+    }
+    
+    // Unit information on the right side - MORE PROMINENT
+    if (groupData.unit?.unitNumber) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(59, 130, 246); // Blue color for unit
+      doc.text(`Unit: ${groupData.unit.unitNumber}`, 140, y + 16);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(31, 41, 55);
+    }
+    
+    y += 40; // Increased spacing
+  }
+
+  // === BILLED TO SECTION ===
   doc.setFillColor(249, 250, 251); // Light gray background
-  doc.roundedRect(15, y, 180, 35, 3, 3, "F");
+  doc.roundedRect(15, y, 180, 25, 3, 3, "F");
   
   doc.setFontSize(12);
   doc.setTextColor(75, 85, 99);
@@ -43,11 +81,16 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   
   doc.setFont("helvetica", "normal");
   doc.setTextColor(31, 41, 55);
-  doc.text(`${groupData.tenant?.firstName || ""} ${groupData.tenant?.lastName || ""}`, 25, y + 16);
-  doc.text(`${groupData.property?.name || ""}`, 25, y + 24);
+  
+  // Tenant name
+  if (groupData.tenant?.firstName || groupData.tenant?.lastName) {
+    doc.text(`${groupData.tenant?.firstName || ""} ${groupData.tenant?.lastName || ""}`.trim(), 25, y + 16);
+  }
+  
+  // Billing period on the right side
   doc.text(`Billing Period: ${formatGroupDate(groupData.dueDate)}`, 120, y + 16);
 
-  y += 50;
+  y += 35;
 
   // === INVOICE BREAKDOWN SECTION ===
   doc.setFont("helvetica", "bold");
@@ -211,6 +254,24 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   }
 
   return doc.output("blob");
+}
+
+// Helper function to determine property display name
+function getPropertyDisplayName(property: any): string {
+  if (!property) return "";
+  
+  // Check for apartment complex building name first
+  if (property.apartmentComplexDetail?.buildingName) {
+    return property.apartmentComplexDetail.buildingName;
+  }
+  
+  // Check for house name second
+  if (property.houseDetail?.houseName) {
+    return property.houseDetail.houseName;
+  }
+  
+  // Fallback to generic property name or address
+  return property.name || property.address || "Property";
 }
 
 
@@ -726,7 +787,9 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                               Combined PDF
                             </Button>
 
-                          
+<Link href={"/map"}>
+<Button>Maps</Button>
+       </Link>                   
                           </div>
                         </td>
                       </tr>
