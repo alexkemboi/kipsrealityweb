@@ -46,7 +46,7 @@ const Dashboard = () => {
 
 	type Properties = {
 		id: string,
-		name?: string,
+		name: string,
 		city: string,
 		units: number,
 		apartmentComplexDetail?: { buildingName?: string } | null,
@@ -54,7 +54,7 @@ const Dashboard = () => {
 	}
 
 	function getPropertyDisplayName(property: Properties): string {
-		return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name || '';
+		return property?.apartmentComplexDetail?.buildingName || property?.houseDetail?.houseName || property?.name;
 	}
 
 	interface Lease {
