@@ -6,6 +6,7 @@ import { fetchInvoicesForTenant, downloadInvoicePDF, generateFullInvoice, genera
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import { fetchLeaseForTenant } from "@/lib/InvoiceLease";
 import { GroupedInvoice, Invoice, Payment, InvoiceItem } from "@/app/data/FinanceData";
 
@@ -786,7 +787,9 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                               Combined PDF
                             </Button>
 
-                          
+<Link href={"/map"}>
+<Button>Maps</Button>
+       </Link>                   
                           </div>
                         </td>
                       </tr>

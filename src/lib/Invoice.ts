@@ -8,7 +8,7 @@ export async function generateFullInvoice(data: FullInvoiceInput): Promise<Invoi
   try {
     
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/full`,
+      `/api/invoices/full`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -38,7 +38,7 @@ export async function generateFullInvoice(data: FullInvoiceInput): Promise<Invoi
 export async function createManualInvoice(data: ManualInvoiceInput): Promise<Invoice> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/manual`,
+      `/api/invoices/manual`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ export async function fetchInvoices(filters?: InvoiceFilters): Promise<GroupedIn
     if (filters?.type) params.append("type", filters.type);
 
     const query = params.toString();
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices${query ? `?${query}` : ""}`;
+    const url = `/api/invoices${query ? `?${query}` : ""}`;
 
     const res = await fetch(url, { cache: "no-store" });
 
@@ -104,7 +104,7 @@ export async function fetchInvoices(filters?: InvoiceFilters): Promise<GroupedIn
 
 export async function fetchInvoiceById(id: string) {
   try {
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/${id}`;
+    const url = `/api/invoices/${id}`;
     const res = await fetch(url, { cache: "no-store" });
 
     if (!res.ok) {
@@ -123,7 +123,7 @@ export async function fetchInvoiceById(id: string) {
 // lib/Invoice.ts
 export async function generateUtilityInvoice(leaseId: string) {
   try {
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/utilities/${leaseId}`;
+    const url = `/api/invoices/utilities/${leaseId}`;
     const res = await fetch(url, { method: "POST" });
 
     const data = await res.json();
@@ -149,7 +149,7 @@ export async function createManualUtilityInvoice(
   try {
 
       const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/manual/utility`,{
+      `/api/invoices/manual/utility`,{
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ leaseId, items }),
@@ -172,7 +172,7 @@ export async function createManualUtilityInvoice(
 export async function generateManualUtilityInvoiceData(leaseId: string) {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/invoices/manual/utility/data?leaseId=${leaseId}`
+      `/api/invoices/manual/utility/data?leaseId=${leaseId}`
     );
 
     const data = await res.json();
@@ -204,7 +204,7 @@ export async function fetchTenantsWithFinancials() {
 export async function fetchInvoicesForTenant(tenantId: string): Promise<GroupedInvoice[]> {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/tenants/${tenantId}/invoices`,
+      `/api/tenants/${tenantId}/invoices`,
       { cache: "no-store" }
     );
 

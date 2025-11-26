@@ -26,7 +26,7 @@ export const postProperty = async (propertyData: PropertyPayload) => {
       organizationId: propertyData.manager.organizationId, // Prisma FK
     };
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`, {
+    const response = await fetch(`/api/propertymanager`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -58,7 +58,7 @@ export const getProperties = async (
     if (managerId) params.append('managerId', managerId);
     if (organizationId) params.append('organizationId', organizationId);
 
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager${
+    const url = `/api/propertymanager${
       params.toString() ? `?${params.toString()}` : ""
     }`;
 
@@ -78,7 +78,7 @@ export const getProperties = async (
 
 export const getPropertyById = async (id: string): Promise<PropertyPayload> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager/${id}`, {
+    const response = await fetch(`/api/propertymanager/${id}`, {
       cache: "no-store",
     });
 
@@ -116,7 +116,7 @@ export const updateProperty = async (
     };
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`,
+      `/api/propertymanager`,
       {
         method: "PUT",
         headers: {
@@ -145,7 +145,7 @@ export const updateProperty = async (
 export const deleteProperty = async (id: string) => {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/propertymanager`,
+      `/api/propertymanager`,
       {
         method: "DELETE",
         headers: {
