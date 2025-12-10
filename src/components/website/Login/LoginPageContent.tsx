@@ -8,7 +8,7 @@ import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
-const LoginPageContent = () => {
+export default function LoginPageContent() {
   const { login } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -45,13 +45,10 @@ const LoginPageContent = () => {
 
       if (response.ok) {
         const data = await response.json();
-
-        // ✅ FIX: Correct token property
         login(data.user, data.tokens.accessToken);
 
         toast.success("Login successful! Redirecting...");
 
-        // ✅ Redirect based on user role
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");
@@ -68,21 +65,19 @@ const LoginPageContent = () => {
           default:
             router.push("/");
         }
-
       } else {
-          const err = await response.json();
-          let errorMsg = err.error || 'Invalid credentials';
+        const err = await response.json();
+        let errorMsg = err.error || 'Invalid credentials';
 
-         if (response.status === 404) {
-         errorMsg = 'User does not exist. Please create an account to continue.';
-          } else if (response.status === 401) {
-         // credential mismatch
-         errorMsg = 'Invalid email or password.';
-      } 
+        if (response.status === 404) {
+          errorMsg = 'User does not exist. Please create an account to continue.';
+        } else if (response.status === 401) {
+          errorMsg = 'Invalid email or password.';
+        }
 
-  setError(errorMsg);
-  toast.error(errorMsg, { duration: 4000 });
-}
+        setError(errorMsg);
+        toast.error(errorMsg, { duration: 4000 });
+      }
     } catch (error) {
       const errorMsg = "Network error. Please try again.";
       setError(errorMsg);
@@ -102,9 +97,7 @@ const LoginPageContent = () => {
         </p>
       </div>
 
-      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email */}
         <div className="relative">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             <Mail className="w-5 h-5" />
@@ -120,7 +113,6 @@ const LoginPageContent = () => {
           />
         </div>
 
-        {/* Password */}
         <div className="relative">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             <Lock className="w-5 h-5" />
@@ -143,7 +135,6 @@ const LoginPageContent = () => {
           </button>
         </div>
 
-        {/* Forgot Password */}
         <div className="text-right">
           <a
             href="/forgot-password"
@@ -153,7 +144,6 @@ const LoginPageContent = () => {
           </a>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm text-center">{error}</p>
@@ -179,7 +169,6 @@ const LoginPageContent = () => {
         </Button>
       </form>
 
-      {/* Sign Up Link */}
       <div className="text-center mt-8 pt-6 border-t border-gray-200">
         <p className="text-gray-600">
           Don't have an account?{" "}
@@ -193,6 +182,4 @@ const LoginPageContent = () => {
       </div>
     </div>
   );
-};
-
-export default LoginPageContent;
+}
