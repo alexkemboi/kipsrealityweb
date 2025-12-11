@@ -50,6 +50,7 @@ model User {
   tenantApplications Tenantapplication[]
   organizationUsers  OrganizationUser[]
   vendors            Vendor[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -1086,4 +1087,18 @@ enum LeaseNotification_notificationType {
   CUSTOM
   AMENDMENT_PROPOSED
   AMENDMENT_EXECUTED
+}
+
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique // Hashed token
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Relation to User
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
