@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
+import React from 'react';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// 1. SAFE INITIALIZATION (The Fix)
+// If the key is missing, we set resend to null instead of crashing the app.
+const resend = process.env.RESEND_API_KEY
+    ? new Resend(process.env.RESEND_API_KEY)
+    : null;
 
 interface SendEmailOptions {
     to: string;
@@ -10,10 +15,16 @@ interface SendEmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, text, react }: SendEmailOptions) => {
-    // 1. Safety Check for Missing Key
-    if (!process.env.RESEND_API_KEY) {
-        console.log("⚠️ RESEND_API_KEY missing. Logging email to console:");
-        console.log(`To: ${to}\nSubject: ${subject}\nBody: ${text}`);
+    // 2. CHECK BEFORE SENDING
+    // If resend is null (key missing), we fallback to console logging.
+    if (!resend) {
+        console.log("=================================================");
+        console.log("⚠️ RESEND_API_KEY is missing in .env");
+        console.log("📧 MOCK EMAIL LOG:");
+        console.log(`To: ${to}`);
+        console.log(`Subject: ${subject}`);
+        if (text) console.log(`Body: ${text}`);
+        console.log("=================================================");
         return;
     }
 
@@ -33,7 +44,7 @@ export const sendEmail = async ({ to, subject, text, react }: SendEmailOptions) 
 
         console.log(`✅ Email sent to ${to}`);
     } catch (error) {
-        // 2. THE GOTCHA FIX: Graceful Fallback
+        // 3. THE GOTCHA FIX: Graceful Fallback
         console.error("❌ Email sending failed (likely Resend Sandbox restriction).");
         console.error("---------------------------------------------------");
         console.error(`Intent: Send to ${to}`);
