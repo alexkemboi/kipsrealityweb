@@ -3,14 +3,16 @@ import { useState } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 const LoginPageContent = () => {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -18,6 +20,33 @@ const LoginPageContent = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // ✅ Handle Verification Toasts
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    const errorParam = searchParams.get('error');
+
+    if (verified === 'true') {
+      toast.success("Email verified successfully! Please log in.", {
+        duration: 6000,
+        className: 'bg-green-50 text-green-800 border-green-200'
+      });
+      // Clean URL
+      router.replace('/login');
+    }
+
+    if (errorParam) {
+      let msg = "Authentication error";
+      if (errorParam === 'invalid_token') msg = "Verification link is invalid or expired.";
+      if (errorParam === 'missing_token') msg = "Invalid verification link.";
+
+      toast.error(msg, {
+        duration: 6000,
+      });
+      setError(msg);
+      router.replace('/login');
+    }
+  }, [searchParams, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -70,19 +99,19 @@ const LoginPageContent = () => {
         }
 
       } else {
-          const err = await response.json();
-          let errorMsg = err.error || 'Invalid credentials';
+        const err = await response.json();
+        let errorMsg = err.error || 'Invalid credentials';
 
-         if (response.status === 404) {
-         errorMsg = 'User does not exist. Please create an account to continue.';
-          } else if (response.status === 401) {
-         // credential mismatch
-         errorMsg = 'Invalid email or password.';
-      } 
+        if (response.status === 404) {
+          errorMsg = 'User does not exist. Please create an account to continue.';
+        } else if (response.status === 401) {
+          // credential mismatch
+          errorMsg = 'Invalid email or password.';
+        }
 
-  setError(errorMsg);
-  toast.error(errorMsg, { duration: 4000 });
-}
+        setError(errorMsg);
+        toast.error(errorMsg, { duration: 4000 });
+      }
     } catch (error) {
       const errorMsg = "Network error. Please try again.";
       setError(errorMsg);
