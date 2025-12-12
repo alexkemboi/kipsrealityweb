@@ -5,7 +5,7 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 
@@ -27,6 +27,7 @@ const SignupPageContent = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // ✅ Input Handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,10 +121,10 @@ const SignupPageContent = () => {
         throw new Error(result.error || "Registration failed");
       }
 
-      toast.success("Account created successfully! Please sign in.");
+      setIsSuccess(true);
+      toast.success("Account created successfully! Please check your email.");
 
-      // ✅ Redirect to login
-      setTimeout(() => router.push("/login"), 600);
+      // Removed auto-redirect
 
     } catch (err) {
       const message =
@@ -148,138 +149,157 @@ const SignupPageContent = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {isSuccess ? (
+        <div className="text-center space-y-4 bg-green-50 p-6 rounded-xl border border-green-100">
+          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-6 h-6 text-green-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-green-800">Check Your Email</h3>
+          <p className="text-gray-600">
+            We've sent a verification link to <strong>{formData.email}</strong>.
+            Please check your inbox to verify your account before logging in.
+          </p>
+          <Button
+            onClick={() => router.push('/login')}
+            className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
+          >
+            Proceed to Login
+          </Button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
 
-        {/* Company Name */}
-        <Input
-          type="text"
-          name="organizationName"
-          placeholder="Company Name *"
-          value={formData.organizationName}
-          onChange={handleInputChange}
-          required
-          className="h-12 text-base"
-        />
-
-        {/* Personal Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Company Name */}
           <Input
             type="text"
-            name="firstName"
-            placeholder="First Name *"
-            value={formData.firstName}
-            onChange={handleInputChange}
-            required
-            className="h-12 text-base"
-          />
-          <Input
-            type="text"
-            name="lastName"
-            placeholder="Last Name *"
-            value={formData.lastName}
-            onChange={handleInputChange}
-            required
-            className="h-12 text-base"
-          />
-        </div>
-
-        {/* Contact Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Input
-            type="email"
-            name="email"
-            placeholder="Email Address *"
-            value={formData.email}
+            name="organizationName"
+            placeholder="Company Name *"
+            value={formData.organizationName}
             onChange={handleInputChange}
             required
             className="h-12 text-base"
           />
 
-          <Input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={formData.phone}
-            onChange={handleInputChange}
-            className="h-12 text-base"
-          />
-        </div>
-
-        {/* Passwords */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
-          {/* Password */}
-          <div className="relative">
+          {/* Personal Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password *"
-              value={formData.password}
+              type="text"
+              name="firstName"
+              placeholder="First Name *"
+              value={formData.firstName}
               onChange={handleInputChange}
               required
-              className="h-12 text-base pr-10"
+              className="h-12 text-base"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
-          {/* Confirm Password */}
-          <div className="relative">
             <Input
-              type={showConfirmPassword ? "text" : "password"}
-              name="confirmPassword"
-              placeholder="Confirm Password *"
-              value={formData.confirmPassword}
+              type="text"
+              name="lastName"
+              placeholder="Last Name *"
+              value={formData.lastName}
               onChange={handleInputChange}
               required
-              className="h-12 text-base pr-10"
+              className="h-12 text-base"
             />
-            <button
-              type="button"
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              {showConfirmPassword ? (
-                <EyeOff size={16} />
-              ) : (
-                <Eye size={16} />
-              )}
-            </button>
           </div>
-        </div>
 
-        {/* Error Block */}
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm text-center">{error}</p>
+          {/* Contact Info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email Address *"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base"
+            />
+
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="h-12 text-base"
+            />
           </div>
-        )}
 
-        {/* Submit */}
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold"
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              Creating Account...
+          {/* Passwords */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            {/* Password */}
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password *"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                className="h-12 text-base pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
-          ) : (
-            <>
-              Create Account <ArrowRight className="w-4 h-4 ml-2" />
-            </>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm Password *"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+                className="h-12 text-base pr-10"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowConfirmPassword(!showConfirmPassword)
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff size={16} />
+                ) : (
+                  <Eye size={16} />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Error Block */}
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm text-center">{error}</p>
+            </div>
           )}
-        </Button>
-      </form>
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold"
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Creating Account...
+              </div>
+            ) : (
+              <>
+                Create Account <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
+        </form>
+      )}
 
       <p className="text-center text-sm text-gray-600 mt-6">
         Already have an account?{" "}
