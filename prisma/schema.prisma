@@ -982,7 +982,8 @@ enum UserRole {
   PROPERTY_MANAGER
   TENANT
   VENDOR
-  ALL
+  AGENT
+  LANDLORD
 }
 
 enum Priority {

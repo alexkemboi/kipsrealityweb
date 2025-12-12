@@ -21,6 +21,7 @@ const SignupPageContent = () => {
     confirmPassword: "",
     organizationName: "",
     phone: "",
+    role: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +73,9 @@ const SignupPageContent = () => {
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match";
 
+    if (!formData.role)
+      return "Please select your role";
+
     return null;
   };
 
@@ -100,6 +104,7 @@ const SignupPageContent = () => {
           lastName: formData.lastName,
           organizationName: formData.organizationName,
           phone: formData.phone,
+          role: formData.role,
         }),
       });
 
@@ -213,6 +218,35 @@ const SignupPageContent = () => {
               required
               className="h-12 text-base"
             />
+
+          <Input
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleInputChange}
+            className="h-12 text-base"
+          />
+        </div>
+
+         {/* role in dropdown*/}
+         <div>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleInputChange}
+            required
+            className="w-full h-12 border rounded px-3 text-base text-gray-700"
+          >
+            <option value="">Select Role </option>
+            <option value="SYSTEM_ADMIN">System Admin</option>
+            <option value="PROPERTY_MANAGER">Property Manager</option>
+            <option value="VENDOR">Vendor</option>
+            <option value="AGENT">Agent</option>
+            <option value="TENANT">Tenant</option>
+            <option value="LANDLORD">Landlord</option>
+          </select>
+        </div>
 
             <Input
               type="tel"
