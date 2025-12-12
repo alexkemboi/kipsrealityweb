@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { sendVerificationEmail } from "@/lib/mail-service";
 
 const DEFAULT_ROLE = 'PROPERTY_MANAGER';
 
@@ -75,14 +76,7 @@ export async function POST(request: Request) {
     });
 
     // 5. Send Email (Only if transaction succeeded)
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${verificationToken}`;
-
-    console.log('=== WELCOME EMAIL MOCK ===');
-    console.log(`To: ${email}`);
-    console.log(`Subject: Welcome to RentFlow360!`);
-    console.log(`Link: ${verifyUrl}`);
-    console.log('==========================');
+    await sendVerificationEmail(email, verificationToken);
 
     return NextResponse.json({
       success: true,
