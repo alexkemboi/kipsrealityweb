@@ -21,9 +21,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const decoded = verifyAccessToken(token);
+    // Wrap token verification in try-catch to prevent 500 crash on invalid tokens
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (err) {
+      console.error("[/api/properties/stats] Invalid token:", err);
+      return NextResponse.json(
+        { error: "Invalid token" },
+        { status: 401 }
+      );
+    }
+
     if (!decoded) {
-      console.error("[/api/properties/stats] Invalid token");
+      console.error("[/api/properties/stats] Token verification returned null");
       return NextResponse.json(
         { error: "Invalid token" },
         { status: 401 }
