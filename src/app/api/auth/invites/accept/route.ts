@@ -1,4 +1,6 @@
-// app/api/auth/invites/tenant/route.ts
+// app/api/auth/invites/accept/route.ts 
+// (Note: This logic looks like a generic 'accept' route, not just for tenants)
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
@@ -17,8 +19,8 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase();
 
-    // 1️⃣ Find invite by token
-    let invite = await prisma.invite.findUnique({
+    // 1️⃣ Find invite by token (Read operation can be outside transaction)
+    const invite = await prisma.invite.findUnique({
       where: { token }
     });
 
@@ -39,92 +41,103 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invite has expired" }, { status: 400 });
     }
 
-    // 3️⃣ Create or update user
     const hashedPassword = await bcrypt.hash(password, 12);
-    let user;
 
-    const existingUser = await prisma.user.findUnique({
-      where: { email: normalizedEmail }
-    });
+    // 3️⃣ ATOMIC TRANSACTION START
+    // We use a transaction to ensure User, OrgLink, and Lease updates happen together.
+    // If one fails, they all fail.
+    const user = await prisma.$transaction(async (tx) => {
+      let userRecord;
 
-    if (existingUser) {
-      // Reactivate/update inactive user
-      user = await prisma.user.update({
-        where: { id: existingUser.id },
-        data: {
-          passwordHash: hashedPassword,
-          firstName,
-          lastName,
-          phone,
-          status: "ACTIVE",
-          emailVerified: true
-        }
+      const existingUser = await tx.user.findUnique({
+        where: { email: normalizedEmail }
       });
-    } else {
-      // Create new user
-      user = await prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          passwordHash: hashedPassword,
-          firstName,
-          lastName,
-          phone,
-          status: "ACTIVE",
-          emailVerified: true
-        }
-      });
-    }
 
-    // 4️⃣ Link user to organization (if not exists)
-    const orgUser = await prisma.organizationUser.findFirst({
-      where: {
-        userId: user.id,
-        organizationId: invite.organizationId
+      // A. Create or Update User
+      if (existingUser) {
+        // Reactivate/update inactive user
+        userRecord = await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            passwordHash: hashedPassword,
+            firstName,
+            lastName,
+            phone,
+            status: "ACTIVE",
+            // FIX: Set to current timestamp, not boolean
+            emailVerified: new Date()
+          }
+        });
+      } else {
+        // Create new user
+        userRecord = await tx.user.create({
+          data: {
+            email: normalizedEmail,
+            passwordHash: hashedPassword,
+            firstName,
+            lastName,
+            phone,
+            status: "ACTIVE",
+            // FIX: Set to current timestamp, not boolean
+            emailVerified: new Date()
+          }
+        });
       }
-    });
 
-    if (!orgUser) {
-      await prisma.organizationUser.create({
-        data: {
-          userId: user.id,
-          organizationId: invite.organizationId,
-          role: invite.role
+      // B. Link user to organization
+      const orgUser = await tx.organizationUser.findFirst({
+        where: {
+          userId: userRecord.id,
+          organizationId: invite.organizationId
         }
       });
-    }
 
-    // 5️⃣ Mark invite as accepted
-    await prisma.invite.update({
-      where: { id: invite.id },
-      data: { accepted: true }
+      if (!orgUser) {
+        await tx.organizationUser.create({
+          data: {
+            userId: userRecord.id,
+            organizationId: invite.organizationId,
+            role: invite.role
+          }
+        });
+      }
+
+      // C. Mark invite as accepted
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { accepted: true }
+      });
+
+      // D. Update lease to link tenant (if tenant invite)
+      if (invite.leaseId) {
+        await tx.lease.update({
+          where: { id: invite.leaseId },
+          data: { tenantId: userRecord.id }
+        });
+      }
+
+      // E. Create Vendor record (if vendor invite)
+      if (invite.role === "VENDOR" && companyName && serviceType) {
+        await tx.vendor.create({
+          data: {
+            userId: userRecord.id,
+            organizationId: invite.organizationId,
+            companyName,
+            serviceType,
+            phone: phone || null,
+            email: normalizedEmail,
+            isActive: true
+          }
+        });
+      }
+
+      return userRecord;
     });
-
-    // 6️⃣ Update lease to link tenant (if tenant invite)
-    if (invite.leaseId) {
-      await prisma.lease.update({
-        where: { id: invite.leaseId },
-        data: { tenantId: user.id }
-      });
-    }
-
-    // 7️⃣ Create Vendor record (if vendor invite)
-    if (invite.role === "VENDOR" && companyName && serviceType) {
-      await prisma.vendor.create({
-        data: {
-          userId: user.id,
-          organizationId: invite.organizationId,
-          companyName,
-          serviceType,
-          phone: phone || null,
-          email: normalizedEmail,
-          isActive: true
-        }
-      });
-    }
+    // TRANSACTION END
 
     return NextResponse.json({
       success: true,
-      message: invite.role === "VENDOR" 
+      message: invite.role === "VENDOR"
         ? "Vendor account created successfully. You may now log in."
         : "Invite accepted. Tenant account created and linked to lease.",
       user: {
