@@ -1,24 +1,26 @@
 // src/app/(website)/about/page.tsx
-import { fetchAboutUs, fetchHeroSection, fetchCTA } from "@/lib/aboutUs";
+import { getAboutUsData, getHeroSectionData, getCTAData } from "@/lib/server/website-data";
 import AboutUsPage from "@/components/website/AboutUs/Aboutpage";
 import Navbar from "@/components/website/Navbar";
+
+export const dynamic = "force-dynamic"; // Ensure dynamic rendering if needed, or remove for static with revalidate
 
 export default async function AboutUs() {
   // Fetch all data in parallel
   const [aboutData, heroData, ctaData] = await Promise.all([
-    fetchAboutUs(),
-    fetchHeroSection("about"),
-    fetchCTA("about"),
+    getAboutUsData(),
+    getHeroSectionData("about"),
+    getCTAData("about"),
   ]);
 
   return (
     <div>
-    <Navbar/>
-    <AboutUsPage 
-      aboutData={aboutData} 
-      heroData={heroData}
-      ctaData={ctaData}
-    />
+      <Navbar />
+      <AboutUsPage
+        aboutData={aboutData}
+        heroData={heroData}
+        ctaData={ctaData}
+      />
     </div>
   );
 }

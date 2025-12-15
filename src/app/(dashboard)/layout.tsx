@@ -50,7 +50,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     typeof window !== "undefined" ? window.location.pathname : "";
   const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
 
-  if (expectedPath && !currentPath.startsWith(expectedPath)) {
+  if (expectedPath && !currentPath.startsWith(expectedPath) && !currentPath.startsWith('/account')) {
     redirect(expectedPath);
   }
 

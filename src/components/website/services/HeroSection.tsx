@@ -1,9 +1,9 @@
 import { Sparkles } from "lucide-react";
 
 interface HeroData {
-  id: number;
+  id: number | string;
   page: string;
-  title: string; 
+  title: string;
   subtitle?: string;
   description?: string;
   buttonText?: string;
@@ -12,23 +12,11 @@ interface HeroData {
   gradient?: string;
 }
 
-async function getHeroData(): Promise<HeroData | null> {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/hero`, {
-      cache: "no-store",
-      next: { revalidate: 0 }
-    });
-    
-    if (!res.ok) {
-      throw new Error('Failed to fetch hero data');
-    }
-    
-    const data = await res.json();
-    return Array.isArray(data) ? data[0] : data;
-  } catch (error) {
-    console.error("Error fetching hero:", error);
-    return null;
-  }
+import { getHeroSectionData } from "@/lib/server/website-data";
+
+async function getHeroData() {
+  const data = await getHeroSectionData("services");
+  return data;
 }
 
 export const HeroSection = async () => {
@@ -50,7 +38,8 @@ export const HeroSection = async () => {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes hero-float {
           0%, 100% {
             transform: translate(0, 0) scale(1);
@@ -77,7 +66,7 @@ export const HeroSection = async () => {
           animation: hero-shimmer 4s linear infinite;
         }
       `}} />
-      
+
       <section
         className="relative overflow-hidden flex flex-col md:flex-row items-center justify-between"
         style={{

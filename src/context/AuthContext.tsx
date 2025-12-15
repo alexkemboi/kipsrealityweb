@@ -16,6 +16,8 @@ interface User {
         slug: string;
     };
     organizationUserId?: string; // <- add this
+    consentNotifications?: boolean;
+    consentMarketing?: boolean;
 }
 
 interface AuthTokens {
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } catch {
             return null;
         }
-    };  
+    };
 
     const setStoredUser = (userData: User | null) => {
         if (userData) {

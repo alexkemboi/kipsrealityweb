@@ -1,60 +1,40 @@
-import { Resend } from 'resend';
-import React from 'react';
-
-// 1. SAFE INITIALIZATION (The Fix)
-// If the key is missing, we set resend to null instead of crashing the app.
-const resend = process.env.RESEND_API_KEY
-    ? new Resend(process.env.RESEND_API_KEY)
-    : null;
+import nodemailer from 'nodemailer';
+import { render } from '@react-email/render';
 
 interface SendEmailOptions {
     to: string;
     subject: string;
-    text?: string;
     react?: React.ReactElement;
+    text?: string;
 }
 
-export const sendEmail = async ({ to, subject, text, react }: SendEmailOptions) => {
-    // 2. CHECK BEFORE SENDING
-    // If resend is null (key missing), we fallback to console logging.
-    if (!resend) {
-        console.log("=================================================");
-        console.log("⚠️ RESEND_API_KEY is missing in .env");
-        console.log("📧 MOCK EMAIL LOG:");
-        console.log(`To: ${to}`);
-        console.log(`Subject: ${subject}`);
-        if (text) console.log(`Body: ${text}`);
-        console.log("=================================================");
-        return;
-    }
+export const sendEmail = async ({ to, subject, react, text }: SendEmailOptions) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.GMAIL_USER,
+            pass: process.env.GMAIL_APP_PASSWORD,
+        },
+    });
 
     try {
-        const data = await resend.emails.send({
-            from: process.env.EMAIL_FROM_ADDRESS || 'onboarding@resend.dev',
+        // 1. Generate HTML
+        const html = react ? await render(react) : undefined;
+
+        // 2. Generate Plain Text Fallback (Crucial for Spam Filters)
+        // If 'text' wasn't provided, strip HTML tags to create it
+        const plainText = text || (html ? html.replace(/<[^>]+>/g, '') : '');
+
+        const info = await transporter.sendMail({
+            from: `"RentFlow360 Support" <${process.env.GMAIL_USER}>`,
             to,
             subject,
-            text, // Fallback text
-            react,
+            text: plainText, // Spam filters love this
+            html,
         });
 
-        // Check for Resend specific error structure
-        if (data.error) {
-            throw new Error(data.error.message);
-        }
-
-        console.log(`✅ Email sent to ${to}`);
+        console.log(`✅ Email sent to ${to} | Message ID: ${info.messageId}`);
     } catch (error) {
-        // 3. THE GOTCHA FIX: Graceful Fallback
-        console.error("❌ Email sending failed (likely Resend Sandbox restriction).");
-        console.error("---------------------------------------------------");
-        console.error(`Intent: Send to ${to}`);
-        console.error(`Subject: ${subject}`);
-
-        // If it's a link-based email (verification/reset), the URL is usually inside the 'react' prop.
-        // Since we can't easily extract it here, relying on the Route Handler's logs is key.
-        console.error("See the ROUTE HANDLER logs above for the actual clickable link.");
-        console.error("---------------------------------------------------");
-
-        // We do NOT re-throw the error. We let the code proceed so the UI doesn't break.
+        console.error("❌ Gmail Sending Failed:", error);
     }
 };
