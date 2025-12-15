@@ -1,4 +1,3 @@
-// app/api/auth/invites/tenant/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyAccessToken } from "@/lib/auth";
@@ -39,7 +38,6 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch (err) {
-      console.error("Invalid JSON body:", err);
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
@@ -50,13 +48,12 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.toLowerCase();
 
-    // --- 3. Check if tenant exists ---
+    // --- 3. Pre-Checks (Read operations can happen before transaction) ---
     const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return NextResponse.json({ error: "A user with this email already exists" }, { status: 409 });
     }
 
-    // --- 4. Fetch lease and unit ---
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },
       include: { unit: true },
@@ -64,45 +61,36 @@ export async function POST(request: Request) {
 
     if (!lease) return NextResponse.json({ error: "Lease not found" }, { status: 404 });
 
-    // --- 5. Create inactive tenant user ---
-    let user;
-    try {
-      user = await prisma.user.create({
+    // --- 4. ATOMIC TRANSACTION (Write Operations) ---
+    // This ensures we don't create a User if the Invite fails
+    const result = await prisma.$transaction(async (tx) => {
+      // A. Create inactive tenant user
+      const user = await tx.user.create({
         data: {
           email: normalizedEmail,
-          passwordHash: "", // Ensure this is allowed in your schema
+          passwordHash: "", // Placeholder until they accept
           firstName,
           lastName: lastName || null,
           phone: phone || null,
           status: "INACTIVE",
-          emailVerified: false,
+          emailVerified: null, // ✅ FIXED: Must be null (DateTime?), not false
         },
       });
-    } catch (err) {
-      console.error("User creation failed:", err);
-      return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
-    }
 
-    // --- 6. Add user to organization ---
-    try {
-      await prisma.organizationUser.create({
+      // B. Add user to organization
+      await tx.organizationUser.create({
         data: {
           userId: user.id,
           organizationId: payload.organizationId,
           role: "TENANT",
         },
       });
-    } catch (err) {
-      console.error("OrganizationUser creation failed:", err);
-      return NextResponse.json({ error: "Failed to associate user with organization" }, { status: 500 });
-    }
 
-    // --- 7. Create invite ---
-    const inviteToken = crypto.randomBytes(32).toString("hex");
-    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    let invite;
-    try {
-      invite = await prisma.invite.create({
+      // C. Create invite
+      const inviteToken = crypto.randomBytes(32).toString("hex");
+      const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      const invite = await tx.invite.create({
         data: {
           email: normalizedEmail,
           token: inviteToken,
@@ -113,25 +101,25 @@ export async function POST(request: Request) {
           expiresAt: inviteExpires,
         },
       });
-    } catch (err) {
-      console.error("Invite creation failed:", err);
-      return NextResponse.json({ error: "Failed to create invite" }, { status: 500 });
-    }
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/tenant/accept?token=${invite.token}&email=${encodeURIComponent(normalizedEmail)}&leaseId=${lease.id}`;
+      return { user, invite };
+    });
+
+    // --- 5. Response Construction ---
+    const inviteLink = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/tenant/accept?token=${result.invite.token}&email=${encodeURIComponent(normalizedEmail)}&leaseId=${lease.id}`;
 
     return NextResponse.json({
       success: true,
       message: "Tenant invited successfully",
       tenant: {
-        id: user.id,
-        token: invite.token,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        accepted: invite.accepted,
-        createdAt: invite.createdAt,
+        id: result.user.id,
+        token: result.invite.token,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        phone: result.user.phone,
+        accepted: result.invite.accepted,
+        createdAt: result.invite.createdAt,
         lease: {
           id: lease.id,
           startDate: lease.startDate,
@@ -142,13 +130,14 @@ export async function POST(request: Request) {
       },
       inviteLink: process.env.NODE_ENV === "development" ? inviteLink : undefined,
     });
+
   } catch (error) {
     console.error("Tenant invite API failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// --- GET route remains mostly the same, add logging ---
+// --- GET route (Kept mostly as is, ensuring types match) ---
 export async function GET() {
   try {
     const cookieStore = await cookies();
@@ -159,7 +148,6 @@ export async function GET() {
     try {
       payload = verifyAccessToken(token) as TokenPayload;
     } catch (err) {
-      console.error("Token verification failed:", err);
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
@@ -171,7 +159,7 @@ export async function GET() {
     }
 
     const invites = await prisma.invite.findMany({
-      where: { 
+      where: {
         organizationId: payload.organizationId,
         role: 'TENANT'
       },

@@ -51,6 +51,8 @@ export async function GET(request: Request) {
             phone: user.phone,
             avatarUrl: user.avatarUrl,
             role: primaryOrgUser.role,
+            consentNotifications: user.consentNotifications,
+            consentMarketing: user.consentMarketing,
             organization: {
                 id: primaryOrgUser.organization.id,
                 name: primaryOrgUser.organization.name,
@@ -66,5 +68,44 @@ export async function GET(request: Request) {
             { error: 'Invalid token' },
             { status: 401 }
         )
+    }
+}
+
+export async function PATCH(request: Request) {
+    try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+        }
+
+        const token = authHeader.slice(7);
+        const payload = verifyAccessToken(token);
+        const body = await request.json();
+
+        const { consentNotifications, consentMarketing } = body;
+
+        // Update only provided fields
+        const updateData: any = {};
+        if (typeof consentNotifications === 'boolean') updateData.consentNotifications = consentNotifications;
+        if (typeof consentMarketing === 'boolean') updateData.consentMarketing = consentMarketing;
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ error: 'No valid fields provided' }, { status: 400 });
+        }
+
+        const updatedUser = await prisma.user.update({
+            where: { id: payload.userId },
+            data: updateData,
+            select: {
+                consentNotifications: true,
+                consentMarketing: true
+            }
+        });
+
+        return NextResponse.json(updatedUser);
+
+    } catch (error) {
+        console.error('Update preferences error:', error);
+        return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
     }
 }

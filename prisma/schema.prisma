@@ -50,6 +50,11 @@ model User {
   emailVerified       DateTime?            @map("email_verified")
   verificationToken   String?              @unique
   
+  // Consent Flags
+  consentTransactional Boolean @default(true)
+  consentNotifications Boolean @default(true)
+  consentMarketing     Boolean @default(false)
+
   sentInvites         Invite[]             @relation("UserInvites")
   leases              Lease[]
   listings            Listing[]
