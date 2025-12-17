@@ -8,6 +8,13 @@ export interface Property {
   locationId?: string;
   city: string;
   address: string;
+
+  country?: string;
+  zipCode?: string;
+  latitude?: number;
+  longitude?: number;
+  contactPhone?: string;
+  contactEmail?: string;
   
   amenities?: string;
   isFurnished?: boolean;
@@ -20,6 +27,7 @@ export interface Property {
 
   // Frontend-only fields (not in Prisma schema)
   applianceIds?: string[];
+  images?: FileList;
 }
 
 export interface ApartmentComplexDetail {
