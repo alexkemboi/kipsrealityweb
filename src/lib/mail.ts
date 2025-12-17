@@ -9,32 +9,33 @@ interface SendEmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, react, text }: SendEmailOptions) => {
+    // 1. Configure SMTP Transporter (Generic)
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
         auth: {
-            user: process.env.GMAIL_USER,
-            pass: process.env.GMAIL_APP_PASSWORD,
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
         },
     });
 
     try {
-        // 1. Generate HTML
+        // 2. Render React to HTML
         const html = react ? await render(react) : undefined;
-
-        // 2. Generate Plain Text Fallback (Crucial for Spam Filters)
-        // If 'text' wasn't provided, strip HTML tags to create it
         const plainText = text || (html ? html.replace(/<[^>]+>/g, '') : '');
 
+        // 3. Send
         const info = await transporter.sendMail({
-            from: `"RentFlow360 Support" <${process.env.GMAIL_USER}>`,
+            from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.SMTP_USER}>`,
             to,
             subject,
-            text: plainText, // Spam filters love this
+            text: plainText,
             html,
         });
 
         console.log(`✅ Email sent to ${to} | Message ID: ${info.messageId}`);
     } catch (error) {
-        console.error("❌ Gmail Sending Failed:", error);
+        console.error("❌ SMTP Sending Failed:", error);
     }
 };
