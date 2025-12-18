@@ -7,8 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ---------------- USER & AUTH ----------------
-
 model Organization {
   id                  String               @id @default(uuid())
   name                String
@@ -34,29 +32,29 @@ model Organization {
 }
 
 model User {
-  id                  String               @id @default(uuid())
-  email               String               @unique
-  passwordHash        String               @map("password_hash")
-  firstName           String?              @map("first_name")
-  lastName            String?              @map("last_name")
-  phone               String?
-  avatarUrl           String?              @map("avatar_url")
-  status              UserStatus           @default(ACTIVE)
-  lastLoginAt         DateTime?            @map("last_login_at")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  
-  // Auth Fields (New)
-  emailVerified       DateTime?            @map("email_verified")
-  verificationToken   String?              @unique
-  
-  sentInvites         Invite[]             @relation("UserInvites")
-  leases              Lease[]
-  listings            Listing[]
-  passwordResetTokens PasswordResetToken[]
-  tenantApplications  Tenantapplication[]
-  organizationUsers   OrganizationUser[]
-  vendors             Vendor[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String               @map("password_hash")
+  firstName            String?              @map("first_name")
+  lastName             String?              @map("last_name")
+  phone                String?
+  avatarUrl            String?              @map("avatar_url")
+  status               UserStatus           @default(ACTIVE)
+  lastLoginAt          DateTime?            @map("last_login_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  emailVerified        DateTime?            @map("email_verified")
+  verificationToken    String?              @unique
+  consentMarketing     Boolean              @default(false)
+  consentNotifications Boolean              @default(true)
+  consentTransactional Boolean              @default(true)
+  sentInvites          Invite[]             @relation("UserInvites")
+  leases               Lease[]
+  listings             Listing[]
+  passwordResetTokens  PasswordResetToken[]
+  tenantApplications   Tenantapplication[]
+  organizationUsers    OrganizationUser[]
+  vendors              Vendor[]
 
   @@map("users")
 }
@@ -121,11 +119,8 @@ model Invite {
   expiresAt      DateTime
   accepted       Boolean      @default(false)
   createdAt      DateTime     @default(now())
-  
-  // Fix for Seed Error: Missing leaseId
   leaseId        String?      @db.VarChar(255)
   lease          Lease?       @relation("LeaseInvites", fields: [leaseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Invite_Lease")
-  
   invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id])
 
@@ -134,8 +129,6 @@ model Invite {
   @@index([invitedById], map: "Invite_invitedById_fkey")
   @@index([leaseId], map: "idx_invite_leaseId")
 }
-
-// ---------------- PROPERTY & LISTINGS ----------------
 
 model CategoryMarketplace {
   id          String   @id @default(uuid())
@@ -163,19 +156,27 @@ model PropertyType {
 }
 
 model Property {
-  id                     String                  @id @default(uuid())
-  listingId              String?                 @unique
-  managerId              String?
-  organizationId         String?
-  propertyTypeId         String?
-  locationId             String?
-  city                   String
-  address                String
-  amenities              String?
-  isFurnished            Boolean                 @default(false)
-  availabilityStatus     String?
-  createdAt              DateTime                @default(now())
-  name                   String?
+  id                 String   @id @default(uuid())
+  listingId          String?  @unique
+  managerId          String?
+  organizationId     String?
+  propertyTypeId     String?
+  locationId         String?
+  city               String
+  address            String
+  amenities          String?
+  isFurnished        Boolean  @default(false)
+  availabilityStatus String?
+  createdAt          DateTime @default(now())
+  name               String?
+
+  country      String?
+  zipCode      String?
+  latitude     Float?
+  longitude    Float?
+  contactPhone String?
+  contactEmail String?
+
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
   leases                 Lease[]
@@ -188,11 +189,29 @@ model Property {
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
   tenantapplications     Tenantapplication[]
   units                  Unit[]
+  image                  PropertyImage[]
 
   @@index([locationId], map: "Property_locationId_fkey")
   @@index([managerId], map: "Property_managerId_fkey")
   @@index([organizationId], map: "Property_organizationId_fkey")
   @@index([propertyTypeId], map: "Property_propertyTypeId_fkey")
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  publicId   String // Cloudinary public ID for deletion
+  order      Int      @default(0)
+  width      Int?
+  height     Int?
+  format     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([order])
 }
 
 model ApartmentComplexDetail {
@@ -212,8 +231,7 @@ model HouseDetail {
   bedrooms       Int?
   size           Float?
   totalUnits     Int?
-  // Fix for Seed Error: Missing houseName
-  houseName      String?  @db.VarChar(255) 
+  houseName      String?  @db.VarChar(255)
   property       Property @relation(fields: [propertyId], references: [id])
 }
 
@@ -231,9 +249,7 @@ model Unit {
   createdAt           DateTime             @default(now())
   houseDetailId       String?
   unitName            String?
-  // Fix for Seed Error: Missing currency
   currency            String?              @db.VarChar(10)
-  
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
@@ -300,8 +316,6 @@ model ListingStatus {
   listings    Listing[]
 }
 
-// ---------------- MARKETPLACE & SERVICES ----------------
-
 model ServiceMarketplace {
   id            String            @id @default(uuid())
   listingId     String            @unique
@@ -333,7 +347,7 @@ model categories {
   tagline  String
   color    String
   services services[]
-  
+
   @@map("categories")
 }
 
@@ -350,8 +364,6 @@ model services {
   @@index([category_id], map: "services_category_id_fkey")
   @@map("services")
 }
-
-// ---------------- TENANCY & LEASES ----------------
 
 model Tenantapplication {
   id                 String            @id @default(uuid())
@@ -423,25 +435,21 @@ model Lease {
   tenantSignedAt           DateTime?
   terminationNoticeDays    Int?
   usageType                String?
-  
-  // Fix for Seed Error: Missing fields
-  hasRenewalOption         Boolean?                @default(false)
-  renewalNoticeDays        Int?
-  renewalTermMonths        Int?
-  renewalRentIncrease      Float?                  @db.Float
   autoRenew                Boolean?                @default(false)
-  hasRentEscalation        Boolean?                @default(false)
-  escalationType           Lease_escalationType?
-  escalationRate           Float?                  @db.Float
-  escalationFrequency      String?                 @db.VarChar(20)
-  nextEscalationDate       DateTime?               @db.DateTime(0)
-  documentVersion          Int?                    @default(1)
-  lastDocumentUpdate       DateTime?               @db.DateTime(0)
   complianceCheckDate      DateTime?               @db.DateTime(0)
-  complianceStatus         Lease_complianceStatus? @default(PENDING)
   complianceNotes          String?                 @db.Text
-  
-  // Relations
+  complianceStatus         Lease_complianceStatus? @default(PENDING)
+  documentVersion          Int?                    @default(1)
+  escalationFrequency      String?                 @db.VarChar(20)
+  escalationRate           Float?                  @db.Float
+  escalationType           Lease_escalationType?
+  hasRenewalOption         Boolean?                @default(false)
+  hasRentEscalation        Boolean?                @default(false)
+  lastDocumentUpdate       DateTime?               @db.DateTime(0)
+  nextEscalationDate       DateTime?               @db.DateTime(0)
+  renewalNoticeDays        Int?
+  renewalRentIncrease      Float?                  @db.Float
+  renewalTermMonths        Int?
   invites                  Invite[]                @relation("LeaseInvites")
   application              Tenantapplication       @relation(fields: [applicationId], references: [id])
   property                 Property                @relation(fields: [propertyId], references: [id])
@@ -463,8 +471,6 @@ model Lease {
   @@index([leaseStatus], map: "idx_lease_leaseStatus")
 }
 
-// ---------------- FINANCIALS (Lowercase Tables Fix) ----------------
-
 model invoice {
   id          String          @id @default(dbgenerated("(uuid())")) @db.Char(36)
   lease_id    String
@@ -480,7 +486,7 @@ model invoice {
   receipt     receipt[]
 
   @@index([lease_id], map: "lease_id")
-  @@map("invoice") // ✅ Explicit map
+  @@map("invoice")
 }
 
 model InvoiceItem {
@@ -513,7 +519,7 @@ model payment {
   receipt          receipt[]
 
   @@index([invoice_id], map: "invoice_id")
-  @@map("payment") // ✅ Explicit map
+  @@map("payment")
 }
 
 model payment_reversal {
@@ -528,7 +534,7 @@ model payment_reversal {
   payment     payment  @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reversal_payment")
 
   @@index([payment_id], map: "idx_payment_id")
-  @@map("payment_reversal") // ✅ Explicit map
+  @@map("payment_reversal")
 }
 
 model receipt {
@@ -544,7 +550,7 @@ model receipt {
 
   @@index([invoice_id], map: "invoice_id")
   @@index([payment_id], map: "payment_id")
-  @@map("receipt") // ✅ Explicit map
+  @@map("receipt")
 }
 
 model utility {
@@ -556,8 +562,8 @@ model utility {
   createdAt     DateTime?       @default(now()) @db.DateTime(0)
   updatedAt     DateTime?       @default(now()) @db.DateTime(0)
   lease_utility lease_utility[]
-  
-  @@map("utility") // ✅ Explicit map
+
+  @@map("utility")
 }
 
 model lease_utility {
@@ -573,7 +579,7 @@ model lease_utility {
 
   @@index([lease_id], map: "lease_id")
   @@index([utility_id], map: "utility_id")
-  @@map("lease_utility") // ✅ Explicit map
+  @@map("lease_utility")
 }
 
 model utility_reading {
@@ -587,10 +593,8 @@ model utility_reading {
   lease_utility    lease_utility @relation(fields: [lease_utility_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "utility_reading_ibfk_1")
 
   @@index([lease_utility_id], map: "lease_utility_id")
-  @@map("utility_reading") // ✅ Explicit map
+  @@map("utility_reading")
 }
-
-// ---------------- MAINTENANCE & OPERATIONS ----------------
 
 model MaintenanceRequest {
   id                 String                    @id @default(uuid())
@@ -605,11 +609,9 @@ model MaintenanceRequest {
   updatedAt          DateTime                  @updatedAt
   category           RequestCategory           @default(STANDARD)
   unitId             String?
-  // Fix for Seed Error: Missing assignment field
+  assigned_at        DateTime?                 @db.DateTime(0)
   assigned_vendor_id String?
   cost               Decimal?                  @db.Decimal(10, 2)
-  assigned_at        DateTime?                 @db.DateTime(0)
-  
   organization       Organization              @relation(fields: [organizationId], references: [id])
   property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
   requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
@@ -634,8 +636,6 @@ model OccupancyHistory {
 
   @@index([propertyId, year, month], map: "idx_occupancy_property_year_month")
 }
-
-// ---------------- ADMIN & SYSTEM ----------------
 
 model AdminAction {
   id              String            @id @default(uuid())
@@ -969,8 +969,6 @@ model RentEscalation {
   @@index([effectiveDate], map: "idx_rentEscalation_effectiveDate")
   @@index([leaseId], map: "idx_rentEscalation_leaseId")
 }
-
-// ---------------- ENUMS ----------------
 
 enum UserRole {
   SYSTEM_ADMIN
