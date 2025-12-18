@@ -31,7 +31,7 @@ const SignupPageContent = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   // ✅ Input Handler
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
@@ -229,8 +229,8 @@ const SignupPageContent = () => {
           />
         </div>
 
-         {/* role in dropdown*/}
-         <div>
+        {/* Role Selection */}
+        <div>
           <select
             name="role"
             value={formData.role}
@@ -238,7 +238,7 @@ const SignupPageContent = () => {
             required
             className="w-full h-12 border rounded px-3 text-base text-gray-700"
           >
-            <option value="">Select Role </option>
+            <option value="">Select Role</option>
             <option value="SYSTEM_ADMIN">System Admin</option>
             <option value="PROPERTY_MANAGER">Property Manager</option>
             <option value="VENDOR">Vendor</option>
@@ -247,16 +247,6 @@ const SignupPageContent = () => {
             <option value="LANDLORD">Landlord</option>
           </select>
         </div>
-
-            <Input
-              type="tel"
-              name="phone"
-              placeholder="Phone Number"
-              value={formData.phone}
-              onChange={handleInputChange}
-              className="h-12 text-base"
-            />
-          </div>
 
           {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -984,6 +984,7 @@ enum UserRole {
   VENDOR
   AGENT
   LANDLORD
+  ALL
 }
 
 enum Priority {
