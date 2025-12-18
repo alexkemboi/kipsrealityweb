@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Property } from "@/app/data/PropertyData";
@@ -71,7 +70,7 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
       
       // Property type info
       type: initialData.type || "",
-      propertyTypeId: initialData.propertyTypeId || "", // This might be needed for the update
+      propertyTypeId: initialData.propertyTypeId || "",
       
       // Details - map from API response to form structure
       houseDetail: initialData.type?.toLowerCase() === "house" ? {
@@ -97,7 +96,7 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
     setLoading(true);
 
     try {
-      // Prepare property details based on type
+      // property details based on type
       let propertyDetails = {};
       
       if (propertyTypeName === "apartment") {
@@ -117,11 +116,9 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
         };
       }
 
-      // We need to get the propertyTypeId for the update
-      // Since your API uses propertyTypeId in the PUT request
       let propertyTypeId = data.propertyTypeId;
       
-      // If we don't have propertyTypeId, try to find it from property types
+      // find it from property types
       if (!propertyTypeId && propertyTypes.length > 0) {
         const foundType = propertyTypes.find(
           (type) => type.name.toLowerCase() === propertyTypeName
@@ -193,8 +190,6 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
-
-
             <div className="flex flex-row md:col-span-2 gap-12">
             <div className="flex flex-col md:col-span-2">
               <label htmlFor="city" className="text-sm font-semibold text-gray-700 mb-1">
@@ -220,7 +215,6 @@ export default function EditPropertyForm({ initialData, onSuccess }: EditPropert
               />
                  </div>
              </div>
-
           </div>
         </div>
 
