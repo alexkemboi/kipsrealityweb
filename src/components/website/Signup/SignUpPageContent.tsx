@@ -28,7 +28,7 @@ const SignupPageContent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ✅ Input Handler
+  //Input Handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -40,7 +40,7 @@ const SignupPageContent = () => {
     if (error) setError("");
   };
 
-  // ✅ Full Validation
+  //Full Validation
   const validateForm = () => {
     if (!formData.organizationName.trim())
       return "Company name is required";
@@ -74,7 +74,7 @@ const SignupPageContent = () => {
     return null;
   };
 
-  // ✅ Handle Submit
+  //Handle Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -104,7 +104,7 @@ const SignupPageContent = () => {
 
       const result = await response.json();
 
-      // ✅ Detect duplicate company
+      // Detect duplicate company
       if (!response.ok) {
         if (
           result.error === "ORGANIZATION_EXISTS" ||
@@ -122,7 +122,7 @@ const SignupPageContent = () => {
 
       toast.success("Account created successfully! Please sign in.");
 
-      // ✅ Redirect to login
+      // Redirect to login
       setTimeout(() => router.push("/login"), 600);
 
     } catch (err) {
@@ -207,7 +207,7 @@ const SignupPageContent = () => {
 
         {/* Passwords */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          
+
           {/* Password */}
           <div className="relative">
             <Input

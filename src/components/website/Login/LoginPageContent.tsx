@@ -46,12 +46,12 @@ const LoginPageContent = () => {
       if (response.ok) {
         const data = await response.json();
 
-        // ✅ FIX: Correct token property
+
         login(data.user, data.tokens.accessToken);
 
         toast.success("Login successful! Redirecting...");
 
-        // ✅ Redirect based on user role
+        // Redirect based on user role
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");
@@ -70,19 +70,19 @@ const LoginPageContent = () => {
         }
 
       } else {
-          const err = await response.json();
-          let errorMsg = err.error || 'Invalid credentials';
+        const err = await response.json();
+        let errorMsg = err.error || 'Invalid credentials';
 
-         if (response.status === 404) {
-         errorMsg = 'User does not exist. Please create an account to continue.';
-          } else if (response.status === 401) {
-         // credential mismatch
-         errorMsg = 'Invalid email or password.';
-      } 
+        if (response.status === 404) {
+          errorMsg = 'User does not exist. Please create an account to continue.';
+        } else if (response.status === 401) {
+          // credential mismatch
+          errorMsg = 'Invalid email or password.';
+        }
 
-  setError(errorMsg);
-  toast.error(errorMsg, { duration: 4000 });
-}
+        setError(errorMsg);
+        toast.error(errorMsg, { duration: 4000 });
+      }
     } catch (error) {
       const errorMsg = "Network error. Please try again.";
       setError(errorMsg);

@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
-import aboutBg from "@/assets/hero-cityscape.jpg";
 import { motion } from "framer-motion";
 import {
   platform,
@@ -11,68 +9,110 @@ import {
   compliance,
   financialTools,
 } from "@/app/data/DifferentData";
+import { Layers, Zap, BarChart3, Shield, Lock, LucideIcon } from "lucide-react";
+
+
+
+const iconMap: Record<string, LucideIcon> = {
+  Layers: Layers,
+  Zap: Zap,
+  BarChart3: BarChart3,
+  Shield: Shield,
+  Lock: Lock,
+  // Mapping for possible DB string variations
+  "All-in-One Platform": Layers,
+  "Automation That Works": Zap,
+  "Data-Driven Decisions": BarChart3,
+  "Compliance & Security First": Shield,
+  "Smart Financial Tools": Lock
+};
 
 export default function WhatMakes() {
-  const sections = [platform, automation, decisions, compliance, financialTools];
+  // Using static data for specific feature display
+  const displayFeatures = [
+    { ...platform[0], iconStr: "Layers" },
+    { ...automation[0], iconStr: "Zap" },
+    { ...decisions[0], iconStr: "BarChart3" },
+    { ...compliance[0], iconStr: "Shield" },
+    { ...financialTools[0], iconStr: "Lock" },
+  ];
 
   return (
     <section
-      id="what-makes"
-      className="relative min-h-[95vh] flex justify-center items-center overflow-hidden"
+      id="features"
+      className="relative py-16 bg-white overflow-hidden"
     >
-      {/* Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
+      {/* Background Decor */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden bg-white">
       </div>
 
-      {/* Content */}
-      <div className="relative z-20 container mx-auto px-6 py-24 text-center">
-        <h3 className="text-black mb-8 text-3xl sm:text-4xl lg:text-5xl font-bold">
-          What Makes{" "}
-          <span className="text-transparent bg-clip-text text-gradient-primary animate-gradient">
-            Us Different
-          </span>
-        </h3>
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-4 tracking-tight">
+              What Makes <span className="text-black">Us Different</span>
+            </h2>
+            <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+              Powerful features designed for modern landlords to automate workflows and maximize returns.
+            </p>
+          </motion.div>
+        </div>
 
-        {/* Grid for all cards */}
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          {sections.map((group, groupIndex) =>
-            group.map((item, i) => (
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-7xl mx-auto">
+          {displayFeatures!.map((item, index) => {
+            let IconComponent = Layers; // Default
+
+            // Static item handling
+            if (item.iconStr && iconMap[item.iconStr]) {
+
+              IconComponent = iconMap[item.iconStr];
+            } else {
+
+              IconComponent = item.icon || Layers;
+            }
+
+            return (
               <motion.div
-                key={`${groupIndex}-${i}`}
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{
-                  delay: (groupIndex + i) * 0.15,
-                  duration: 0.8,
+                  delay: index * 0.1,
+                  duration: 0.5,
                   ease: "easeOut",
                 }}
-                className="relative bg-[#1d3d67] backdrop-blur-2xl border border-white/20 rounded-2xl 
-                           p-8 shadow-2xl flex flex-col items-center text-center 
-                           hover:border-white/30 hover:shadow-blue-500/30 transition-all duration-500 
-                           group cursor-pointer"
+                className="relative bg-white rounded-2xl p-8 
+                           border border-slate-100 shadow-[0_2px_15px_rgb(0,0,0,0.03)] 
+                           hover:bg-blue-50/50 hover:shadow-[0_15px_30px_rgb(0,0,0,0.08)] 
+                           transition-all duration-300 group flex flex-col h-full"
               >
-                {/* Glow effect */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 to-cyan-400/10 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500" />
-
-                {/* Icon */}
-                <div className="relative z-10 flex items-center justify-center w-16 h-16 mb-6 bg-gradient-to-r from-blue-500/30 to-cyan-400/30 rounded-xl group-hover:from-blue-500/50 group-hover:to-cyan-400/50 transition-all duration-500">
-                  <item.icon className="w-7 h-7 text-white" />
+                {/* Icon Container */}
+                <div className="mb-6 inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-700 text-white shadow-sm transition-transform group-hover:scale-110">
+                  <IconComponent className="w-7 h-7" />
                 </div>
 
                 {/* Title */}
-                <h5 className="relative z-10 text-2xl font-semibold text-white mb-3">
+                <h3 className="text-xl font-bold text-blue-700 mb-3 transition-colors">
                   {item.title}
-                </h5>
+                </h3>
 
                 {/* Description */}
-                <p className="relative z-10 text-white/80 text-lg leading-relaxed">
+                <p className="text-slate-600 text-[15px] leading-relaxed flex-grow">
                   {item.description}
                 </p>
+
+                {/* Bottom Border Accent */}
+                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-blue-600/10 group-hover:bg-blue-600 transition-colors rounded-b-2xl"></div>
               </motion.div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
     </section>

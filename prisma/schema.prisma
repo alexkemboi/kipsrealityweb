@@ -32,24 +32,29 @@ model Organization {
 }
 
 model User {
-  id                 String              @id @default(uuid())
-  email              String              @unique
-  passwordHash       String              @map("password_hash")
-  emailVerified      Boolean             @default(false) @map("email_verified")
-  firstName          String?             @map("first_name")
-  lastName           String?             @map("last_name")
-  phone              String?
-  avatarUrl          String?             @map("avatar_url")
-  status             UserStatus          @default(ACTIVE)
-  lastLoginAt        DateTime?           @map("last_login_at")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  sentInvites        Invite[]            @relation("UserInvites")
-  leases             Lease[]
-  listings           Listing[]
-  tenantApplications Tenantapplication[]
-  organizationUsers  OrganizationUser[]
-  vendors            Vendor[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String               @map("password_hash")
+  firstName            String?              @map("first_name")
+  lastName             String?              @map("last_name")
+  phone                String?
+  avatarUrl            String?              @map("avatar_url")
+  status               UserStatus           @default(ACTIVE)
+  lastLoginAt          DateTime?            @map("last_login_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  emailVerified        DateTime?            @map("email_verified")
+  verificationToken    String?              @unique
+  consentMarketing     Boolean              @default(false)
+  consentNotifications Boolean              @default(true)
+  consentTransactional Boolean              @default(true)
+  sentInvites          Invite[]             @relation("UserInvites")
+  leases               Lease[]
+  listings             Listing[]
+  PasswordResetToken   PasswordResetToken[]
+  tenantApplications   Tenantapplication[]
+  organizationUsers    OrganizationUser[]
+  vendors              Vendor[]
 
   @@map("users")
 }
@@ -324,9 +329,9 @@ model MaintenanceRequest {
   updatedAt          DateTime                  @updatedAt
   category           RequestCategory           @default(STANDARD)
   unitId             String?
+  assigned_at        DateTime?                 @db.DateTime(0)
   assigned_vendor_id String?
   cost               Decimal?                  @db.Decimal(10, 2)
-  assigned_at        DateTime?                 @db.DateTime(0)
   organization       Organization              @relation(fields: [organizationId], references: [id])
   property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
   requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
@@ -407,6 +412,12 @@ model Property {
   availabilityStatus     String?
   createdAt              DateTime                @default(now())
   name                   String?
+  country                String?
+  latitude               Float?
+  longitude              Float?
+  contactEmail           String?
+  contactPhone           String?
+  zipCode                String?
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
   leases                 Lease[]
@@ -417,6 +428,7 @@ model Property {
   manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
   organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
+  PropertyImage          PropertyImage[]
   tenantapplications     Tenantapplication[]
   units                  Unit[]
 
@@ -636,21 +648,21 @@ model Lease {
   tenantSignedAt           DateTime?
   terminationNoticeDays    Int?
   usageType                String?
-  hasRenewalOption         Boolean?                @default(false)
-  renewalNoticeDays        Int?
-  renewalTermMonths        Int?
-  renewalRentIncrease      Float?                  @db.Float
   autoRenew                Boolean?                @default(false)
-  hasRentEscalation        Boolean?                @default(false)
-  escalationType           Lease_escalationType?
-  escalationRate           Float?                  @db.Float
-  escalationFrequency      String?                 @db.VarChar(20)
-  nextEscalationDate       DateTime?               @db.DateTime(0)
-  documentVersion          Int?                    @default(1)
-  lastDocumentUpdate       DateTime?               @db.DateTime(0)
   complianceCheckDate      DateTime?               @db.DateTime(0)
-  complianceStatus         Lease_complianceStatus? @default(PENDING)
   complianceNotes          String?                 @db.Text
+  complianceStatus         Lease_complianceStatus? @default(PENDING)
+  documentVersion          Int?                    @default(1)
+  escalationFrequency      String?                 @db.VarChar(20)
+  escalationRate           Float?                  @db.Float
+  escalationType           Lease_escalationType?
+  hasRenewalOption         Boolean?                @default(false)
+  hasRentEscalation        Boolean?                @default(false)
+  lastDocumentUpdate       DateTime?               @db.DateTime(0)
+  nextEscalationDate       DateTime?               @db.DateTime(0)
+  renewalNoticeDays        Int?
+  renewalRentIncrease      Float?                  @db.Float
+  renewalTermMonths        Int?
   invites                  Invite[]                @relation("LeaseInvites")
   application              Tenantapplication       @relation(fields: [applicationId], references: [id])
   property                 Property                @relation(fields: [propertyId], references: [id])
@@ -915,6 +927,34 @@ model RentEscalation {
 
   @@index([effectiveDate], map: "idx_rentEscalation_effectiveDate")
   @@index([leaseId], map: "idx_rentEscalation_leaseId")
+}
+
+model PasswordResetToken {
+  id        String   @id
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PropertyImage {
+  id         String   @id
+  propertyId String
+  url        String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  format     String?
+  height     Int?
+  publicId   String
+  updatedAt  DateTime
+  width      Int?
+  Property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([order])
+  @@index([propertyId])
 }
 
 enum UserRole {
