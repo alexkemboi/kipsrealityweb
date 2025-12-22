@@ -34,7 +34,7 @@ export async function getCurrentUser(req?: Request) {
       organizationUserId: payload.organizationUserId
     };
   } catch (error) {
-    console.error("getCurrentUser error:", error);
+    // console.warn("getCurrentUser: Invalid or missing token");
     return null;
   }
 }

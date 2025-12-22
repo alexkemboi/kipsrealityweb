@@ -53,17 +53,17 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${plusJakartaSans.variable} ${inter.variable} ${sen.variable} font-sans antialiased min-h-screen transition-colors duration-500`}
       >
-        <Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading...</p>
+        <AuthProvider>
+          <Suspense
+            fallback={
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading...</p>
+                </div>
               </div>
-            </div>
-          }
-        >
-          <AuthProvider>
+            }
+          >
             <LoadingBar />
             {children}
             <Toaster
@@ -72,8 +72,8 @@ export default function RootLayout({
               richColors
               closeButton
             />
-          </AuthProvider>
-        </Suspense>
+          </Suspense>
+        </AuthProvider>
       </body>
     </html>
   );

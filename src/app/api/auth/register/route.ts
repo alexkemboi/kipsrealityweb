@@ -1,123 +1,100 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
-import { generateAccessToken, generateRefreshToken } from '@/lib/auth'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { sendVerificationEmail } from "@/lib/mail-service";
 
-const DEFAULT_ROLE = 'PROPERTY_MANAGER';
+const ALLOWED_ROLES = ['SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'LANDLORD', 'VENDOR', 'TENANT', 'AGENT'] as const;
+type UserRole = typeof ALLOWED_ROLES[number];
 
 export async function POST(request: Request) {
   try {
-    const { email, password, firstName, lastName, organizationName } = await request.json()
+    const { email, password, firstName, lastName, organizationName, role } = await request.json();
 
-    // Validate required fields
-    if (!email || !password || !organizationName) {
+    // 1. Validate Input
+    if (!email || !password || !organizationName || !role) {
       return NextResponse.json(
-        { error: 'Email, password, and organization name are required' },
+        { error: 'Email, password, organization name, and role are required' },
         { status: 400 }
       );
     }
 
-    // ✅ Check if organization exists already
+    // Validate role
+    if (!ALLOWED_ROLES.includes(role as UserRole)) {
+      return NextResponse.json(
+        { error: 'Invalid role selected' },
+        { status: 400 }
+      );
+    }
+
+    // 2. Pre-check Organization (Optimization to avoid starting transaction if not needed)
     const existingOrg = await prisma.organization.findFirst({
-      where: {
-        name: organizationName,
-      },
+      where: { name: organizationName },
     });
 
     if (existingOrg) {
-      return NextResponse.json(
-        { error: "ORGANIZATION_EXISTS" },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: "ORGANIZATION_EXISTS" }, { status: 409 });
     }
 
-    // Check if user already exists
+    // 3. Pre-check User
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'USER_EXISTS' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'USER_EXISTS' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // ✅ Create organization
-    const organization = await prisma.organization.create({
-      data: {
-        name: organizationName,
-        slug: organizationName.toLowerCase().replace(/\s+/g, '-'),
-        isActive: true,
-      },
+    // 4. ATOMIC TRANSACTION (Critical for Data Integrity)
+    // If any step inside fails, the entire database rolls back.
+    const result = await prisma.$transaction(async (tx) => {
+      // A. Create Organization
+      const organization = await tx.organization.create({
+        data: {
+          name: organizationName,
+          slug: organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''), // Cleaner slug
+          isActive: true,
+        },
+      });
+
+      // B. Create User
+      const user = await tx.user.create({
+        data: {
+          email: email.toLowerCase(),
+          passwordHash: hashedPassword, // Ensure your Schema uses 'passwordHash', not 'password'
+          firstName,
+          lastName,
+          emailVerified: null,
+          verificationToken: verificationToken,
+        },
+      });
+
+      // C. Link User to Organization with their selected role
+      await tx.organizationUser.create({
+        data: {
+          userId: user.id,
+          organizationId: organization.id,
+          role: role,
+        },
+      });
+
+      return user; // Return user to outside scope
     });
 
-    // ✅ Create user
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash: hashedPassword,
-        firstName,
-        lastName,
-        emailVerified: false,
-      },
-    });
+    // 5. Send Email (Only if transaction succeeded)
+    await sendVerificationEmail(email, verificationToken);
 
-    // ✅ Link user to organization
-    await prisma.organizationUser.create({
-      data: {
-        userId: user.id,
-        organizationId: organization.id,
-        role: DEFAULT_ROLE,
-      },
-    });
-
-    // ✅ Generate tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: DEFAULT_ROLE,
-      organizationId: organization.id,
-      organizationUserId: ''
-    });
-
-    const refreshToken = generateRefreshToken({ userId: user.id });
-    const expiresAt = Date.now() + 60 * 60 * 1000;
-
-    const userResponse = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: DEFAULT_ROLE,
-      organization: {
-        id: organization.id,
-        name: organization.name,
-        slug: organization.slug,
-      },
-    };
-
-    const response = NextResponse.json({
-      user: userResponse,
-      tokens: {
-        accessToken,
-        refreshToken,
-        expiresAt,
-      },
-    });
-
-    // ✅ Secure cookie
-    response.cookies.set('token', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60,
-      path: '/',
-    });
-
-    return response;
+    return NextResponse.json({
+      success: true,
+      message: "Account created. Please check your email to verify your account.",
+      user: {
+        id: result.id,
+        email: result.email,
+      }
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Registration error:', error);

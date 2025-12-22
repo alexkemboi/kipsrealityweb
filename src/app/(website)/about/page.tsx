@@ -7,6 +7,8 @@ import { Testimonials } from "@/components/website/Testimonial/TestimonialClient
 import BrandPromise from "@/components/website/landing/BrandPromise";
 import Footer from "@/components/website/Footer";
 
+export const dynamic = "force-dynamic"; // Ensure dynamic rendering if needed, or remove for static with revalidate
+
 export default async function AboutUs() {
   // Fetch data in parallel
   const [aboutData, heroData, testimonials] = await Promise.all([

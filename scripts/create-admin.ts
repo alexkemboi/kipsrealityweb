@@ -24,7 +24,7 @@ async function createAdmin() {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create admin in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create organization
       const organization = await tx.organization.create({
         data: {

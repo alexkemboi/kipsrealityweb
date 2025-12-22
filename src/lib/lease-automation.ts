@@ -1,6 +1,6 @@
 // lib/lease-automation.ts
 import { prisma } from "@/lib/db";
-import { sendEmail } from "@/lib/email"; 
+import { sendEmail } from "@/lib/mail";
 import { randomUUID } from "crypto";
 
 interface NotificationConfig {
@@ -232,8 +232,8 @@ async function processScheduledNotifications() {
       await sendEmail({
         to: notification.recipientEmail || "unknown@example.com", // fallback
         subject: notification.subject || "No Subject",          // fallback
-        body: notification.message || "No message available",   // fallback
-        });
+        text: notification.message || "No message available",   // fallback
+      });
       await prisma.leaseNotification.update({
         where: { id: notification.id },
         data: { status: "SENT", sentAt: new Date() },
@@ -257,44 +257,44 @@ async function checkComplianceDates() {
   thirtyDaysAgo.setDate(today.getDate() - 30);
 
   // Fetch property manager email via relational join
-const leasesNeedingCompliance = await prisma.lease.findMany({
-  where: {
-    OR: [
-      { complianceCheckDate: null },
-      { complianceCheckDate: { lt: thirtyDaysAgo } },
-    ],
-    leaseStatus: "ACTIVE",
-  },
-  include: {
-    property: {
-      include: {
-        manager: {       // OrganisationUser
-          include: {
-            user: true, // join to User table
+  const leasesNeedingCompliance = await prisma.lease.findMany({
+    where: {
+      OR: [
+        { complianceCheckDate: null },
+        { complianceCheckDate: { lt: thirtyDaysAgo } },
+      ],
+      leaseStatus: "ACTIVE",
+    },
+    include: {
+      property: {
+        include: {
+          manager: {       // OrganisationUser
+            include: {
+              user: true, // join to User table
+            },
           },
         },
       },
     },
-  },
-});
-
-for (const lease of leasesNeedingCompliance) {
-  const recipientEmail = lease.property.manager?.user?.email  || "";
-
-  await prisma.leaseNotification.create({
-    data: {
-      id: randomUUID(),
-      leaseId: lease.id,
-      notificationType: "COMPLIANCE_CHECK",
-      recipientEmail,
-      recipientRole: "LANDLORD",
-      subject: "Lease Compliance Check Required",
-      message: `Lease ${lease.id} requires compliance review`,
-      scheduledFor: new Date(),
-      status: "PENDING",
-    },
   });
-}
+
+  for (const lease of leasesNeedingCompliance) {
+    const recipientEmail = lease.property.manager?.user?.email || "";
+
+    await prisma.leaseNotification.create({
+      data: {
+        id: randomUUID(),
+        leaseId: lease.id,
+        notificationType: "COMPLIANCE_CHECK",
+        recipientEmail,
+        recipientRole: "LANDLORD",
+        subject: "Lease Compliance Check Required",
+        message: `Lease ${lease.id} requires compliance review`,
+        scheduledFor: new Date(),
+        status: "PENDING",
+      },
+    });
+  }
 
   console.log(`✅ Marked ${leasesNeedingCompliance.length} leases for compliance check`);
 }

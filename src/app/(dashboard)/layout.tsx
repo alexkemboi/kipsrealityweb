@@ -44,13 +44,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     PROPERTY_MANAGER: "/property-manager",
     TENANT: "/tenant",
     VENDOR: "/vendor",
+    AGENT: "/agent",
+    LANDLORD: "/landlord",
   } as const;
 
   const currentPath =
     typeof window !== "undefined" ? window.location.pathname : "";
   const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
 
-  if (expectedPath && !currentPath.startsWith(expectedPath)) {
+  if (expectedPath && !currentPath.startsWith(expectedPath) && !currentPath.startsWith('/account')) {
     redirect(expectedPath);
   }
 
