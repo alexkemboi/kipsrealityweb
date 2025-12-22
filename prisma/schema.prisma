@@ -32,52 +32,7 @@ model Organization {
 }
 
 model User {
-  id                   String               @id @default(uuid())
-  email                String               @unique
-  passwordHash         String               @map("password_hash")
-  firstName            String?              @map("first_name")
-  lastName             String?              @map("last_name")
-  phone                String?
-  avatarUrl            String?              @map("avatar_url")
-  status               UserStatus           @default(ACTIVE)
-  lastLoginAt          DateTime?            @map("last_login_at")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  emailVerified        DateTime?            @map("email_verified")
-  verificationToken    String?              @unique
-  consentMarketing     Boolean              @default(false)
-  consentNotifications Boolean              @default(true)
-  consentTransactional Boolean              @default(true)
-  sentInvites          Invite[]             @relation("UserInvites")
-  leases               Lease[]
-  listings             Listing[]
-  PasswordResetToken   PasswordResetToken[]
-  tenantApplications   Tenantapplication[]
-  organizationUsers    OrganizationUser[]
-  vendors              Vendor[]
-  id                   String               @id @default(uuid())
-  email                String               @unique
-  passwordHash         String               @map("password_hash")
-  firstName            String?              @map("first_name")
-  lastName             String?              @map("last_name")
-  phone                String?
-  avatarUrl            String?              @map("avatar_url")
-  status               UserStatus           @default(ACTIVE)
-  lastLoginAt          DateTime?            @map("last_login_at")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  emailVerified        DateTime?            @map("email_verified")
-  verificationToken    String?              @unique
-  consentMarketing     Boolean              @default(false)
-  consentNotifications Boolean              @default(true)
-  consentTransactional Boolean              @default(true)
-  sentInvites          Invite[]             @relation("UserInvites")
-  leases               Lease[]
-  listings             Listing[]
-  passwordResetTokens  PasswordResetToken[]
-  tenantApplications   Tenantapplication[]
-  organizationUsers    OrganizationUser[]
-  vendors              Vendor[]
+
   id                  String               @id @default(uuid())
   email               String               @unique
   passwordHash        String               @map("password_hash")
@@ -444,35 +399,7 @@ model PropertyType {
   properties  Property[]
 }
 
-model Property {
-  id                 String   @id @default(uuid())
-  listingId          String?  @unique
-  managerId          String?
-  organizationId     String?
-  propertyTypeId     String?
-  locationId         String?
-  title              String
-  description        String
-  price              Float
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  propertyId         String?
-  unitId             String?
-  adminActions       AdminAction[]
-  createdByUser      User                @relation(fields: [createdBy], references: [id])
-  location           Location?           @relation(fields: [locationId], references: [id])
-  organization       Organization        @relation(fields: [organizationId], references: [id])
-  status             ListingStatus?      @relation(fields: [statusId], references: [id])
-  images             ListingImage[]
-  property           Property?           @relation("PropertyListing")
-  serviceMarketplace ServiceMarketplace?
-  unit               Unit?               @relation("UnitListing")
 
-  @@index([createdBy], map: "Listing_createdBy_fkey")
-  @@index([locationId], map: "Listing_locationId_fkey")
-  @@index([organizationId], map: "Listing_organizationId_fkey")
-  @@index([statusId], map: "Listing_statusId_fkey")
-}
 
 model Property {
   id                     String                  @id @default(uuid())
@@ -494,20 +421,7 @@ model Property {
   contactEmail           String?
   contactPhone           String?
   zipCode                String?
-  city               String
-  address            String
-  amenities          String?
-  isFurnished        Boolean  @default(false)
-  availabilityStatus String?
-  createdAt          DateTime @default(now())
-  name               String?
 
-  country      String?
-  zipCode      String?
-  latitude     Float?
-  longitude    Float?
-  contactPhone String?
-  contactEmail String?
 
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
@@ -522,7 +436,7 @@ model Property {
   PropertyImage          PropertyImage[]
   tenantapplications     Tenantapplication[]
   units                  Unit[]
-  image                  PropertyImage[]
+
 
   @@index([locationId], map: "Property_locationId_fkey")
   @@index([managerId], map: "Property_managerId_fkey")
@@ -641,13 +555,7 @@ model ListingImage {
   @@index([listingId], map: "ListingImage_listingId_fkey")
 }
 
-model ListingStatus {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String?
-  createdAt   DateTime  @default(now())
-  listings    Listing[]
-}
+
 
 model ServiceMarketplace {
   id            String            @id @default(uuid())
@@ -674,29 +582,7 @@ model ServiceType {
   serviceMarketplace ServiceMarketplace[]
 }
 
-model categories {
-  id       Int        @id @default(autoincrement())
-  name     String
-  tagline  String
-  color    String
-  services services[]
 
-  @@map("categories")
-}
-
-model services {
-  id          Int        @id @default(autoincrement())
-  category_id Int
-  name        String
-  description String
-  features    Json
-  impact      String
-  icon        String
-  categories  categories @relation(fields: [category_id], references: [id])
-
-  @@index([category_id], map: "services_category_id_fkey")
-  @@map("services")
-}
 
 model Tenantapplication {
   id                 String            @id @default(uuid())
@@ -783,18 +669,7 @@ model Lease {
   renewalNoticeDays        Int?
   renewalRentIncrease      Float?                  @db.Float
   renewalTermMonths        Int?
-  complianceStatus         Lease_complianceStatus? @default(PENDING)
-  documentVersion          Int?                    @default(1)
-  escalationFrequency      String?                 @db.VarChar(20)
-  escalationRate           Float?                  @db.Float
-  escalationType           Lease_escalationType?
-  hasRenewalOption         Boolean?                @default(false)
-  hasRentEscalation        Boolean?                @default(false)
-  lastDocumentUpdate       DateTime?               @db.DateTime(0)
-  nextEscalationDate       DateTime?               @db.DateTime(0)
-  renewalNoticeDays        Int?
-  renewalRentIncrease      Float?                  @db.Float
-  renewalTermMonths        Int?
+
   invites                  Invite[]                @relation("LeaseInvites")
   application              Tenantapplication       @relation(fields: [applicationId], references: [id])
   property                 Property                @relation(fields: [propertyId], references: [id])
@@ -941,34 +816,7 @@ model utility_reading {
   @@map("utility_reading")
 }
 
-model MaintenanceRequest {
-  id                 String                    @id @default(uuid())
-  organizationId     String
-  propertyId         String
-  requestedById      String
-  title              String
-  description        String
-  priority           Priority                  @default(NORMAL)
-  status             MaintenanceRequest_status @default(OPEN)
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
-  category           RequestCategory           @default(STANDARD)
-  unitId             String?
-  assigned_at        DateTime?                 @db.DateTime(0)
-  assigned_vendor_id String?
-  cost               Decimal?                  @db.Decimal(10, 2)
-  organization       Organization              @relation(fields: [organizationId], references: [id])
-  property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
-  unit               Unit?                     @relation(fields: [unitId], references: [id])
-  vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
 
-  @@index([organizationId], map: "MaintenanceRequest_organizationId_fkey")
-  @@index([propertyId], map: "MaintenanceRequest_propertyId_fkey")
-  @@index([requestedById], map: "MaintenanceRequest_requestedById_fkey")
-  @@index([unitId], map: "MaintenanceRequest_unitId_fkey")
-  @@index([assigned_vendor_id], map: "MaintenanceRequest_assignedVendorId_fkey")
-}
 
 model OccupancyHistory {
   id            String   @id
@@ -1002,65 +850,7 @@ model AdminAction {
   @@index([targetOrgUserId], map: "AdminAction_targetOrgUserId_fkey")
 }
 
-model ActionType {
-  id           String        @id @default(uuid())
-  name         String        @unique
-  description  String?
-  createdAt    DateTime      @default(now())
-  adminActions AdminAction[]
-}
 
-model Plan {
-  id            Int            @id @default(autoincrement())
-  name          String
-  badge         String?
-  monthlyPrice  Float
-  yearlyPrice   Float
-  description   String?
-  gradient      String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime?      @default(now())
-  organizations Organization[]
-  features      Feature[]      @relation("PlanFeatures")
-  sidebarItems  SidebarItem[]  @relation("SidebarItemPlans")
-}
-
-model Feature {
-  id           Int           @id @default(autoincrement())
-  title        String
-  description  String?
-  category     String?
-  createdAt    DateTime      @default(now())
-  icon         String?
-  isActive     Boolean       @default(true)
-  key          String?       @unique
-  path         String?
-  updatedAt    DateTime?     @default(now())
-  sidebarItems SidebarItem[]
-  plans        Plan[]        @relation("PlanFeatures")
-}
-
-model SidebarItem {
-  id          Int      @id @default(autoincrement())
-  label       String
-  path        String
-  icon        String?
-  section     String?
-  order       Int?
-  badge       String?
-  description String?
-  isActive    Boolean  @default(true)
-  isExternal  Boolean  @default(false)
-  target      String?
-  featureId   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  role        UserRole
-  feature     Feature? @relation(fields: [featureId], references: [id])
-  plans       Plan[]   @relation("SidebarItemPlans")
-
-  @@index([featureId], map: "SidebarItem_featureId_fkey")
-}
 
 model NavbarItem {
   id          Int          @id @default(autoincrement())
@@ -1079,125 +869,7 @@ model NavbarItem {
   @@index([order])
 }
 
-model AboutUs {
-  id          Int      @id @default(autoincrement())
-  section     String
-  description String   @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-}
 
-model Applicant {
-  id          Int           @id @default(autoincrement())
-  firstName   String
-  lastName    String
-  email       String        @unique
-  resume      String?
-  createdAt   DateTime      @default(now())
-  Application Application[]
-}
-
-model Application {
-  id          Int       @id @default(autoincrement())
-  jobId       Int
-  applicantId Int
-  status      String    @default("Pending")
-  appliedAt   DateTime  @default(now())
-  Applicant   Applicant @relation(fields: [applicantId], references: [id])
-  Job         Job       @relation(fields: [jobId], references: [id])
-
-  @@index([applicantId], map: "Application_applicantId_fkey")
-  @@index([jobId], map: "Application_jobId_fkey")
-}
-
-model CTA {
-  id         Int      @id @default(autoincrement())
-  page       String
-  title      String
-  subtitle   String
-  buttonText String
-  buttonUrl  String
-  gradient   String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime
-}
-
-model ContactMessage {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String
-  message     String
-  createdAt   DateTime @default(now())
-  countryCode String
-  phone       String
-}
-
-model HeroSection {
-  id          Int      @id @default(autoincrement())
-  page        String
-  title       String?
-  subtitle    String?
-  description String?
-  buttonText  String?
-  buttonUrl   String?
-  imageUrl    String?
-  iconUrl     String?
-  searchBar   Boolean  @default(false)
-  gradient    String?
-  layout      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime
-}
-
-model Job {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String
-  image       String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime
-  Application Application[]
-}
-
-model Policy {
-  id                       Int       @id @default(autoincrement())
-  title                    String
-  companyName              String
-  contactEmail             String
-  privacyEmail             String
-  website                  String?
-  mailingAddress           String?
-  responseTime             String?
-  inactiveAccountThreshold String?
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime
-  Section                  Section[]
-}
-
-model Section {
-  id        Int      @id @default(autoincrement())
-  key       String
-  title     String
-  intro     String?
-  content   Json?
-  order     Int?
-  policyId  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  Policy    Policy   @relation(fields: [policyId], references: [id])
-
-  @@index([policyId], map: "Section_policyId_fkey")
-}
-
-model Testimonial {
-  id        Int      @id @default(autoincrement())
-  name      String
-  role      String
-  image     String
-  text      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-}
 
 model LeaseAmendment {
   id             String                       @id
@@ -1315,33 +987,9 @@ model RentEscalation {
   @@index([leaseId], map: "idx_rentEscalation_leaseId")
 }
 
-model PasswordResetToken {
-  id        String   @id
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  userId    String
-  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-}
 
-model PropertyImage {
-  id         String   @id
-  propertyId String
-  url        String
-  order      Int      @default(0)
-  createdAt  DateTime @default(now())
-  format     String?
-  height     Int?
-  publicId   String
-  updatedAt  DateTime
-  width      Int?
-  Property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
-  @@index([order])
-  @@index([propertyId])
-}
 
 enum UserRole {
   SYSTEM_ADMIN
