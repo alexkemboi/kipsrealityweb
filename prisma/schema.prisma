@@ -32,60 +32,39 @@ model Organization {
 }
 
 model User {
-  id                   String               @id @default(uuid())
-  email                String               @unique
-  passwordHash         String               @map("password_hash")
-  firstName            String?              @map("first_name")
-  lastName             String?              @map("last_name")
+  id                   String   @id @default(uuid())
+  email                String   @unique
+  passwordHash         String   @map("password_hash")
+  firstName            String?  @map("first_name")
+  lastName             String?  @map("last_name")
   phone                String?
-  avatarUrl            String?              @map("avatar_url")
-  status               UserStatus           @default(ACTIVE)
-  lastLoginAt          DateTime?            @map("last_login_at")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  emailVerified        DateTime?            @map("email_verified")
-  verificationToken    String?              @unique
-  consentMarketing     Boolean              @default(false)
-  consentNotifications Boolean              @default(true)
-  consentTransactional Boolean              @default(true)
-  sentInvites          Invite[]             @relation("UserInvites")
+  avatarUrl            String?  @map("avatar_url")
+  status               UserStatus @default(ACTIVE)
+  lastLoginAt          DateTime? @map("last_login_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // Auth
+  emailVerified        DateTime? @map("email_verified")
+  verificationToken    String?   @unique
+
+  // Consent
+  consentMarketing     Boolean   @default(false)
+  consentNotifications Boolean   @default(true)
+  consentTransactional Boolean   @default(true)
+
+  // Relations
+  sentInvites          Invite[] @relation("UserInvites")
   leases               Lease[]
   listings             Listing[]
   passwordResetTokens  PasswordResetToken[]
   tenantApplications   Tenantapplication[]
   organizationUsers    OrganizationUser[]
   vendors              Vendor[]
-  id                  String               @id @default(uuid())
-  email               String               @unique
-  passwordHash        String               @map("password_hash")
-  firstName           String?              @map("first_name")
-  lastName            String?              @map("last_name")
-  phone               String?
-  avatarUrl           String?              @map("avatar_url")
-  status              UserStatus           @default(ACTIVE)
-  lastLoginAt         DateTime?            @map("last_login_at")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  
-  // Auth Fields (New)
-  emailVerified       DateTime?            @map("email_verified")
-  verificationToken   String?              @unique
-  
-  // Consent Flags
-  consentTransactional Boolean @default(true)
-  consentNotifications Boolean @default(true)
-  consentMarketing     Boolean @default(false)
-
-  sentInvites         Invite[]             @relation("UserInvites")
-  leases              Lease[]
-  listings            Listing[]
-  passwordResetTokens PasswordResetToken[]
-  tenantApplications  Tenantapplication[]
-  organizationUsers   OrganizationUser[]
-  vendors             Vendor[]
 
   @@map("users")
 }
+
 
 model OrganizationUser {
   id                String               @id @default(uuid())
