@@ -1,62 +1,43 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Testimonial } from "@/app/data/TestimonialData";
 import { TestimonialCard } from "./TestimonialCard";
-import { useState } from "react";
+import { motion } from "framer-motion";
 
 interface TestimonialsProps {
   initialTestimonials: Testimonial[];
 }
 
 export function Testimonials({ initialTestimonials }: TestimonialsProps) {
-  const [index, setIndex] = useState(0);
-
-  const nextSlide = () => setIndex((prev) => (prev + 1) % initialTestimonials.length);
-  const prevSlide = () => setIndex((prev) => (prev - 1 + initialTestimonials.length) % initialTestimonials.length);
-
-  const testimonial = initialTestimonials[index];
-
   return (
-    <section
-      id="testimonials"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-8 py-12"
-    >
-      
+    <section id="testimonials" className="bg-white py-8 lg:py-10 overflow-hidden">
+      <div className="container mx-auto px-6">
+        <div className="text-center mb-10">
+          <div className="text-blue-700 text-[15px] md:text-base font-black tracking-[0.3em] md:tracking-[0.4em] uppercase mb-8">
+            Testimonials
+          </div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-blue-700 mb-6 tracking-tight font-heading">
+            What Do Our <span className="text-black">Customers Say?</span>
+          </h2>
+          <p className="text-lg md:text-xl text-slate-500 max-w-3xl mx-auto font-medium opacity-95 leading-relaxed">
+            Real feedback from property managers and tenants who have transformed their rental experience with RentFlow360.
+          </p>
+        </div>
 
-        
-    {/* --- Background --- */}
-           <div className="absolute inset-0 z-0">
-             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
-           </div>
-
-
-      {/* Title */}
-      <h2 className="relative z-10 font-poppins font-bold text-4xl lg:text-5xl mb-10  bg-clip-text text-black animate-gradient">
-        What Do Our <span className="text-gradient-primary animate-gradient">Customers Say?</span>
-      </h2>
-
-     {/* Card + Arrows together */}
-<div className="relative z-10 flex items-center justify-center w-full max-w-6xl ">
-  <button
-    onClick={prevSlide}
-    className="absolute left-0 inset-y-0 my-auto ml-4 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-[#2c7cd6] rounded-full transition-all duration-300"
-    style={{ zIndex: 20 }}
-  >
-    <ChevronLeft className="w-6 h-6 text-white" />
-  </button>
-
-  <TestimonialCard testimonial={testimonial} />
-
-  <button
-    onClick={nextSlide}
-    className="absolute right-0 inset-y-0 my-auto mr-4 w-12 h-12 flex items-center justify-center bg-white/10 hover:bg-[#2c7cd6]  rounded-full transition-all duration-300"
-    style={{ zIndex: 20 }}
-  >
-    <ChevronRight className="w-6 h-6 text-white" />
-  </button>
-</div>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {initialTestimonials.slice(0, 3).map((testimonial, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <TestimonialCard testimonial={testimonial} />
+            </motion.div>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

@@ -75,12 +75,12 @@ const LoginPageContent = () => {
       if (response.ok) {
         const data = await response.json();
 
-        // ✅ FIX: Correct token property
+
         login(data.user, data.tokens.accessToken);
 
         toast.success("Login successful! Redirecting...");
 
-        // ✅ Redirect based on user role
+        // Redirect based on user role
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");

@@ -42,7 +42,7 @@ const SignupPageContent = () => {
     if (error) setError("");
   };
 
-  // ✅ Full Validation
+  //Full Validation
   const validateForm = () => {
     if (!formData.organizationName.trim())
       return "Company name is required";
@@ -79,7 +79,7 @@ const SignupPageContent = () => {
     return null;
   };
 
-  // ✅ Handle Submit
+  //Handle Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -110,7 +110,7 @@ const SignupPageContent = () => {
 
       const result = await response.json();
 
-      // ✅ Detect duplicate company
+      // Detect duplicate company
       if (!response.ok) {
         if (
           result.error === "ORGANIZATION_EXISTS" ||
@@ -219,34 +219,34 @@ const SignupPageContent = () => {
               className="h-12 text-base"
             />
 
-          <Input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={formData.phone}
-            onChange={handleInputChange}
-            className="h-12 text-base"
-          />
-        </div>
+            <Input
+              type="tel"
+              name="phone"
+              placeholder="Phone Number"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="h-12 text-base"
+            />
+          </div>
 
-        {/* Role Selection */}
-        <div>
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleInputChange}
-            required
-            className="w-full h-12 border rounded px-3 text-base text-gray-700"
-          >
-            <option value="">Select Role</option>
-            <option value="SYSTEM_ADMIN">System Admin</option>
-            <option value="PROPERTY_MANAGER">Property Manager</option>
-            <option value="VENDOR">Vendor</option>
-            <option value="AGENT">Agent</option>
-            <option value="TENANT">Tenant</option>
-            <option value="LANDLORD">Landlord</option>
-          </select>
-        </div>
+          {/* Role Selection */}
+          <div>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              required
+              className="w-full h-12 border rounded px-3 text-base text-gray-700"
+            >
+              <option value="">Select Role</option>
+              <option value="SYSTEM_ADMIN">System Admin</option>
+              <option value="PROPERTY_MANAGER">Property Manager</option>
+              <option value="VENDOR">Vendor</option>
+              <option value="AGENT">Agent</option>
+              <option value="TENANT">Tenant</option>
+              <option value="LANDLORD">Landlord</option>
+            </select>
+          </div>
 
           {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -331,7 +331,7 @@ const SignupPageContent = () => {
           Sign in
         </a>
       </p>
-    </div>
+    </div >
   );
 };
 

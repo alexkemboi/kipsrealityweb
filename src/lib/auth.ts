@@ -1,10 +1,20 @@
 import jwt from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET!
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
 
-if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
-    throw new Error('JWT secrets must be defined in environment variables')
+export function getJwtSecret(): string {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+    return secret;
+}
+
+export function getJwtRefreshSecret(): string {
+    const secret = process.env.JWT_REFRESH_SECRET;
+    if (!secret) {
+        throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+    }
+    return secret;
 }
 
 interface AccessTokenPayload {
@@ -20,7 +30,7 @@ interface RefreshTokenPayload {
 }
 
 export function generateAccessToken(payload: AccessTokenPayload): string {
-    return jwt.sign(payload, JWT_SECRET, {
+    return jwt.sign(payload, getJwtSecret(), {
         expiresIn: '1h',
         issuer: 'rentflow360',
         audience: 'rentflow360-web'
@@ -28,7 +38,7 @@ export function generateAccessToken(payload: AccessTokenPayload): string {
 }
 
 export function generateRefreshToken(payload: RefreshTokenPayload): string {
-    return jwt.sign(payload, JWT_REFRESH_SECRET, {
+    return jwt.sign(payload, getJwtRefreshSecret(), {
         expiresIn: '7d',
         issuer: 'rentflow360',
         audience: 'rentflow360-web'
@@ -36,14 +46,14 @@ export function generateRefreshToken(payload: RefreshTokenPayload): string {
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-    return jwt.verify(token, JWT_SECRET, {
+    return jwt.verify(token, getJwtSecret(), {
         issuer: 'rentflow360',
         audience: 'rentflow360-web'
     }) as AccessTokenPayload
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
-    return jwt.verify(token, JWT_REFRESH_SECRET, {
+    return jwt.verify(token, getJwtRefreshSecret(), {
         issuer: 'rentflow360',
         audience: 'rentflow360-web'
     }) as RefreshTokenPayload

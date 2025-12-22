@@ -22,7 +22,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    const formatted = readings.map((r) => ({
+    const formatted = readings.map((r: any) => ({
       id: r.id,
       reading_value: r.reading_value,
       amount: r.amount,

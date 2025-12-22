@@ -4,4 +4,11 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
     "./app/**/*.{js,ts,jsx,tsx}",
   ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sen: ["var(--font-sen)"],
+      },
+    },
+  },
 };
