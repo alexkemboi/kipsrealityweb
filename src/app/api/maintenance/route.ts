@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+
+// http://localhost:3000/api/maintenance?organizationId=1&status=OPEN&unassigned=true&propertyId=1&vendorId=1
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
