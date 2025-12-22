@@ -1003,6 +1003,8 @@ enum UserRole {
   PROPERTY_MANAGER
   TENANT
   VENDOR
+  AGENT
+  LANDLORD
   ALL
 }
 
