@@ -1,23 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 interface Feature { id: number; title: string; description: string; }
 interface Plan { id: number; name: string; badge?: string; monthlyPrice: number; yearlyPrice: number; description?: string; features: Feature[]; }
 
-export const PricingPlans = () => {
+interface PricingProps {
+  cta?: {
+    title: string;
+    subtitle: string;
+    buttonText?: string;
+    buttonUrl?: string;
+  } | null;
+}
+
+export const PricingPlans = ({ cta }: PricingProps) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("yearly");
 
   useEffect(() => {
     const fetchPlans = async () => {
-      const res = await fetch("/api/plan");
-      const data = await res.json();
-      setPlans(data);
+      try {
+        const res = await fetch("/api/plan");
+        if (!res.ok) {
+          setPlans([]);
+          return;
+        }
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPlans(data);
+        } else {
+          setPlans([]);
+        }
+      } catch (error) {
+        setPlans([]);
+      }
     };
     fetchPlans();
   }, []);
@@ -26,60 +47,77 @@ export const PricingPlans = () => {
     billingPeriod === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
 
   return (
-    <section className="relative px-6 pb-20 -mt-20 bg-white">
-      <div className="mx-auto max-w-7xl grid gap-8 md:grid-cols-3">
-        {plans.map((plan) => (
-          <Card
-            key={plan.id}
-            className={`relative bg-white border ${
-              plan.badge === "Most Popular"
-                ? "border-blue-600 shadow-xl"
-                : "border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            {plan.badge && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <Badge className="bg-blue-600 text-white px-4 py-2 font-semibold">
-                  {plan.badge}
-                </Badge>
-              </div>
-            )}
+    <section className="relative px-6 py-16 bg-slate-50">
+      {/* Section Header */}
+      <div className="max-w-4xl mx-auto text-center mb-12">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-blue-700 mb-6 tracking-tight">
+          {cta?.title || "Simple, Transparent Pricing"}
+        </h2>
+        <p className="text-lg text-slate-600 max-w-2xl mx-auto font-medium">
+          {cta?.subtitle || "Choose the plan that fits your property management needs. No hidden fees."}
+        </p>
+      </div>
 
-            <CardHeader className="pb-6 pt-12 text-center">
-              <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-              <div className="mt-4">
-                <div className="flex justify-center items-baseline gap-1 mb-2">
-                  <span className="text-4xl font-bold">${currentPrice(plan)}</span>
-                  <span className="text-xl text-slate-500">/month</span>
+      <div className="mx-auto max-w-6xl">
+        <div className="grid gap-6 lg:grid-cols-3">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={`relative flex flex-col p-5 rounded-3xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${"bg-blue-700 text-white shadow-xl shadow-slate-900/10"
+                } ${plan.badge ? "ring-4 ring-blue-500/20 scale-[1.02] z-10" : ""}`}
+            >
+              {plan.badge && (
+                <div className="absolute top-0 right-0 p-3">
+                  <div className="bg-white/20 backdrop-blur-md text-white border border-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    {plan.badge}
+                  </div>
                 </div>
-                <CardDescription className="text-slate-600 mt-2">
+              )}
+
+              <div className="mb-4">
+                <h3 className="text-lg font-bold mb-1 text-white">
+                  {plan.name}
+                </h3>
+                <div className="flex items-baseline gap-1 my-3">
+                  <span className="text-base font-semibold text-blue-100">$</span>
+                  <span className="text-4xl font-extrabold text-white">
+                    {currentPrice(plan)}
+                  </span>
+                  <span className="text-xs font-medium text-blue-100/80">/mo</span>
+                </div>
+                <p className="text-sm leading-relaxed text-blue-50/80">
                   {plan.description}
-                </CardDescription>
+                </p>
               </div>
-            </CardHeader>
 
-            <CardContent className="pb-8">
-              <Button className="w-full text-lg py-3 font-semibold bg-blue-600 text-white">
-                Start Free Trial
-              </Button>
-
-              <div className="mt-8 space-y-4">
-                <p className="font-semibold text-lg border-b pb-2">
-                  What's included:
+              <div className="flex-grow space-y-2 mb-6">
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-3 border-b border-white/20 pb-3 text-blue-200">
+                  Includes
                 </p>
                 {plan.features.map((feature) => (
                   <div key={feature.id} className="flex items-start gap-3">
-                    <div className="h-5 w-5 flex items-center justify-center rounded-full bg-green-500 mt-1">
-                      <Check className="h-3 w-3 text-white" />
+                    <div className="mt-0.5 rounded-full p-0.5 bg-white/20">
+                      <Check className="w-3 h-3 text-white" />
                     </div>
-                    <span className="text-slate-700 text-sm">{feature.title}</span>
+                    <span className="text-[13px] font-medium leading-relaxed text-blue-50/90">
+                      {feature.title}
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        ))}
+
+              <Link href={`/signup?plan=${encodeURIComponent(plan.name)}`} className="w-full">
+                <Button
+                  className="w-full py-5 text-sm font-bold rounded-xl transition-all bg-white text-blue-900 hover:bg-blue-50 hover:shadow-lg"
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-3 h-3" />
+                </Button>
+              </Link>
+            </div>
+          ))}
+        </div>
       </div>
-    </section>
+    </section >
   );
 };

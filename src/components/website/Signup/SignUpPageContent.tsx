@@ -21,6 +21,7 @@ const SignupPageContent = () => {
     confirmPassword: "",
     organizationName: "",
     phone: "",
+    role: "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +31,7 @@ const SignupPageContent = () => {
   const [isSuccess, setIsSuccess] = useState(false);
 
   // ✅ Input Handler
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setFormData((prev) => ({
@@ -41,7 +42,7 @@ const SignupPageContent = () => {
     if (error) setError("");
   };
 
-  // ✅ Full Validation
+  //Full Validation
   const validateForm = () => {
     if (!formData.organizationName.trim())
       return "Company name is required";
@@ -72,10 +73,13 @@ const SignupPageContent = () => {
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match";
 
+    if (!formData.role)
+      return "Please select your role";
+
     return null;
   };
 
-  // ✅ Handle Submit
+  //Handle Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -100,12 +104,13 @@ const SignupPageContent = () => {
           lastName: formData.lastName,
           organizationName: formData.organizationName,
           phone: formData.phone,
+          role: formData.role,
         }),
       });
 
       const result = await response.json();
 
-      // ✅ Detect duplicate company
+      // Detect duplicate company
       if (!response.ok) {
         if (
           result.error === "ORGANIZATION_EXISTS" ||
@@ -224,6 +229,25 @@ const SignupPageContent = () => {
             />
           </div>
 
+          {/* Role Selection */}
+          <div>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleInputChange}
+              required
+              className="w-full h-12 border rounded px-3 text-base text-gray-700"
+            >
+              <option value="">Select Role</option>
+              <option value="SYSTEM_ADMIN">System Admin</option>
+              <option value="PROPERTY_MANAGER">Property Manager</option>
+              <option value="VENDOR">Vendor</option>
+              <option value="AGENT">Agent</option>
+              <option value="TENANT">Tenant</option>
+              <option value="LANDLORD">Landlord</option>
+            </select>
+          </div>
+
           {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
@@ -307,7 +331,7 @@ const SignupPageContent = () => {
           Sign in
         </a>
       </p>
-    </div>
+    </div >
   );
 };
 
