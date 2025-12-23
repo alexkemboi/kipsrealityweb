@@ -27,21 +27,33 @@ interface NavbarClientProps {
 }
 
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
+  const [mounted, setMounted] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+
   const { user, logout } = useAuth();
   const router = useRouter();
 
+  // Mount guard
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Scroll effect (safe – runs client only)
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const progress = Math.min(scrollY / 100, 1);
+      const progress = Math.min(window.scrollY / 100, 1);
       setScrollProgress(progress);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // prevent SSR/client mismatch
+  if (!mounted) {
+    return null;
+  }
 
   const handleLogout = async () => {
     await logout();
@@ -61,12 +73,11 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
   const getUserInitials = () => {
     if (!user) return "U";
-    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
   };
 
-  const formatRoleName = (role: string) => {
-    return role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const formatRoleName = (role: string) =>
+    role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   const backgroundOpacity = 0.95 * scrollProgress;
   const backdropBlur = `blur(${8 * scrollProgress}px)`;
