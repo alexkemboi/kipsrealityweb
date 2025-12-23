@@ -28,7 +28,7 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
 
   const handleLogout = async () => {
     await fetch('/api/auth', { method: 'DELETE' })
-    router.push('/login')
+    router.push('/')
   }
 
   return (
