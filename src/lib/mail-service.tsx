@@ -1,139 +1,76 @@
-import React from 'react';
+// src/lib/mail-service.tsx
 import { sendEmail } from "./mail";
-import { APP_NAME, BASE_URL } from "./constants";
-import { prisma } from "./db";
+import { APP_NAME, getBaseUrl } from "./constants";
 
 /**
- * @deprecated Use sendNotification({ template: 'PASSWORD_RESET' }) instead.
+ * 1. Password Reset Wrapper
  */
 export const sendPasswordResetEmail = async (email: string, token: string) => {
-    // 1. We need to find the ID because the new system works on IDs
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Dynamic URL based on environment
+    const resetUrl = `${getBaseUrl()}/reset-password?token=${token}`;
 
-    if (user) {
-        const resetUrl = `${BASE_URL}/reset-password?token=${token}`;
+    const emailBody = (
+        <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px', color: '#333' }}>
+            <h1>Reset your password for {APP_NAME}</h1>
+            <p>Someone requested a password reset for your account.</p>
+            <p>Click the link below to reset it. This link expires in 1 hour.</p>
+            <a
+                href={resetUrl}
+                style={{
+                    display: 'inline-block',
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    borderRadius: '5px',
+                    marginTop: '10px'
+                }}
+            >
+                Reset Password
+            </a>
+            <p style={{ marginTop: '20px', fontSize: '12px', color: '#666' }}>
+                If you did not request this, please ignore this email.
+            </p>
+        </div>
+    );
 
-        // 2. Delegate to the new system (Enforces Consent & centralized logic)
-        await sendNotification({
-            userId: user.id,
-            template: 'PASSWORD_RESET',
-            data: { url: resetUrl }
-        });
-    }
+    await sendEmail({
+        to: email,
+        subject: `Reset your ${APP_NAME} password`,
+        react: emailBody,
+    });
 };
 
 /**
- * @deprecated Use sendNotification({ template: 'VERIFY_EMAIL' }) instead.
+ * 2. Verification Wrapper
  */
 export const sendVerificationEmail = async (email: string, token: string) => {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const verifyUrl = `${getBaseUrl()}/api/auth/verify-email?token=${token}`;
 
-    if (user) {
-        const verifyUrl = `${BASE_URL}/api/auth/verify-email?token=${token}`;
+    const emailBody = (
+        <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px', color: '#333' }}>
+            <h1>Welcome to {APP_NAME}!</h1>
+            <p>Thank you for signing up. Please verify your email address to activate your account.</p>
+            <a
+                href={verifyUrl}
+                style={{
+                    display: 'inline-block',
+                    padding: '10px 20px',
+                    backgroundColor: '#28a745',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    borderRadius: '5px',
+                    marginTop: '10px'
+                }}
+            >
+                Verify Email
+            </a>
+        </div>
+    );
 
-        await sendNotification({
-            userId: user.id,
-            template: 'VERIFY_EMAIL',
-            data: { url: verifyUrl }
-        });
-    }
-};
-
-// -- New Template-Driven Notification System --
-
-export type EmailCategory = 'transactional' | 'notifications' | 'marketing';
-
-interface NotificationOptions {
-    userId: string;
-    template: 'WELCOME' | 'VERIFY_EMAIL' | 'PASSWORD_RESET' | 'BILLING_NOTICE' | 'MAINTENANCE_UPDATE';
-    data: Record<string, any>;
-}
-
-export const sendNotification = async ({ userId, template, data }: NotificationOptions) => {
-    // 1. Fetch User Data & Consents
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { email: true, firstName: true, consentTransactional: true, consentNotifications: true, consentMarketing: true }
-    });
-
-    if (!user) return;
-
-    // 2. Map Template to Category & Subject
-    let category: EmailCategory = 'notifications';
-    let subject = "";
-    let body: React.ReactElement = <div></div>;
-
-    switch (template) {
-        case 'VERIFY_EMAIL':
-            category = 'transactional';
-            subject = "Verify your RentFlow360 Account";
-            body = (
-                <div>
-                    <h1>Hi {user.firstName}</h1>
-                    <p>Click here to verify: {data.url}</p>
-                </div>
-            );
-            break;
-
-        case 'PASSWORD_RESET':
-            category = 'transactional';
-            subject = "Reset your Password";
-            body = (
-                <div>
-                    <p>Your reset link: {data.url}</p>
-                </div>
-            );
-            break;
-
-        case 'BILLING_NOTICE':
-            category = 'notifications'; // User can opt-out of this
-            subject = `Invoice Due: ${data.invoiceId}`;
-            body = (
-                <div>
-                    <p>Amount due: {data.amount}</p>
-                    <a href={data.url}>Pay Now</a>
-                </div>
-            );
-            break;
-
-        case 'MAINTENANCE_UPDATE':
-            category = 'notifications';
-            subject = "System Maintenance Update";
-            body = (
-                <div>
-                    <h1>Maintenance Scheduled</h1>
-                    <p>{data.message || "We will be performing scheduled maintenance."}</p>
-                </div>
-            );
-            break;
-
-        case 'WELCOME':
-            category = 'marketing'; // Categorized as marketing/onboarding to enable 'marketing' path
-            subject = `Welcome to ${APP_NAME}!`;
-            body = (
-                <div>
-                    <h1>Welcome, {user.firstName}!</h1>
-                    <p>We're excited to have you on board.</p>
-                </div>
-            );
-            break;
-    }
-
-    // 3. Consent Check logic
-    const hasConsent =
-        (category === 'transactional' && user.consentTransactional) ||
-        (category === 'notifications' && user.consentNotifications) ||
-        (category === 'marketing' && user.consentMarketing);
-
-    if (!hasConsent) {
-        console.log(`[Mail] User ${userId} has opted out of ${category} emails.`);
-        return;
-    }
-
-    // 4. Dispatch
     await sendEmail({
-        to: user.email,
-        subject: subject,
-        react: body,
+        to: email,
+        subject: `Welcome to ${APP_NAME} - Verify your email`,
+        react: emailBody,
     });
 };
