@@ -7,8 +7,7 @@ import Image from "next/image";
 import Logo from "@/assets/Logo.png";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, usePathname } from "next/navigation";
-import { UserDropdown } from "./UserDropdown";
+import { useRouter } from "next/navigation";
 import { MobileMenu } from "./ MobileMenu";
 
 interface NavbarItem {
@@ -27,20 +26,34 @@ interface NavbarClientProps {
 }
 
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Mount guard
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Scroll effect (safe – runs client only)
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const progress = Math.min(window.scrollY / 100, 1);
+      setScrollProgress(progress);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // prevent SSR/client mismatch
+  if (!mounted) {
+    return null;
+  }
 
   const handleLogout = async () => {
     await logout();
@@ -60,12 +73,11 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
   const getUserInitials = () => {
     if (!user) return "U";
-    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
   };
 
-  const formatRoleName = (role: string) => {
-    return role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const formatRoleName = (role: string) =>
+    role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   // Base text color should always be dark because the landing page hero is light
   const textColor = "text-slate-700";
@@ -161,49 +173,31 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
           </div>
 
           {/* User Actions */}
-          <div className="hidden md:flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`relative transition-colors duration-300 ${textColor} ${hoverColor} hover:bg-blue-50/50`}
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                </Button>
+          <div className="hidden lg:flex items-center space-x-4">
+            <Link href="/login">
+              <Button
+                variant={scrollProgress > 0.1 ? "ghost" : "outline"}
+                className={`font-inter transition-all duration-200 ${
+                  scrollProgress > 0.1
+                    ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
+                    : "text-white border-white/30 hover:bg-white/20 hover:text-white"
+                }`}
+              >
+                Login
+              </Button>
+            </Link>
 
-                <UserDropdown
-                  user={user}
-                  scrollProgress={isScrolled ? 1 : 0} // Simplify prop
-                  textColor={textColor}
-                  hoverColor={hoverColor}
-                  getDashboardPath={getDashboardPath}
-                  getUserInitials={getUserInitials}
-                  formatRoleName={formatRoleName}
-                  handleLogout={handleLogout}
-                />
-              </div>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button
-                    variant="outline"
-                    className={`font-semibold text-[15px] px-5 h-10 rounded-full border-blue-700 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all duration-300`}
-                  >
-                    Login
-                  </Button>
-                </Link>
-
-                <Link href="/signup">
-                  <Button
-                    className="h-10 px-6 rounded-full text-[15px] font-bold text-white bg-blue-700 hover:bg-blue-800 shadow-sm hover:shadow-md transition-all duration-300"
-                  >
-                    Sign up
-                  </Button>
-                </Link>
-              </>
-            )}
+            <Link href="/signup">
+              <Button
+                className={`transition-all duration-200 ${
+                  scrollProgress > 0.1
+                    ? "bg-blue-500 text-white hover:opacity-90"
+                    : "bg-white text-neutral-900 hover:bg-white/90"
+                }`}
+              >
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu */}

@@ -110,27 +110,6 @@ const AuthenticatedMobileContent = ({
     navLinks: readonly { name: string; href: string; }[];
 }) => (
     <div className="space-y-6">
-        {/* User Info Section */}
-        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl">
-            <Avatar className="h-12 w-12">
-                <AvatarImage src={user.avatarUrl} />
-                <AvatarFallback className="bg-blue-500 text-white">
-                    {getUserInitials()}
-                </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-                <div className="font-semibold text-neutral-900">
-                    {user.firstName} {user.lastName}
-                </div>
-                <div className="text-sm text-neutral-600">{user.email}</div>
-                <Badge
-                    variant="outline"
-                    className={`mt-1 text-xs bg-blue-100 text-blue-800 border-blue-200`}
-                >
-                    {formatRoleName(user.role)}
-                </Badge>
-            </div>
-        </div>
 
         {/* User Actions */}
         <div className="space-y-1">
@@ -214,7 +193,7 @@ const NavigationSection = ({
 const MobileAuthButtons = () => (
     <DrawerFooter className="flex flex-row gap-2">
         <DrawerClose asChild>
-            <Link href="/login" className="flex-1">
+            <Link href="/" className="flex-1">
                 <Button variant="outline" className="w-full">
                     Login
                 </Button>
