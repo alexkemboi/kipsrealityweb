@@ -29,6 +29,7 @@ interface NavbarClientProps {
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -60,12 +61,11 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
   const getUserInitials = () => {
     if (!user) return "U";
-    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
   };
 
-  const formatRoleName = (role: string) => {
-    return role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const formatRoleName = (role: string) =>
+    role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
   // Remove Privacy Policy from the top navbar (retain link in footer)
   const filteredNavLinks = navLinks.filter((n) => n.name !== "Privacy Policy");
@@ -178,7 +178,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
                 <UserDropdown
                   user={user}
-                  scrollProgress={isScrolled ? 1 : 0} // Simplify prop
+                  scrollProgress={isScrolled ? 1 : 0}
                   textColor={textColor}
                   hoverColor={hoverColor}
                   getDashboardPath={getDashboardPath}

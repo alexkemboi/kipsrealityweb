@@ -5,16 +5,17 @@ import { HelpCircle, Phone, FileText, Lock, Menu, User, LogOut, Settings } from 
 import Image from "next/image";
 import profilepivc from "../../../../public/favicon/favicon.ico";
 import insure from "../../../../public/favicon/favicon.ico";
+import { useLogout } from '@/hooks/useLogout';
 
 export default function Navbar() {
 	const router = useRouter();
 	const [menuOpen, setMenuOpen] = React.useState(false);
 	const menuRef = React.useRef<HTMLDivElement>(null);
+	const { logout } = useLogout();
 
 	const handleLogout = async () => {
-		setMenuOpen(false);
-		router.push('/login');
-	};
+      await logout()
+    }
 
 	// Close menu when clicking outside
 	React.useEffect(() => {
