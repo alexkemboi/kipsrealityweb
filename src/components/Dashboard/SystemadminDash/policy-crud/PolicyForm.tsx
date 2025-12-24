@@ -64,7 +64,7 @@ export default function PolicyForm({ policy, onSaved, onClose }: Props) {
         </button>
         <button
           onClick={handleSubmit}
-          className="px-3 py-1 bg-green-600 text-white rounded"
+          className="px-3 py-1 bg-green-500 text-white rounded"
         >
           {policy ? "Save Changes" : "Create"}
         </button>

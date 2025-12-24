@@ -61,7 +61,7 @@ export default function ViewPropertyPage() {
             {isApartment ? (
               <Building2 className="text-blue-600 w-6 h-6" />
             ) : (
-              <Home className="text-green-600 w-6 h-6" />
+              <Home className="text-navy-700 w-6 h-6" />
             )}
             <h1 className="text-3xl font-bold text-gray-900">{property.name}</h1>
           </div>
@@ -73,7 +73,7 @@ export default function ViewPropertyPage() {
               <span>{property.city}, {property.address}</span>
             </div>
             <div className="flex gap-2">
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${property.isFurnished ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}`}>
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${property.isFurnished ? "bg-navy-100 text-green-800" : "bg-gray-200 text-gray-700"}`}>
                 {property.isFurnished ? "Furnished" : "Unfurnished"}
               </span>
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">

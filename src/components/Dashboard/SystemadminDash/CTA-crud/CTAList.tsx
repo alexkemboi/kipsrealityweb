@@ -52,7 +52,7 @@ export default function CTAList() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">CTA Management</h1>
         <button
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"
+          className="bg-green-500 hover:bg-green-500 text-white px-4 py-2 rounded-md"
           onClick={() => { setEditingCTA(null); setShowForm(true); }}
         >
           + Add CTA

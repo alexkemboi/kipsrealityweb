@@ -8,6 +8,13 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const SignupPageContent = () => {
   const router = useRouter();
@@ -142,37 +149,37 @@ const SignupPageContent = () => {
   };
 
   return (
-    <div className="w-full p-6 lg:px-8 lg:py-6">
-      <Logo />
+    <div className="w-full p-8 lg:px-12 lg:py-4">
+      <Logo className="w-28 h-28" />
 
-      <div className="text-center mb-8">
-        <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-4">
+        <h2 className="text-2xl lg:text-3xl font-bold text-neutral-900 mb-2">
           Create Your Account
         </h2>
-        <p className="text-gray-600 text-sm lg:text-base">
+        <p className="text-neutral-500 text-sm lg:text-base">
           Join thousands of property managers
         </p>
       </div>
 
       {isSuccess ? (
-        <div className="text-center space-y-4 bg-green-50 p-6 rounded-xl border border-green-100">
-          <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <Mail className="w-6 h-6 text-green-600" />
+        <div className="text-center space-y-4 bg-navy-50 p-6 rounded-xl border border-green-100">
+          <div className="mx-auto w-12 h-12 bg-navy-100 rounded-full flex items-center justify-center mb-4">
+            <Mail className="w-6 h-6 text-[#003b73]" />
           </div>
-          <h3 className="text-xl font-semibold text-green-800">Check Your Email</h3>
-          <p className="text-gray-600">
-            We've sent a verification link to <strong>{formData.email}</strong>.
+          <h3 className="text-xl font-semibold text-neutral-900">Check Your Email</h3>
+          <p className="text-neutral-600">
+            We've sent a verification link to <strong className="text-neutral-900">{formData.email}</strong>.
             Please check your inbox to verify your account before logging in.
           </p>
           <Button
             onClick={() => router.push('/login')}
-            className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
+            className="w-full mt-4 bg-navy-700 hover:bg-navy-800 text-white"
           >
             Proceed to Login
           </Button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
 
           {/* Company Name */}
           <Input
@@ -182,11 +189,11 @@ const SignupPageContent = () => {
             value={formData.organizationName}
             onChange={handleInputChange}
             required
-            className="h-12 text-base"
+            className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
           />
 
           {/* Personal Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               type="text"
               name="firstName"
@@ -194,7 +201,7 @@ const SignupPageContent = () => {
               value={formData.firstName}
               onChange={handleInputChange}
               required
-              className="h-12 text-base"
+              className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
             />
             <Input
               type="text"
@@ -203,12 +210,12 @@ const SignupPageContent = () => {
               value={formData.lastName}
               onChange={handleInputChange}
               required
-              className="h-12 text-base"
+              className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
             />
           </div>
 
           {/* Contact Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               type="email"
               name="email"
@@ -216,7 +223,7 @@ const SignupPageContent = () => {
               value={formData.email}
               onChange={handleInputChange}
               required
-              className="h-12 text-base"
+              className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
             />
 
             <Input
@@ -225,31 +232,30 @@ const SignupPageContent = () => {
               placeholder="Phone Number"
               value={formData.phone}
               onChange={handleInputChange}
-              className="h-12 text-base"
+              className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
             />
           </div>
 
           {/* Role Selection */}
           <div>
-            <select
-              name="role"
+            <Select
               value={formData.role}
-              onChange={handleInputChange}
-              required
-              className="w-full h-12 border rounded px-3 text-base text-gray-700"
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
             >
-              <option value="">Select Role</option>
-              <option value="SYSTEM_ADMIN">System Admin</option>
-              <option value="PROPERTY_MANAGER">Property Manager</option>
-              <option value="VENDOR">Vendor</option>
-              <option value="AGENT">Agent</option>
-              <option value="TENANT">Tenant</option>
-              <option value="LANDLORD">Landlord</option>
-            </select>
+              <SelectTrigger className="w-full h-12 border-neutral-200 bg-white text-neutral-900 focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all text-base px-3">
+                <SelectValue placeholder="Select Role" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-neutral-200" side="bottom" sideOffset={4}>
+                <SelectItem value="PROPERTY_MANAGER" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Property Manager</SelectItem>
+                <SelectItem value="VENDOR" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Vendor</SelectItem>
+                <SelectItem value="AGENT" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Agent</SelectItem>
+                <SelectItem value="TENANT" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Tenant</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Passwords */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
             {/* Password */}
             <div className="relative">
@@ -260,12 +266,12 @@ const SignupPageContent = () => {
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                className="h-12 text-base pr-10"
+                className="h-12 text-base pr-10 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
@@ -280,14 +286,14 @@ const SignupPageContent = () => {
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 required
-                className="h-12 text-base pr-10"
+                className="h-12 text-base pr-10 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
               />
               <button
                 type="button"
                 onClick={() =>
                   setShowConfirmPassword(!showConfirmPassword)
                 }
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 {showConfirmPassword ? (
                   <EyeOff size={16} />
@@ -300,8 +306,8 @@ const SignupPageContent = () => {
 
           {/* Error Block */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm text-center">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+              <p className="text-red-500 text-sm text-center">{error}</p>
             </div>
           )}
 
@@ -309,7 +315,7 @@ const SignupPageContent = () => {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold"
+            className="w-full h-12 bg-[#003b73] hover:bg-[#002b5b] text-white text-base font-semibold"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
@@ -323,11 +329,12 @@ const SignupPageContent = () => {
             )}
           </Button>
         </form>
-      )}
+      )
+      }
 
-      <p className="text-center text-sm text-gray-600 mt-6">
+      <p className="text-center text-sm text-neutral-500 mt-4 pt-4 border-t border-neutral-100">
         Already have an account?{" "}
-        <a href="/login" className="text-blue-600 hover:underline font-semibold">
+        <a href="/login" className="text-neutral-600 hover:text-[#003b73] hover:underline font-semibold transition-colors">
           Sign in
         </a>
       </p>

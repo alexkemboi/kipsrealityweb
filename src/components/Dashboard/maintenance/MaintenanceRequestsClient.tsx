@@ -291,7 +291,7 @@ export default function MaintenanceRequestsClient(): ReactElement {
                       className={`px-3 py-1 rounded-full text-xs font-semibold
                         ${r.priority === "LOW" ? "bg-gray-200 text-gray-800"
                           : r.priority === "NORMAL" ? "bg-green-100 text-green-800"
-                          : r.priority === "HIGH" ? "bg-green-600 text-white"
+                          : r.priority === "HIGH" ? "bg-green-500 text-white"
                           : r.priority === "URGENT" ? "bg-red-500 text-white"
                           : "bg-orange-400 text-white"}`}
                     >

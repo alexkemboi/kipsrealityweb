@@ -225,7 +225,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold">usd {listing.price.toLocaleString()}</p>
+              <p className="text-xl font-bold">USD {listing.price.toLocaleString()}</p>
               <p className="text-xs text-blue-200">per month</p>
             </div>
           </div>

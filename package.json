@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/build-standalone.js",
     "start": "node .next/standalone/server.js",
     "create-admin": "tsx scripts/create-admin.ts",
     "lint": "next lint",

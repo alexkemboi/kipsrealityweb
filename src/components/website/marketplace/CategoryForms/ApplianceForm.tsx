@@ -52,7 +52,7 @@ export default function ApplianceForm() {
             <input
               {...register("price")}
               type="number"
-              placeholder="Price (KES)"
+              placeholder="Price (USD)"
               className="border p-3 rounded-lg w-full placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

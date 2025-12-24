@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Bell, ChevronDown } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/assets/Logo.png";
+import Logo from "@/assets/rf_logo.jpeg";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { UserDropdown } from "./UserDropdown";
 import { MobileMenu } from "./ MobileMenu";
 
 interface NavbarItem {
@@ -26,34 +27,21 @@ interface NavbarClientProps {
 }
 
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
-  const [mounted, setMounted] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
 
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  // Mount guard
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Scroll effect (safe – runs client only)
   useEffect(() => {
     const handleScroll = () => {
-      const progress = Math.min(window.scrollY / 100, 1);
-      setScrollProgress(progress);
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // prevent SSR/client mismatch
-  if (!mounted) {
-    return null;
-  }
 
   const handleLogout = async () => {
     await logout();
@@ -79,27 +67,30 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
   const formatRoleName = (role: string) =>
     role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
+  // Remove Privacy Policy from the top navbar (retain link in footer)
+  const filteredNavLinks = navLinks.filter((n) => n.name !== "Privacy Policy");
+
   // Base text color should always be dark because the landing page hero is light
   const textColor = "text-slate-700";
-  const hoverColor = "hover:text-blue-700";
+  const hoverColor = "hover:text-[#003b73]";
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-        ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200/50 py-2"
-        : "bg-white/90 backdrop-blur-md py-4 border-b border-slate-200"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? "bg-white shadow-md py-2"
+        : "bg-white py-4 border-b border-slate-100"
         }`}
     >
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 transition-all duration-300">
+      <div className="site-container">
+        <div className="flex items-center justify-between h-20 sm:h-24 transition-all duration-500">
           {/* Logo */}
           <Link href="/" className="flex items-center group cursor-pointer">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 transition-transform duration-300 group-hover:scale-105">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 transition-all duration-500 group-hover:scale-105">
               <Image
                 src={Logo}
                 alt="RentFlow360"
                 fill
-                className="object-contain"
+                className="object-contain mix-blend-multiply"
                 priority
               />
             </div>
@@ -107,7 +98,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {filteredNavLinks.map((link) => (
               <div
                 key={link.id}
                 className="relative group px-1"
@@ -119,17 +110,17 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
                     <button
                       className={`font-medium text-[15px] px-3 py-2 transition-all duration-300 flex items-center gap-1 group relative
                         ${pathname.startsWith(link.href) && link.href !== "/"
-                          ? "text-blue-700"
+                          ? "text-[#003b73]"
                           : `${textColor} ${hoverColor}`
                         }
-                        ${openSubmenu === link.id ? "text-blue-700" : ""}
+                        ${openSubmenu === link.id ? "text-[#003b73]" : ""}
                       `}
                     >
                       {link.name}
                       <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSubmenu === link.id ? 'rotate-180' : ''}`} />
 
                       {/* Submenu Trigger Underline */}
-                      <span className={`absolute bottom-0 left-1 right-1 h-[2px] bg-blue-700 transition-all duration-300 
+                      <span className={`absolute bottom-0 left-1 right-1 h-0.5 bg-[#003b73] transition-all duration-300 
                         ${(pathname.startsWith(link.href) && link.href !== "/") || openSubmenu === link.id ? "w-[calc(100%-8px)]" : "w-0 group-hover:w-[calc(100%-8px)]"}
                       `} />
                     </button>
@@ -145,7 +136,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
                         <Link
                           key={child.id}
                           href={child.href}
-                          className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-blue-700 hover:text-white transition-colors"
+                          className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-[#003b73] hover:text-white transition-colors"
                         >
                           {child.name}
                         </Link>
@@ -157,13 +148,13 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
                     href={link.href}
                     className={`relative font-medium text-[15px] px-4 py-2 transition-all duration-300 block group
                       ${pathname === link.href
-                        ? "text-blue-700"
-                        : `${textColor} hover:text-blue-700`
+                        ? "text-[#003b73]"
+                        : `${textColor} hover:text-[#003b73]`
                       }
                     `}
                   >
                     {link.name}
-                    <span className={`absolute bottom-0 left-4 right-4 h-[2px] bg-blue-700 transition-all duration-300
+                    <span className={`absolute bottom-0 left-4 right-4 h-0.5 bg-[#003b73] transition-all duration-300
                       ${pathname === link.href ? "w-[calc(100%-32px)]" : "w-0 group-hover:w-[calc(100%-32px)]"}
                     `} />
                   </Link>
@@ -173,31 +164,49 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
           </div>
 
           {/* User Actions */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <Link href="/login">
-              <Button
-                variant={scrollProgress > 0.1 ? "ghost" : "outline"}
-                className={`font-inter transition-all duration-200 ${
-                  scrollProgress > 0.1
-                    ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                    : "text-white border-white/30 hover:bg-white/20 hover:text-white"
-                }`}
-              >
-                Login
-              </Button>
-            </Link>
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`relative transition-colors duration-300 ${textColor} ${hoverColor} hover:bg-[#f0f7ff]`}
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                </Button>
 
-            <Link href="/signup">
-              <Button
-                className={`transition-all duration-200 ${
-                  scrollProgress > 0.1
-                    ? "bg-blue-500 text-white hover:opacity-90"
-                    : "bg-white text-neutral-900 hover:bg-white/90"
-                }`}
-              >
-                Get Started
-              </Button>
-            </Link>
+                <UserDropdown
+                  user={user}
+                  scrollProgress={isScrolled ? 1 : 0}
+                  textColor={textColor}
+                  hoverColor={hoverColor}
+                  getDashboardPath={getDashboardPath}
+                  getUserInitials={getUserInitials}
+                  formatRoleName={formatRoleName}
+                  handleLogout={handleLogout}
+                />
+              </div>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button
+                    variant="outline"
+                    className={`font-semibold text-[15px] px-5 h-10 rounded-full border-[#003b73] text-[#003b73] hover:bg-[#f0f7ff] hover:text-[#002b5b] transition-all duration-300`}
+                  >
+                    Login
+                  </Button>
+                </Link>
+
+                <Link href="/signup">
+                  <Button
+                    className="h-10 px-6 rounded-full text-[15px] font-bold text-white bg-[#003b73] hover:bg-[#002b5b] shadow-sm hover:shadow-md transition-all duration-300"
+                  >
+                    Sign up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -208,7 +217,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
             getUserInitials={getUserInitials}
             formatRoleName={formatRoleName}
             handleLogout={handleLogout}
-            navLinks={navLinks}
+            navLinks={filteredNavLinks}
           />
         </div>
       </div>

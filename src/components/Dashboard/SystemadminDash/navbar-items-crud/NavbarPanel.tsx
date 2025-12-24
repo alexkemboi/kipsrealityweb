@@ -201,7 +201,7 @@ const NavbarAdminPanel = () => {
             {!item.parentId && (
               <button
                 onClick={() => handleAddSubmenu(item.id)}
-                className="p-2 text-green-600 hover:bg-green-50 rounded"
+                className="p-2 text-green-500 hover:bg-green-50 rounded"
                 title="Add Submenu"
               >
                 <Plus className="w-4 h-4" />

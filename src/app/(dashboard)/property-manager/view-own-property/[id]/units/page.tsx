@@ -48,7 +48,7 @@ export default async function ManageUnitsPage({
           <div className="flex gap-4">
             <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm">
               <div className="text-sm text-gray-600">Occupied</div>
-              <div className="text-2xl font-bold text-green-600">{occupiedUnits}</div>
+              <div className="text-2xl font-bold text-navy-700">{occupiedUnits}</div>
             </div>
             <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm">
               <div className="text-sm text-gray-600">Vacant</div>
@@ -126,7 +126,7 @@ export default async function ManageUnitsPage({
                     <td className="px-6 py-4">
                       {unit.rentAmount ? (
                         <div className="flex items-center gap-2">
-                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <DollarSign className="w-4 h-4 text-navy-700" />
                           <span className="font-semibold text-gray-900">
                             KSh {unit.rentAmount.toLocaleString()}
                           </span>
@@ -152,7 +152,7 @@ export default async function ManageUnitsPage({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${
-                          unit.isOccupied ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                          unit.isOccupied ? 'bg-navy-500 animate-pulse' : 'bg-gray-400'
                         }`} />
                         <span className={`text-sm font-medium ${
                           unit.isOccupied ? 'text-green-800' : 'text-gray-600'
@@ -178,7 +178,7 @@ export default async function ManageUnitsPage({
                         
                         <Link
                           href={`/property-manager/view-own-property/${propertyId}/units/${unit.unitNumber}/list`}
-                          className="px-4 py-2 rounded-lg font-medium text-sm text-center bg-green-600 hover:bg-green-700 text-white transition-colors"
+                          className="px-4 py-2 rounded-lg font-medium text-sm text-center bg-navy-700 hover:bg-navy-800 text-white transition-colors"
                         >
                           List Unit
                         </Link>
@@ -208,11 +208,11 @@ export default async function ManageUnitsPage({
 
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-green-600" />
+            <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-navy-700" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">{occupiedUnits}</div>
+              <div className="text-2xl font-bold text-navy-700">{occupiedUnits}</div>
               <div className="text-sm text-gray-600">Occupied Units</div>
             </div>
           </div>

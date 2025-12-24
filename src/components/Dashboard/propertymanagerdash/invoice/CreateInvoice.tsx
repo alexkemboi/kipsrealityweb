@@ -25,7 +25,7 @@ export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
     <button
       onClick={handleGenerate}
       disabled={loading}
-      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
     >
       {loading ? "Generating..." : "Generate Full Invoice"}
     </button>

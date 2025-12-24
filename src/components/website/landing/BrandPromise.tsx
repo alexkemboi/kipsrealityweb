@@ -23,7 +23,7 @@ export default function BrandPromise() {
   ];
 
   return (
-    <section className="py-6 lg:py-8 bg-blue-50/20 overflow-hidden">
+    <section className="py-6 lg:py-8 bg-[#f0f7ff]/30 overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div
@@ -33,7 +33,7 @@ export default function BrandPromise() {
             transition={{ duration: 0.8 }}
             className="text-center mb-10"
           >
-            <h2 className="text-3xl md:text-4xl font-black text-blue-700 mb-6 tracking-tight font-heading">
+            <h2 className="text-3xl md:text-4xl font-black text-[#003b73] mb-6 tracking-tight font-heading">
               Our <span className="text-black">Brand Promise</span>
             </h2>
             <p className="text-lg md:text-xl text-slate-500/90 max-w-3xl mx-auto font-medium leading-relaxed opacity-95">
@@ -47,12 +47,12 @@ export default function BrandPromise() {
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center text-center p-8 lg:p-10 bg-white rounded-[24px] border-2 border-blue-700 shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group"
+                className="flex flex-col items-center text-center p-8 lg:p-10 bg-white rounded-[24px] border-2 border-[#003b73] shadow-sm hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group"
               >
-                <div className="w-14 h-14 rounded-2xl bg-blue-700 flex items-center justify-center text-white mb-6 group-hover:bg-blue-800 transition-all duration-300 shadow-md shadow-blue-900/10">
+                <div className="w-14 h-14 rounded-2xl bg-[#003b73] flex items-center justify-center text-white mb-6 group-hover:bg-[#002b5b] transition-all duration-300 shadow-md shadow-[#003b73]/10">
                   <promise.icon size={28} strokeWidth={2.5} />
                 </div>
-                <h4 className="text-xl font-black text-blue-700 mb-3 tracking-tight uppercase font-heading">
+                <h4 className="text-xl font-black text-[#003b73] mb-3 tracking-tight uppercase font-heading">
                   {promise.title}
                 </h4>
                 <p className="text-base text-slate-600 leading-relaxed font-semibold">

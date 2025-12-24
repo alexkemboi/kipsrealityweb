@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { groupId } = await context.params;
-    
+
     // Parse groupId (format: lease_id-date)
     const [leaseId, dateString] = decodeURIComponent(groupId).split('-');
     const dueDate = new Date(dateString);
@@ -44,10 +44,10 @@ export async function GET(
 
     // Generate simple text content
     const textContent = generateTextContent(invoices, dateString);
-    
+
     // Convert to Blob for download
     const blob = new Blob([textContent], { type: 'text/plain' });
-    
+
     return new Response(blob, {
       headers: {
         'Content-Type': 'text/plain',
@@ -68,10 +68,10 @@ function generateTextContent(invoices: any[], dateString: string): string {
   const tenant = invoices[0]?.Lease?.tenant;
   const property = invoices[0]?.Lease?.property;
   const unit = invoices[0]?.Lease?.unit;
-  
+
   // Fixed: Added proper types for reduce functions
   const totalAmount = invoices.reduce((sum: number, inv: any) => sum + inv.amount, 0);
-  const totalPaid = invoices.reduce((sum: number, inv: any) => 
+  const totalPaid = invoices.reduce((sum: number, inv: any) =>
     sum + inv.payment.reduce((pSum: number, p: any) => pSum + p.amount, 0), 0
   );
 
@@ -90,10 +90,10 @@ INVOICE BREAKDOWN:
   invoices.forEach((invoice: any) => {
     content += `
 ${invoice.type} INVOICE:
-  Amount: KES ${invoice.amount.toLocaleString()}
+  Amount: USD ${invoice.amount.toLocaleString()}
   Status: ${invoice.status}
   Items:${invoice.InvoiceItem.length > 0 ? '' : ' None'}
-${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: KES ${item.amount.toLocaleString()}`).join('\n')}
+${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
 `;
   });
 

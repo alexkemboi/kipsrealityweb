@@ -91,7 +91,7 @@ export default function SidebarItemList() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Sidebar Items</h1>
         <button
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors"
+          className="bg-green-500 hover:bg-green-500 text-white px-4 py-2 rounded-md transition-colors"
           onClick={() => {
             setEditingItem(null);
             setShowForm(true);
@@ -177,7 +177,7 @@ export default function SidebarItemList() {
                       {item.feature && (
                         <div>
                           <span className="font-medium">Feature:</span>{" "}
-                          <span className="text-green-600">{item.feature.title}</span>
+                          <span className="text-green-500">{item.feature.title}</span>
                         </div>
                       )}
                       {item.plans && item.plans.length > 0 && (

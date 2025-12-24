@@ -54,7 +54,7 @@ export default function WhatMakes() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-700 mb-4 tracking-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#003b73] mb-4 tracking-tight">
               What Makes <span className="text-black">Us Different</span>
             </h2>
             <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
@@ -90,16 +90,16 @@ export default function WhatMakes() {
                 }}
                 className="relative bg-white rounded-2xl p-8 
                            border border-slate-100 shadow-[0_2px_15px_rgb(0,0,0,0.03)] 
-                           hover:bg-blue-50/50 hover:shadow-[0_15px_30px_rgb(0,0,0,0.08)] 
+                           hover:bg-[#f0f7ff] hover:shadow-[0_15px_30px_rgb(0,0,0,0.08)] 
                            transition-all duration-300 group flex flex-col h-full"
               >
                 {/* Icon Container */}
-                <div className="mb-6 inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-700 text-white shadow-sm transition-transform group-hover:scale-110">
+                <div className="mb-6 inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#003b73] text-white shadow-sm transition-transform group-hover:scale-110">
                   <IconComponent className="w-7 h-7" />
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-blue-700 mb-3 transition-colors">
+                <h3 className="text-xl font-bold text-[#003b73] mb-3 transition-colors">
                   {item.title}
                 </h3>
 
@@ -109,7 +109,7 @@ export default function WhatMakes() {
                 </p>
 
                 {/* Bottom Border Accent */}
-                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-blue-600/10 group-hover:bg-blue-600 transition-colors rounded-b-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-full h-[3px] bg-[#003b73]/10 group-hover:bg-[#003b73] transition-colors rounded-b-2xl"></div>
               </motion.div>
             );
           })}

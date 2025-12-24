@@ -225,7 +225,7 @@
 //                         {p.type?.toLowerCase() === "apartment" ? (
 //                           <Building2 className="text-blue-600 w-6 h-6" />
 //                         ) : (
-//                           <Home className="text-green-600 w-6 h-6" />
+//                           <Home className="text-navy-700 w-6 h-6" />
 //                         )}
 //                         <div>
 //                           <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600">
@@ -290,7 +290,7 @@
 //                       <div className="space-y-1">
 //                         <span
 //                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-//                             p.availabilityStatus === "available" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+//                             p.availabilityStatus === "available" ? "bg-navy-100 text-green-800" : "bg-gray-100 text-gray-800"
 //                           }`}
 //                         >
 //                           {p.availabilityStatus || "Unknown"}
@@ -361,12 +361,12 @@
 //                                   setEditModalOpen(true); 
 //                                   setOpenMenu(null); 
 //                                 }}
-//                                 className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors group"
+//                                 className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-navy-50 hover:text-navy-900 transition-colors group"
 //                               >
-//                                 <Edit className="w-4 h-4 mr-3 text-gray-400 group-hover:text-green-600" />
+//                                 <Edit className="w-4 h-4 mr-3 text-gray-400 group-hover:text-navy-700" />
 //                                 <div className="text-left">
 //                                   <div className="font-medium">Update Property</div>
-//                                   <div className="text-xs text-gray-500 group-hover:text-green-600">Edit property details</div>
+//                                   <div className="text-xs text-gray-500 group-hover:text-navy-700">Edit property details</div>
 //                                 </div>
 //                               </button>
 
@@ -696,7 +696,7 @@ export default function PropertyManagerPage() {
                         {p.type?.toLowerCase() === "apartment" ? (
                           <Building2 className="text-blue-600 w-6 h-6" />
                         ) : (
-                          <Home className="text-green-600 w-6 h-6" />
+                          <Home className="text-navy-700 w-6 h-6" />
                         )}
                         <div>
                           <h2 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600">
@@ -761,7 +761,7 @@ export default function PropertyManagerPage() {
                       <div className="space-y-1">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            p.availabilityStatus === "available" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                            p.availabilityStatus === "available" ? "bg-navy-100 text-green-800" : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {p.availabilityStatus || "Unknown"}
@@ -826,12 +826,12 @@ export default function PropertyManagerPage() {
                                   setEditModalOpen(true); 
                                   setOpenMenu(null); 
                                 }}
-                                className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors group"
+                                className="flex items-center w-full px-4 py-3 text-sm text-gray-700 hover:bg-navy-50 hover:text-navy-900 transition-colors group"
                               >
-                                <Edit className="w-4 h-4 mr-3 text-gray-400 group-hover:text-green-600" />
+                                <Edit className="w-4 h-4 mr-3 text-gray-400 group-hover:text-navy-700" />
                                 <div className="text-left">
                                   <div className="font-medium">Update Property</div>
-                                  <div className="text-xs text-gray-500 group-hover:text-green-600">Edit property details</div>
+                                  <div className="text-xs text-gray-500 group-hover:text-navy-700">Edit property details</div>
                                 </div>
                               </button>
 

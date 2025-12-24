@@ -406,7 +406,7 @@ const Dashboard = () => {
 										</button>
 									</Link>
 									<Link href="/property-manager/content/tenants">
-										<button className="inline-flex items-center px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition-all">
+										<button className="inline-flex items-center px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow transition-all">
 											+ Add Tenant
 										</button>
 									</Link>

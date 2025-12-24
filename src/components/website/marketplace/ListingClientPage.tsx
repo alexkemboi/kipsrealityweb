@@ -11,7 +11,7 @@ export interface MarketplaceItem {
   description?: string;
   price: number;
   image: string;
-  
+
 
   unitId?: string | null;
   propertyId?: string | null;
@@ -41,8 +41,8 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
   const [selectedListing, setSelectedListing] = useState<MarketplaceItem | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  
-  
+
+
 
   const handleApply = (listing: MarketplaceItem) => {
     const unitId = listing.unitId ?? listing.unit?.id;
@@ -88,7 +88,7 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
               placeholder="Search listings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#003b73] focus:border-transparent transition-all"
             />
             {searchTerm && (
               <button
@@ -100,9 +100,9 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
             )}
           </div>
 
-          
 
-       
+
+
         </div>
       </div>
 
@@ -119,12 +119,12 @@ export function MarketplaceClientPage({ listings: initialListings }: Marketplace
                 <h3 className="font-semibold text-xl text-gray-900">{item.title}</h3>
                 <p className="text-gray-600 text-sm line-clamp-3">{item.description}</p>
                 <div className="flex items-center justify-between mt-4">
-                  <span className="text-blue-600 font-semibold">usd {item.price.toLocaleString()}</span>
+                  <span className="text-[#003b73] font-semibold">USD {item.price.toLocaleString()}</span>
                 </div>
                 <div className="mt-5">
                   <button
                     onClick={() => handleApply(item)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold transition-all duration-200"
+                    className="w-full bg-[#003b73] hover:bg-[#002b5b] text-white py-2.5 rounded-xl font-semibold transition-all duration-200"
                   >
                     Apply for Property
                   </button>

@@ -64,54 +64,54 @@ export default function UtilitiesPage() {
   }, []);
 
   const loadData = async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    // No need to get token manually; API will read cookie automatically
-    const [utilRes, propRes] = await Promise.all([
-      fetch("/api/utilities"),
-      fetch("/api/propertymanager"),
-    ]);
+      // No need to get token manually; API will read cookie automatically
+      const [utilRes, propRes] = await Promise.all([
+        fetch("/api/utilities"),
+        fetch("/api/propertymanager"),
+      ]);
 
-    const [utilData, propData] = await Promise.all([utilRes.json(), propRes.json()]);
+      const [utilData, propData] = await Promise.all([utilRes.json(), propRes.json()]);
 
-    // ✅ Ensure utilities is an array
-    if (utilRes.ok) {
-      const list = Array.isArray(utilData)
-        ? utilData
-        : Array.isArray(utilData.data)
-        ? utilData.data
-        : [];
-      setUtilities(list);
-    } else {
-      setError(utilData.error || "Failed to load utilities");
-      toast.error(utilData.error || "Failed to load utilities");
-      setUtilities([]); // fallback
+      // ✅ Ensure utilities is an array
+      if (utilRes.ok) {
+        const list = Array.isArray(utilData)
+          ? utilData
+          : Array.isArray(utilData.data)
+            ? utilData.data
+            : [];
+        setUtilities(list);
+      } else {
+        setError(utilData.error || "Failed to load utilities");
+        toast.error(utilData.error || "Failed to load utilities");
+        setUtilities([]); // fallback
+      }
+
+      // ✅ Ensure properties is an array
+      if (propRes.ok) {
+        const props = Array.isArray(propData)
+          ? propData
+          : Array.isArray(propData.data)
+            ? propData.data
+            : [];
+        setProperties(props);
+      } else {
+        toast.error(propData.error || "Failed to load properties");
+        setProperties([]); // fallback
+      }
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while loading data");
+      toast.error("Failed to load data");
+      setUtilities([]); // safe fallback
+      setProperties([]); // safe fallback
+    } finally {
+      setIsLoading(false);
     }
-
-    // ✅ Ensure properties is an array
-    if (propRes.ok) {
-      const props = Array.isArray(propData)
-        ? propData
-        : Array.isArray(propData.data)
-        ? propData.data
-        : [];
-      setProperties(props);
-    } else {
-      toast.error(propData.error || "Failed to load properties");
-      setProperties([]); // fallback
-    }
-  } catch (err) {
-    console.error(err);
-    setError("An error occurred while loading data");
-    toast.error("Failed to load data");
-    setUtilities([]); // safe fallback
-    setProperties([]); // safe fallback
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
   const handleDelete = async (id: string, name: string) => {
@@ -146,20 +146,20 @@ export default function UtilitiesPage() {
 
   const formatCurrency = (amount?: number) =>
     amount
-      ? new Intl.NumberFormat("en-KE", {
-          style: "currency",
-          currency: "KES",
-        }).format(amount)
+      ? new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(amount)
       : "-";
 
   // ✅ Defensive filtering
   const filteredUtilities = Array.isArray(utilities)
     ? utilities.filter((u) => {
-        let match = true;
-        if (selectedProperty !== "all") match = u.propertyId === selectedProperty;
-        if (match && selectedUnit !== "all") match = u.unitId === selectedUnit;
-        return match;
-      })
+      let match = true;
+      if (selectedProperty !== "all") match = u.propertyId === selectedProperty;
+      if (match && selectedUnit !== "all") match = u.unitId === selectedUnit;
+      return match;
+    })
     : [];
 
   const availableUnits =
@@ -172,30 +172,30 @@ export default function UtilitiesPage() {
       <Toaster position="top-right" richColors />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-4xl font-bold text-[#0b1f3a]">Utilities</h2>
-          <p className="text-[#15386a]/70 mt-2">
-            Manage utility types and pricing
-          </p>
-        </div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-4xl font-bold text-[#0b1f3a]">Utilities</h2>
+            <p className="text-[#15386a]/70 mt-2">
+              Manage utility types and pricing
+            </p>
+          </div>
 
-        <div className="flex gap-3">
-          {/* Add Reading Button */}
-          <Link href="/property-manager/content/meter-readings">
-            <Button className="bg-[#15386a] hover:bg-[#15386a]/90 text-white shadow-lg shadow-[#15386a]/20 hover:shadow-xl transition-all">
-              <Plus className="mr-2 w-4 h-4" /> Reading
-            </Button>
-          </Link>
+          <div className="flex gap-3">
+            {/* Add Reading Button */}
+            <Link href="/property-manager/content/meter-readings">
+              <Button className="bg-[#15386a] hover:bg-[#15386a]/90 text-white shadow-lg shadow-[#15386a]/20 hover:shadow-xl transition-all">
+                <Plus className="mr-2 w-4 h-4" /> Reading
+              </Button>
+            </Link>
 
-          {/* Add Utility Button */}
-          <Link href="/property-manager/content/utilities/new">
-            <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20 hover:shadow-xl transition-all">
-              <Plus className="mr-2 w-4 h-4" /> Add Utility
-            </Button>
-          </Link>
+            {/* Add Utility Button */}
+            <Link href="/property-manager/content/utilities/new">
+              <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white shadow-lg shadow-[#30D5C8]/20 hover:shadow-xl transition-all">
+                <Plus className="mr-2 w-4 h-4" /> Add Utility
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
 
 
         {/* Filters */}
@@ -308,11 +308,10 @@ export default function UtilitiesPage() {
                         </TableCell>
                         <TableCell>
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              u.type === "FIXED"
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${u.type === "FIXED"
                                 ? "bg-[#15386a]/10 text-[#15386a]"
                                 : "bg-[#30D5C8]/10 text-[#30D5C8]"
-                            }`}
+                              }`}
                           >
                             {u.type === "FIXED" ? "Fixed" : "Metered"}
                           </span>

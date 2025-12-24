@@ -102,7 +102,7 @@ export default function InvoicesPage() {
 
           <button
             onClick={downloadPDF}
-            className="bg-green-600 text-white px-5 py-2 rounded-lg shadow hover:bg-green-700"
+            className="bg-navy-700 text-white px-5 py-2 rounded-lg shadow hover:bg-navy-800"
           >
             Download PDF
           </button>

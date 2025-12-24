@@ -5,7 +5,7 @@ export default function Plans() {
       description:
         "Streamline property listings, maintenance requests, and lease tracking with ease.",
       icon: "🏢",
-      accent: "text-blue-700",
+      accent: "text-[#003b73]",
     },
     {
       title: "Tenant Screening",
@@ -19,7 +19,7 @@ export default function Plans() {
       description:
         "Automated rent reminders and secure online payment options for reliable cash flow.",
       icon: "💳",
-      accent: "text-blue-700",
+      accent: "text-[#003b73]",
     },
     {
       title: "Utility Payments",
@@ -51,9 +51,9 @@ export default function Plans() {
           {plans.map((plan, i) => (
             <div
               key={i}
-              className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col items-start shadow-sm hover:shadow-lg hover:border-blue-700 transition duration-300 group"
+              className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col items-start shadow-sm hover:shadow-lg hover:border-[#003b73] transition duration-300 group"
             >
-              <div className={`text-5xl mb-4 ${plan.accent === "text-[#FACC15]" ? "text-blue-700" : "text-slate-700"}`}>{plan.icon}</div>
+              <div className={`text-5xl mb-4 ${plan.accent === "text-[#FACC15]" ? "text-[#003b73]" : "text-slate-700"}`}>{plan.icon}</div>
               <h4 className="text-xl font-semibold text-slate-900 mb-2">{plan.title}</h4>
               <p className="text-gray-600 text-sm leading-relaxed">{plan.description}</p>
             </div>
@@ -61,7 +61,7 @@ export default function Plans() {
         </div>
 
         <div className="mt-14">
-          <button className="bg-blue-700 text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-blue-700/20 hover:bg-blue-800 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+          <button className="bg-[#003b73] text-white font-bold px-10 py-4 rounded-full shadow-lg shadow-[#003b73]/20 hover:bg-[#002b5b] hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
             Get Started
           </button>
         </div>
