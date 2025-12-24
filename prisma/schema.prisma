@@ -311,8 +311,16 @@ model Policy {
   responseTime             String?
   inactiveAccountThreshold String?
   createdAt                DateTime  @default(now())
-  updatedAt                DateTime
+  updatedAt                DateTime  @updatedAt
   Section                  Section[]
+
+  // --- LEGACY FIELDS (Restored to prevent data loss) ---
+  /// @deprecated [Legacy] Unused in new design
+  contactEmailLabel String?
+  /// @deprecated [Legacy] Unused in new design
+  contactPhone      String?
+  /// @deprecated [Legacy] Unused in new design
+  contactPhoneLabel String?
 }
 
 model Section {
@@ -406,24 +414,20 @@ model PropertyType {
   properties  Property[]
 }
 
-
-
 model Property {
-  id                     String                  @id @default(uuid())
-  listingId              String?                 @unique
-  managerId              String?
-  organizationId         String?
-  propertyTypeId         String?
-  locationId             String?
-  city                   String
-  address                String
-  amenities              String?
-  isFurnished            Boolean                 @default(false)
-  availabilityStatus     String?
-  createdAt              DateTime                @default(now())
-  name                   String?
-
-
+  id                 String   @id @default(uuid())
+  listingId          String?  @unique
+  managerId          String?
+  organizationId     String?
+  propertyTypeId     String?
+  locationId         String?
+  city               String
+  address            String
+  amenities          String?
+  isFurnished        Boolean  @default(false)
+  availabilityStatus String?
+  createdAt          DateTime @default(now())
+  name               String?
 
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
@@ -436,10 +440,10 @@ model Property {
   organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
 
-  tenantapplications     Tenantapplication[]
-  units                  Unit[]
-  DssDocument            DssDocument[]
-  DssWorkflowTemplate    DssWorkflowTemplate[]
+  tenantapplications  Tenantapplication[]
+  units               Unit[]
+  DssDocument         DssDocument[]
+  DssWorkflowTemplate DssWorkflowTemplate[]
 
   // ---------------------------------------------------------
   // ⛔ LEGACY FIELDS (DEPRECATED)
@@ -467,7 +471,6 @@ model Property {
   // Relation to the legacy images table
   images PropertyImage[]
 
-
   @@index([locationId], map: "Property_locationId_fkey")
   @@index([managerId], map: "Property_managerId_fkey")
   @@index([organizationId], map: "Property_organizationId_fkey")
@@ -481,6 +484,18 @@ model PropertyImage {
   url        String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  // --- RESTORED METADATA FIELDS ---
+  /// @deprecated [Legacy]
+  publicId String?
+  /// @deprecated [Legacy]
+  format   String?
+  /// @deprecated [Legacy]
+  height   Int?
+  /// @deprecated [Legacy]
+  width    Int?
+  /// @deprecated [Legacy]
+  order    Int?
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
@@ -585,8 +600,6 @@ model ListingImage {
   @@index([listingId], map: "ListingImage_listingId_fkey")
 }
 
-
-
 model ServiceMarketplace {
   id            String            @id @default(uuid())
   listingId     String            @unique
@@ -611,12 +624,6 @@ model ServiceType {
   createdAt          DateTime             @default(now())
   serviceMarketplace ServiceMarketplace[]
 }
-
-
-
-
-
-
 
 model Tenantapplication {
   id       String   @id @default(uuid())
@@ -864,9 +871,6 @@ model utility_reading {
 
 // ---------------- MAINTENANCE & OPERATIONS ----------------
 
-
-
-
 model OccupancyHistory {
   id            String   @id
   propertyId    String
@@ -899,8 +903,6 @@ model AdminAction {
   @@index([targetOrgUserId], map: "AdminAction_targetOrgUserId_fkey")
 }
 
-
-
 model NavbarItem {
   id          Int          @id @default(autoincrement())
   name        String
@@ -917,8 +919,6 @@ model NavbarItem {
   @@index([parentId])
   @@index([order])
 }
-
-
 
 model LeaseAmendment {
   id             String                       @id
@@ -1035,10 +1035,6 @@ model RentEscalation {
   @@index([effectiveDate], map: "idx_rentEscalation_effectiveDate")
   @@index([leaseId], map: "idx_rentEscalation_leaseId")
 }
-
-
-
-
 
 enum UserRole {
   SYSTEM_ADMIN
