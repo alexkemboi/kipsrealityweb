@@ -306,8 +306,16 @@ model Policy {
   responseTime             String?
   inactiveAccountThreshold String?
   createdAt                DateTime  @default(now())
-  updatedAt                DateTime
+  updatedAt                DateTime  @updatedAt
   Section                  Section[]
+
+  // --- LEGACY FIELDS (Restored to prevent data loss) ---
+  /// @deprecated [Legacy] Unused in new design
+  contactEmailLabel String?
+  /// @deprecated [Legacy] Unused in new design
+  contactPhone      String?
+  /// @deprecated [Legacy] Unused in new design
+  contactPhoneLabel String?
 }
 
 model Section {
@@ -402,6 +410,20 @@ model PropertyType {
 }
 
 model Property {
+  id                 String   @id @default(uuid())
+  listingId          String?  @unique
+  managerId          String?
+  organizationId     String?
+  propertyTypeId     String?
+  locationId         String?
+  city               String
+  address            String
+  amenities          String?
+  isFurnished        Boolean  @default(false)
+  availabilityStatus String?
+  createdAt          DateTime @default(now())
+  name               String?
+
   id                     String                   @id @default(uuid())
   listingId              String?                  @unique
   managerId              String?
@@ -426,6 +448,42 @@ model Property {
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]     @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
+  listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
+  location               Location?               @relation(fields: [locationId], references: [id])
+  manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
+  organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
+
+  tenantapplications  Tenantapplication[]
+  units               Unit[]
+  DssDocument         DssDocument[]
+  DssWorkflowTemplate DssWorkflowTemplate[]
+
+  // ---------------------------------------------------------
+  // ⛔ LEGACY FIELDS (DEPRECATED)
+  // These are kept only to prevent crashes. Do not use for new features.
+  // ---------------------------------------------------------
+
+  /// @deprecated [Legacy] Use 'manager.email' or 'organization.email' instead.
+  contactEmail String?
+
+  /// @deprecated [Legacy] Use 'manager.phone' or 'organization.phone' instead.
+  contactPhone String?
+
+  /// @deprecated [Legacy] Use the 'Location' relation (property.location.country) instead.
+  country String?
+
+  /// @deprecated [Legacy] Use the 'Location' relation instead.
+  zipCode String?
+
+  /// @deprecated [Legacy] Use the 'Location' relation or specialized Map integration.
+  latitude Float?
+
+  /// @deprecated [Legacy] Use the 'Location' relation or specialized Map integration.
+  longitude Float?
+
+  // Relation to the legacy images table
+  images PropertyImage[]
   listing                Listing?                 @relation("PropertyListing", fields: [listingId], references: [id])
   location               Location?                @relation(fields: [locationId], references: [id])
   manager                OrganizationUser?        @relation(fields: [managerId], references: [id])
@@ -454,6 +512,20 @@ model PropertyImage {
   order      Int?     @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  // --- RESTORED METADATA FIELDS ---
+  /// @deprecated [Legacy]
+  publicId String?
+  /// @deprecated [Legacy]
+  format   String?
+  /// @deprecated [Legacy]
+  height   Int?
+  /// @deprecated [Legacy]
+  width    Int?
+  /// @deprecated [Legacy]
+  order    Int?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
@@ -812,6 +884,8 @@ model utility_reading {
   @@map("utility_reading")
 }
 
+// ---------------- MAINTENANCE & OPERATIONS ----------------
+
 model OccupancyHistory {
   id            String   @id
   propertyId    String
@@ -977,6 +1051,14 @@ model RentEscalation {
   @@index([leaseId], map: "idx_rentEscalation_leaseId")
 }
 
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  AGENT
+  LANDLORD
+  ALL
 model blockchain_notary_records {
   id               String                           @id
   organization_id  String
