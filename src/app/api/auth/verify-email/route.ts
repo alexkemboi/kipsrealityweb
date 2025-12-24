@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getBaseUrl } from '@/lib/constants'; // Import the helper
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
-    // Helper to redirect with error
+    // Helper using dynamic base URL
     const redirectToLogin = (params: string) => {
-        return NextResponse.redirect(new URL(`/login?${params}`, request.url));
+        return NextResponse.redirect(`${getBaseUrl()}/login?${params}`);
     };
 
     if (!token) {

@@ -4,16 +4,25 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendVerificationEmail } from "@/lib/mail-service";
 
-const DEFAULT_ROLE = 'PROPERTY_MANAGER';
+const ALLOWED_ROLES = ['SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'LANDLORD', 'VENDOR', 'TENANT', 'AGENT'] as const;
+type UserRole = typeof ALLOWED_ROLES[number];
 
 export async function POST(request: Request) {
   try {
-    const { email, password, firstName, lastName, organizationName } = await request.json();
+    const { email, password, firstName, lastName, organizationName, role } = await request.json();
 
     // 1. Validate Input
-    if (!email || !password || !organizationName) {
+    if (!email || !password || !organizationName || !role) {
       return NextResponse.json(
-        { error: 'Email, password, and organization name are required' },
+        { error: 'Email, password, organization name, and role are required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate role
+    if (!ALLOWED_ROLES.includes(role as UserRole)) {
+      return NextResponse.json(
+        { error: 'Invalid role selected' },
         { status: 400 }
       );
     }
@@ -63,12 +72,12 @@ export async function POST(request: Request) {
         },
       });
 
-      // C. Link User to Organization
+      // C. Link User to Organization with their selected role
       await tx.organizationUser.create({
         data: {
           userId: user.id,
           organizationId: organization.id,
-          role: DEFAULT_ROLE,
+          role: role,
         },
       });
 

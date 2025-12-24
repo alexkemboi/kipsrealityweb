@@ -17,10 +17,10 @@ export default function ClientAnimations() {
   }, []);
 
   return (
-    <div 
+    <div
       className="absolute inset-0 opacity-30 transition-opacity duration-300 pointer-events-none"
       style={{
-        background: `radial-gradient(600px circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(20,184,166,0.15), transparent 40%)`
+        background: `radial-gradient(600px circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(29, 78, 216, 0.15), transparent 40%)`
       }}
     />
   );

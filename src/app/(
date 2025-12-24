@@ -1,0 +1,303 @@
+"use client";
+
+import { useAuth } from "@/context/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { 
+  CalendarDays, 
+  Clock, 
+  DollarSign, 
+  FileText, 
+  Home,
+  TrendingUp,
+  Users,
+  Eye,
+  Phone,
+  Mail
+} from "lucide-react";
+
+export default function AgentDashboard() {
+  const { user } = useAuth();
+
+  // Mock data for demonstration
+  const dashboardStats = {
+    totalListings: 15,
+    activeListings: 12,
+    totalViews: 2840,
+    inquiries: 23,
+    scheduledViewings: 8,
+    monthlyEarnings: 8500,
+    commissionRate: "3%",
+    responseTime: "1.2 hours"
+  };
+
+  const recentListings = [
+    {
+      id: "1",
+      address: "123 Oak Street, Downtown",
+      type: "Apartment",
+      price: 2400,
+      status: "Active",
+      views: 156,
+      inquiries: 5,
+      lastViewed: "2 hours ago"
+    },
+    {
+      id: "2",
+      address: "456 Pine Avenue, Suburbs",
+      type: "House",
+      price: 3200,
+      status: "Pending",
+      views: 89,
+      inquiries: 3,
+      lastViewed: "1 day ago"
+    },
+    {
+      id: "3",
+      address: "789 Maple Drive, City Center",
+      type: "Condo",
+      price: 2800,
+      status: "Active",
+      views: 203,
+      inquiries: 8,
+      lastViewed: "30 minutes ago"
+    }
+  ];
+
+  const upcomingViewings = [
+    {
+      id: "1",
+      address: "123 Oak Street, Downtown",
+      client: "John Smith",
+      time: "2:00 PM",
+      date: "2025-12-17",
+      phone: "(555) 123-4567"
+    },
+    {
+      id: "2",
+      address: "456 Pine Avenue, Suburbs",
+      client: "Sarah Johnson",
+      time: "4:30 PM",
+      date: "2025-12-17",
+      phone: "(555) 987-6543"
+    },
+    {
+      id: "3",
+      address: "789 Maple Drive, City Center",
+      client: "Mike Wilson",
+      time: "10:00 AM",
+      date: "2025-12-18",
+      phone: "(555) 456-7890"
+    }
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-3xl font-bold text-gray-900">Agent Dashboard</h1>
+        <p className="text-gray-600">
+          Welcome back, {user?.firstName || user?.email}! Here's your property portfolio overview.
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardStats.totalListings}</div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardStats.activeListings} active
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardStats.totalViews.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              +12% from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Inquiries</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardStats.inquiries}</div>
+            <p className="text-xs text-muted-foreground">
+              Avg response: {dashboardStats.responseTime}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Earnings</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${dashboardStats.monthlyEarnings.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {dashboardStats.commissionRate} commission rate
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Listings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Listings</CardTitle>
+          <CardDescription>
+            Your latest property listings and their performance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentListings.map((listing) => (
+              <div key={listing.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium">{listing.address}</h4>
+                    <Badge 
+                      variant={
+                        listing.status === "Active" ? "default" : 
+                        listing.status === "Pending" ? "secondary" : 
+                        "outline"
+                      }
+                    >
+                      {listing.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">{listing.type} • ${listing.price}/month</p>
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mt-1">
+                    <span>{listing.views} views</span>
+                    <span>{listing.inquiries} inquiries</span>
+                    <span>Last viewed: {listing.lastViewed}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Button size="sm" variant="outline">
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Viewings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upcoming Viewings</CardTitle>
+          <CardDescription>
+            Your scheduled property viewings for the next few days
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {upcomingViewings.map((viewing) => (
+              <div key={viewing.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <h4 className="font-medium">{viewing.address}</h4>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {viewing.client}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" />
+                      {viewing.date} at {viewing.time}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {viewing.phone}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Button size="sm">
+                    Contact Client
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Add Listing</CardTitle>
+            <CardDescription>
+              Create a new property listing
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full">
+              Add Property
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Schedule Viewing</CardTitle>
+            <CardDescription>
+              Book a property viewing appointment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              Schedule
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Client Management</CardTitle>
+            <CardDescription>
+              Manage your client relationships
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              View Clients
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Analytics</CardTitle>
+            <CardDescription>
+              View performance analytics
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" className="w-full">
+              View Reports
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

@@ -44,6 +44,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     PROPERTY_MANAGER: "/property-manager",
     TENANT: "/tenant",
     VENDOR: "/vendor",
+    AGENT: "/agent",
+    LANDLORD: "/landlord",
   } as const;
 
   const currentPath =
