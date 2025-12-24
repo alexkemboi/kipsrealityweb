@@ -8,7 +8,6 @@ import Logo from "@/assets/Logo.png";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { UserDropdown } from "./UserDropdown";
 import { MobileMenu } from "./ MobileMenu";
 
 interface NavbarItem {
@@ -177,60 +176,30 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
           {/* User Actions */}
           <div className="hidden lg:flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`relative transition-all duration-200 ${
-                    scrollProgress > 0.1
-                      ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                      : "text-white hover:bg-white/20 hover:text-white"
-                  }`}
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                </Button>
+            <Link href="/login">
+              <Button
+                variant={scrollProgress > 0.1 ? "ghost" : "outline"}
+                className={`font-inter transition-all duration-200 ${
+                  scrollProgress > 0.1
+                    ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
+                    : "text-white border-white/30 hover:bg-white/20 hover:text-white"
+                }`}
+              >
+                Login
+              </Button>
+            </Link>
 
-                <UserDropdown
-                  user={user}
-                  scrollProgress={scrollProgress}
-                  textColor={textColor}
-                  hoverColor={hoverColor}
-                  getDashboardPath={getDashboardPath}
-                  getUserInitials={getUserInitials}
-                  formatRoleName={formatRoleName}
-                  handleLogout={handleLogout}
-                />
-              </div>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button
-                    variant={scrollProgress > 0.1 ? "ghost" : "outline"}
-                    className={`font-inter transition-all duration-200 ${
-                      scrollProgress > 0.1
-                        ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                        : "text-white border-white/30 hover:bg-white/20 hover:text-white"
-                    }`}
-                  >
-                    Login
-                  </Button>
-                </Link>
-
-                <Link href="/signup">
-                  <Button
-                    className={`transition-all duration-200 ${
-                      scrollProgress > 0.1
-                        ? "bg-blue-500 text-white hover:opacity-90"
-                        : "bg-white text-neutral-900 hover:bg-white/90"
-                    }`}
-                  >
-                    Get Started
-                  </Button>
-                </Link>
-              </>
-            )}
+            <Link href="/signup">
+              <Button
+                className={`transition-all duration-200 ${
+                  scrollProgress > 0.1
+                    ? "bg-blue-500 text-white hover:opacity-90"
+                    : "bg-white text-neutral-900 hover:bg-white/90"
+                }`}
+              >
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu */}

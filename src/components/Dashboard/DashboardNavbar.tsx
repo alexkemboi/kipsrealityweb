@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Bell, Search, Settings, Menu, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useLogout } from '@/hooks/useLogout'
 
 interface DashboardNavbarProps {
   user: {
@@ -18,6 +19,7 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
   const router = useRouter()
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileSearch, setShowMobileSearch] = useState(false)
+  const { logout, isLoggingOut } = useLogout()
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -26,10 +28,9 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' })
-    router.push('/')
-  }
+    const handleLogout = async () => {
+      await logout()
+    }
 
   return (
     <div className="bg-[#0a1628] border-b border-neutral-800">
