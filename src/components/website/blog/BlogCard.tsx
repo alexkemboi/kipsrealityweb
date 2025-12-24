@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 
 interface BlogCardProps {
-  post: BlogPost;
+    post: BlogPost;
 }
 
 export const BlogCard = ({ post }: BlogCardProps) => {
@@ -35,7 +35,7 @@ export const BlogCard = ({ post }: BlogCardProps) => {
                 </div>
 
                 <div className="p-6">
-                    <h2 className="text-lg font-bold text-gray-900 mb-3 leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors duration-300">
+                    <h2 className="group inline-flex items-center text-blue-600 font-bold hover:text-blue-700 transition-colors duration-300">
                         {post.title}
                     </h2>
 
@@ -48,7 +48,7 @@ export const BlogCard = ({ post }: BlogCardProps) => {
                         <div className="flex items-center gap-3">
                             {/* Author Avatar */}
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-900">{post.author}</span>
+                                <span className="text-blue-600 font-medium text-sm px-3 py-1 bg-blue-50 rounded-full">{post.author}</span>
                             </div>
                         </div>
 

@@ -37,12 +37,12 @@ export default function LeaseSignPage() {
     async function fetchLease() {
       try {
         // ALWAYS include token if available
-        const url = inviteToken 
+        const url = inviteToken
           ? `/api/lease/${leaseId}?token=${inviteToken}`
           : `/api/lease/${leaseId}`;
-        
+
         console.log("Fetching lease from:", url); // Debug
-        
+
         const res = await fetch(url);
         const data = await res.json();
 
@@ -170,11 +170,10 @@ export default function LeaseSignPage() {
       {userRole && (
         <div className="mb-4">
           <span
-            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-              userRole === "landlord"
+            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${userRole === "landlord"
                 ? "bg-purple-100 text-purple-800"
                 : "bg-blue-100 text-blue-800"
-            }`}
+              }`}
           >
             Viewing as: {userRole === "landlord" ? "Landlord" : "Tenant"}
           </span>
@@ -194,9 +193,9 @@ export default function LeaseSignPage() {
             {new Date(lease.endDate).toLocaleDateString()}
           </p>
           <p><strong>Lease Term:</strong> {lease.leaseTerm || "N/A"}</p>
-          <p><strong>Monthly Rent:</strong> KES {lease.rentAmount?.toLocaleString()}</p>
+          <p><strong>Monthly Rent:</strong> $ {lease.rentAmount?.toLocaleString()}</p>
           {lease.securityDeposit && (
-            <p><strong>Security Deposit:</strong> KES {lease.securityDeposit?.toLocaleString()}</p>
+            <p><strong>Security Deposit:</strong> $ {lease.securityDeposit?.toLocaleString()}</p>
           )}
         </div>
 
@@ -206,14 +205,14 @@ export default function LeaseSignPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               {lease.landlordSignedAt ? (
-                <span className="text-green-600 font-semibold">✓ Landlord Signed</span>
+                <span className="text-navy-700 font-semibold">✓ Landlord Signed</span>
               ) : (
                 <span className="text-gray-400">○ Landlord Pending</span>
               )}
             </div>
             <div className="flex items-center gap-2">
               {lease.tenantSignedAt ? (
-                <span className="text-green-600 font-semibold">✓ Tenant Signed</span>
+                <span className="text-navy-700 font-semibold">✓ Tenant Signed</span>
               ) : (
                 <span className="text-gray-400">○ Tenant Pending</span>
               )}
@@ -226,9 +225,8 @@ export default function LeaseSignPage() {
           <button
             onClick={handleSign}
             disabled={signing}
-            className={`mt-6 px-6 py-3 rounded-lg font-semibold ${
-              signing ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
-            }`}
+            className={`mt-6 px-6 py-3 rounded-lg font-semibold ${signing ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
           >
             {signing
               ? "Signing..."
@@ -245,7 +243,7 @@ export default function LeaseSignPage() {
           </div>
         )}
         {lease.leaseStatus === "SIGNED" && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded p-4">
+          <div className="mt-6 bg-navy-50 border border-navy-200 rounded p-4">
             <p className="text-green-800 font-semibold">
               ✓ This lease has been fully executed by both parties
             </p>

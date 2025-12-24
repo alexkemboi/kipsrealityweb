@@ -32,7 +32,7 @@ export const FeatureGrid = () => {
     <section className="bg-white px-6 py-24 mx-auto border-t border-neutral-100">
       <div className="mx-auto max-w-7xl">
         <div className="mb-20 text-center max-w-3xl mx-auto">
-          <span className="text-blue-600 font-semibold tracking-wider text-sm uppercase mb-3 block">
+          <span className="text-[#003b73] font-semibold tracking-wider text-sm uppercase mb-3 block">
             Why RentFlow360?
           </span>
           <h2 className="text-3xl lg:text-5xl font-bold text-neutral-900 mb-6 tracking-tight">
@@ -47,8 +47,8 @@ export const FeatureGrid = () => {
           {features.map((feature, idx) => {
             const Icon = getIcon(idx);
             return (
-              <div key={feature.id} className="flex flex-col items-start gap-5 p-6 rounded-2xl border border-neutral-100 bg-white hover:border-blue-100 hover:shadow-lg hover:shadow-blue-900/5 transition-all duration-300 group">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+              <div key={feature.id} className="flex flex-col items-start gap-5 p-6 rounded-2xl border border-neutral-100 bg-white hover:border-[#003b73]/30 hover:shadow-lg hover:shadow-[#003b73]/10 transition-all duration-300 group">
+                <div className="w-12 h-12 rounded-xl bg-[#f0f7ff] flex items-center justify-center text-[#003b73] group-hover:bg-[#003b73] group-hover:text-white transition-colors duration-300">
                   <Icon size={24} strokeWidth={2} />
                 </div>
                 <div>

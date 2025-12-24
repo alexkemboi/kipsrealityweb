@@ -7,18 +7,18 @@ import { Loader2, Trash2, Edit2, Save, X, ArrowLeft, Plus, AlertCircle, Filter, 
 interface Lease {
   id: string;
   rentAmount: number;
-  tenant?: { 
+  tenant?: {
     name?: string;
     firstName?: string;
     lastName?: string;
     email?: string;
   };
-  unit?: { 
+  unit?: {
     number?: string;
     unitNumber?: string;
     floor?: string;
   };
-  property?: { 
+  property?: {
     id: string;
     name: string;
   };
@@ -56,12 +56,12 @@ export default function AssignUtilityPage() {
   const [leases, setLeases] = useState<Lease[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [assigned, setAssigned] = useState<LeaseUtility[]>([]);
-  
+
   const [selectedProperty, setSelectedProperty] = useState<string>(searchParams.get('property') || "all");
   const [selectedUnit, setSelectedUnit] = useState<string>("all");
   const [selectedLease, setSelectedLease] = useState<string>("");
   const [responsibility, setResponsibility] = useState("true");
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isAssigning, setIsAssigning] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -119,7 +119,7 @@ export default function AssignUtilityPage() {
 
       const propRes = await fetch("/api/propertymanager");
       const propData = await propRes.json();
-      
+
       if (propData.success && propData.data) {
         setProperties(propData.data);
       } else if (Array.isArray(propData)) {
@@ -237,7 +237,7 @@ export default function AssignUtilityPage() {
       });
 
       const data = await res.json();
-      
+
       if (data.success || res.ok) {
         alert("Utility assigned successfully!");
         const newAssignment = data.data || data;
@@ -263,12 +263,12 @@ export default function AssignUtilityPage() {
     setDeletingId(assignmentId);
 
     try {
-      const res = await fetch(`/api/lease-utility/${assignmentId}`, { 
-        method: "DELETE" 
+      const res = await fetch(`/api/lease-utility/${assignmentId}`, {
+        method: "DELETE"
       });
-      
+
       const data = await res.json();
-      
+
       if (data.success || res.ok) {
         alert("Assignment removed successfully");
         setAssigned((prev) => prev.filter((a) => a.id !== assignmentId));
@@ -285,9 +285,9 @@ export default function AssignUtilityPage() {
 
   const formatCurrency = (amount?: number | null) => {
     if (amount === null || amount === undefined) return "N/A";
-    return new Intl.NumberFormat("en-US", { 
-      style: "currency", 
-      currency: "KES" 
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD"
     }).format(amount);
   };
 
@@ -315,7 +315,7 @@ export default function AssignUtilityPage() {
     const lease = leases.find((l) => l.id === a.lease_id);
     const propertyId = a.Lease?.property?.id || lease?.property?.id || "unknown";
     const propertyName = a.Lease?.property?.name || lease?.property?.name || "Unknown Property";
-    
+
     if (!acc[propertyId]) {
       acc[propertyId] = { name: propertyName, assignments: [] };
     }
@@ -371,9 +371,8 @@ export default function AssignUtilityPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold">{utility.name}</h2>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
-                  utility.type === "FIXED" ? "bg-white/20 text-white" : "bg-[#30D5C8] text-[#0b1f3a]"
-                }`}>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${utility.type === "FIXED" ? "bg-white/20 text-white" : "bg-[#30D5C8] text-[#0b1f3a]"
+                  }`}>
                   {utility.type === "FIXED" ? "Fixed" : "Metered"}
                 </span>
               </div>
@@ -385,7 +384,7 @@ export default function AssignUtilityPage() {
               )}
             </div>
           </div>
-          
+
           <div className="p-6 space-y-6">
             {isEditing ? (
               <div className="space-y-4 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 p-6 rounded-xl border-2 border-[#30D5C8]/20">
@@ -501,7 +500,7 @@ export default function AssignUtilityPage() {
                 Assign Utility to Lease
               </h3>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* Filters */}
               <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200">
@@ -509,7 +508,7 @@ export default function AssignUtilityPage() {
                   <Filter className="w-5 h-5 text-[#15386a]" />
                   <span className="font-semibold text-[#0b1f3a]">Filter Leases</span>
                 </div>
-                
+
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[#0b1f3a] font-semibold block mb-2">Property</label>
@@ -571,8 +570,8 @@ export default function AssignUtilityPage() {
                     {leases.length === 0
                       ? "No leases available. Create a lease first."
                       : filteredLeases.length === 0
-                      ? "No leases match the selected filters."
-                      : "All filtered leases already have this utility assigned."}
+                        ? "No leases match the selected filters."
+                        : "All filtered leases already have this utility assigned."}
                   </p>
                   {leases.length === 0 && (
                     <a href="/property-manager/content/lease/new">
@@ -642,7 +641,7 @@ export default function AssignUtilityPage() {
             <div className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white p-6">
               <h3 className="text-xl font-bold">Assigned Leases ({assigned.length})</h3>
             </div>
-            
+
             <div className="p-6">
               {assigned.length === 0 ? (
                 <div className="text-center py-12 space-y-4">
@@ -667,7 +666,7 @@ export default function AssignUtilityPage() {
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
@@ -704,11 +703,10 @@ export default function AssignUtilityPage() {
                                 </td>
                                 <td className="p-3">
                                   <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                      a.is_tenant_responsible 
-                                        ? "bg-[#30D5C8]/10 text-[#30D5C8]" 
+                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${a.is_tenant_responsible
+                                        ? "bg-[#30D5C8]/10 text-[#30D5C8]"
                                         : "bg-orange-100 text-orange-800"
-                                    }`}
+                                      }`}
                                   >
                                     {a.is_tenant_responsible ? "Tenant" : "Landlord"}
                                   </span>

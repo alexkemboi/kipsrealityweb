@@ -1,7 +1,7 @@
 // app/api/sidebarItem/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+import { SidebarItem_role } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -22,10 +22,10 @@ export async function GET(req: Request) {
       return NextResponse.json(allItems);
     }
 
-    // Cast to UserRole
-    let role: UserRole | undefined;
-    if (roleParam && Object.values(UserRole).includes(roleParam as UserRole)) {
-      role = roleParam as UserRole;
+    // Cast to SidebarItem_role
+    let role: SidebarItem_role | undefined;
+    if (roleParam && Object.values(SidebarItem_role).includes(roleParam as SidebarItem_role)) {
+      role = roleParam as SidebarItem_role;
     }
 
     console.log("Parsed role:", role); // Debug log
@@ -33,15 +33,15 @@ export async function GET(req: Request) {
     // Build WHERE clause - fetch items matching user's role OR items for ALL roles
     const whereClause = role
       ? {
-          OR: [
-            { role: role },
-            { role: UserRole.ALL },
-          ],
-          isActive: true, // Only fetch active items
-        }
+        OR: [
+          { role: role },
+          { role: SidebarItem_role.ALL },
+        ],
+        isActive: true, // Only fetch active items
+      }
       : {
-          isActive: true,
-        };
+        isActive: true,
+      };
 
     console.log("WHERE clause:", JSON.stringify(whereClause, null, 2)); // Debug log
 
@@ -57,12 +57,12 @@ export async function GET(req: Request) {
     const visibleItems = sidebarItems.filter((item) => {
       // Check if feature is active (if feature gate exists)
       const featureCheck = !item.feature || item.feature.isActive;
-      
+
       // Check if user has required plan (if plans are specified)
-      const planCheck = item.plans.length === 0 || 
-                       planIds.length === 0 || 
-                       item.plans.some((p) => planIds.includes(p.id));
-      
+      const planCheck = item.plans.length === 0 ||
+        planIds.length === 0 ||
+        item.plans.some((p) => planIds.includes(p.id));
+
       return featureCheck && planCheck;
     });
 
@@ -107,9 +107,9 @@ export async function POST(req: Request) {
     }
 
     // Validate role is valid enum value
-    if (!Object.values(UserRole).includes(role as UserRole)) {
+    if (!Object.values(SidebarItem_role).includes(role as SidebarItem_role)) {
       return NextResponse.json(
-        { error: `Invalid role: ${role}. Must be one of: ${Object.values(UserRole).join(", ")}` },
+        { error: `Invalid role: ${role}. Must be one of: ${Object.values(SidebarItem_role).join(", ")}` },
         { status: 400 }
       );
     }
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       data: {
         label,
         path,
-        role: role as UserRole,
+        role: role as SidebarItem_role,
         icon: icon || null,
         section: section || null,
         order: order || null,

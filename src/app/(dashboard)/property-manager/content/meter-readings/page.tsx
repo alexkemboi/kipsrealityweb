@@ -5,12 +5,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster, toast } from "sonner";
-import { 
-  Plus, 
-  Loader2, 
-  AlertCircle, 
-  Search, 
-  Calendar, 
+import {
+  Plus,
+  Loader2,
+  AlertCircle,
+  Search,
+  Calendar,
   FileText,
   TrendingUp,
   Zap,
@@ -114,10 +114,10 @@ export default function MeterReadingsPage() {
   const formatCurrency = (amount: number | null) =>
     amount === null
       ? "—"
-      : new Intl.NumberFormat("en-KE", { 
-          style: "currency", 
-          currency: "KES" 
-        }).format(amount);
+      : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD"
+      }).format(amount);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", {
@@ -142,10 +142,10 @@ export default function MeterReadingsPage() {
             <div className="flex items-center gap-4">
               <div>
                 <Link href="/property-manager/content/utilities">
-                                    <Button className="bg-[#0b1f3a] hover:bg-[#15386a] h-12 px-6">
-                                      <Zap className="w-4 h-4 mr-2" /> Go to Utilities
-                                    </Button>
-                  </Link>
+                  <Button className="bg-[#0b1f3a] hover:bg-[#15386a] h-12 px-6">
+                    <Zap className="w-4 h-4 mr-2" /> Go to Utilities
+                  </Button>
+                </Link>
               </div>
               <div>
                 <h1 className="text-3xl font-bold">Meter Readings</h1>
@@ -271,8 +271,8 @@ export default function MeterReadingsPage() {
                   <AlertCircle className="w-12 h-12 text-red-600" />
                 </div>
                 <p className="text-gray-700 text-lg">{error}</p>
-                <Button 
-                  onClick={loadReadings} 
+                <Button
+                  onClick={loadReadings}
                   variant="outline"
                   className="border-2"
                 >
@@ -309,20 +309,19 @@ export default function MeterReadingsPage() {
                   </thead>
                   <tbody>
                     {filteredReadings.map((r, idx) => (
-                      <tr 
+                      <tr
                         key={r.id}
-                        className={`border-b border-gray-100 ${
-                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        }`}
+                        className={`border-b border-gray-100 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          }`}
                       >
                         <td className="px-4 py-3 font-medium text-[#0b1f3a]">
                           {(() => {
-                              const tenant = r.lease_utility.Lease.tenant; // use the tenant object
-                              if (!tenant) return r.lease_utility.Lease.tenantName || "Unknown Tenant"; // fallback
-                              const name = `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim();
-                              return name || r.lease_utility.Lease.tenantName || "Unknown Tenant";
-                            })()}
-                                                  </td>
+                            const tenant = r.lease_utility.Lease.tenant; // use the tenant object
+                            if (!tenant) return r.lease_utility.Lease.tenantName || "Unknown Tenant"; // fallback
+                            const name = `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim();
+                            return name || r.lease_utility.Lease.tenantName || "Unknown Tenant";
+                          })()}
+                        </td>
                         <td className="px-4 py-3 text-gray-700">
                           {r.lease_utility.Lease.propertyName || "N/A"}
                         </td>

@@ -9,7 +9,7 @@ import {
 } from "../ui/drawer";
 import { Menu, X, User, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/assets/Logo.png";
+import Logo from "@/assets/rf_logo.jpeg";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
@@ -40,8 +40,8 @@ export const MobileMenu = ({
                     variant="ghost"
                     size="icon"
                     className={`lg:hidden transition-all duration-200 ${scrollProgress > 0.1
-                            ? "text-neutral-700 hover:bg-neutral-200"
-                            : "text-white hover:bg-white/20"
+                        ? "text-neutral-700 hover:bg-neutral-200"
+                        : "text-white hover:bg-white/20"
                         }`}
                 >
                     <Menu className="h-6 w-6" />
@@ -55,7 +55,7 @@ export const MobileMenu = ({
                             alt="RentFlow360"
                             width={32}
                             height={32}
-                            className="w-8 h-8 object-contain"
+                            className="object-contain mix-blend-multiply"
                         />
                         <div>
                             <DrawerTitle className="font-bold text-lg text-neutral-900">
@@ -111,10 +111,10 @@ const AuthenticatedMobileContent = ({
 }) => (
     <div className="space-y-6">
         {/* User Info Section */}
-        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl">
+        <div className="flex items-center space-x-3 p-4 bg-[#f0f7ff] rounded-xl">
             <Avatar className="h-12 w-12">
                 <AvatarImage src={user.avatarUrl} />
-                <AvatarFallback className="bg-blue-500 text-white">
+                <AvatarFallback className="bg-[#003b73] text-white">
                     {getUserInitials()}
                 </AvatarFallback>
             </Avatar>
@@ -125,7 +125,7 @@ const AuthenticatedMobileContent = ({
                 <div className="text-sm text-neutral-600">{user.email}</div>
                 <Badge
                     variant="outline"
-                    className={`mt-1 text-xs bg-blue-100 text-blue-800 border-blue-200`}
+                    className={`mt-1 text-xs bg-[#f0f7ff] text-[#002b5b] border-[#003b73]/20`}
                 >
                     {formatRoleName(user.role)}
                 </Badge>
@@ -137,7 +137,7 @@ const AuthenticatedMobileContent = ({
             <DrawerClose asChild>
                 <Link
                     href={getDashboardPath()}
-                    className="flex items-center space-x-3 p-4 rounded-xl hover:bg-blue-50 transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-blue-600 font-inter font-medium"
+                    className="flex items-center space-x-3 p-4 rounded-xl hover:bg-[#f0f7ff] transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-[#003b73] font-inter font-medium"
                 >
                     <User className="w-5 h-5" />
                     <span>Dashboard</span>
@@ -147,7 +147,7 @@ const AuthenticatedMobileContent = ({
             <DrawerClose asChild>
                 <Link
                     href="/dashboard/settings"
-                    className="flex items-center space-x-3 p-4 rounded-xl hover:bg-blue-50 transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-blue-600 font-inter font-medium"
+                    className="flex items-center space-x-3 p-4 rounded-xl hover:bg-[#f0f7ff] transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-[#003b73] font-inter font-medium"
                 >
                     <Settings className="w-5 h-5" />
                     <span>Settings</span>
@@ -178,7 +178,7 @@ const UnauthenticatedMobileContent = ({
             <DrawerClose asChild key={link.name}>
                 <Link
                     href={link.href}
-                    className="block p-4 rounded-xl hover:bg-blue-50 transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-blue-600 font-inter font-medium"
+                    className="block p-4 rounded-xl hover:bg-[#f0f7ff] transition-all duration-200 active:scale-[0.98] text-neutral-700 hover:text-[#003b73] font-inter font-medium"
                 >
                     {link.name}
                 </Link>
@@ -201,7 +201,7 @@ const NavigationSection = ({
             <DrawerClose asChild key={link.name}>
                 <Link
                     href={link.href}
-                    className="block p-3 rounded-xl hover:bg-neutral-50 transition-all duration-200 text-neutral-700 hover:text-blue-600 font-inter"
+                    className="block p-3 rounded-xl hover:bg-neutral-50 transition-all duration-200 text-neutral-700 hover:text-[#003b73] font-inter"
                 >
                     {link.name}
                 </Link>
@@ -222,7 +222,7 @@ const MobileAuthButtons = () => (
         </DrawerClose>
         <DrawerClose asChild>
             <Link href="/signup" className="flex-1">
-                <Button className="w-full bg-blue-500 text-white">
+                <Button className="w-full bg-[#003b73] text-white hover:bg-[#002b5b]">
                     Get Started
                 </Button>
             </Link>

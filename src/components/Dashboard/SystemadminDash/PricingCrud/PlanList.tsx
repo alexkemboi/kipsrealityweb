@@ -50,7 +50,7 @@ export default function PlansList() {
       {/* Button to open Plan modal */}
       <button
         onClick={() => { setEditingPlan(null); setShowPlanModal(true); }}
-        className="mb-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition"
+        className="mb-4 bg-green-500 hover:bg-green-500 text-white px-4 py-2 rounded-md transition"
       >
         Create Plan
       </button>

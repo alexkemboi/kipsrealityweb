@@ -30,7 +30,7 @@ export const ListingCard = ({
   return (
     <Link href={link}>
       <article className="group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-        
+
         {/* Image Section */}
         <div className="relative overflow-hidden aspect-[4/3]">
           <Image

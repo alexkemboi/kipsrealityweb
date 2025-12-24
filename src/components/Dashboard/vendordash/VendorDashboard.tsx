@@ -138,7 +138,7 @@ export default function VendorDashboard() {
                   <td className="p-2">
                     <div className="flex items-center gap-2">
                       <button
-                        className={`p-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition ${req.status !== "OPEN" ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`p-2 bg-green-500 text-white rounded-lg shadow-sm hover:bg-green-600 transition ${req.status !== "OPEN" ? "opacity-50 cursor-not-allowed" : ""}`}
                         title="Accept"
                         disabled={req.status !== "OPEN"}
                         onClick={() => {
@@ -214,7 +214,7 @@ export default function VendorDashboard() {
                 Cancel
               </button>
               <button
-                className="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+                className="px-6 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600"
                 disabled={modalLoading || !chargeAmount}
                 onClick={async () => {
                   setModalLoading(true);

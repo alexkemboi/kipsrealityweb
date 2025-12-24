@@ -295,7 +295,7 @@ export default function DocumentManager({ leaseId }: DocumentManagerProps) {
                       {new Date(doc.uploadedAt).toLocaleDateString()}
                     </span>
                     {doc.isSigned ? (
-                      <span className="flex items-center gap-1 text-green-600">
+                      <span className="flex items-center gap-1 text-green-500">
                         <CheckCircle className="w-3 h-3" />
                         Signed {doc.signedAt && `on ${new Date(doc.signedAt).toLocaleDateString()}`}
                       </span>
@@ -351,7 +351,7 @@ export default function DocumentManager({ leaseId }: DocumentManagerProps) {
             <p className="text-xs text-gray-500">Total Documents</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-green-500">
               {documents.filter((d) => d.isSigned).length}
             </p>
             <p className="text-xs text-gray-500">Signed</p>

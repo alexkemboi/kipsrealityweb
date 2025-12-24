@@ -330,7 +330,7 @@ export default function TenantLeasePage() {
                 {amend.status === "PENDING" && (
                   <button
                     onClick={() => signAmendment(amend.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                    className="px-3 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 text-sm font-medium"
                   >
                     Sign Amendment
                   </button>

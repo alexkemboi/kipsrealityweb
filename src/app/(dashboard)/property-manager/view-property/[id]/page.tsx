@@ -148,8 +148,8 @@ export default function PropertyDetailsPage() {
           <h3 className="text-sm font-semibold text-blue-700">Tenants</h3>
           <p className="text-2xl font-bold text-blue-900">{property.tenants}</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-4 text-center">
-          <h3 className="text-sm font-semibold text-green-700">Monthly Rent</h3>
+        <div className="bg-navy-50 rounded-xl p-4 text-center">
+          <h3 className="text-sm font-semibold text-navy-900">Monthly Rent</h3>
           <p className="text-2xl font-bold text-green-900">KSh {property.rentPerMonth.toLocaleString()}</p>
         </div>
         <div className="bg-yellow-50 rounded-xl p-4 text-center">

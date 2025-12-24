@@ -8,80 +8,75 @@ datasource db {
 }
 
 model Organization {
-  id                     String                   @id @default(uuid())
-  name                   String
-  slug                   String                   @unique
-  logoUrl                String?                  @map("logo_url")
-  website                String?
-  phone                  String?
-  address                String?
-  isActive               Boolean                  @default(true) @map("is_active")
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
-  planId                 Int?
-  invites                Invite[]
-  listings               Listing[]
-  maintenanceRequests    MaintenanceRequest[]
-  properties             Property[]               @relation("OrganizationToProperty")
-  users                  OrganizationUser[]
-  plan                   Plan?                    @relation(fields: [planId], references: [id])
-  vendors                Vendor[]
-  DssDocument            DssDocument[]
-  DssParticipant         DssParticipant[]
-  BlockchainNotaryRecord BlockchainNotaryRecord[]
-  DssWorkflowTemplate    DssWorkflowTemplate[]
+  id                        String                      @id @default(uuid())
+  name                      String
+  slug                      String                      @unique
+  logoUrl                   String?                     @map("logo_url")
+  website                   String?
+  phone                     String?
+  address                   String?
+  isActive                  Boolean                     @default(true) @map("is_active")
+  createdAt                 DateTime                    @default(now()) @map("created_at")
+  updatedAt                 DateTime                    @updatedAt @map("updated_at")
+  planId                    Int?
+  invites                   Invite[]
+  listings                  Listing[]
+  maintenanceRequests       MaintenanceRequest[]
+  properties                Property[]                  @relation("OrganizationToProperty")
+  blockchain_notary_records blockchain_notary_records[]
+  dss_documents             dss_documents[]
+  dss_participants          dss_participants[]
+  dss_workflow_templates    dss_workflow_templates[]
+  users                     OrganizationUser[]
+  plan                      Plan?                       @relation(fields: [planId], references: [id])
+  vendors                   Vendor[]
 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String     @map("password_hash")
-  firstName    String?    @map("first_name")
-  lastName     String?    @map("last_name")
-  phone        String?
-  avatarUrl    String?    @map("avatar_url")
-  status       UserStatus @default(ACTIVE)
-  lastLoginAt  DateTime?  @map("last_login_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-
-  // Auth Fields (New)
-  emailVerified     DateTime? @map("email_verified")
-  verificationToken String?   @unique
-
-  // Consent Flags
-  consentTransactional Boolean @default(true)
-  consentNotifications Boolean @default(true)
-  consentMarketing     Boolean @default(false)
-
-  sentInvites         Invite[]             @relation("UserInvites")
-  leases              Lease[]
-  listings            Listing[]
-  passwordResetTokens PasswordResetToken[]
-  tenantApplications  Tenantapplication[]
-  organizationUsers   OrganizationUser[]
-  vendors             Vendor[]
-  DssParticipant      DssParticipant[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String               @map("password_hash")
+  firstName            String?              @map("first_name")
+  lastName             String?              @map("last_name")
+  phone                String?
+  avatarUrl            String?              @map("avatar_url")
+  status               UserStatus           @default(ACTIVE)
+  lastLoginAt          DateTime?            @map("last_login_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  emailVerified        DateTime?            @map("email_verified")
+  verificationToken    String?              @unique
+  consentMarketing     Boolean              @default(false)
+  consentNotifications Boolean              @default(true)
+  consentTransactional Boolean              @default(true)
+  sentInvites          Invite[]             @relation("UserInvites")
+  leases               Lease[]
+  listings             Listing[]
+  passwordResetTokens  PasswordResetToken[]
+  tenantApplications   Tenantapplication[]
+  dss_participants     dss_participants[]
+  organizationUsers    OrganizationUser[]
+  vendors              Vendor[]
 
   @@map("users")
 }
 
 model OrganizationUser {
-  id                String               @id @default(uuid())
-  userId            String               @map("user_id")
-  organizationId    String               @map("organization_id")
-  role              UserRole
-  createdAt         DateTime             @default(now()) @map("created_at")
-  adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
-  targetActions     AdminAction[]        @relation("AdminActionsTarget")
-  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
+  id                String                  @id @default(uuid())
+  userId            String                  @map("user_id")
+  organizationId    String                  @map("organization_id")
+  role              organization_users_role
+  createdAt         DateTime                @default(now()) @map("created_at")
+  adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
+  targetActions     AdminAction[]           @relation("AdminActionsTarget")
+  createdRequests   MaintenanceRequest[]    @relation("RequestCreator")
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
-  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
@@ -120,22 +115,19 @@ model PasswordResetToken {
 }
 
 model Invite {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   email          String
-  token          String   @unique
-  role           UserRole
+  token          String       @unique
+  role           Invite_role
   organizationId String
   invitedById    String?
   expiresAt      DateTime
-  accepted       Boolean  @default(false)
-  createdAt      DateTime @default(now())
-
-  // Fix for Seed Error: Missing leaseId
-  leaseId String? @db.VarChar(255)
-  lease   Lease?  @relation("LeaseInvites", fields: [leaseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Invite_Lease")
-
-  invitedBy    User?        @relation("UserInvites", fields: [invitedById], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
+  accepted       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  leaseId        String?      @db.VarChar(255)
+  lease          Lease?       @relation("LeaseInvites", fields: [leaseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Invite_Lease")
+  invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([email])
@@ -199,7 +191,7 @@ model Feature {
 }
 
 model SidebarItem {
-  id          Int      @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   label       String
   path        String
   icon        String?
@@ -207,15 +199,15 @@ model SidebarItem {
   order       Int?
   badge       String?
   description String?
-  isActive    Boolean  @default(true)
-  isExternal  Boolean  @default(false)
+  isActive    Boolean          @default(true)
+  isExternal  Boolean          @default(false)
   target      String?
   featureId   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  role        UserRole
-  feature     Feature? @relation(fields: [featureId], references: [id])
-  plans       Plan[]   @relation("SidebarItemPlans")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  role        SidebarItem_role
+  feature     Feature?         @relation(fields: [featureId], references: [id])
+  plans       Plan[]           @relation("SidebarItemPlans")
 
   @@index([featureId], map: "SidebarItem_featureId_fkey")
 }
@@ -305,6 +297,9 @@ model Policy {
   title                    String
   companyName              String
   contactEmail             String
+  contactPhone             String?   // Official contact phone number
+  contactEmailLabel        String?   // Customizable label for email (e.g., "Email Us")
+  contactPhoneLabel        String?   // Customizable label for phone (e.g., "Call Us")
   privacyEmail             String
   website                  String?
   mailingAddress           String?
@@ -429,10 +424,29 @@ model Property {
   createdAt          DateTime @default(now())
   name               String?
 
+  id                     String                   @id @default(uuid())
+  listingId              String?                  @unique
+  managerId              String?
+  organizationId         String?
+  propertyTypeId         String?
+  locationId             String?
+  city                   String
+  address                String
+  amenities              String?
+  isFurnished            Boolean                  @default(false)
+  availabilityStatus     String?
+  createdAt              DateTime                 @default(now())
+  name                   String?
+  contactEmail           String?
+  contactPhone           String?
+  country                String?
+  latitude               Float?
+  longitude              Float?
+  zipCode                String?
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
   leases                 Lease[]
-  maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
+  maintenanceRequests    MaintenanceRequest[]     @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
   listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
   location               Location?               @relation(fields: [locationId], references: [id])
@@ -470,6 +484,16 @@ model Property {
 
   // Relation to the legacy images table
   images PropertyImage[]
+  listing                Listing?                 @relation("PropertyListing", fields: [listingId], references: [id])
+  location               Location?                @relation(fields: [locationId], references: [id])
+  manager                OrganizationUser?        @relation(fields: [managerId], references: [id])
+  organization           Organization?            @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType           PropertyType?            @relation(fields: [propertyTypeId], references: [id])
+  PropertyImage          PropertyImage[]
+  tenantapplications     Tenantapplication[]
+  units                  Unit[]
+  dss_documents          dss_documents[]
+  dss_workflow_templates dss_workflow_templates[]
 
   @@index([locationId], map: "Property_locationId_fkey")
   @@index([managerId], map: "Property_managerId_fkey")
@@ -477,11 +501,15 @@ model Property {
   @@index([propertyTypeId], map: "Property_propertyTypeId_fkey")
 }
 
-/// @deprecated [Legacy] Use 'ListingImage' for marketplace photos or 'DssDocument' for files.
 model PropertyImage {
   id         String   @id @default(uuid())
   propertyId String
   url        String
+  publicId   String   @default("")
+  format     String?
+  width      Int?
+  height     Int?
+  order      Int?     @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -498,6 +526,7 @@ model PropertyImage {
   order    Int?
 
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@index([propertyId])
 }
@@ -519,35 +548,32 @@ model HouseDetail {
   bedrooms       Int?
   size           Float?
   totalUnits     Int?
-  // Fix for Seed Error: Missing houseName
   houseName      String?  @db.VarChar(255)
   property       Property @relation(fields: [propertyId], references: [id])
 }
 
 model Unit {
-  id              String   @id @default(uuid())
-  propertyId      String
-  complexDetailId String?
-  listingId       String?  @unique
-  unitNumber      String
-  floorNumber     Int?
-  bedrooms        Int?
-  bathrooms       Int?
-  isOccupied      Boolean  @default(false)
-  rentAmount      Float?
-  createdAt       DateTime @default(now())
-  houseDetailId   String?
-  unitName        String?
-  // Fix for Seed Error: Missing currency
-  currency        String?  @db.VarChar(10)
-
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @db.VarChar(10)
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
   listing             Listing?             @relation("UnitListing", fields: [listingId], references: [id])
   property            Property             @relation(fields: [propertyId], references: [id])
+  dss_documents       dss_documents[]
   appliances          Appliance[]          @relation("UnitAppliances")
-  DssDocument         DssDocument[]
 
   @@index([propertyId], map: "Unit_propertyId_fkey")
 }
@@ -626,20 +652,11 @@ model ServiceType {
 }
 
 model Tenantapplication {
-  id       String   @id @default(uuid())
-  fullName String
-  email    String
-  phone    String
-  dob      DateTime
-
-  // ---------------------------------------------------------
-  // ⛔ SECURITY RISK (DEPRECATED)
-  // ---------------------------------------------------------
-
-  /// @deprecated [SECURITY RISK] Storing SSN in plain text is forbidden. Use 'ssnEncrypted' instead.
-  ssn String?
-
-  ssnEncrypted       String?           @map("ssn_encrypted") // renamed to enforce dev awareness
+  id                 String            @id @default(uuid())
+  fullName           String
+  email              String
+  phone              String
+  dob                DateTime
   address            String?
   employerName       String?
   jobTitle           String?
@@ -663,6 +680,8 @@ model Tenantapplication {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   unitId             String?
+  ssn_encrypted      String?
+  ssn                String?
   tenantLeases       Lease?
   property           Property          @relation(fields: [propertyId], references: [id])
   unit               Unit?             @relation(fields: [unitId], references: [id])
@@ -674,8 +693,8 @@ model Tenantapplication {
 }
 
 model Lease {
-  id                       String             @id @default(uuid())
-  applicationId            String             @unique
+  id                       String                  @id @default(uuid())
+  applicationId            String                  @unique
   tenantId                 String?
   propertyId               String
   unitId                   String
@@ -683,9 +702,9 @@ model Lease {
   endDate                  DateTime
   rentAmount               Float
   securityDeposit          Float?
-  leaseStatus              Lease_leaseStatus? @default(DRAFT)
-  createdAt                DateTime           @default(now())
-  updatedAt                DateTime           @updatedAt
+  leaseStatus              Lease_leaseStatus?      @default(DRAFT)
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
   earlyTerminationFee      Float?
   gracePeriodDays          Int?
   landlordResponsibilities String?
@@ -694,48 +713,44 @@ model Lease {
   lateFeeFlat              Float?
   leaseTerm                String?
   paymentDueDay            Int?
-  paymentFrequency         String             @default("MONTHLY")
-  tenantPaysElectric       Boolean            @default(true)
-  tenantPaysInternet       Boolean            @default(false)
-  tenantPaysTrash          Boolean            @default(false)
-  tenantPaysWater          Boolean            @default(false)
+  paymentFrequency         String                  @default("MONTHLY")
+  tenantPaysElectric       Boolean                 @default(true)
+  tenantPaysInternet       Boolean                 @default(false)
+  tenantPaysTrash          Boolean                 @default(false)
+  tenantPaysWater          Boolean                 @default(false)
   tenantResponsibilities   String?
   tenantSignedAt           DateTime?
   terminationNoticeDays    Int?
   usageType                String?
-
-  // Fix for Seed Error: Missing fields
-  hasRenewalOption    Boolean?                @default(false)
-  renewalNoticeDays   Int?
-  renewalTermMonths   Int?
-  renewalRentIncrease Float?                  @db.Float
-  autoRenew           Boolean?                @default(false)
-  hasRentEscalation   Boolean?                @default(false)
-  escalationType      Lease_escalationType?
-  escalationRate      Float?                  @db.Float
-  escalationFrequency String?                 @db.VarChar(20)
-  nextEscalationDate  DateTime?               @db.DateTime(0)
-  documentVersion     Int?                    @default(1)
-  lastDocumentUpdate  DateTime?               @db.DateTime(0)
-  complianceCheckDate DateTime?               @db.DateTime(0)
-  complianceStatus    Lease_complianceStatus? @default(PENDING)
-  complianceNotes     String?                 @db.Text
-
-  // Relations
-  invites           Invite[]            @relation("LeaseInvites")
-  application       Tenantapplication   @relation(fields: [applicationId], references: [id])
-  property          Property            @relation(fields: [propertyId], references: [id])
-  tenant            User?               @relation(fields: [tenantId], references: [id])
-  unit              Unit                @relation(fields: [unitId], references: [id])
-  LeaseAmendment    LeaseAmendment[]
-  LeaseAuditLog     LeaseAuditLog[]
-  LeaseDocument     LeaseDocument[]
-  LeaseNotification LeaseNotification[]
-  LeaseRenewal      LeaseRenewal[]
-  RentEscalation    RentEscalation[]
-  invoice           invoice[]
-  lease_utility     lease_utility[]
-  DssDocument       DssDocument[]
+  autoRenew                Boolean?                @default(false)
+  complianceCheckDate      DateTime?               @db.DateTime(0)
+  complianceNotes          String?                 @db.Text
+  complianceStatus         Lease_complianceStatus? @default(PENDING)
+  documentVersion          Int?                    @default(1)
+  escalationFrequency      String?                 @db.VarChar(20)
+  escalationRate           Float?                  @db.Float
+  escalationType           Lease_escalationType?
+  hasRenewalOption         Boolean?                @default(false)
+  hasRentEscalation        Boolean?                @default(false)
+  lastDocumentUpdate       DateTime?               @db.DateTime(0)
+  nextEscalationDate       DateTime?               @db.DateTime(0)
+  renewalNoticeDays        Int?
+  renewalRentIncrease      Float?                  @db.Float
+  renewalTermMonths        Int?
+  invites                  Invite[]                @relation("LeaseInvites")
+  application              Tenantapplication       @relation(fields: [applicationId], references: [id])
+  property                 Property                @relation(fields: [propertyId], references: [id])
+  tenant                   User?                   @relation(fields: [tenantId], references: [id])
+  unit                     Unit                    @relation(fields: [unitId], references: [id])
+  LeaseAmendment           LeaseAmendment[]
+  LeaseAuditLog            LeaseAuditLog[]
+  LeaseDocument            LeaseDocument[]
+  LeaseNotification        LeaseNotification[]
+  LeaseRenewal             LeaseRenewal[]
+  RentEscalation           RentEscalation[]
+  dss_documents            dss_documents[]
+  invoice                  invoice[]
+  lease_utility            lease_utility[]
 
   @@index([propertyId], map: "Lease_propertyId_fkey")
   @@index([tenantId], map: "Lease_tenantId_fkey")
@@ -836,7 +851,7 @@ model utility {
   updatedAt     DateTime?       @default(now()) @db.DateTime(0)
   lease_utility lease_utility[]
 
-  @@map("utility") // ✅ Explicit map
+  @@map("utility")
 }
 
 model lease_utility {
@@ -1044,6 +1059,123 @@ enum UserRole {
   AGENT
   LANDLORD
   ALL
+model blockchain_notary_records {
+  id               String                           @id
+  organization_id  String
+  document_id      String                           @unique(map: "uq_notary_document")
+  chain_id         Int
+  contract_address String
+  notarized_hash   String
+  tx_hash          String?
+  block_number     Int?
+  status           blockchain_notary_records_status @default(PENDING)
+  created_at       DateTime                         @default(now())
+  confirmed_at     DateTime?
+  dss_documents    dss_documents                    @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  organizations    Organization                     @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+
+  @@index([notarized_hash])
+  @@index([organization_id], map: "blockchain_notary_records_organization_id_fkey")
+}
+
+model dss_documents {
+  id                        String                     @id
+  organization_id           String
+  lease_id                  String?
+  property_id               String?
+  unit_id                   String?
+  title                     String
+  description               String?                    @db.Text
+  original_file_url         String?                    @db.Text
+  original_file_key         String?
+  mime_type                 String?
+  file_size_bytes           Int?
+  original_pdf_sha256_hex   String
+  final_pdf_sha256_hex      String?
+  status                    dss_documents_status       @default(DRAFT)
+  signingMode               dss_documents_signingMode  @default(SEQUENTIAL)
+  current_step              Int                        @default(1)
+  sent_at                   DateTime?
+  completed_at              DateTime?
+  voided_at                 DateTime?
+  created_at                DateTime                   @default(now())
+  updated_at                DateTime
+  blockchain_notary_records blockchain_notary_records?
+  Lease                     Lease?                     @relation(fields: [lease_id], references: [id])
+  organizations             Organization               @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  Property                  Property?                  @relation(fields: [property_id], references: [id])
+  Unit                      Unit?                      @relation(fields: [unit_id], references: [id])
+  dss_participants          dss_participants[]
+  dss_signatures            dss_signatures[]
+
+  @@index([lease_id])
+  @@index([organization_id])
+  @@index([property_id], map: "dss_documents_property_id_fkey")
+  @@index([unit_id], map: "dss_documents_unit_id_fkey")
+}
+
+model dss_participants {
+  id                String                @id
+  document_id       String
+  organization_id   String
+  user_id           String?
+  email             String                @db.VarChar(255)
+  full_name         String?
+  role              dss_participants_role
+  step_order        Int                   @default(1)
+  has_signed        Boolean               @default(false)
+  signed_at         DateTime?
+  viewed_at         DateTime?
+  access_token_hash String?
+  dss_documents     dss_documents         @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  organizations     Organization          @relation(fields: [organization_id], references: [id])
+  users             User?                 @relation(fields: [user_id], references: [id])
+  dss_signatures    dss_signatures[]
+
+  @@unique([document_id, email], map: "uq_dss_participant_doc_email")
+  @@index([organization_id], map: "dss_participants_organization_id_fkey")
+  @@index([user_id], map: "dss_participants_user_id_fkey")
+}
+
+model dss_signatures {
+  id               String           @id
+  document_id      String
+  participant_id   String
+  signature_hash   String
+  signed_at        DateTime         @default(now())
+  dss_documents    dss_documents    @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  dss_participants dss_participants @relation(fields: [participant_id], references: [id], onDelete: Cascade)
+
+  @@unique([document_id, participant_id], map: "uq_dss_signature_doc_participant")
+  @@index([participant_id], map: "dss_signatures_participant_id_fkey")
+}
+
+model dss_workflow_steps {
+  id                     String                  @id
+  template_id            String
+  step_order             Int
+  role                   dss_workflow_steps_role
+  label                  String?
+  is_optional            Boolean                 @default(false)
+  dss_workflow_templates dss_workflow_templates  @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@unique([template_id, step_order])
+}
+
+model dss_workflow_templates {
+  id                 String               @id
+  organization_id    String
+  name               String
+  description        String?
+  property_id        String?
+  created_at         DateTime             @default(now())
+  updated_at         DateTime
+  dss_workflow_steps dss_workflow_steps[]
+  organizations      Organization         @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  Property           Property?            @relation(fields: [property_id], references: [id])
+
+  @@index([organization_id], map: "dss_workflow_templates_organization_id_fkey")
+  @@index([property_id], map: "dss_workflow_templates_property_id_fkey")
 }
 
 enum Priority {
@@ -1081,12 +1213,6 @@ enum invoice_type {
 enum utility_type {
   FIXED
   METERED
-}
-
-enum payment_method {
-  CASH
-  BANK
-  CREDIT_CARD // ✅ Removed @map("CREDIT CARD") to prevent runtime errors
 }
 
 enum invoice_status {
@@ -1209,19 +1335,15 @@ enum LeaseNotification_notificationType {
   AMENDMENT_EXECUTED
 }
 
-// Add these new Enums for DSS
-enum DssDocumentStatus {
-  DRAFT
-  SENT
-  IN_SIGNING
-  COMPLETED
-  DECLINED
-  VOIDED
-  EXPIRED
+enum Invite_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
 }
 
-enum DssParticipantRole {
-  LANDLORD
+enum dss_workflow_steps_role {
   TENANT
   PROPERTY_MANAGER
   AGENT
@@ -1231,176 +1353,57 @@ enum DssParticipantRole {
   OTHER
 }
 
-enum DssSigningMode {
-  SEQUENTIAL
-  PARALLEL
+enum organization_users_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
 }
 
-enum DssSignatureType {
-  ESIGN
-  DRAW
-  TYPED
-  UPLOAD
+enum payment_method {
+  CASH
+  BANK
+  CREDIT_CARD
 }
 
-enum BlockchainNotaryStatus {
+enum dss_participants_role {
+  TENANT
+  PROPERTY_MANAGER
+  AGENT
+  VENDOR
+  WITNESS
+  NOTARY
+  OTHER
+}
+
+enum blockchain_notary_records_status {
   PENDING
   SUBMITTED
   CONFIRMED
   FAILED
 }
 
-// ---------------- DSS WORKFLOW TEMPLATES ----------------
-
-model DssWorkflowTemplate {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  description    String?
-  propertyId     String?  @map("property_id") // Optional: Bind template to specific property
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  steps        DssWorkflowStep[]
-  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  property     Property?         @relation(fields: [propertyId], references: [id])
-
-  @@map("dss_workflow_templates")
+enum dss_documents_status {
+  DRAFT
+  SENT
+  IN_SIGNING
+  COMPLETED
+  DECLINED
+  VOIDED
+  EXPIRED
 }
 
-model DssWorkflowStep {
-  id         String             @id @default(uuid())
-  templateId String             @map("template_id")
-  stepOrder  Int                @map("step_order")
-  role       DssParticipantRole
-  label      String? // e.g., "Legal Review"
-  isOptional Boolean            @default(false) @map("is_optional")
-
-  template DssWorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
-  @@unique([templateId, stepOrder])
-  @@map("dss_workflow_steps")
+enum SidebarItem_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
 }
 
-// ---------------- DSS (Document Signing System) ----------------
-
-model DssDocument {
-  id             String @id @default(uuid())
-  organizationId String @map("organization_id")
-
-  // Optional links to your existing domain
-  leaseId    String? @map("lease_id")
-  propertyId String? @map("property_id")
-  unitId     String? @map("unit_id")
-
-  title       String
-  description String? @db.Text
-
-  // File Pointers
-  originalFileUrl String? @map("original_file_url") @db.Text
-  originalFileKey String? @map("original_file_key")
-  mimeType        String? @map("mime_type")
-  fileSizeBytes   Int?    @map("file_size_bytes")
-
-  // HASHING (The Critical Security Update)
-  originalPdfSha256Hex String  @map("original_pdf_sha256_hex")
-  finalPdfSha256Hex    String? @map("final_pdf_sha256_hex") // populated after signing
-
-  status      DssDocumentStatus @default(DRAFT)
-  signingMode DssSigningMode    @default(SEQUENTIAL)
-  currentStep Int               @default(1) @map("current_step")
-
-  // Timestamps
-  sentAt      DateTime? @map("sent_at")
-  completedAt DateTime? @map("completed_at")
-  voidedAt    DateTime? @map("voided_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  lease        Lease?       @relation(fields: [leaseId], references: [id], onDelete: SetNull)
-  property     Property?    @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit         Unit?        @relation(fields: [unitId], references: [id], onDelete: SetNull)
-
-  participants DssParticipant[]
-  signatures   DssSignature[]
-
-  // Blockchain Link (1-to-1 Enforced)
-  notaryRecord BlockchainNotaryRecord?
-
-  @@index([organizationId])
-  @@index([leaseId])
-  @@map("dss_documents")
+enum dss_documents_signingMode {
+  SEQUENTIAL
+  PARALLEL
 }
 
-model DssParticipant {
-  id             String @id @default(uuid())
-  documentId     String @map("document_id")
-  organizationId String @map("organization_id")
-
-  userId   String?            @map("user_id") // Optional: Link to existing User
-  email    String             @db.VarChar(255)
-  fullName String?            @map("full_name")
-  role     DssParticipantRole
-
-  // Workflow Control
-  stepOrder Int @default(1) @map("step_order")
-
-  // Status
-  hasSigned Boolean   @default(false) @map("has_signed")
-  signedAt  DateTime? @map("signed_at")
-  viewedAt  DateTime? @map("viewed_at")
-
-  // Security
-  accessTokenHash String? @map("access_token_hash") // Hashed, not plain text
-
-  document     DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user         User?          @relation(fields: [userId], references: [id])
-  organization Organization   @relation(fields: [organizationId], references: [id])
-  signatures   DssSignature[]
-
-  // Constraint: One person cannot be added twice to the same doc
-  @@unique([documentId, email], map: "uq_dss_participant_doc_email")
-  @@map("dss_participants")
-}
-
-model DssSignature {
-  id            String @id @default(uuid())
-  documentId    String @map("document_id")
-  participantId String @map("participant_id")
-
-  signatureHash String   @map("signature_hash") // Server-generated proof
-  signedAt      DateTime @default(now()) @map("signed_at")
-
-  document    DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  participant DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-
-  // Constraint: One signature per participant per document
-  @@unique([documentId, participantId], map: "uq_dss_signature_doc_participant")
-  @@map("dss_signatures")
-}
-
-model BlockchainNotaryRecord {
-  id             String @id @default(uuid())
-  organizationId String @map("organization_id")
-  documentId     String @unique(map: "uq_notary_document") @map("document_id")
-
-  chainId         Int    @map("chain_id")
-  contractAddress String @map("contract_address")
-
-  // The Proof
-  notarizedHash String                 @map("notarized_hash") // finalPdfSha256Hex
-  txHash        String?                @map("tx_hash")
-  blockNumber   Int?                   @map("block_number")
-  status        BlockchainNotaryStatus @default(PENDING)
-
-  createdAt   DateTime  @default(now()) @map("created_at")
-  confirmedAt DateTime? @map("confirmed_at")
-
-  document     DssDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@index([notarizedHash])
-  @@map("blockchain_notary_records")
-}

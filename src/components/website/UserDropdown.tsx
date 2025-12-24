@@ -39,13 +39,13 @@ export const UserDropdown = ({
                 <Button
                     variant="ghost"
                     className={`flex items-center space-x-3 transition-all duration-200 ${scrollProgress > 0.1
-                        ? "text-neutral-700 hover:text-blue-700 hover:bg-blue-50"
+                        ? "text-neutral-700 hover:text-[#003b73] hover:bg-[#f0f7ff]"
                         : "text-white hover:bg-white/20 hover:text-white"
                         }`}
                 >
                     <Avatar className="h-8 w-8 border-2 border-white/20">
                         <AvatarImage src={user.avatarUrl} />
-                        <AvatarFallback className="bg-blue-700 text-white text-sm">
+                        <AvatarFallback className="bg-[#003b73] text-white text-sm">
                             {getUserInitials()}
                         </AvatarFallback>
                     </Avatar>
@@ -62,7 +62,7 @@ export const UserDropdown = ({
                     <div className="flex items-center space-x-3">
                         <Avatar className="h-10 w-10">
                             <AvatarImage src={user.avatarUrl} />
-                            <AvatarFallback className="bg-blue-700 text-white">
+                            <AvatarFallback className="bg-[#003b73] text-white">
                                 {getUserInitials()}
                             </AvatarFallback>
                         </Avatar>
@@ -73,7 +73,7 @@ export const UserDropdown = ({
                             <span className="text-sm text-gray-500">{user.email}</span>
                             <Badge
                                 variant="outline"
-                                className={`mt-1 text-xs bg-blue-50 text-blue-800 border-blue-100`}
+                                className={`mt-1 text-xs bg-[#f0f7ff] text-[#002b5b] border-[#003b73]/20`}
                             >
                                 {formatRoleName(user.role)}
                             </Badge>

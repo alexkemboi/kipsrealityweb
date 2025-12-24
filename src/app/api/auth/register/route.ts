@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendVerificationEmail } from "@/lib/mail-service";
 
-const ALLOWED_ROLES = ['SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'LANDLORD', 'VENDOR', 'TENANT', 'AGENT'] as const;
+const ALLOWED_ROLES = ['SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'VENDOR', 'TENANT', 'AGENT'] as const;
 type UserRole = typeof ALLOWED_ROLES[number];
 
 export async function POST(request: Request) {

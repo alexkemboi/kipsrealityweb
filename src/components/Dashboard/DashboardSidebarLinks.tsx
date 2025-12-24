@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { RouteGroup } from './RouteGroup'
 import { systemRoutes, routeConfig } from './SidebarLinks'
 import { LogOut } from 'lucide-react'
+import { useLogout } from '@/hooks/useLogout';
    
 interface DashboardSidebarLinksProps {
   user: { id: string, firstName: string, role: string, email: string }
@@ -14,9 +15,10 @@ interface DashboardSidebarLinksProps {
 
 export function DashboardSidebarLinks({ user, open = true, isCollapsed = false, darkMode = true }: DashboardSidebarLinksProps) {
   const userRoutes = routeConfig[user.role as keyof typeof routeConfig]
+  const { logout } = useLogout({ redirectTo: '/' });
 
   const handleLogout = async () => {
-    // TODO: Handle Logout 
+      await logout()
   }
 
   return (

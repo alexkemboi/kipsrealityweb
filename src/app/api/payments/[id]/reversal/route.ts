@@ -79,7 +79,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({
       success: true,
       ...result,
-      message: `Payment reversed. Invoice status: ${result.status}. Remaining balance: KES ${result.remaining.toFixed(2)}`,
+      message: `Payment reversed. Invoice status: ${result.status}. Remaining balance: USD ${result.remaining.toFixed(2)}`,
     });
   } catch (err: any) {
     console.error("Payment reversal error:", err);

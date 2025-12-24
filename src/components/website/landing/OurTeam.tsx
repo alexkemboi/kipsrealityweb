@@ -27,7 +27,7 @@ export default function OurTeam() {
     <section id="our-team" className="py-8 lg:py-10 bg-white overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-5xl mx-auto mb-10">
-          <h2 className="text-3xl md:text-4xl font-black text-blue-700 mb-6 tracking-tighter">
+          <h2 className="text-3xl md:text-4xl font-black text-[#003b73] mb-6 tracking-tighter">
             Our <span className="text-black">Team</span>
           </h2>
           <p className="text-xl md:text-2xl text-slate-500 leading-relaxed font-bold opacity-95">
@@ -43,10 +43,10 @@ export default function OurTeam() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-blue-700 rounded-[24px] p-10 flex flex-col items-center text-center shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
+              className="bg-[#003b73] rounded-[24px] p-10 flex flex-col items-center text-center shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
             >
               {/* Icon Box */}
-              <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center text-blue-700 mb-8 group-hover:scale-110 transition-transform duration-300">
+              <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center text-[#003b73] mb-8 group-hover:scale-110 transition-transform duration-300">
                 <item.icon size={28} />
               </div>
 

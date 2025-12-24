@@ -155,7 +155,7 @@ export default function EnhancedLeaseManagementDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "ACTIVE":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-navy-100 text-green-800 border-green-300";
       case "EXPIRING_SOON":
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
       case "DRAFT":
@@ -212,13 +212,13 @@ export default function EnhancedLeaseManagementDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-navy-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 font-medium">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-2xl font-bold text-navy-700">{stats.active}</p>
               </div>
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
+              <CheckCircle2 className="w-6 h-6 text-navy-700" />
             </div>
           </div>
 
@@ -520,7 +520,7 @@ export default function EnhancedLeaseManagementDashboard() {
                                     `/property-manager/content/lease/${lease.id}/renew`
                                   )
                                 }
-                                className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                className="p-1.5 text-navy-700 hover:bg-navy-50 rounded transition-colors"
                                 title="Renew Lease"
                               >
                                 <RefreshCw className="w-4 h-4" />

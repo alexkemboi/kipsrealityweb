@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  User, Home, FileText, Mail, DollarSign, Calendar, 
+import {
+  User, Home, FileText, Mail, DollarSign, Calendar,
   Phone, Search, Eye, Download, Check, X,
   AlertCircle, Plus, ExternalLink, TrendingUp,
   Clock, CheckCircle, AlertTriangle,
@@ -98,13 +98,13 @@ interface Invite {
 
 export default function EnhancedTenantDashboard() {
   const [activeTab, setActiveTab] = useState<"tenants" | "applications" | "invites">("tenants");
-    const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
 
   // Data states
   const [leases, setLeases] = useState<Lease[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
-  
+
   // UI states
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,7 +113,7 @@ export default function EnhancedTenantDashboard() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  
+
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteFirstName, setInviteFirstName] = useState("");
@@ -134,9 +134,9 @@ export default function EnhancedTenantDashboard() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
- 
 
-  
+
+
 
   // Fetch all data
   useEffect(() => {
@@ -172,13 +172,13 @@ export default function EnhancedTenantDashboard() {
   useEffect(() => {
     if (selectedLeaseId) {
       const lease = leases.find(l => l.id === selectedLeaseId);
-      
+
       if (lease?.application) {
         const fullName = lease.application.fullName || "";
         const nameParts = fullName.trim().split(/\s+/);
         const fName = nameParts[0] || "";
         const lName = nameParts.slice(1).join(" ") || "";
-        
+
         setInviteEmail(lease.application.email || "");
         setInviteFirstName(fName);
         setInviteLastName(lName);
@@ -197,14 +197,14 @@ export default function EnhancedTenantDashboard() {
     }
   }, [selectedLeaseId, leases]);
 
-   // Full name helper
+  // Full name helper
   const getTenantName = (tenant?: Tenant) => {
     if (!tenant) return "Unnamed Tenant";
     const full = [tenant.firstName, tenant.lastName].filter(Boolean).join(" ");
     return full || tenant.email || "Unnamed Tenant";
   };
   // Filter functions
-   const filteredLeases = leases.filter((lease) => {
+  const filteredLeases = leases.filter((lease) => {
     const name = getTenantName(lease.tenant).toLowerCase();
     const email = lease.tenant?.email?.toLowerCase() || "";
     const property = lease.property?.name?.toLowerCase() || "";
@@ -216,12 +216,12 @@ export default function EnhancedTenantDashboard() {
       property.includes(searchTerm.toLowerCase()) ||
       unit.includes(searchTerm.toLowerCase());
 
-          const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
+    const matchesStatus = statusFilter === "ALL" || lease.leaseStatus === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const filteredApplications = applications.filter((app) => {
-    const matchesSearch = 
+    const matchesSearch =
       app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       app.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || app.status === statusFilter;
@@ -231,119 +231,119 @@ export default function EnhancedTenantDashboard() {
 
 
   // Handle input changes
- const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  setFormData({ ...formData, [e.target.name]: e.target.value });
-};
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
 
   const openEditModal = (tenant?: Tenant) => {
-  if (!tenant) return;
+    if (!tenant) return;
 
-  setSelectedTenant(tenant);
+    setSelectedTenant(tenant);
 
-  setFormData({
-    firstName: tenant.firstName || "",
-    lastName: tenant.lastName || "",
-    email: tenant.email || "",
-    phone: tenant.phone || "",
-  });
+    setFormData({
+      firstName: tenant.firstName || "",
+      lastName: tenant.lastName || "",
+      email: tenant.email || "",
+      phone: tenant.phone || "",
+    });
 
-  setIsEditModalOpen(true);
-};
+    setIsEditModalOpen(true);
+  };
 
 
 
   // Submit edited tenant details
   const handleSave = async () => {
-  if (!selectedTenant) return;
+    if (!selectedTenant) return;
 
-  setIsSaving(true);
-  try {
-    const res = await fetch(`/api/tenants/${selectedTenant.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/tenants/${selectedTenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-    if (!res.ok) throw new Error("Failed to update tenant");
+      if (!res.ok) throw new Error("Failed to update tenant");
 
-    setIsEditModalOpen(false);
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update tenant");
-  } finally {
-    setIsSaving(false);
-  }
-};
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update tenant");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
 
   // Handle Approve
-    async function handleApprove(appId: string) {
-      try {
-        const res = await fetch(`/api/tenant-application/${appId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "APPROVED" }),
-        });
-        
-        if (res.ok) {
-          setApplications((prev) =>
-            prev.map((app) => (app.id === appId ? { ...app, status: "Approved" } : app))
-          );
-          setShowModal(false);
-          alert("Application approved! You can now proceed to lease signing.");
-        }
-      } catch (err) {
-        console.error("Error approving application:", err);
-        alert("Failed to approve application");
+  async function handleApprove(appId: string) {
+    try {
+      const res = await fetch(`/api/tenant-application/${appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "APPROVED" }),
+      });
+
+      if (res.ok) {
+        setApplications((prev) =>
+          prev.map((app) => (app.id === appId ? { ...app, status: "Approved" } : app))
+        );
+        setShowModal(false);
+        alert("Application approved! You can now proceed to lease signing.");
       }
+    } catch (err) {
+      console.error("Error approving application:", err);
+      alert("Failed to approve application");
     }
-  
-    // Handle Reject
-    async function handleReject(appId: string) {
-      try {
-        const res = await fetch(`/api/tenant-application/${appId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "REJECTED" }),
-        });
-        
-        if (res.ok) {
-          setApplications((prev) =>
-            prev.map((app) => (app.id === appId ? { ...app, status: "Rejected" } : app))
-          );
-          setShowModal(false);
-        }
-      } catch (err) {
-        console.error("Error rejecting application:", err);
-        alert("Failed to reject application");
+  }
+
+  // Handle Reject
+  async function handleReject(appId: string) {
+    try {
+      const res = await fetch(`/api/tenant-application/${appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "REJECTED" }),
+      });
+
+      if (res.ok) {
+        setApplications((prev) =>
+          prev.map((app) => (app.id === appId ? { ...app, status: "Rejected" } : app))
+        );
+        setShowModal(false);
       }
+    } catch (err) {
+      console.error("Error rejecting application:", err);
+      alert("Failed to reject application");
     }
-  
-  
-    function proceedToLease(app: TenantApplication) {
-      // Navigate to lease signing page with application data
-      const userId = app.id || app.id;
-      window.location.href = `/property-manager/content/lease/create?applicationId=${app.id}&tenantId=${userId}`;
-    }
-  
+  }
+
+
+  function proceedToLease(app: TenantApplication) {
+    // Navigate to lease signing page with application data
+    const userId = app.id || app.id;
+    window.location.href = `/property-manager/content/lease/create?applicationId=${app.id}&tenantId=${userId}`;
+  }
+
 
   const filteredInvites = invites.filter((invite) => {
-    const matchesSearch = 
+    const matchesSearch =
       invite.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invite.firstName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = 
-      statusFilter === "ALL" || 
+    const matchesStatus =
+      statusFilter === "ALL" ||
       (statusFilter === "ACCEPTED" && invite.accepted) ||
       (statusFilter === "PENDING" && !invite.accepted);
     return matchesSearch && matchesStatus;
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -352,7 +352,7 @@ export default function EnhancedTenantDashboard() {
       case "SIGNED":
       case "APPROVED":
       case "PAID":
-        return "bg-green-100 text-green-700 border-green-200";
+        return "bg-green-100 text-green-700 border-navy-200";
       case "PENDING":
         return "bg-amber-100 text-amber-700 border-amber-200";
       case "DRAFT":
@@ -368,7 +368,7 @@ export default function EnhancedTenantDashboard() {
   const copyInviteLink = async (token: string, email: string, leaseId: string) => {
     const baseUrl = window.location.origin;
     const inviteLink = `${baseUrl}/invite/tenant/accept?email=${encodeURIComponent(email)}&token=${token}&leaseId=${leaseId}`;
-    
+
     try {
       await navigator.clipboard.writeText(inviteLink);
       setCopiedToken(token);
@@ -511,38 +511,38 @@ export default function EnhancedTenantDashboard() {
   };
 
   // Statistics
- const stats = leases.reduce(
-  (acc, lease) => {
-    acc.totalTenants = leases.length;
-    if (lease.leaseStatus === "SIGNED") acc.activeLeases++;
+  const stats = leases.reduce(
+    (acc, lease) => {
+      acc.totalTenants = leases.length;
+      if (lease.leaseStatus === "SIGNED") acc.activeLeases++;
 
-    // Sum invoiced across all invoices
-    const totalInvoiced = lease.invoice?.reduce((sum: any, inv: { amount: any; }) => sum + (inv.amount || 0), 0) || 0;
+      // Sum invoiced across all invoices
+      const totalInvoiced = lease.invoice?.reduce((sum: any, inv: { amount: any; }) => sum + (inv.amount || 0), 0) || 0;
 
-    // Sum paid ignoring reversed payments
-    const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
-      const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
-      return sum + paid;
-    }, 0) || 0;
+      // Sum paid ignoring reversed payments
+      const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
+        const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
+        return sum + paid;
+      }, 0) || 0;
 
-    const balance = totalInvoiced - totalPaid;
+      const balance = totalInvoiced - totalPaid;
 
-    acc.totalRevenue += totalInvoiced;
-    acc.totalPaid += totalPaid;
-    acc.totalBalance += balance;
+      acc.totalRevenue += totalInvoiced;
+      acc.totalPaid += totalPaid;
+      acc.totalBalance += balance;
 
-    return acc;
-  },
-  {
-    totalTenants: 0,
-    activeLeases: 0,
-    totalRevenue: 0,
-    totalPaid: 0,
-    totalBalance: 0,
-    pendingApplications: applications.filter(a => a.status.toLowerCase() === "pending").length,
-    pendingInvites: invites.filter(i => !i.accepted).length,
-  }
-);
+      return acc;
+    },
+    {
+      totalTenants: 0,
+      activeLeases: 0,
+      totalRevenue: 0,
+      totalPaid: 0,
+      totalBalance: 0,
+      pendingApplications: applications.filter(a => a.status.toLowerCase() === "pending").length,
+      pendingInvites: invites.filter(i => !i.accepted).length,
+    }
+  );
 
 
 
@@ -595,12 +595,12 @@ export default function EnhancedTenantDashboard() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center gap-3">
               <div className="bg-green-100 p-3 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+                <DollarSign className="w-6 h-6 text-green-500" />
               </div>
               <div>
                 <p className="text-sm text-slate-600">Revenue</p>
-                <p className="text-2xl font-bold text-green-600">KES {(stats.totalRevenue / 1000).toFixed(0)}k</p>
-                <p className="text-xs text-slate-500">Paid: KES {(stats.totalPaid / 1000).toFixed(0)}k</p>
+                <p className="text-2xl font-bold text-green-500">$ {(stats.totalRevenue / 1000).toFixed(0)}k</p>
+                <p className="text-xs text-slate-500">Paid: $ {(stats.totalPaid / 1000).toFixed(0)}k</p>
               </div>
             </div>
           </div>
@@ -625,7 +625,7 @@ export default function EnhancedTenantDashboard() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Outstanding Balance</p>
-                <p className="text-2xl font-bold text-red-600">KES {(stats.totalBalance / 1000).toFixed(0)}k</p>
+                <p className="text-2xl font-bold text-red-600">$ {(stats.totalBalance / 1000).toFixed(0)}k</p>
                 <p className="text-xs text-slate-500">Total pending</p>
               </div>
             </div>
@@ -641,11 +641,10 @@ export default function EnhancedTenantDashboard() {
                 setSearchTerm("");
                 setStatusFilter("ALL");
               }}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === "tenants"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "tenants"
+                ? "bg-blue-600 text-white"
+                : "text-slate-600 hover:bg-slate-100"
+                }`}
             >
               Active Tenants ({stats.totalTenants})
             </button>
@@ -655,11 +654,10 @@ export default function EnhancedTenantDashboard() {
                 setSearchTerm("");
                 setStatusFilter("ALL");
               }}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === "applications"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "applications"
+                ? "bg-blue-600 text-white"
+                : "text-slate-600 hover:bg-slate-100"
+                }`}
             >
               Applications ({applications.length})
             </button>
@@ -669,11 +667,10 @@ export default function EnhancedTenantDashboard() {
                 setSearchTerm("");
                 setStatusFilter("ALL");
               }}
-              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
-                activeTab === "invites"
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
+              className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === "invites"
+                ? "bg-blue-600 text-white"
+                : "text-slate-600 hover:bg-slate-100"
+                }`}
             >
               Invites ({invites.length})
             </button>
@@ -722,7 +719,7 @@ export default function EnhancedTenantDashboard() {
             </select>
             <button
               onClick={exportToCSV}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors"
+              className="flex items-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-lg hover:bg-green-600 transition-colors"
             >
               <Download className="w-4 h-4" />
               Export CSV
@@ -767,7 +764,7 @@ export default function EnhancedTenantDashboard() {
                                   ? `${lease.tenant.firstName} ${lease.tenant.lastName}`
                                   : "Unnamed"}
                               </p>                              <p className="text-sm text-slate-500">{lease.tenant?.email}</p>
-                                                            {lease.tenant?.phone && (
+                              {lease.tenant?.phone && (
                                 <p className="text-sm text-slate-500">{lease.tenant.phone}</p>
                               )}
                             </div>
@@ -778,7 +775,7 @@ export default function EnhancedTenantDashboard() {
                           <p className="text-sm text-slate-500">Unit {lease.unit?.unitNumber}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-semibold text-slate-900">KES {lease.rentAmount?.toLocaleString()}</p>
+                          <p className="font-semibold text-slate-900">$ {lease.rentAmount?.toLocaleString()}</p>
                           <p className="text-xs text-slate-500">/month</p>
                         </td>
                         <td className="px-6 py-4">
@@ -797,21 +794,21 @@ export default function EnhancedTenantDashboard() {
                                   <div className="flex justify-between">
                                     <span className="text-slate-600">Invoiced:</span>
                                     <span className="font-semibold text-slate-900">
-                                      KES {totalInvoiced.toLocaleString()}
+                                      $ {totalInvoiced.toLocaleString()}
                                     </span>
                                   </div>
 
                                   <div className="flex justify-between">
                                     <span className="text-slate-600">Paid:</span>
-                                    <span className="font-semibold text-green-600">
-                                      KES {totalPaid.toLocaleString()}
+                                    <span className="font-semibold text-green-500">
+                                      $ {totalPaid.toLocaleString()}
                                     </span>
                                   </div>
 
                                   <div className="flex justify-between">
                                     <span className="text-slate-600">Balance:</span>
-                                    <span className={`font-semibold ${balance > 0 ? "text-red-600" : "text-green-600"}`}>
-                                      KES {balance.toLocaleString()}
+                                    <span className={`font-semibold ${balance > 0 ? "text-red-600" : "text-green-500"}`}>
+                                      $ {balance.toLocaleString()}
                                     </span>
                                   </div>
                                 </>
@@ -820,47 +817,47 @@ export default function EnhancedTenantDashboard() {
                           </div>
                         </td>
 
-                       
+
                         <td className="px-6 py-4">
                           <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lease.leaseStatus)}`}>
                             {lease.leaseStatus}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                        <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="inline-flex justify-center w-full rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Actions
-                          </button>
-                        </DropdownMenuTrigger>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="inline-flex justify-center w-full rounded-lg bg-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Actions
+                              </button>
+                            </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end" className="w-48 bg-white shadow-lg rounded-md border border-slate-200">
-                          <DropdownMenuItem
-                            onClick={() => window.location.href = `/property-manager/content/lease/${lease.id}`}
-                            className="flex items-center gap-2"
-                          >
-                            <Eye className="w-4 h-4" /> View Lease
-                          </DropdownMenuItem>
+                            <DropdownMenuContent align="end" className="w-48 bg-white shadow-lg rounded-md border border-slate-200">
+                              <DropdownMenuItem
+                                onClick={() => window.location.href = `/property-manager/content/lease/${lease.id}`}
+                                className="flex items-center gap-2"
+                              >
+                                <Eye className="w-4 h-4" /> View Lease
+                              </DropdownMenuItem>
 
-                          <DropdownMenuItem
-                            onClick={() => window.location.href = `/property-manager/content/tenants/${lease.tenant?.id}`}
-                            className="flex items-center gap-2"
-                          >
-                            <DollarSign className="w-4 h-4" /> Finance
-                          </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => window.location.href = `/property-manager/content/tenants/${lease.tenant?.id}`}
+                                className="flex items-center gap-2"
+                              >
+                                <DollarSign className="w-4 h-4" /> Finance
+                              </DropdownMenuItem>
 
-                          <DropdownMenuItem
-                            onClick={() => lease.tenant && openEditModal(lease.tenant)}
-                            className="flex items-center gap-2"
-                          >
-                            <Edit className="w-4 h-4" /> Edit Tenant
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    
-                      </td>
+                              <DropdownMenuItem
+                                onClick={() => lease.tenant && openEditModal(lease.tenant)}
+                                className="flex items-center gap-2"
+                              >
+                                <Edit className="w-4 h-4" /> Edit Tenant
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
 
-                    </tr>
+                        </td>
+
+                      </tr>
                     ))
                   )}
                 </tbody>
@@ -913,7 +910,7 @@ export default function EnhancedTenantDashboard() {
                           <div className="space-y-1">
                             <p className="text-sm font-medium text-slate-900">{app.jobTitle || "N/A"}</p>
                             <p className="text-xs text-slate-500">{app.employerName || "N/A"}</p>
-                            <p className="text-xs text-slate-600">KES {(app.monthlyIncome || 0).toLocaleString()}</p>
+                            <p className="text-xs text-slate-600">$ {(app.monthlyIncome || 0).toLocaleString()}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -979,8 +976,8 @@ export default function EnhancedTenantDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-slate-700">
-                            {invite.firstName || invite.lastName 
-                              ? `${invite.firstName || ""} ${invite.lastName || ""}`.trim() 
+                            {invite.firstName || invite.lastName
+                              ? `${invite.firstName || ""} ${invite.lastName || ""}`.trim()
                               : "N/A"}
                           </p>
                         </td>
@@ -996,36 +993,36 @@ export default function EnhancedTenantDashboard() {
                           <p className="text-sm text-slate-500">{formatDate(invite.createdAt)}</p>
                         </td>
                         <td className="px-6 py-4">
-                        {!invite.accepted && (
-                          <button
-                            disabled={!invite?.leaseId}
-                            onClick={() =>
-                              copyInviteLink(
-                                invite.token,
-                                invite.email,
-                                invite.leaseId // safe now
-                              )
-                            }
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors
+                          {!invite.accepted && (
+                            <button
+                              disabled={!invite?.leaseId}
+                              onClick={() =>
+                                copyInviteLink(
+                                  invite.token,
+                                  invite.email,
+                                  invite.leaseId // safe now
+                                )
+                              }
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors
                               ${!invite?.leaseId
-                                ? "bg-gray-400 cursor-not-allowed"
-                                : "bg-blue-600 text-white hover:bg-blue-700"}
+                                  ? "bg-gray-400 cursor-not-allowed"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"}
                             `}
-                          >
-                            {copiedToken === invite.token ? (
-                              <>
-                                <Check className="w-4 h-4" />
-                                Copied!
-                              </>
-                            ) : (
-                              <>
-                                <ExternalLink className="w-4 h-4" />
-                                Copy Link
-                              </>
-                            )}
-                          </button>
-                        )}
-                      </td>
+                            >
+                              {copiedToken === invite.token ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="w-4 h-4" />
+                                  Copy Link
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </td>
 
                       </tr>
                     ))
@@ -1036,111 +1033,111 @@ export default function EnhancedTenantDashboard() {
           )}
         </div>
 
-         {/* Edit Tenant Modal */}
-          {isEditModalOpen && selectedTenant && (
-            <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl border border-gray-200">
-                
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-800">Edit Tenant</h2>
-                  <button
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="text-gray-400 hover:text-gray-600 text-2xl"
+        {/* Edit Tenant Modal */}
+        {isEditModalOpen && selectedTenant && (
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl border border-gray-200">
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Edit Tenant</h2>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  disabled={isSaving}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
                     disabled={isSaving}
-                  >
-                    ✕
-                  </button>
+                  />
                 </div>
 
-                {/* Form */}
-                <div className="space-y-4">
-                  {/* First Name */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      placeholder="Enter first name"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
-                      disabled={isSaving}
-                    />
-                  </div>
-
-                  {/* Last Name */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      placeholder="Enter last name"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
-                      disabled={isSaving}
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="Enter email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
-                      disabled={isSaving}
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Phone
-                    </label>
-                    <input
-                      type="text"
-                      name="phone"
-                      placeholder="Enter phone number"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
-                      disabled={isSaving}
-                    />
-                  </div>
+                {/* Last Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Enter last name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
+                    disabled={isSaving}
+                  />
                 </div>
 
-                {/* Actions */}
-                <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => setIsEditModalOpen(false)}
-                    className="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Enter email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
                     disabled={isSaving}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    name="phone"
+                    placeholder="Enter phone number"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all hover:border-gray-400"
                     disabled={isSaving}
-                  >
-                    {isSaving ? "Saving..." : "Save Changes"}
-                  </button>
+                  />
                 </div>
               </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
             </div>
-          )}
-    
+          </div>
+        )}
+
 
         {/* Invite Modal */}
         {showInviteModal && (
@@ -1170,7 +1167,7 @@ export default function EnhancedTenantDashboard() {
 
               {/* Success Message */}
               {inviteSuccess && (
-                <div className="mx-6 mt-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg flex items-start gap-3">
+                <div className="mx-6 mt-6 bg-green-50 border border-navy-200 text-green-700 p-4 rounded-lg flex items-start gap-3">
                   <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <p className="font-medium text-sm">{inviteSuccess}</p>
                 </div>
@@ -1194,7 +1191,7 @@ export default function EnhancedTenantDashboard() {
                       const address = lease.property?.address || "No Address";
                       const fullAddress = city && address !== city ? `${address}, ${city}` : address;
                       const displayName = unitName ? `${unitNum} (${unitName})` : unitNum;
-                      
+
                       return (
                         <option key={lease.id} value={lease.id}>
                           Unit {displayName} - {fullAddress}
@@ -1300,22 +1297,20 @@ export default function EnhancedTenantDashboard() {
 
               <div className="p-6 space-y-6">
                 {/* Status Banner */}
-                <div className={`p-4 rounded-lg border flex items-center justify-between ${
-                  selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
-                    ? "bg-green-50 border-green-200"
-                    : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
+                <div className={`p-4 rounded-lg border flex items-center justify-between ${selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
+                  ? "bg-green-50 border-navy-200"
+                  : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
                     ? "bg-red-50 border-red-200"
                     : "bg-amber-50 border-amber-200"
-                }`}>
+                  }`}>
                   <div>
                     <p className="text-sm font-medium text-slate-600">Current Status</p>
-                    <p className={`text-lg font-bold ${
-                      selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
-                        ? "text-green-700"
-                        : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
+                    <p className={`text-lg font-bold ${selectedApplication.status === "APPROVED" || selectedApplication.status === "Approved"
+                      ? "text-green-700"
+                      : selectedApplication.status === "REJECTED" || selectedApplication.status === "Rejected"
                         ? "text-red-700"
                         : "text-amber-700"
-                    }`}>
+                      }`}>
                       {selectedApplication.status}
                     </p>
                   </div>
@@ -1389,7 +1384,7 @@ export default function EnhancedTenantDashboard() {
                 {/* Employment Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <DollarSign className="w-5 h-5 text-green-500" />
                     Employment & Financial Information
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
@@ -1401,10 +1396,10 @@ export default function EnhancedTenantDashboard() {
                       <p className="text-sm text-slate-600 font-medium">Job Title</p>
                       <p className="text-slate-900 font-semibold mt-1">{selectedApplication.jobTitle || "N/A"}</p>
                     </div>
-                    <div className="col-span-2 bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <div className="col-span-2 bg-green-50 border border-navy-200 p-4 rounded-lg">
                       <p className="text-sm text-slate-600 font-medium">Monthly Income</p>
                       <p className="text-green-700 font-bold text-xl mt-1">
-                        KES {(selectedApplication.monthlyIncome || 0).toLocaleString()}
+                        $ {(selectedApplication.monthlyIncome || 0).toLocaleString()}
                       </p>
                       <p className="text-xs text-slate-600 mt-2">
                         Rent-to-Income Ratio: {selectedApplication.unit?.rentAmount && selectedApplication.monthlyIncome
@@ -1431,36 +1426,36 @@ export default function EnhancedTenantDashboard() {
                   Close
                 </button>
                 <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3 justify-end">
-                                
-                                {(selectedApplication.status === "Pending" || selectedApplication.status === "PENDING") && (
-                                  <>
-                                    <button
-                                      onClick={() => handleReject(selectedApplication.id)}
-                                      className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                    >
-                                      <X className="h-4 w-4" />
-                                      Reject
-                                    </button>
-                                    <button
-                                      onClick={() => handleApprove(selectedApplication.id)}
-                                      className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                    >
-                                      <Check className="h-4 w-4" />
-                                      Approve
-                                    </button>
-                                  </>
-                                )}
-                                {(selectedApplication.status === "Approved" || selectedApplication.status === "APPROVED") && (
-                                                                <button
-                                onClick={() => proceedToLease(selectedApplication as unknown as TenantApplication)}
-                                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                              >
-                                <FileText className="h-4 w-4" />
-                                Proceed to Lease Signing
-                              </button>
 
-                                )}
-                              </div>
+                  {(selectedApplication.status === "Pending" || selectedApplication.status === "PENDING") && (
+                    <>
+                      <button
+                        onClick={() => handleReject(selectedApplication.id)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleApprove(selectedApplication.id)}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                      >
+                        <Check className="h-4 w-4" />
+                        Approve
+                      </button>
+                    </>
+                  )}
+                  {(selectedApplication.status === "Approved" || selectedApplication.status === "APPROVED") && (
+                    <button
+                      onClick={() => proceedToLease(selectedApplication as unknown as TenantApplication)}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Proceed to Lease Signing
+                    </button>
+
+                  )}
+                </div>
               </div>
             </div>
           </div>

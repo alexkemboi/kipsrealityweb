@@ -181,7 +181,7 @@ export default function LeaseSignPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               {lease.landlordSignedAt ? (
-                <span className="text-green-600 font-semibold">
+                <span className="text-navy-700 font-semibold">
                   ✓ Landlord Signed
                 </span>
               ) : (
@@ -196,7 +196,7 @@ export default function LeaseSignPage() {
 
             <div className="flex items-center gap-2">
               {lease.tenantSignedAt ? (
-                <span className="text-green-600 font-semibold">
+                <span className="text-navy-700 font-semibold">
                   ✓ Tenant Signed
                 </span>
               ) : (
@@ -240,7 +240,7 @@ export default function LeaseSignPage() {
 
         {/* Fully Executed Message */}
         {lease.leaseStatus === "SIGNED" && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded p-4">
+          <div className="mt-6 bg-navy-50 border border-navy-200 rounded p-4">
             <p className="text-green-800 font-semibold">
               ✓ This lease has been fully executed by both parties
             </p>

@@ -64,9 +64,9 @@ export const BlogHeader = ({ searchQuery, onSearchChange }: BlogHeaderProps) => 
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-3 leading-tight line-clamp-2 group-hover:text-[#003b73] transition-colors duration-300">
             {hero.title || "Latest Articles"}
-          </h1>
+          </h2>
           <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
             {hero.subtitle ||
               "Expert insights, guides, and tips to help you succeed in property management."}

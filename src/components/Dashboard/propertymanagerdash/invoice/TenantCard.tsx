@@ -28,16 +28,16 @@ export default function TenantCard({ lease }: { lease: any }) {
         <div className="bg-slate-50 p-3 rounded-lg mb-3">
           <div className="flex justify-between text-sm text-gray-600">
             <span>Total Invoiced</span>
-            <span className="font-medium">KES {Number(totalInvoiced).toLocaleString()}</span>
+            <span className="font-medium">$ {Number(totalInvoiced).toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm text-gray-600 mt-1">
             <span>Total Paid</span>
-            <span className="font-medium text-emerald-700">KES {Number(totalPaid).toLocaleString()}</span>
+            <span className="font-medium text-emerald-700">$ {Number(totalPaid).toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm mt-2">
             <span className="text-gray-600">Balance</span>
             <span className={`font-bold ${balance > 0 ? "text-red-600" : "text-emerald-700"}`}>
-              KES {Number(balance).toLocaleString()}
+              $ {Number(balance).toLocaleString()}
             </span>
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function TenantCard({ lease }: { lease: any }) {
         <div className="flex gap-2">
           <button
             onClick={() => router.push(`/property-manager/finance/tenants/${lease.tenant?.id || lease.id}`
-)}
+            )}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             View Invoices
