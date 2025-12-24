@@ -36,27 +36,26 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
           />
         </div>
 
-    {/* Tabs */}
-<div className="mt-8 border-b border-gray-200 flex divide-x divide-gray-300 rounded-t-xl overflow-hidden">
-  {["view", "edit", "inquiries"].map((tab) => (
-    <button
-      key={tab}
-      onClick={() => setActiveTab(tab as "view" | "edit" | "inquiries")}
-      className={`flex-1 py-3 text-sm font-semibold transition-colors
-        ${
-          activeTab === tab
-            ? "text-blue-600 border-b-2 border-blue-600 bg-gray-50"
-            : "text-gray-500 hover:text-gray-700"
-        }`}
-    >
-      {tab === "view"
-        ? "Overview"
-        : tab === "edit"
-        ? "Edit Listing"
-        : "Inquiries"}
-    </button>
-  ))}
-</div>
+        {/* Tabs */}
+        <div className="mt-8 border-b border-gray-200 flex divide-x divide-gray-300 rounded-t-xl overflow-hidden">
+          {["view", "edit", "inquiries"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as "view" | "edit" | "inquiries")}
+              className={`flex-1 py-3 text-sm font-semibold transition-colors
+        ${activeTab === tab
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-gray-50"
+                  : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              {tab === "view"
+                ? "Overview"
+                : tab === "edit"
+                  ? "Edit Listing"
+                  : "Inquiries"}
+            </button>
+          ))}
+        </div>
 
 
         {/* Content Area */}
@@ -127,7 +126,7 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                     value={editableListing.title}
                     onChange={(e) => handleChange("title", e.target.value)}
                     className="text-2xl md:text-3xl font-bold text-gray-900 border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                      style={{ width: `${editableListing.title.length + 2}ch` }}
+                    style={{ width: `${editableListing.title.length + 2}ch` }}
 
                   />
                   <input
@@ -152,7 +151,7 @@ export default function MyListing({ listing }: ListingDetailsPageProps) {
                   className="w-full text-gray-900 border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 />
 
-             
+
 
                 <button
                   type="submit"

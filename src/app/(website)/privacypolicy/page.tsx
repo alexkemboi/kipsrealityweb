@@ -111,7 +111,7 @@ const PolicyListPage = () => {
           {filteredPolicies.map((policy) => (
             <div key={policy.id} className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-blue-100">
               {/* Policy Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 px-8 py-6 border-b-2 border-blue-200">
+              <div className="bg-linear-to-r from-blue-50 to-blue-100 px-8 py-6 border-b-2 border-blue-200">
                 <h2 className="text-3xl font-bold text-gray-900 mb-3">{policy.title}</h2>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-700">
                   <span className="flex items-center gap-1">
@@ -167,7 +167,7 @@ const PolicyListPage = () => {
                           )}
                         </div>
                       </div>
-                      <div className="ml-4 flex-shrink-0">
+                      <div className="ml-4 shrink-0">
                         {isExpanded ? (
                           <ChevronUp className="w-6 h-6 text-blue-600" />
                         ) : (
@@ -177,7 +177,7 @@ const PolicyListPage = () => {
                     </button>
 
                     {isExpanded && section.content && (
-                      <div data-color-mode="light" className="px-8 py-6 bg-gradient-to-br from-gray-50 to-blue-50/30">
+                      <div data-color-mode="light" className="px-8 py-6 bg-linear-to-br from-gray-50 to-blue-50/30">
                         <div className="bg-white rounded-xl p-6 shadow-inner border border-gray-200">
                           <Markdown source={replacePlaceholders(section.content, policy)} />
                         </div>

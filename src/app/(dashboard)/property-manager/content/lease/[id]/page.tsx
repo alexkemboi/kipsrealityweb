@@ -223,14 +223,14 @@ export default function LeaseViewPage() {
                 <div>
                   <p className="text-emerald-100 text-sm font-medium mb-2">Monthly Rent</p>
                   <p className="text-5xl font-bold">
-                    {lease.unit?.currency || "$"}{lease.rentAmount.toLocaleString()}
+                    $ {lease.rentAmount.toLocaleString()}
                   </p>
                 </div>
                 <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
                   <span className="text-3xl">💰</span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 pt-6 border-t border-emerald-400/30">
                 {lease.securityDeposit !== null && (
                   <div>
@@ -320,9 +320,8 @@ export default function LeaseViewPage() {
                     </div>
                   )}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      lease.landlordSignedAt ? "bg-emerald-100" : "bg-slate-200"
-                    }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${lease.landlordSignedAt ? "bg-emerald-100" : "bg-slate-200"
+                      }`}>
                       <span className={`text-2xl ${lease.landlordSignedAt ? "text-emerald-600" : "text-slate-400"}`}>
                         🏢
                       </span>
@@ -348,9 +347,8 @@ export default function LeaseViewPage() {
                     </div>
                   )}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      lease.tenantSignedAt ? "bg-emerald-100" : "bg-slate-200"
-                    }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${lease.tenantSignedAt ? "bg-emerald-100" : "bg-slate-200"
+                      }`}>
                       <span className={`text-2xl ${lease.tenantSignedAt ? "text-emerald-600" : "text-slate-400"}`}>
                         👤
                       </span>
@@ -450,11 +448,10 @@ export default function LeaseViewPage() {
                 ].map((utility, idx) => (
                   <div
                     key={idx}
-                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${
-                      utility.key
+                    className={`flex items-center justify-between p-3 rounded-lg transition-colors ${utility.key
                         ? "bg-emerald-50 border border-emerald-200"
                         : "bg-slate-50 border border-slate-200"
-                    }`}
+                      }`}
                   >
                     <span className={`flex items-center gap-2 ${utility.key ? "text-slate-900 font-medium" : "text-slate-400"}`}>
                       <span>{utility.icon}</span>

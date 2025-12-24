@@ -22,7 +22,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   // === MODERN HEADER WITH COLOR ===
   doc.setFillColor(59, 130, 246); // Blue background
   doc.rect(0, 0, 210, 40, 'F');
-  
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(24);
   doc.setTextColor(255, 255, 255);
@@ -34,30 +34,30 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   if (groupData.property || groupData.unit) {
     doc.setFillColor(249, 250, 251); // Light gray background
     doc.roundedRect(15, y, 180, 30, 3, 3, "F"); // Increased height to 30
-    
+
     doc.setFontSize(12);
     doc.setTextColor(75, 85, 99);
     doc.setFont("helvetica", "bold");
     doc.text("PROPERTY DETAILS", 25, y + 8);
-    
+
     doc.setFont("helvetica", "normal");
     doc.setTextColor(31, 41, 55);
-    
+
     // Determine property name based on property type
     const propertyName = getPropertyDisplayName(groupData.property);
-    
+
     // Property name
     if (propertyName) {
       doc.text("Property Name: " + propertyName, 25, y + 16);
     }
-    
+
     // Property address
     if (groupData.property?.address) {
       doc.setFontSize(10);
       doc.text(`Address: ${groupData.property.address}`, 25, y + 22);
       doc.setFontSize(12);
     }
-    
+
     // Unit information on the right side - MORE PROMINENT
     if (groupData.unit?.unitNumber) {
       doc.setFont("helvetica", "bold");
@@ -66,27 +66,27 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
       doc.setFont("helvetica", "normal");
       doc.setTextColor(31, 41, 55);
     }
-    
+
     y += 40; // Increased spacing
   }
 
   // === BILLED TO SECTION ===
   doc.setFillColor(249, 250, 251); // Light gray background
   doc.roundedRect(15, y, 180, 25, 3, 3, "F");
-  
+
   doc.setFontSize(12);
   doc.setTextColor(75, 85, 99);
   doc.setFont("helvetica", "bold");
   doc.text("BILLED TO", 25, y + 8);
-  
+
   doc.setFont("helvetica", "normal");
   doc.setTextColor(31, 41, 55);
-  
+
   // Tenant name
   if (groupData.tenant?.firstName || groupData.tenant?.lastName) {
     doc.text(`${groupData.tenant?.firstName || ""} ${groupData.tenant?.lastName || ""}`.trim(), 25, y + 16);
   }
-  
+
   // Billing period on the right side
   doc.text(`Billing Period: ${formatGroupDate(groupData.dueDate)}`, 120, y + 16);
 
@@ -103,7 +103,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   // Table Header
   doc.setFillColor(59, 130, 246);
   doc.roundedRect(20, y, 170, 10, 2, 2, "F");
-  
+
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
   doc.text("INVOICE TYPE", 25, y + 7);
@@ -152,7 +152,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
       invoice.utilities.forEach((u: any, utilIndex: number) => {
         const utilType = u.type?.toUpperCase() === "METERED" ? "METERED" : "FIXED";
         let line = `• ${u.name} (${utilType})`;
-        
+
         if (utilType === "FIXED" && u.fixedAmount) {
           line += ` - KES ${u.fixedAmount.toLocaleString()}`;
         } else if (utilType === "METERED" && u.unitPrice) {
@@ -185,7 +185,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
 
   // === SIMPLIFIED PAYMENT SUMMARY ===
   y += 10;
-  
+
   // Summary header
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
@@ -195,10 +195,10 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
 
   // White background summary card - Only Balance Due
   const balanceDue = (groupData.totalAmount || 0) - (groupData.totalPaid || 0);
-  
+
   doc.setFillColor(255, 255, 255); // White background
   doc.roundedRect(20, y - 5, 170, 20, 5, 5, "F");
-  
+
   doc.setDrawColor(226, 232, 240); // Light border
   doc.setLineWidth(0.5);
   doc.roundedRect(20, y - 5, 170, 20, 5, 5, "S");
@@ -208,7 +208,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   doc.setFontSize(12);
   doc.setTextColor(31, 41, 55);
   doc.text("BALANCE DUE:", 30, y + 5);
-  
+
   doc.setTextColor(239, 68, 68); // Red color for balance due
   doc.text(`KES ${balanceDue.toLocaleString()}`, 150, y + 5, { align: "right" });
 
@@ -224,7 +224,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(75, 85, 99);
-  
+
   const instructions = [
     "• Please pay the balance due by the billing period end date",
     "• Late payments may incur additional charges",
@@ -240,11 +240,11 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    
+
     // Footer line
     doc.setDrawColor(226, 232, 240);
     doc.line(20, 285, 190, 285);
-    
+
     // Footer text
     doc.setFont("helvetica", "italic");
     doc.setFontSize(8);
@@ -259,17 +259,17 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
 // Helper function to determine property display name
 function getPropertyDisplayName(property: any): string {
   if (!property) return "";
-  
+
   // Check for apartment complex building name first
   if (property.apartmentComplexDetail?.buildingName) {
     return property.apartmentComplexDetail.buildingName;
   }
-  
+
   // Check for house name second
   if (property.houseDetail?.houseName) {
     return property.houseDetail.houseName;
   }
-  
+
   // Fallback to generic property name or address
   return property.name || property.address || "Property";
 }
@@ -288,7 +288,7 @@ async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
     }
 
     const pdfBlob = await generateCombinedInvoicePDF(groupData);
-    
+
     // Download the PDF
     const url = window.URL.createObjectURL(pdfBlob);
     const a = document.createElement("a");
@@ -298,7 +298,7 @@ async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
     a.click();
     a.remove();
     window.URL.revokeObjectURL(url);
-    
+
     return true;
   } catch (error) {
     console.error("Error generating combined invoice PDF:", error);
@@ -309,7 +309,7 @@ async function downloadCombinedInvoicePDF(groupData: any, groupId: string) {
 function getStatusColor(status: string) {
   switch (status?.toLowerCase()) {
     case "paid":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-navy-100 text-green-800 border-navy-200";
     case "overdue":
       return "bg-red-100 text-red-800 border-red-200";
     case "pending":
@@ -320,7 +320,7 @@ function getStatusColor(status: string) {
 }
 
 function formatCurrency(amount: number) {
-  return `KES ${Number(amount).toLocaleString()}`;
+  return `$ ${Number(amount).toLocaleString()}`;
 }
 
 function formatDate(dateString: string) {
@@ -344,7 +344,7 @@ function formatGroupDate(dateKey: string) {
 // Helper function to calculate invoice balance
 function calculateInvoiceBalance(invoice: Invoice): number {
   const payments = invoice.payment || [];
-  const totalPaid = payments.reduce((sum: number, payment: Payment) => 
+  const totalPaid = payments.reduce((sum: number, payment: Payment) =>
     sum + (payment.amount || 0), 0);
   return (invoice.amount || 0) - totalPaid;
 }
@@ -353,11 +353,11 @@ function calculateInvoiceBalance(invoice: Invoice): number {
 function calculateGroupBalance(group: GroupedInvoice): number {
   const totalPaid = group.invoices.reduce((sum, invoice) => {
     const payments = invoice.payment || [];
-    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) => 
+    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) =>
       paymentSum + (payment.amount || 0), 0);
     return sum + invoicePaid;
   }, 0);
-  
+
   return (group.totalAmount || 0) - totalPaid;
 }
 
@@ -365,7 +365,7 @@ function calculateGroupBalance(group: GroupedInvoice): number {
 function calculateGroupTotalPaid(group: GroupedInvoice): number {
   return group.invoices.reduce((sum, invoice) => {
     const payments = invoice.payment || [];
-    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) => 
+    const invoicePaid = payments.reduce((paymentSum: number, payment: Payment) =>
       paymentSum + (payment.amount || 0), 0);
     return sum + invoicePaid;
   }, 0);
@@ -376,7 +376,7 @@ function getGroupStatus(group: GroupedInvoice): string {
   const balance = calculateGroupBalance(group);
   const dueDate = group.date === "no-date" ? null : new Date(group.date);
   const today = new Date();
-  
+
   if (balance <= 0) return "paid";
   if (dueDate && dueDate < today) return "overdue";
   return "pending";
@@ -387,10 +387,10 @@ export default function TenantInvoicesPage() {
   const tenantId = (params as any).tenantId;
 
   const [groupedInvoices, setGroupedInvoices] = useState<GroupedInvoice[]>([]);
-  const [lease, setLease] = useState<any | null>(null); 
+  const [lease, setLease] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  
+
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showManualModal, setShowManualModal] = useState(false);
@@ -420,7 +420,7 @@ export default function TenantInvoicesPage() {
   // Filter grouped invoices by status
   const filteredGroups = useMemo(() => {
     if (statusFilter === "all") return groupedInvoices;
-    
+
     return groupedInvoices.filter(group => {
       const groupStatus = getGroupStatus(group);
       return groupStatus === statusFilter.toLowerCase();
@@ -430,11 +430,11 @@ export default function TenantInvoicesPage() {
   // Calculate financial summary from grouped invoices
   const financialSummary = useMemo(() => {
     const totalBilled = filteredGroups.reduce((sum, group) => sum + (group.totalAmount || 0), 0);
-    
+
     const totalPaid = filteredGroups.reduce((sum, group) => {
       return sum + calculateGroupTotalPaid(group);
     }, 0);
-    
+
     const balance = totalBilled - totalPaid;
 
     return { totalBilled, totalPaid, balance };
@@ -573,7 +573,7 @@ export default function TenantInvoicesPage() {
                   <option value="overdue">Overdue</option>
                 </select>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-white rounded-lg border border-gray-200 min-w-32">
                   <div className="text-sm text-gray-600 mb-1">Total Billed</div>
@@ -583,15 +583,14 @@ export default function TenantInvoicesPage() {
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg border border-gray-200 min-w-32">
                   <div className="text-sm text-gray-600 mb-1">Total Paid</div>
-                  <div className="text-lg font-bold text-green-600">
+                  <div className="text-lg font-bold text-navy-700">
                     {formatCurrency(financialSummary.totalPaid)}
                   </div>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg border border-gray-200 min-w-32">
                   <div className="text-sm text-gray-600 mb-1">Balance</div>
-                  <div className={`text-lg font-bold ${
-                    financialSummary.balance > 0 ? "text-red-600" : "text-green-600"
-                  }`}>
+                  <div className={`text-lg font-bold ${financialSummary.balance > 0 ? "text-red-600" : "text-navy-700"
+                    }`}>
                     {formatCurrency(financialSummary.balance)}
                   </div>
                 </div>
@@ -644,8 +643,8 @@ export default function TenantInvoicesPage() {
               {statusFilter === "all" ? "No invoices found" : "No invoices match the filter"}
             </h3>
             <p className="text-gray-600">
-              {statusFilter === "all" 
-                ? "There are no invoices available for this tenant." 
+              {statusFilter === "all"
+                ? "There are no invoices available for this tenant."
                 : `No invoices with status "${statusFilter}" found.`}
             </p>
           </div>
@@ -665,27 +664,27 @@ export default function TenantInvoicesPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredGroups.map((group, index) => {
-              const groupId = `group-${group.leaseId}-${group.date}-${index}`;
+                  const groupId = `group-${group.leaseId}-${group.date}-${index}`;
                   const isGroupExpanded = expandedGroups.has(groupId);
                   const groupBalance = calculateGroupBalance(group);
                   const groupTotalPaid = calculateGroupTotalPaid(group);
                   const groupStatus = getGroupStatus(group);
-                  
+
                   // Separate invoices by type for display
                   const rentInvoice = group.invoices.find((inv: Invoice) => inv.type === "RENT");
                   const utilityInvoice = group.invoices.find((inv: Invoice) => inv.type === "UTILITY");
 
                   // Prepare data for combined PDF
-                const combinedInvoiceData = {
-  leaseId: group.leaseId,
-  dueDate: group.date, // Use group.date here
-  invoices: group.invoices || [],
-  totalAmount: group.totalAmount || 0,
-  totalPaid: groupTotalPaid || 0,
-   tenant: group.tenant || {},    // directly from group
-  property: group.property || {}, // directly from group
-  unit: group.unit || {},        
-};
+                  const combinedInvoiceData = {
+                    leaseId: group.leaseId,
+                    dueDate: group.date, // Use group.date here
+                    invoices: group.invoices || [],
+                    totalAmount: group.totalAmount || 0,
+                    totalPaid: groupTotalPaid || 0,
+                    tenant: group.tenant || {},    // directly from group
+                    property: group.property || {}, // directly from group
+                    unit: group.unit || {},
+                  };
 
                   return (
                     <React.Fragment key={groupId}>
@@ -696,7 +695,7 @@ export default function TenantInvoicesPage() {
                             <Calendar className="h-5 w-5 text-blue-600" />
                             <div>
                               <div className="font-semibold text-gray-900">
-  {formatGroupDate(group.date)}
+                                {formatGroupDate(group.date)}
                               </div>
                               <div className="text-sm text-gray-600">
                                 {group.invoices.length} invoice(s)
@@ -731,18 +730,16 @@ export default function TenantInvoicesPage() {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-4 w-4 text-green-400" />
-                            <span className="font-semibold text-green-600">
+                            <span className="font-semibold text-navy-700">
                               {formatCurrency(groupTotalPaid)}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className={`flex items-center gap-2 ${
-                            groupBalance > 0 ? "text-red-600" : "text-green-600"
-                          }`}>
-                            <AlertCircle className={`h-4 w-4 ${
-                              groupBalance > 0 ? "text-red-500" : "text-green-500"
-                            }`} />
+                          <div className={`flex items-center gap-2 ${groupBalance > 0 ? "text-red-600" : "text-navy-700"
+                            }`}>
+                            <AlertCircle className={`h-4 w-4 ${groupBalance > 0 ? "text-red-500" : "text-navy-700"
+                              }`} />
                             <span className="font-semibold">
                               {formatCurrency(groupBalance)}
                             </span>
@@ -764,7 +761,7 @@ export default function TenantInvoicesPage() {
                               <Eye className="h-4 w-4" />
                               {isGroupExpanded ? "Hide" : "Details"}
                             </Button>
-                            
+
                             {/* Combined PDF Download Button */}
                             <Button
                               size="sm"
@@ -773,7 +770,7 @@ export default function TenantInvoicesPage() {
                                 e.stopPropagation();
                                 try {
                                   setDownloadingId(`combined-${groupId}`);
-await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.date}`);
+                                  await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.date}`);
                                   toast.success("Combined PDF downloaded successfully");
                                 } catch (error: any) {
                                   toast.error(error.message || "Failed to download combined PDF");
@@ -787,9 +784,9 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                               Combined PDF
                             </Button>
 
-<Link href={"/map"}>
-<Button>Maps</Button>
-       </Link>                   
+                            <Link href={"/map"}>
+                              <Button>Maps</Button>
+                            </Link>
                           </div>
                         </td>
                       </tr>
@@ -822,9 +819,8 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                                         </div>
                                         <div className="flex justify-between text-sm">
                                           <span className="text-gray-600">Balance:</span>
-                                          <span className={`font-semibold ${
-                                            calculateInvoiceBalance(rentInvoice) > 0 ? "text-red-600" : "text-green-600"
-                                          }`}>
+                                          <span className={`font-semibold ${calculateInvoiceBalance(rentInvoice) > 0 ? "text-red-600" : "text-navy-700"
+                                            }`}>
                                             {formatCurrency(calculateInvoiceBalance(rentInvoice))}
                                           </span>
                                         </div>
@@ -851,27 +847,26 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                                         </div>
                                         <div className="flex justify-between text-sm">
                                           <span className="text-gray-600">Balance:</span>
-                                          <span className={`font-semibold ${
-                                            calculateInvoiceBalance(utilityInvoice) > 0 ? "text-red-600" : "text-green-600"
-                                          }`}>
+                                          <span className={`font-semibold ${calculateInvoiceBalance(utilityInvoice) > 0 ? "text-red-600" : "text-navy-700"
+                                            }`}>
                                             {formatCurrency(calculateInvoiceBalance(utilityInvoice))}
                                           </span>
                                         </div>
-                                     {utilityInvoice.utilities && utilityInvoice.utilities.length > 0 && (
-  <div className="mt-2">
-    <div className="text-xs font-medium text-gray-600 mb-1">Utility Details:</div>
-    {utilityInvoice.utilities.map((u) => (
-      <div key={u.id} className="flex justify-between text-xs">
-        <span className="text-gray-500">{u.name} ({u.type})</span>
-        <span>
-          {u.fixedAmount !== undefined ? `Fixed: ${formatCurrency(u.fixedAmount)}` : ''}
-          {u.unitPrice !== undefined ? ` • Unit Price: ${formatCurrency(u.unitPrice)}` : ''}
-          {u.isTenantResponsible !== undefined ? ` • Tenant Responsible: ${u.isTenantResponsible ? "Yes" : "No"}` : ''}
-        </span>
-      </div>
-    ))}
-  </div>
-)}
+                                        {utilityInvoice.utilities && utilityInvoice.utilities.length > 0 && (
+                                          <div className="mt-2">
+                                            <div className="text-xs font-medium text-gray-600 mb-1">Utility Details:</div>
+                                            {utilityInvoice.utilities.map((u) => (
+                                              <div key={u.id} className="flex justify-between text-xs">
+                                                <span className="text-gray-500">{u.name} ({u.type})</span>
+                                                <span>
+                                                  {u.fixedAmount !== undefined ? `Fixed: ${formatCurrency(u.fixedAmount)}` : ''}
+                                                  {u.unitPrice !== undefined ? ` • Unit Price: ${formatCurrency(u.unitPrice)}` : ''}
+                                                  {u.isTenantResponsible !== undefined ? ` • Tenant Responsible: ${u.isTenantResponsible ? "Yes" : "No"}` : ''}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
 
 
                                       </div>
@@ -883,14 +878,14 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                               {/* Combined Payment History */}
                               <div>
                                 <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                  <CreditCard className="h-4 w-4 text-green-600" />
+                                  <CreditCard className="h-4 w-4 text-navy-700" />
                                   Payment History
                                 </h4>
                                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                                   <div className="space-y-2">
                                     {group.invoices.flatMap((invoice: Invoice) => invoice.payment || []).length > 0 ? (
                                       group.invoices.flatMap((invoice: Invoice) => invoice.payment || []).map((payment: Payment) => (
-                                        <div key={payment.id} className="flex justify-between items-center p-3 bg-green-50 rounded border border-green-200">
+                                        <div key={payment.id} className="flex justify-between items-center p-3 bg-navy-50 rounded border border-navy-200">
                                           <div>
                                             <div className="font-medium text-gray-900 capitalize">
                                               {payment.method} Payment
@@ -900,7 +895,7 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                                               {payment.paidOn && ` • ${formatDate(payment.paidOn)}`}
                                             </div>
                                           </div>
-                                          <span className="font-semibold text-green-600">
+                                          <span className="font-semibold text-navy-700">
                                             {formatCurrency(payment.amount)}
                                           </span>
                                         </div>
@@ -969,7 +964,7 @@ await downloadCombinedInvoicePDF(combinedInvoiceData, `${group.leaseId}-${group.
                   Cancel
                 </Button>
 
-                <Button 
+                <Button
                   variant="outline"
                   disabled={loadingManual}
                   onClick={handleCreateManualInvoice}

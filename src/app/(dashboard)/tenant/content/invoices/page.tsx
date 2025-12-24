@@ -564,13 +564,13 @@ export default function TenantInvoices() {
                         PAYMENT INFORMATION
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment ID</div>
+                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment ID</div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                           #{viewingReceipt.payment.id.slice(0, 12)}
                         </div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Date</div>
+                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Date</div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                           {viewingReceipt.payment.paidOn 
                             ? new Date(viewingReceipt.payment.paidOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) 
@@ -579,14 +579,14 @@ export default function TenantInvoices() {
 
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#1e40af' }}>Payment Method</div>
+                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Method</div>
                         <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                           {viewingReceipt.payment.method === 'CASH' ? '💵 Cash' : '💳 Credit Card'}
                         </div>
                       </div>
                       {viewingReceipt.payment.reference && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <div style={{ fontSize: '13px', color: '#1e40af' }}>Reference Number</div>
+                          <div style={{ fontSize: '13px', color: '#002b5b' }}>Reference Number</div>
                           <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
                             {viewingReceipt.payment.reference}
                           </div>

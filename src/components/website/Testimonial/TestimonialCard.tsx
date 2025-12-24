@@ -12,9 +12,9 @@ export const TestimonialCard = ({ testimonial }: TestimonialsCardProps) => {
   const text = testimonial?.text ?? "";
 
   return (
-    <div className="relative bg-slate-50 border-2 border-blue-200/80 p-10 pt-16 rounded-[24px] h-full shadow-md hover:shadow-xl transition-all duration-300 group">
+    <div className="relative bg-slate-50 border-2 border-[#003b73]/20 p-10 pt-16 rounded-[24px] h-full shadow-md hover:shadow-xl transition-all duration-300 group">
       {/* Quotation Mark Icon */}
-      <div className="absolute top-8 left-10 text-blue-400 group-hover:text-blue-600 transition-colors">
+      <div className="absolute top-8 left-10 text-[#003b73]/60 group-hover:text-[#003b73] transition-colors">
         <Quote size={24} strokeWidth={2} />
       </div>
 
@@ -25,8 +25,8 @@ export const TestimonialCard = ({ testimonial }: TestimonialsCardProps) => {
           </p>
         </blockquote>
 
-        <div className="flex items-center gap-5 border-t-2 border-blue-200/50 pt-8">
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-blue-200 p-0.5 bg-white shadow-md">
+        <div className="flex items-center gap-5 border-t-2 border-[#003b73]/10 pt-8">
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-[#003b73]/20 p-0.5 bg-white shadow-md">
             <Image
               src={testimonial.image || "/man.jpeg"}
               alt={name}
@@ -38,8 +38,8 @@ export const TestimonialCard = ({ testimonial }: TestimonialsCardProps) => {
           </div>
           <div>
             <div className="font-black text-neutral-900 text-base md:text-lg uppercase tracking-widest font-heading leading-tight">{name}</div>
-            <div className="text-[11px] md:text-[12px] text-blue-600 font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+            <div className="text-[11px] md:text-[12px] text-[#002b5b] font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#003b73]"></span>
               {role || "Customer"}
             </div>
           </div>

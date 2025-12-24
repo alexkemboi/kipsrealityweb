@@ -30,7 +30,7 @@ export function MyListings({ listings }: MarketplaceClientPageProps) {
             {listings.map((item) => (
               <Link
                 key={item.id}
-                href={`/marketplace/agent/myListings/${item.id}`} 
+                href={`/marketplace/agent/myListings/${item.id}`}
                 className="grid grid-cols-5 items-center px-6 py-4 hover:bg-gray-50 transition-all duration-200 cursor-pointer"
               >
                 {/* Image */}
@@ -52,7 +52,7 @@ export function MyListings({ listings }: MarketplaceClientPageProps) {
 
                 {/* Price */}
                 <div className="font-semibold text-gray-800">
-                  KES {item.price.toLocaleString()}
+                  $ {item.price.toLocaleString()}
                 </div>
 
                 {/* Location */}

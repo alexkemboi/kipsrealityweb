@@ -24,10 +24,10 @@ const integrations = [
 
 export default function Integrations() {
   return (
-    <section className="relative py-12 bg-[#111d33] text-white overflow-hidden flex flex-col items-center justify-center">
+    <section className="relative py-12 bg-[#1F2933] text-white overflow-hidden flex flex-col items-center justify-center">
       {/* Background Accents */}
-      <div className="absolute top-0 left-0 w-80 h-80 bg-blue-700/10 blur-3xl rounded-full animate-float-slow"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-700/10 blur-3xl rounded-full animate-float-medium"></div>
+      <div className="absolute top-0 left-0 w-80 h-80 bg-[#003b73]/10 blur-3xl rounded-full animate-float-slow"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#003b73]/10 blur-3xl rounded-full animate-float-medium"></div>
 
       <div className="relative z-10 w-[90%] max-w-6xl text-center">
         {/* Heading */}
@@ -48,7 +48,7 @@ export default function Integrations() {
           {integrations.map((item) => (
             <div
               key={item.name}
-              className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-6 w-64 flex flex-col items-center justify-center shadow-lg hover:shadow-blue-600/20 hover:scale-105 transition-all duration-300"
+              className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-6 w-64 flex flex-col items-center justify-center shadow-lg hover:shadow-[#003b73]/20 hover:scale-105 transition-all duration-300"
             >
               <div className="relative w-10 h-10 mb-4">
                 <Image

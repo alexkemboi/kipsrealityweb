@@ -463,7 +463,7 @@ export default function SidebarItemForm({ item, onSaved, onCancel }: Props) {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            className="flex-1 bg-green-500 hover:bg-green-500 disabled:bg-green-300 text-white font-medium py-2.5 px-4 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
           >
             {saving ? (
               <span className="flex items-center justify-center gap-2">

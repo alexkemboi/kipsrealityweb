@@ -79,7 +79,7 @@ export default function ManualInvoiceForm({ leaseId }: ManualInvoiceFormProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600  text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+            className="w-full bg-green-500  text-white py-2 rounded-lg hover:bg-green-600 disabled:opacity-50"
           >
             {loading ? "Creating..." : "Create Rent Invoice"}
           </button>

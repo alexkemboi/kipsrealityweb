@@ -410,7 +410,7 @@ export default function AmendmentManager({ leaseId }: AmendmentManagerProps) {
                         onClick={() =>
                           updateAmendmentStatus(amendment.id, "APPROVE")
                         }
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                        className="p-2 text-green-500 hover:bg-green-50 rounded-lg"
                         title="Approve"
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function AmendmentManager({ leaseId }: AmendmentManagerProps) {
                       onClick={() =>
                         updateAmendmentStatus(amendment.id, "EXECUTE")
                       }
-                      className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium flex items-center gap-1"
+                      className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm font-medium flex items-center gap-1"
                     >
                       <ArrowRight className="w-3 h-3" />
                       Execute

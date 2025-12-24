@@ -61,7 +61,7 @@ export default function VendorDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Completed":
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge className="bg-navy-100 text-green-800">Completed</Badge>;
       case "In Progress":
         return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
       case "Pending":

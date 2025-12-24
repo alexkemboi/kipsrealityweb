@@ -2,9 +2,8 @@ import Navbar from "../components/website/Navbar";
 import HeroSection from "../components/website/landing/HeroSection";
 import About from "../components/website/landing/AboutUs";
 import Footer from "../components/website/Footer";
-import Contact from "../components/website/landing/ContactUs";
+import FAQSection from "../components/website/landing/FAQSection";
 import { fetchAboutUs } from "@/lib/aboutUs";
-import { fetchCompanyInfo } from "@/lib/company-info";
 import { fetchCTAs } from "@/lib/cta";
 import { PricingPlans } from "@/components/website/plans/PricingPlan";
 import { FeatureGrid } from "@/components/website/plans/FeatureGrid";
@@ -16,12 +15,10 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const about = await fetchAboutUs();
-  const companyInfo = await fetchCompanyInfo();
   const ctas = await fetchCTAs("home");
 
 
   const pricingCta = ctas.find(c => c.title.toLowerCase().includes("pricing"));
-  const contactCta = ctas.find(c => c.title.toLowerCase().includes("touch") || c.title.toLowerCase().includes("contact"));
 
 
   return (
@@ -37,7 +34,7 @@ export default async function Home() {
       <Services />
       <PricingPlans cta={pricingCta} />
 
-      <Contact companyInfo={companyInfo} cta={contactCta} />
+      <FAQSection />
       <Footer />
     </main>
   );

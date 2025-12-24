@@ -19,8 +19,8 @@ export const HeroSection = ({ page }: { page: string }) => {
   const [hero, setHero] = useState<HeroData | null>(null);
 
   const theme = {
-    accent: "#00a8e8",
-    secondary: "#004e92",
+    accent: "#003b73",
+    secondary: "#1F2933",
     white: "#ffffff",
   };
 
@@ -49,7 +49,7 @@ export const HeroSection = ({ page }: { page: string }) => {
 
   return (
     <section
-      className="relative flex flex-col items-center justify-center text-center overflow-hidden bg-[#1d3d67] mx-4 md:mx-10 rounded-3xl mt-4"
+      className="relative flex flex-col items-center justify-center text-center overflow-hidden bg-[#1F2933] mx-4 md:mx-10 rounded-3xl mt-4"
       style={{
         minHeight: "60vh",
         position: "relative",
@@ -116,7 +116,7 @@ export const HeroSection = ({ page }: { page: string }) => {
         {hero.buttonText && hero.buttonUrl && (
           <a
             href={hero.buttonUrl}
-            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-500 transition"
+            className="inline-block bg-[#003b73] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#002b5b] transition"
           >
             {hero.buttonText}
           </a>

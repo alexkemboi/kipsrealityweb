@@ -212,7 +212,7 @@ export default function AdminTenantApplications() {
             <p className="text-sm text-yellow-800 font-medium">Pending Review</p>
             <p className="text-3xl font-bold text-yellow-900 mt-2">{stats.pending}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-green-200 bg-green-50">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-navy-200 bg-green-50">
             <p className="text-sm text-green-800 font-medium">Approved</p>
             <p className="text-3xl font-bold text-green-900 mt-2">{stats.approved}</p>
           </div>
@@ -266,7 +266,7 @@ export default function AdminTenantApplications() {
             <div className="flex gap-2">
               <button
                 onClick={exportToCSV}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
               >
                 <FileDown className="h-4 w-4" />
                 CSV
@@ -590,7 +590,7 @@ export default function AdminTenantApplications() {
                     </button>
                     <button
                       onClick={() => handleApprove(selectedApp.id)}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      className="flex items-center gap-2 px-6 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                       <Check className="h-4 w-4" />
                       Approve
