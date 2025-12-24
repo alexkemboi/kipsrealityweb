@@ -23,12 +23,42 @@ export default function DashboardLayout({
   );
 }
 
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } =
     useDashboard();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
-  if (isLoading || !user) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const allowedPaths = {
+    SYSTEM_ADMIN: "/admin",
+    PROPERTY_MANAGER: "/property-manager",
+    TENANT: "/tenant",
+    VENDOR: "/vendor",
+    AGENT: "/agent",
+    LANDLORD: "/landlord",
+    // Add default roles if needed or handle fallback
+  } as const;
+
+  useEffect(() => {
+    if (!isLoading && user && mounted) {
+      const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
+      if (expectedPath && !pathname.startsWith(expectedPath) && !pathname.startsWith('/account')) {
+        router.push(expectedPath);
+      }
+    }
+  }, [user, isLoading, mounted, pathname, router]);
+
+
+  if (!mounted || isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
@@ -39,25 +69,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const allowedPaths = {
-    SYSTEM_ADMIN: "/admin",
-    PROPERTY_MANAGER: "/property-manager",
-    TENANT: "/tenant",
-    VENDOR: "/vendor",
-    AGENT: "/agent",
-    LANDLORD: "/landlord",
-  } as const;
-
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname : "";
-  const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
-
-  if (expectedPath && !currentPath.startsWith(expectedPath) && !currentPath.startsWith('/account')) {
-    redirect(expectedPath);
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
+
       {/* Sidebar with dark background */}
       <div className="bg-[ #0c1b33] text-white">
         <DashboardSidebar

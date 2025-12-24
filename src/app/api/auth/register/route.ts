@@ -49,13 +49,13 @@ export async function POST(request: Request) {
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
     // 4. ATOMIC TRANSACTION (Critical for Data Integrity)
-    // If any step inside fails, the entire database rolls back.
+    // ✅ FIX APPLIED: Added timeout config to handle remote DB latency
     const result = await prisma.$transaction(async (tx) => {
       // A. Create Organization
       const organization = await tx.organization.create({
         data: {
           name: organizationName,
-          slug: organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''), // Cleaner slug
+          slug: organizationName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
           isActive: true,
         },
       });
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       const user = await tx.user.create({
         data: {
           email: email.toLowerCase(),
-          passwordHash: hashedPassword, // Ensure your Schema uses 'passwordHash', not 'password'
+          passwordHash: hashedPassword,
           firstName,
           lastName,
           emailVerified: null,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         },
       });
 
-      // C. Link User to Organization with their selected role
+      // C. Link User to Organization
       await tx.organizationUser.create({
         data: {
           userId: user.id,
@@ -81,7 +81,10 @@ export async function POST(request: Request) {
         },
       });
 
-      return user; // Return user to outside scope
+      return user;
+    }, {
+      maxWait: 5000, // Wait max 5s to start the transaction
+      timeout: 20000 // ✅ Allow 20s for the transaction to complete (Fixes the crash)
     });
 
     // 5. Send Email (Only if transaction succeeded)

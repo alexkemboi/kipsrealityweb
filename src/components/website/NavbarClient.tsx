@@ -33,7 +33,10 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -162,7 +165,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {user ? (
+            {mounted && user ? (
               <div className="flex items-center space-x-4">
                 <Button
                   variant="ghost"
