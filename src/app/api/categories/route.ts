@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 // GET all categories with services
 export async function GET() {
   try {
-    const categories = await prisma.categories.findMany({
+    const categories = await prisma.category.findMany({
       include: { services: true },
     });
     return NextResponse.json(categories);
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { name, tagline, color } = body;
 
-    const category = await prisma.categories.create({
+    const category = await prisma.category.create({
       data: { name, tagline, color },
     });
     return NextResponse.json(category);
