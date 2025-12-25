@@ -1,9 +1,7 @@
 // src/app/api/invoices/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
-
-const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
