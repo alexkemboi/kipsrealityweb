@@ -18,9 +18,9 @@ export async function GET(
       where: { propertyId },
       include: {
         leases: {
-          include: { 
-            tenant: true, 
-            application: true // Include applicant info
+          include: {
+            tenant: true,
+            tenantApplication: true // Include applicant info
           },
         },
       },
