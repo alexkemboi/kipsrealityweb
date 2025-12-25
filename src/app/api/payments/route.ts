@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     const payments = await prisma.payment.findMany({
       where: {
         invoice: {
-          Lease: {
+          lease: {
             property: { managerId: orgUser.id }, // Use organisation_user.id here
             ...(propertyId ? { propertyId } : {}),
             ...(unitId ? { unitId } : {}),
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       include: {
         invoice: {
           include: {
-            Lease: {
+            lease: {
               include: {
                 property: true,
                 unit: true,
@@ -56,9 +56,9 @@ export async function GET(req: Request) {
     return NextResponse.json(payments);
   } catch (error) {
     console.error("Error fetching payments:", error);
-    return NextResponse.json({ 
-      error: "Failed to fetch payments", 
-      details: error instanceof Error ? error.message : String(error) 
+    return NextResponse.json({
+      error: "Failed to fetch payments",
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }

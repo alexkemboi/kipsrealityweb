@@ -1,6 +1,6 @@
 // /app/api/payment/[id]/receipt/route.ts
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/db";
+import { prisma } from "@/lib/db";
 
 function generateReceiptNo(count: number) {
   const year = new Date().getFullYear();
@@ -32,8 +32,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Create receipt
     const receipt = await prisma.receipt.create({
       data: {
-        invoice_id: payment.invoice_id,
-        payment_id: payment.id,
+        invoiceId: payment.invoiceId,
+        paymentId: payment.id,
         receiptNo,
       },
     });
