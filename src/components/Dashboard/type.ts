@@ -1,6 +1,6 @@
 export interface Service {
   id: number;
-  category_id: number;
+  categoryId: number;
   name: string;
   description: string;
   features: string[];
@@ -25,10 +25,10 @@ export interface CategoryFormData {
 
 export interface ServiceFormData {
   id: number;
-  category_id: number;
+  categoryId: number;
   name: string;
   description: string;
-   features: string | string[];
+  features: string | string[];
   impact: string;
   icon: string;
 }
@@ -41,7 +41,7 @@ export type Unit = {
   bedrooms?: number;
   bathrooms?: number;
   rentAmount?: number;
- 
+
 };
 
 export type TenantApplication = {
