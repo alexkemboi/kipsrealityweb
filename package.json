@@ -3,20 +3,29 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "scripts": {
+"scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node .next/standalone/server.js",
-    "create-admin": "tsx scripts/create-admin.ts",
-    "lint": "next lint",
-    "clean": "rimraf .next",
+    
+    "// --- DEPLOYMENT SCRIPTS ---": "",
+    "postbuild": "node scripts/build-standalone.mjs",
+    "start": "next start",
+    "start:standalone": "node .next/standalone/server.js",
+    
+    "// --- DATABASE SCRIPTS ---": "",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
+    "db:dev": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:pull": "prisma db pull",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "db:status": "prisma migrate status",
-    "db:push": "prisma db push"
+    
+    "// --- UTILITIES ---": "",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "lint": "next lint",
+    "clean": "rimraf .next"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -98,7 +107,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@prisma/client": "^6.19.0",
+    "@prisma/client": "^6.18.0",
     "@tailwindcss/postcss": "^4.1.15",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.4",
