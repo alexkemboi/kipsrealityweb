@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     const activeLeases = await prisma.lease.count({
       where: {
         propertyId: { in: propertyIds },
-        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
+        status: { in: ["ACTIVE", "SIGNED"] },
       },
     });
 
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     const tenants = await prisma.lease.findMany({
       where: {
         propertyId: { in: propertyIds },
-        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
+        status: { in: ["ACTIVE", "SIGNED"] },
       },
       select: { tenantId: true },
       distinct: ["tenantId"],
@@ -140,13 +140,13 @@ export async function GET(request: NextRequest) {
         overduePayments = await prisma.invoice.count({
           where: {
             status: "OVERDUE",
-            lease_id: { in: leaseIds },
+            leaseId: { in: leaseIds },
           },
         });
 
         // Get all invoice IDs for these leases
         const invoices = await prisma.invoice.findMany({
-          where: { lease_id: { in: leaseIds } },
+          where: { leaseId: { in: leaseIds } },
           select: { id: true }
         });
         const invoiceIds = invoices.map((inv: any) => inv.id);
@@ -155,9 +155,9 @@ export async function GET(request: NextRequest) {
           // Sum all successful payments for these invoices
           const payments = await prisma.payment.aggregate({
             _sum: { amount: true },
-            where: { invoice_id: { in: invoiceIds } }
+            where: { invoiceId: { in: invoiceIds } }
           });
-          totalRentCollected = payments._sum.amount || 0;
+          totalRentCollected = Number(payments._sum?.amount ?? 0);
         }
       }
     } catch (invoiceError) {
