@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const invoice = await prisma.invoice.findUnique({
       where: { id },
       include: {
-        Lease: {
+        lease: {
           include: {
             tenant: {
               select: { id: true, firstName: true, lastName: true, email: true },
@@ -24,25 +24,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 address: true,
                 apartmentComplexDetail: {
                   select: {
-                    buildingName: true, 
+                    buildingName: true,
                   },
                 },
                 houseDetail: {
                   select: {
-                    houseName: true, 
+                    houseName: true,
                   },
                 },
               },
             },
-           lease_utility: {
-  include: {
-    utility: true,
-    utility_reading: {
-      orderBy: { readingDate: "desc" },
-      take: 1, 
-    },
-  },
-},
+            leaseUtilities: {
+              include: {
+                utility: true,
+                utilityReadings: {
+                  orderBy: { readingDate: "desc" },
+                  take: 1,
+                },
+              },
+            },
 
           },
         },
@@ -54,23 +54,24 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     // optionally map the utilities to a simpler structure
-    const utilities = invoice.Lease?.lease_utility?.map((lu) => ({
+    const utilities = invoice.lease?.leaseUtilities?.map((lu) => ({
       id: lu.utility.id,
       name: lu.utility.name,
       type: lu.utility.type,
       fixedAmount: lu.utility.fixedAmount ?? 0,
       unitPrice: lu.utility.unitPrice ?? 0,
-      isTenantResponsible: lu.is_tenant_responsible,
+      isTenantResponsible: lu.isTenantResponsible,
     }));
 
-const buildingName =
-      invoice.Lease?.property?.apartmentComplexDetail?.buildingName ?? null;
+    const buildingName =
+      invoice.lease?.property?.apartmentComplexDetail?.buildingName ?? null;
 
     return NextResponse.json({
       ...invoice,
       buildingName,
       utilities,
-    });  } catch (error) {
+    });
+  } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json({ error: "Failed to fetch invoice" }, { status: 500 });
   }

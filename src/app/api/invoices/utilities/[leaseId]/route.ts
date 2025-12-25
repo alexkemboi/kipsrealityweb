@@ -41,11 +41,11 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     }
 
     // Fetch all utilities linked to this lease
-    const leaseUtilities = await prisma.lease_utility.findMany({
-      where: { lease_id: leaseId },
+    const leaseUtilities = await prisma.leaseUtility.findMany({
+      where: { leaseId: leaseId },
       include: {
         utility: true,
-        utility_reading: {
+        utilityReadings: {
           orderBy: { readingDate: "desc" },
           take: 1, // latest reading
         },
@@ -67,8 +67,8 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
       if (utility.type === "FIXED") {
         amount = utility.fixedAmount ?? 0;
       } else if (utility.type === "METERED") {
-        const latestReading = lu.utility_reading[0];
-        amount = (latestReading?.reading_value ?? 0) * (utility.unitPrice ?? 0);
+        const latestReading = lu.utilityReadings[0];
+        amount = (latestReading?.readingValue ?? 0) * (utility.unitPrice ?? 0);
       }
 
       return {
@@ -88,11 +88,11 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     // Create invoice
     const invoice = await prisma.invoice.create({
       data: {
-        lease_id: leaseId,
+        leaseId: leaseId,
         type: "UTILITY",
         amount: totalAmount,
         dueDate: dueDate, // Now uses same logic as rent invoices
-        InvoiceItem: {
+        invoiceItems: {
           create: items.map((i) => ({
             description: i.name,
             amount: i.amount,
@@ -100,8 +100,8 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
         },
       },
       include: {
-        InvoiceItem: true,
-        Lease: {
+        invoiceItems: true,
+        lease: {
           include: {
             tenant: { select: { firstName: true, lastName: true, email: true } },
             property: { select: { name: true, address: true } },

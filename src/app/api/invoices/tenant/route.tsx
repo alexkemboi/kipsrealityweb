@@ -17,17 +17,17 @@ export async function GET(req: Request) {
     // Fetch invoices for this tenant
     const invoices = await prisma.invoice.findMany({
       where: {
-        Lease: {
+        lease: {
           tenantId: tenantId, // filter by tenant
         },
       },
       orderBy: { dueDate: "asc" },
       include: {
-         payment: {
-          include: { receipt: true } 
-        },
-        Lease: true,
-      },
+         payments: {
+           include: { receipts: true }
+         },
+         lease: true,
+       },
     });
 
     return NextResponse.json(invoices);

@@ -34,7 +34,7 @@ const dueDate = calculateNextDueDate({
 
   const invoice = await prisma.invoice.create({
     data: {
-      lease_id,
+      leaseId: lease_id,
       type,
       amount,
       dueDate,
