@@ -1,7 +1,7 @@
 // app/api/sidebarItem/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { SidebarItem_role } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -22,10 +22,10 @@ export async function GET(req: Request) {
       return NextResponse.json(allItems);
     }
 
-    // Cast to SidebarItem_role
-    let role: SidebarItem_role | undefined;
-    if (roleParam && Object.values(SidebarItem_role).includes(roleParam as SidebarItem_role)) {
-      role = roleParam as SidebarItem_role;
+    // Cast to UserRole
+    let role: UserRole | undefined;
+    if (roleParam && Object.values(UserRole).includes(roleParam as UserRole)) {
+      role = roleParam as UserRole;
     }
 
     console.log("Parsed role:", role); // Debug log
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       ? {
         OR: [
           { role: role },
-          { role: SidebarItem_role.ALL },
+          { role: UserRole.ALL },
         ],
         isActive: true, // Only fetch active items
       }
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
       // Check if user has required plan (if plans are specified)
       const planCheck = item.plans.length === 0 ||
         planIds.length === 0 ||
-        item.plans.some((p) => planIds.includes(p.id));
+        item.plans.some((p: any) => planIds.includes(p.id));
 
       return featureCheck && planCheck;
     });
@@ -107,9 +107,9 @@ export async function POST(req: Request) {
     }
 
     // Validate role is valid enum value
-    if (!Object.values(SidebarItem_role).includes(role as SidebarItem_role)) {
+    if (!Object.values(UserRole).includes(role as UserRole)) {
       return NextResponse.json(
-        { error: `Invalid role: ${role}. Must be one of: ${Object.values(SidebarItem_role).join(", ")}` },
+        { error: `Invalid role: ${role}. Must be one of: ${Object.values(UserRole).join(", ")}` },
         { status: 400 }
       );
     }
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       data: {
         label,
         path,
-        role: role as SidebarItem_role,
+        role: role as UserRole,
         icon: icon || null,
         section: section || null,
         order: order || null,
