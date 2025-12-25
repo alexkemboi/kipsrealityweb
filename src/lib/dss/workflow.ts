@@ -12,7 +12,7 @@ export async function getNextSigner(documentId: string): Promise<WorkflowResult>
         where: { id: documentId },
         include: {
             participants: {
-                orderBy: { stepOrder: 'asc' }
+                orderBy: { signingOrder: 'asc' }
             }
         }
     });
@@ -32,7 +32,7 @@ export async function getNextSigner(documentId: string): Promise<WorkflowResult>
 
     // 3. Find the first participant who hasn't signed
     // Since we ordered by stepOrder asc, the first one we find is the "bottleneck"
-    const nextParticipant = document.participants.find((p) => !p.hasSigned);
+    const nextParticipant = document.participants.find((p: DssParticipant) => !p.hasSigned);
 
     if (!nextParticipant) {
         // All signed!
@@ -46,7 +46,7 @@ export async function getNextSigner(documentId: string): Promise<WorkflowResult>
     // 4. Return the next step details
     return {
         isComplete: false,
-        nextStep: nextParticipant.stepOrder,
+        nextStep: nextParticipant.signingOrder,
         nextRole: nextParticipant.role
     };
 }
@@ -74,5 +74,5 @@ export async function canUserSignNow(documentId: string, userEmail: string): Pro
     // Check if it's their turn
     // It's their turn if the "nextStep" matches their "stepOrder"
     // (In a strictly sequential flow)
-    return result.nextStep === participant.stepOrder;
+    return result.nextStep === participant.signingOrder;
 }
