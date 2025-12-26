@@ -16,15 +16,15 @@ export async function GET(
     let receipt;
 
     if (byPayment) {
-      // Search by payment_id
+      // Search by paymentId
       receipt = await prisma.receipt.findFirst({
-        where: { payment_id: id },
+        where: { paymentId: id },
         include: {
           payment: {
             include: {
               invoice: {
                 include: {
-                  Lease: {
+                  lease: {
                     include: {
                       property: true,
                       unit: true,
@@ -46,7 +46,7 @@ export async function GET(
             include: {
               invoice: {
                 include: {
-                  Lease: {
+                  lease: {
                     include: {
                       property: true,
                       unit: true,

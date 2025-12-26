@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         tenant: true,
         property: true,
         unit: true,
-        application: true,  
+        tenantApplication: true,
       },
       orderBy: {
         createdAt: "desc",

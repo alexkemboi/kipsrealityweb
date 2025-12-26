@@ -83,7 +83,7 @@ export async function GET(
     const activeLeases = await prisma.lease.count({
       where: {
         propertyId,
-        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
+        status: { in: ["ACTIVE", "SIGNED"] },
       },
     });
 
@@ -91,7 +91,7 @@ export async function GET(
     const tenants = await prisma.lease.findMany({
       where: {
         propertyId,
-        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
+        status: { in: ["ACTIVE", "SIGNED"] },
       },
       select: { tenantId: true },
       distinct: ["tenantId"],
@@ -113,7 +113,7 @@ export async function GET(
         overduePayments = await prisma.invoice.count({
           where: {
             status: "OVERDUE",
-            lease_id: { in: leaseIds },
+            leaseId: { in: leaseIds },
           },
         });
       }

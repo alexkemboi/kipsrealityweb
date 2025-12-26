@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { FileText, Upload, Trash2, FileCheck } from "lucide-react";
-import { LeaseDocument_documentType } from "@prisma/client";
+import { LeaseDocumentType } from "@prisma/client";
 
 interface Lease {
   id: string;
@@ -19,7 +19,7 @@ interface Lease {
 interface LeaseDocument {
   id: string;
   leaseId: string;
-  documentType: LeaseDocument_documentType;
+  documentType: LeaseDocumentType;
   fileName: string;
   fileUrl: string;
   fileSize: number;
@@ -52,7 +52,7 @@ export default function TenantLeasePage() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<LeaseDocument_documentType>("OTHER");
+  const [documentType, setDocumentType] = useState<LeaseDocumentType>("OTHER");
   const [description, setDescription] = useState("");
 
   // Fetch all lease-related data
@@ -253,9 +253,9 @@ export default function TenantLeasePage() {
         <select
           className="w-full border border-gray-300 rounded px-3 py-2"
           value={documentType}
-          onChange={(e) => setDocumentType(e.target.value as LeaseDocument_documentType)}
+          onChange={(e) => setDocumentType(e.target.value as LeaseDocumentType)}
         >
-          {Object.keys(LeaseDocument_documentType).map((type) => (
+          {Object.keys(LeaseDocumentType).map((type) => (
             <option key={type} value={type}>
               {type.replace(/_/g, " ")}
             </option>

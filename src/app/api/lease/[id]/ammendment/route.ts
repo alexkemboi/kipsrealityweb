@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
-import { LeaseNotification_notificationType } from "@prisma/client";
+import { LeaseNotificationType } from "@prisma/client";
 import crypto from "crypto";
 
 function capturePreviousValues(lease: any, amendmentType: string, changes: any) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
       data: {
         id: crypto.randomUUID(),
         leaseId,
-        amendmentType,
+        type: amendmentType,
         effectiveDate: new Date(effectiveDate),
         description,
         changes,
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
         data: {
           id: crypto.randomUUID(),
           leaseId,
-          notificationType: LeaseNotification_notificationType.AMENDMENT_PROPOSED,
+          notificationType: LeaseNotificationType.AMENDMENT_PROPOSED,
           recipientEmail: lease.tenant.email,
           recipientRole: "TENANT",
           subject: "Lease Amendment Proposed",
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
         data: {
           landlordSignedAt: null,
           tenantSignedAt: null,
-          leaseStatus: "PENDING_APPROVAL",
+          status: "PENDING_APPROVAL",
           documentVersion: { increment: 1 },
         },
       });

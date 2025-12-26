@@ -36,7 +36,7 @@ export async function POST(
 
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
-      include: { payment: true },
+      include: { payments: true },
     });
 
     if (!invoice) {
@@ -44,13 +44,13 @@ export async function POST(
     }
 
     // ✅ Filter out reversed payments (same as frontend)
-    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const validPayments = invoice.payments?.filter(p => !p.isReversed) || [];
     const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
     console.log("Invoice details:", {
       invoiceAmount: invoice.amount,
-      totalPayments: invoice.payment?.length,
+      totalPayments: invoice.payments?.length,
       validPayments: validPayments.length,
       paidAmount,
       remaining,
@@ -74,7 +74,7 @@ export async function POST(
 
     const payment = await prisma.payment.create({
       data: {
-        invoice_id: invoiceId,
+        invoiceId: invoiceId,
         amount: parseFloat(amount.toString()),
         method,
         reference: reference || null,
@@ -128,7 +128,7 @@ export async function GET(
     const { id: invoiceId } = await params;
 
     const payments = await prisma.payment.findMany({
-      where: { invoice_id: invoiceId },
+      where: { invoiceId: invoiceId },
       orderBy: { paidOn: "desc" },
     });
 

@@ -20,7 +20,7 @@ export async function PATCH(
     // Fetch amendment with tenant via leaseId
     const amendment = await prisma.leaseAmendment.findUnique({
       where: { id: amendmentId },
-      include: { Lease: { include: { tenant: true } } }, // lowercase 'lease'
+      include: { lease: { include: { tenant: true } } }, // lowercase 'lease'
     });
 
     if (!amendment) return NextResponse.json({ error: "Amendment not found" }, { status: 404 });
@@ -60,13 +60,13 @@ export async function PATCH(
         auditAction = "AMENDMENT_EXECUTED";
 
         // Notify tenant if exists
-        if (amendment.Lease?.tenant?.email) {
+        if (amendment.lease?.tenant?.email) {
           await prisma.leaseNotification.create({
             data: {
               id: randomUUID(),
               leaseId,
               notificationType: "CUSTOM",
-              recipientEmail: amendment.Lease.tenant.email ?? "unknown@example.com",
+              recipientEmail: amendment.lease.tenant.email ?? "unknown@example.com",
               recipientRole: "TENANT",
               subject: "Lease Amendment Executed",
               message: `The lease amendment "${amendment.description ?? ""}" has been executed.`,
@@ -120,7 +120,7 @@ export async function DELETE(
 
     const amendment = await prisma.leaseAmendment.findUnique({
       where: { id: amendmentId },
-      include: { Lease: { include: { tenant: true } } },
+      include: { lease: { include: { tenant: true } } },
     });
 
     if (!amendment) return NextResponse.json({ error: "Amendment not found" }, { status: 404 });
@@ -142,13 +142,13 @@ export async function DELETE(
     });
 
     // Notify tenant
-    if (amendment.Lease?.tenant?.email) {
+    if (amendment.lease?.tenant?.email) {
       await prisma.leaseNotification.create({
         data: {
           id: crypto.randomUUID(),
           leaseId,
           notificationType: "CUSTOM",
-          recipientEmail: amendment.Lease.tenant.email,
+          recipientEmail: amendment.lease.tenant.email,
           recipientRole: "TENANT",
           subject: "Lease Amendment Cancelled",
           message: `The lease amendment "${amendment.description ?? ""}" has been cancelled.`,

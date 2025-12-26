@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { computeDocumentHash, verifyDocumentIntegrity } from "./hashing";
 import { getNextSigner } from "./workflow";
-import { DssParticipantRole, DssDocumentStatus, DssSigningMode } from "@prisma/client";
+import { DssParticipantRole, DssDocumentStatus, DssSigningMode, DssParticipant } from "@prisma/client";
 
 // Placeholder for actual file upload storage (S3/UploadThing)
 async function uploadFileToStorage(fileBuffer: Buffer): Promise<{ url: string; key: string }> {
@@ -47,12 +47,9 @@ export async function createDocument({
 
     // 3. Create Document & Participants in Transaction
     // We enforce basic sequential order logic here:
-    // If sequential, we might want to auto-assign stepOrder based on ROLE_HIERARCHY or index.
-    // For now, let's just use the order provided in the array + role defaults if logical.
-
     const participantsWithOrder = participants.map((p, index) => ({
         ...p,
-        stepOrder: index + 1 // Simple 1-based sequence based on input array order
+        signingOrder: index + 1 // Simple 1-based sequence based on input array order
     }));
 
     const doc = await prisma.dssDocument.create({
@@ -68,8 +65,8 @@ export async function createDocument({
                     organizationId, // Inherit org from doc
                     email: p.email,
                     role: p.role,
-                    fullName: p.name,
-                    stepOrder: p.stepOrder
+                    name: p.name,
+                    signingOrder: p.signingOrder
                 }))
             }
         },
@@ -97,11 +94,11 @@ export async function signDocument(documentId: string, userEmail: string, signat
     if (!doc) throw new Error("Document not found");
 
     // 2. Validate it is THIS user's turn
-    const participant = doc.participants.find((p) => p.email === userEmail);
+    const participant = doc.participants.find((p: DssParticipant) => p.email === userEmail);
     if (!participant) throw new Error("User is not a participant of this document");
 
     if (doc.signingMode === DssSigningMode.SEQUENTIAL) {
-        if (workflowStatus.nextStep !== participant.stepOrder) {
+        if (workflowStatus.nextStep !== participant.signingOrder) {
             throw new Error("It is not your turn to sign this document.");
         }
     }

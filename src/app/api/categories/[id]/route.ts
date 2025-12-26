@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
   const categoryId = parseInt(id, 10);
 
   try {
-    const category = await prisma.categories.findUnique({
+    const category = await prisma.category.findUnique({
       where: { id: categoryId },
     });
 
@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     const body = await req.json();
     const { name, tagline, color } = body;
 
-    const updatedCategory = await prisma.categories.update({
+    const updatedCategory = await prisma.category.update({
       where: { id: categoryId },
       data: { name, tagline, color },
     });
@@ -61,10 +61,10 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
   try {
     // Delete all services linked to this category
-    await prisma.services.deleteMany({ where: { category_id: categoryId } });
+    await prisma.service.deleteMany({ where: { categoryId: categoryId } });
 
     // Delete the category
-    await prisma.categories.delete({ where: { id: categoryId } });
+    await prisma.category.delete({ where: { id: categoryId } });
 
     return NextResponse.json({ message: "Category and its services deleted successfully" });
   } catch (err: any) {

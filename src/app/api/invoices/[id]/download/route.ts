@@ -15,16 +15,16 @@ export async function GET(
     // Fetch all invoices for this lease and due date
     const invoices = await prisma.invoice.findMany({
       where: {
-        lease_id: leaseId,
+        leaseId: leaseId,
         dueDate: {
           gte: new Date(dueDate.setHours(0, 0, 0, 0)),
           lt: new Date(dueDate.setHours(23, 59, 59, 999))
         }
       },
       include: {
-        InvoiceItem: true,
-        payment: true,
-        Lease: {
+        invoiceItems: true,
+        payments: true,
+        lease: {
           include: {
             tenant: true,
             property: true,
@@ -65,14 +65,14 @@ export async function GET(
 }
 
 function generateTextContent(invoices: any[], dateString: string): string {
-  const tenant = invoices[0]?.Lease?.tenant;
-  const property = invoices[0]?.Lease?.property;
-  const unit = invoices[0]?.Lease?.unit;
+  const tenant = invoices[0]?.lease?.tenant;
+  const property = invoices[0]?.lease?.property;
+  const unit = invoices[0]?.lease?.unit;
 
   // Fixed: Added proper types for reduce functions
   const totalAmount = invoices.reduce((sum: number, inv: any) => sum + inv.amount, 0);
   const totalPaid = invoices.reduce((sum: number, inv: any) =>
-    sum + inv.payment.reduce((pSum: number, p: any) => pSum + p.amount, 0), 0
+    sum + inv.payments.reduce((pSum: number, p: any) => pSum + p.amount, 0), 0
   );
 
   let content = `
@@ -92,8 +92,8 @@ INVOICE BREAKDOWN:
 ${invoice.type} INVOICE:
   Amount: USD ${invoice.amount.toLocaleString()}
   Status: ${invoice.status}
-  Items:${invoice.InvoiceItem.length > 0 ? '' : ' None'}
-${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
+  Items:${invoice.invoiceItems.length > 0 ? '' : ' None'}
+${invoice.invoiceItems.map((item: any) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
 `;
   });
 

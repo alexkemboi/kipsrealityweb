@@ -5,15 +5,15 @@ import { prisma } from "@/lib/db";
 // GET /api/lease-utilities -> List all lease utilities with relations
 export async function GET() {
   try {
-    const leaseUtilities = await prisma.lease_utility.findMany({
+    const leaseUtilities = await prisma.leaseUtility.findMany({
       include: {
         utility: true, // Include utility details
-        Lease: {
+        lease: {
           include: {
             tenant: true,
             unit: true,
             property: true,
-            application: true,
+            tenantApplication: true,
           },
         },
       },
@@ -33,18 +33,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lease_id, utility_id, is_tenant_responsible = true } = body;
+    const { leaseId, utilityId, isTenantResponsible = true } = body;
 
-    if (!lease_id || !utility_id) {
+    if (!leaseId || !utilityId) {
       return NextResponse.json(
-        { success: false, error: "lease_id and utility_id are required" },
+        { success: false, error: "leaseId and utilityId are required" },
         { status: 400 }
       );
     }
 
     // Check if the assignment already exists
-    const existing = await prisma.lease_utility.findFirst({
-      where: { lease_id, utility_id },
+    const existing = await prisma.leaseUtility.findFirst({
+      where: { leaseId, utilityId },
     });
     if (existing) {
       return NextResponse.json(
@@ -53,15 +53,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const assignment = await prisma.lease_utility.create({
-      data: { lease_id, utility_id, is_tenant_responsible },
+    const assignment = await prisma.leaseUtility.create({
+      data: { leaseId, utilityId, isTenantResponsible },
       include: {
-        Lease: {
+        lease: {
           include: {
             tenant: true,
             unit: true,
             property: true,
-            application: true,
+            tenantApplication: true,
           },
         },
         utility: true,

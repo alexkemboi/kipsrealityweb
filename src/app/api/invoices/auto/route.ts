@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
@@ -9,7 +7,7 @@ export async function GET() {
 
     // 1Find all active leases
     const activeLeases = await prisma.lease.findMany({
-      where: { leaseStatus: "ACTIVE" },
+      where: { status: "ACTIVE" },
     });
 
     const generatedInvoices = [];
@@ -24,7 +22,7 @@ export async function GET() {
       // 3 Check if an invoice for that period already exists
       const existing = await prisma.invoice.findFirst({
         where: {
-          lease_id: lease.id,
+          leaseId: lease.id,
           type: "RENT",
           dueDate: {
             gte: new Date(dueDate.getFullYear(), dueDate.getMonth(), 1),
@@ -38,7 +36,7 @@ export async function GET() {
       // 4 Create invoice
       const invoice = await prisma.invoice.create({
         data: {
-          lease_id: lease.id,
+          leaseId: lease.id,
           type: "RENT",
           amount: lease.rentAmount,
           dueDate,

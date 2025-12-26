@@ -24,7 +24,7 @@ export async function PATCH(
       }, { status: 400 });
     }
 
-    const updatedApplication = await prisma.tenantapplication.update({
+    const updatedApplication = await prisma.tenantApplication.update({
       where: { id },
       data: { status: normalizedStatus as ApplicationStatus },
       include: {
@@ -57,7 +57,7 @@ export async function GET(
   try {
     const { id } = params;
 
-    const application = await prisma.tenantapplication.findUnique({
+    const application = await prisma.tenantApplication.findUnique({
       where: { id },
       include: {
         property: true,
@@ -91,7 +91,7 @@ export async function DELETE(
   try {
     const { id } = params;
 
-    await prisma.tenantapplication.delete({
+    await prisma.tenantApplication.delete({
       where: { id },
     });
 
@@ -101,7 +101,7 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error("Error deleting application:", error);
-    
+
     if (error.code === "P2025") {
       return NextResponse.json(
         { error: "Application not found" },

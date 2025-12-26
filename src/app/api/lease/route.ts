@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Ensure the tenant application exists and is approved
-    const app = await prisma.tenantapplication.findUnique({
+    const app = await prisma.tenantApplication.findUnique({
       where: { id: applicationId },
       include: { property: true, unit: true },
     });
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         tenant: true,
         property: true,
         unit: true,
-        application: true,
+        tenantApplication: true,
       },
     });
 
@@ -143,10 +143,10 @@ export async function GET(req: NextRequest) {
           }
         },
          unit: true,
-        application: true,
-        invoice: {
+        tenantApplication: true,
+        invoices: {
           include: {
-            payment: true,
+            payments: true,
           },
         },
       },
@@ -158,13 +158,13 @@ export async function GET(req: NextRequest) {
     // Add financial summary
     const leasesWithFinancials = leases.map((lease) => {
       const totalInvoiced =
-        lease.invoice?.reduce((sum, inv) => sum + inv.amount, 0) ?? 0;
+        lease.invoices?.reduce((sum, inv) => sum + inv.amount, 0) ?? 0;
 
       const totalPaid =
-        lease.invoice?.reduce(
+        lease.invoices?.reduce(
           (sum, inv) =>
             sum +
-            inv.payment.reduce((paySum, pay) => paySum + pay.amount, 0),
+            inv.payments.reduce((paySum, pay) => paySum + pay.amount, 0),
           0
         ) ?? 0;
 
