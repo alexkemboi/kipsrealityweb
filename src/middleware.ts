@@ -81,6 +81,16 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // 3️⃣ Redirect logged-in users from homepage to their dashboard
+  if (token && pathname === '/') {
+    const decoded = decodeJWT(token);
+    const userRole = decoded?.role;
+    if (userRole && roleDashboards[userRole as keyof typeof roleDashboards]) {
+      const dashboard = roleDashboards[userRole as keyof typeof roleDashboards];
+      return NextResponse.redirect(new URL(dashboard, request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

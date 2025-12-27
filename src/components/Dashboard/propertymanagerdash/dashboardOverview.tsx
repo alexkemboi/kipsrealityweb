@@ -126,7 +126,12 @@ const Dashboard = () => {
 	// This prevents the "Unexpected end of JSON" crash by checking response text first
 	const safeFetch = async (url: string, options: any = {}) => {
 		try {
-			const res = await fetch(url, options);
+			const headers = {
+				'Content-Type': 'application/json',
+				...options.headers,
+				...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+			};
+			const res = await fetch(url, { ...options, headers });
 			const text = await res.text(); // Get raw text first
 
 			if (!res.ok) {

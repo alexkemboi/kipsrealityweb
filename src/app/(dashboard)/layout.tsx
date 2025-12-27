@@ -43,8 +43,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     PROPERTY_MANAGER: "/property-manager",
     TENANT: "/tenant",
     VENDOR: "/vendor",
-    AGENT: "/agent",
-    LANDLORD: "/landlord",
     // Add default roles if needed or handle fallback
   } as const;
 
@@ -63,7 +61,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );

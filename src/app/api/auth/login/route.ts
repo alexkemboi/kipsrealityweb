@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     const primaryOrgUser = user.organizationUsers[0];
-    let role = primaryOrgUser?.role || 'PROPERTY_MANAGER';
+    let role = primaryOrgUser?.role || 'TENANT';
 
     // Force system admin role for platform admin account
     if (email === process.env.ADMIN_EMAIL) {
