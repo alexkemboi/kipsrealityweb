@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -16,7 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const SignupPageContent = () => {
+interface SignUpPageContentProps {
+  role?: "PROPERTY_MANAGER" | "TENANT";
+}
+
+const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
   const router = useRouter();
   const { login } = useAuth();
 
@@ -28,7 +33,7 @@ const SignupPageContent = () => {
     confirmPassword: "",
     organizationName: "",
     phone: "",
-    role: "",
+    role: propRole || "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +41,15 @@ const SignupPageContent = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const currentRole = propRole || formData.role;
+
+  // If propRole is provided, set the role in formData and hide role selection
+  useEffect(() => {
+    if (propRole) {
+      setFormData(prev => ({ ...prev, role: propRole }));
+    }
+  }, [propRole]);
 
   // ✅ Input Handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -51,7 +65,8 @@ const SignupPageContent = () => {
 
   //Full Validation
   const validateForm = () => {
-    if (!formData.organizationName.trim())
+    // Only require organization name for Property Managers
+    if (currentRole === "PROPERTY_MANAGER" && !formData.organizationName.trim())
       return "Company name is required";
 
     if (!formData.firstName.trim())
@@ -80,7 +95,7 @@ const SignupPageContent = () => {
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match";
 
-    if (!formData.role)
+    if (!currentRole)
       return "Please select your role";
 
     return null;
@@ -101,18 +116,25 @@ const SignupPageContent = () => {
     setIsLoading(true);
 
     try {
+      // Use currentRole for the request
+      const requestBody: Record<string, unknown> = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        role: currentRole,
+      };
+
+      // Only include organizationName for Property Managers
+      if (currentRole === "PROPERTY_MANAGER") {
+        requestBody.organizationName = formData.organizationName;
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          organizationName: formData.organizationName,
-          phone: formData.phone,
-          role: formData.role,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -157,40 +179,55 @@ const SignupPageContent = () => {
           Create Your Account
         </h2>
         <p className="text-neutral-500 text-sm lg:text-base">
-          Join thousands of property managers
+          {propRole === "TENANT" ? "Join your community" : "Join thousands of property managers"}
         </p>
       </div>
 
       {isSuccess ? (
-        <div className="text-center space-y-4 bg-navy-50 p-6 rounded-xl border border-green-100">
-          <div className="mx-auto w-12 h-12 bg-navy-100 rounded-full flex items-center justify-center mb-4">
-            <Mail className="w-6 h-6 text-[#003b73]" />
+        <div className="flex flex-col items-center justify-center space-y-6 text-center py-10">
+          {/* Email Icon Circle */}
+          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-2">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                strokeWidth={1.5} 
+                stroke="currentColor" 
+                className="w-8 h-8 text-blue-600"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+              </svg>
           </div>
-          <h3 className="text-xl font-semibold text-neutral-900">Check Your Email</h3>
-          <p className="text-neutral-600">
-            We've sent a verification link to <strong className="text-neutral-900">{formData.email}</strong>.
-            Please check your inbox to verify your account before logging in.
-          </p>
-          <Button
-            onClick={() => router.push('/login')}
-            className="w-full mt-4 bg-navy-700 hover:bg-navy-800 text-white"
-          >
-            Proceed to Login
-          </Button>
+
+          <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-gray-900">Check Your Email</h2>
+              <p className="text-gray-500 max-w-xs mx-auto">
+                We have sent a verification link to <span className="font-semibold text-gray-900">{formData.email}</span>.
+              </p>
+              <p className="text-sm text-gray-400">
+                Please check your inbox to verify your account before logging in.
+              </p>
+          </div>
+
+          <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-4 block">
+            &larr; Return to Login
+          </Link>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
 
           {/* Company Name */}
-          <Input
-            type="text"
-            name="organizationName"
-            placeholder="Company Name *"
-            value={formData.organizationName}
-            onChange={handleInputChange}
-            required
-            className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
-          />
+          {currentRole === "PROPERTY_MANAGER" && (
+            <Input
+              type="text"
+              name="organizationName"
+              placeholder="Company Name *"
+              value={formData.organizationName}
+              onChange={handleInputChange}
+              required
+              className="h-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
+            />
+          )}
 
           {/* Personal Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -237,22 +274,23 @@ const SignupPageContent = () => {
           </div>
 
           {/* Role Selection */}
-          <div>
-            <Select
-              value={formData.role}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
-            >
-              <SelectTrigger className="w-full h-12 border-neutral-200 bg-white text-neutral-900 focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all text-base px-3">
-                <SelectValue placeholder="Select Role" />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-neutral-200" side="bottom" sideOffset={4}>
-                <SelectItem value="PROPERTY_MANAGER" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Property Manager</SelectItem>
-                <SelectItem value="VENDOR" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Vendor</SelectItem>
-                <SelectItem value="AGENT" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Agent</SelectItem>
-                <SelectItem value="TENANT" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Tenant</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!propRole && (
+            <div>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger className="w-full h-12 border-neutral-200 bg-white text-neutral-900 focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all text-base px-3">
+                  <SelectValue placeholder="Select Role" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-neutral-200" side="bottom" sideOffset={4}>
+                  <SelectItem value="PROPERTY_MANAGER" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Property Manager</SelectItem>
+                  <SelectItem value="VENDOR" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Vendor</SelectItem>
+                  <SelectItem value="TENANT" className="focus:bg-[#003b73] focus:text-white cursor-pointer py-2.5 transition-colors">Tenant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
