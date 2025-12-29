@@ -32,10 +32,10 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     useDashboard();
   const pathname = usePathname();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    setIsMounted(true);
   }, []);
 
   const allowedPaths = {
@@ -49,16 +49,20 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   } as const;
 
   useEffect(() => {
-    if (!isLoading && user && mounted) {
+    if (!isLoading && user && isMounted) {
       const expectedPath = allowedPaths[user.role as keyof typeof allowedPaths];
       if (expectedPath && !pathname.startsWith(expectedPath) && !pathname.startsWith('/account')) {
         router.push(expectedPath);
       }
     }
-  }, [user, isLoading, mounted, pathname, router]);
+  }, [user, isLoading, isMounted, pathname, router]);
 
+  // Prevent Hydration Mismatch
+  if (!isMounted) {
+    return null;
+  }
 
-  if (!mounted || isLoading || !user) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
