@@ -1,5 +1,5 @@
 
-import { 
+import {
   LayoutDashboard,
   FileText,
   Image,
@@ -17,7 +17,8 @@ import {
   Wrench,
   Building2,
   Calculator,
-  Zap
+  Zap,
+  FileSignature
 } from 'lucide-react'
 
 
@@ -151,6 +152,9 @@ export const routeConfig = {
   'PROPERTY_MANAGER': {
     main: [
       { path: '/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
+    ],
+    documents: [
+      { path: '/property-manager/dss/upload', label: 'Sign Documents', icon: FileSignature },
     ],
     properties: [
       { path: '/property-manager/view-own-property', label: 'Manage Property', icon: Building2 },
