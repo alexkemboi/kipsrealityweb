@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      status: result.status // "IN_PROGRESS" or "COMPLETED"
+      status: result.result.status // "IN_PROGRESS" or "COMPLETED"
     });
 
   } catch (error: unknown) {
