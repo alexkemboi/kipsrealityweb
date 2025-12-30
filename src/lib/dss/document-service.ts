@@ -81,7 +81,12 @@ export async function createDocument({
 /**
  * Executes a signing action for a participant.
  */
-export async function signDocument(documentId: string, userEmail: string, signatureData: string) {
+interface SignDocumentResult {
+  success: boolean;
+  result: { status: string };
+}
+
+export async function signDocument(documentId: string, userEmail: string, signatureData: string): Promise<SignDocumentResult> {
     // 1. Get Security Baseline & Permissions
     const workflowStatus = await getNextSigner(documentId);
 
