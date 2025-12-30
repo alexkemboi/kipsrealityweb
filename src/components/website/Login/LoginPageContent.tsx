@@ -94,12 +94,6 @@ const LoginPageContent = () => {
           case "VENDOR":
             router.push("/vendor");
             break;
-          case "AGENT":
-            router.push("/agent");
-            break;
-          case "LANDLORD":
-            router.push("/property-manager");
-            break;
           default:
             router.push("/");
         }
