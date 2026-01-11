@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import PdfViewer from "@/components/dss/PdfViewer";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+
+// Dynamically import PDF Viewer to avoid "DOMMatrix is not defined" error during SSR
+const PdfViewer = dynamic(() => import("@/components/dss/PdfViewer"), { ssr: false });
 import { toast } from "sonner";
 import { Loader2, PenTool } from "lucide-react";
 

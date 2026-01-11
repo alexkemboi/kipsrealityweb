@@ -6,7 +6,9 @@ import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 // 1. Configure the Worker (Critical for Next.js)
 // We use a CDN to load the worker script to avoid build errors.
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+if (typeof window !== "undefined") {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+}
 
 interface PdfViewerProps {
   url: string;
