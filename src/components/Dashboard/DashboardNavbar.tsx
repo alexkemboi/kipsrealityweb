@@ -91,7 +91,7 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
                 onClick={handleLogout}
                 className="px-3 py-2 text-sm text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg border border-neutral-700 transition"
               >
-                Logout
+                Logout Build
               </button>
             </div>
           </div>

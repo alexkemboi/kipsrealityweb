@@ -128,7 +128,7 @@ export default async function ManageUnitsPage({
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-4 h-4 text-navy-700" />
                           <span className="font-semibold text-gray-900">
-                            KSh {unit.rentAmount.toLocaleString()}
+                            USD {unit.rentAmount.toLocaleString()}
                           </span>
                         </div>
                       ) : (
