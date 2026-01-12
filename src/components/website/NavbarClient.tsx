@@ -8,7 +8,6 @@ import Logo from "@/assets/rf_logo.jpeg";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { UserDropdown } from "./UserDropdown";
 import { MobileMenu } from "./ MobileMenu";
 
 interface NavbarItem {
@@ -168,29 +167,7 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {mounted && user ? (
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`relative transition-colors duration-300 ${textColor} ${hoverColor} hover:bg-[#f0f7ff]`}
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                </Button>
-
-                <UserDropdown
-                  user={user}
-                  scrollProgress={isScrolled ? 1 : 0}
-                  textColor={textColor}
-                  hoverColor={hoverColor}
-                  getDashboardPath={getDashboardPath}
-                  getUserInitials={getUserInitials}
-                  formatRoleName={formatRoleName}
-                  handleLogout={handleLogout}
-                />
-              </div>
-            ) : (
+            {
               <>
                 <Link href="/login">
                   <Button
@@ -209,17 +186,12 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
                   </Button>
                 </Link>
               </>
-            )}
+            }
           </div>
 
           {/* Mobile Menu */}
           <MobileMenu
-            user={user}
             scrollProgress={isScrolled ? 1 : 0}
-            getDashboardPath={getDashboardPath}
-            getUserInitials={getUserInitials}
-            formatRoleName={formatRoleName}
-            handleLogout={handleLogout}
             navLinks={filteredNavLinks}
           />
         </div>
