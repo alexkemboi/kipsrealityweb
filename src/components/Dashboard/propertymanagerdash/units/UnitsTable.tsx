@@ -88,7 +88,7 @@ export default function UnitsTable({ propertyId, units, inModal = false }: Units
                   </div>
                 </td>
                 <td className="px-4 py-2">
-                  {unit.rentAmount ? `KSh ${unit.rentAmount.toLocaleString()}` : "Not set"}
+                  {unit.rentAmount ? `USD ${unit.rentAmount.toLocaleString()}` : "Not set"}
                 </td>
                 <td className="px-4 py-2">{applianceCount || "None"}</td>
                 <td className="px-4 py-2">

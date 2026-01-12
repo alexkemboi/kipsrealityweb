@@ -150,7 +150,7 @@ export default function PropertyDetailsPage() {
         </div>
         <div className="bg-navy-50 rounded-xl p-4 text-center">
           <h3 className="text-sm font-semibold text-navy-900">Monthly Rent</h3>
-          <p className="text-2xl font-bold text-green-900">KSh {property.rentPerMonth.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-green-900">USD {property.rentPerMonth.toLocaleString()}</p>
         </div>
         <div className="bg-yellow-50 rounded-xl p-4 text-center">
           <h3 className="text-sm font-semibold text-yellow-700">Occupancy</h3>
@@ -181,7 +181,7 @@ export default function PropertyDetailsPage() {
 
         {/* Rent Collected Trend */}
         <div className="bg-gray-50 p-4 rounded-xl shadow-sm">
-          <h3 className="text-gray-700 font-semibold mb-3">Rent Collection (KSh)</h3>
+          <h3 className="text-gray-700 font-semibold mb-3">Rent Collection (USD)</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={property.analytics}>
               <CartesianGrid strokeDasharray="3 3" />
