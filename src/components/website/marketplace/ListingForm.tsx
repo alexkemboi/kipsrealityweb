@@ -119,6 +119,7 @@ export default function ListingForm() {
                 Description *
               </label>
               <textarea
+                id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -173,10 +174,12 @@ export default function ListingForm() {
                 Category *
               </label>
               <select
+                id="category"
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
                 className="w-full bg-white text-slate-900 border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all duration-200 px-4 py-3 appearance-none cursor-pointer"
+                title="Select a category for your listing"
               >
                 <option value="property">Property</option>
                 <option value="furniture"> Furniture</option>
@@ -230,6 +233,8 @@ export default function ListingForm() {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
+                        aria-label={`Remove image ${index + 1}`}
+                        title="Remove image"
                         className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 shadow-lg"
                       >
                         <X className="w-3 h-3" />

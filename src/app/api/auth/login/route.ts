@@ -65,10 +65,10 @@ export async function POST(request: Request) {
       organizationUserId: primaryOrgUser?.id, // <-- Added
       organization: primaryOrgUser
         ? {
-            id: primaryOrgUser.organization.id,
-            name: primaryOrgUser.organization.name,
-            slug: primaryOrgUser.organization.slug
-          }
+          id: primaryOrgUser.organization.id,
+          name: primaryOrgUser.organization.name,
+          slug: primaryOrgUser.organization.slug
+        }
         : null
     };
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         user: userResponse,
         tokens: { accessToken, refreshToken, expiresAt }
       },
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200 }
     );
 
     response.cookies.set('token', accessToken, {

@@ -187,26 +187,26 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
         <div className="flex flex-col items-center justify-center space-y-6 text-center py-10">
           {/* Email Icon Circle */}
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-2">
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                strokeWidth={1.5} 
-                stroke="currentColor" 
-                className="w-8 h-8 text-blue-600"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-              </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-8 h-8 text-blue-600"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+            </svg>
           </div>
 
           <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-gray-900">Check Your Email</h2>
-              <p className="text-gray-500 max-w-xs mx-auto">
-                We have sent a verification link to <span className="font-semibold text-gray-900">{formData.email}</span>.
-              </p>
-              <p className="text-sm text-gray-400">
-                Please check your inbox to verify your account before logging in.
-              </p>
+            <h2 className="text-2xl font-bold text-gray-900">Check Your Email</h2>
+            <p className="text-gray-500 max-w-xs mx-auto">
+              We have sent a verification link to <span className="font-semibold text-gray-900">{formData.email}</span>.
+            </p>
+            <p className="text-sm text-gray-400">
+              Please check your inbox to verify your account before logging in.
+            </p>
           </div>
 
           <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-4 block">
@@ -280,7 +280,11 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
                 value={formData.role}
                 onValueChange={(value) => setFormData((prev) => ({ ...prev, role: value }))}
               >
-                <SelectTrigger className="w-full h-12 border-neutral-200 bg-white text-neutral-900 focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all text-base px-3">
+                <SelectTrigger
+                  aria-label="Select your account role"
+                  title="Select Role"
+                  className="w-full h-12 border-neutral-200 bg-white text-neutral-900 focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all text-base px-3"
+                >
                   <SelectValue placeholder="Select Role" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-neutral-200" side="bottom" sideOffset={4}>
@@ -309,6 +313,8 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -331,6 +337,8 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
                 onClick={() =>
                   setShowConfirmPassword(!showConfirmPassword)
                 }
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                title={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
               >
                 {showConfirmPassword ? (
