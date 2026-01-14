@@ -57,6 +57,8 @@ export default function PdfViewer({ url }: PdfViewerProps) {
           <button
             onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
             disabled={pageNumber <= 1}
+            aria-label="Previous page"
+            title="Previous page"
             className="p-1 hover:bg-gray-100 rounded-full disabled:opacity-30"
           >
             <ChevronLeft />
@@ -69,6 +71,8 @@ export default function PdfViewer({ url }: PdfViewerProps) {
           <button
             onClick={() => setPageNumber((prev) => Math.min(prev + 1, numPages))}
             disabled={pageNumber >= numPages}
+            aria-label="Next page"
+            title="Next page"
             className="p-1 hover:bg-gray-100 rounded-full disabled:opacity-30"
           >
             <ChevronRight />

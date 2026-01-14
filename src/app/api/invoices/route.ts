@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     // Build the where clause with user-based filtering
     const where: any = {
       // Only show invoices for properties managed by the current user
-      Lease: {
+      lease: {
         property: {
           manager: {
             userId: user.id,
@@ -76,7 +76,7 @@ export async function GET(req: Request) {
     const invoicesWithFinancials = invoices.map((invoice) => {
       const totalPaid = invoice.payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
       const balance = invoice.amount - totalPaid;
-      
+
       // Get building name from property details
       const buildingName =
         invoice.lease?.property?.apartmentComplexDetail?.buildingName ||
@@ -96,29 +96,29 @@ export async function GET(req: Request) {
       };
     });
 
- const grouped = Object.values(
-  invoicesWithFinancials.reduce((acc: any, inv) => {
-    const dateKey = inv.dueDate.toISOString().split("T")[0];
-    const leaseKey = inv.lease?.id || "unknown";
-    const groupKey = `${leaseKey}-${dateKey}`;
+    const grouped = Object.values(
+      invoicesWithFinancials.reduce((acc: any, inv) => {
+        const dateKey = inv.dueDate.toISOString().split("T")[0];
+        const leaseKey = inv.lease?.id || "unknown";
+        const groupKey = `${leaseKey}-${dateKey}`;
 
-    if (!acc[groupKey]) {
-      acc[groupKey] = {
-        leaseId: leaseKey,
-        dueDate: inv.dueDate,
-        totalAmount: 0,
-        invoices: [],
-      };
-    }
+        if (!acc[groupKey]) {
+          acc[groupKey] = {
+            leaseId: leaseKey,
+            dueDate: inv.dueDate,
+            totalAmount: 0,
+            invoices: [],
+          };
+        }
 
-    acc[groupKey].totalAmount += inv.amount;
-    acc[groupKey].invoices.push(inv);
+        acc[groupKey].totalAmount += inv.amount;
+        acc[groupKey].invoices.push(inv);
 
-    return acc;
-  }, {})
-);
+        return acc;
+      }, {})
+    );
 
-return NextResponse.json(grouped);
+    return NextResponse.json(grouped);
   } catch (err) {
     console.error("GET /api/invoices error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

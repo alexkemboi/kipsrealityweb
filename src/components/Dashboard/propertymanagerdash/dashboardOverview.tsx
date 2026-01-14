@@ -125,13 +125,49 @@ const Dashboard = () => {
 	// --- HELPER: SAFE FETCH ---
 	// This prevents the "Unexpected end of JSON" crash by checking response text first
 	const safeFetch = async (url: string, options: any = {}) => {
+		// 1. GET TOKEN (Try to get from current state or localStorage)
+		let currentToken = token;
+		if (!currentToken && typeof window !== 'undefined') {
+			const stored = localStorage.getItem('rentflow_tokens');
+			if (stored) {
+				try {
+					const parsed = JSON.parse(stored);
+					currentToken = parsed?.accessToken || stored;
+				} catch {
+					currentToken = stored;
+				}
+			}
+		}
+
+		// 2. STOP IF MISSING (Prevent loops)
+		if (!currentToken) {
+			console.warn("[Dashboard] No token found. Redirecting to login.");
+			if (typeof window !== 'undefined') {
+				window.location.href = '/login';
+			}
+			return null;
+		}
+
 		try {
 			const headers = {
 				'Content-Type': 'application/json',
 				...options.headers,
-				...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+				'Authorization': `Bearer ${currentToken}`,
 			};
+
 			const res = await fetch(url, { ...options, headers });
+
+			// 3. HANDLE EXPIRED TOKEN (401)
+			if (res.status === 401) {
+				console.error(`[Dashboard] Token expired or invalid (401) on ${url}. Logging out.`);
+				if (typeof window !== 'undefined') {
+					localStorage.removeItem('rentflow_tokens');
+					localStorage.removeItem('rentflow_user');
+					window.location.href = '/login';
+				}
+				return null;
+			}
+
 			const text = await res.text(); // Get raw text first
 
 			if (!res.ok) {
