@@ -92,7 +92,7 @@ async function main() {
         console.log('🔄 Foreign key checks disabled.');
 
         const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
-        
+
         const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.json')).sort((a, b) => {
             const modelA = a.replace('.json', '');
             const modelB = b.replace('.json', '');
@@ -109,7 +109,7 @@ async function main() {
         for (const file of files) {
             const rawModelName = file.replace('.json', '');
             let clientKey = rawModelName;
-            
+
             // Map common plural/casing issues
             if (clientKey === 'vendors') clientKey = 'vendor';
             if (clientKey === 'services') clientKey = 'service';
@@ -123,7 +123,7 @@ async function main() {
             if (clientKey === 'payment_reversal') clientKey = 'paymentReversal';
             if (clientKey === 'Tenantapplication') clientKey = 'tenantapplication';
             if (clientKey === 'PropertyImage') clientKey = 'propertyImage';
-            
+
             clientKey = clientKey.charAt(0).toLowerCase() + clientKey.slice(1);
 
             if (processedModels.has(clientKey)) continue;
@@ -142,8 +142,8 @@ async function main() {
 
             const filePath = path.join(backupDir, file);
             const rawData = JSON.parse(fs.readFileSync(filePath, 'utf-8'), (key, value) => {
-                 if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value);
-                 return value;
+                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value);
+                return value;
             });
 
             if (!Array.isArray(rawData) || rawData.length === 0) continue;
@@ -157,7 +157,7 @@ async function main() {
                     // 1. Apply Manual Translation (Backup Key -> Client Key)
                     if (FIELD_TRANSLATIONS[rawModelName] && FIELD_TRANSLATIONS[rawModelName][key]) {
                         newKey = FIELD_TRANSLATIONS[rawModelName][key];
-                    } 
+                    }
                     // 2. Auto-convert snake_case -> camelCase
                     else if (key.includes('_')) {
                         newKey = toCamelCase(key);
@@ -174,12 +174,19 @@ async function main() {
                 return newItem;
             });
 
-            console.log(`📥 Restoring ${rawModelName} -> ${clientKey} (${normalizedData.length})...`);
-            
+            // 4. Safety Filter: Remove rows with null required FKs
+            const cleanData = normalizedData.filter(item => {
+                if (clientKey === 'property' && !item.organizationId) return false;
+                if (clientKey === 'user' && !item.email) return false;
+                return true;
+            });
+
+            console.log(`📥 Restoring ${rawModelName} -> ${clientKey} (${cleanData.length})...`);
+
             try {
                 // @ts-ignore
                 await prisma[clientKey].createMany({
-                    data: normalizedData,
+                    data: cleanData,
                     skipDuplicates: true
                 });
             } catch (err: any) {
