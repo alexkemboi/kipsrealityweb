@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { NextResponse } from "next/server";
-import { InvoiceStatus } from "@prisma/client"; // Standardized enum name
+import { invoice_status } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   const { id } = params;
@@ -50,16 +50,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         const totalPaid = Number(totalPaidAgg._sum?.amount ?? 0);
 
         // 3️⃣ Calculate remaining balance
-        const remaining = (payment.invoice?.amount ?? 0) - totalPaid;
+        const remaining = (payment.invoice?.totalAmount ?? 0) - totalPaid;
 
         // 4️⃣ Determine new invoice status (use enum)
-        let newStatus: InvoiceStatus;
+        let newStatus: invoice_status;
         const now = new Date();
         const invoiceDueDate = payment.invoice?.dueDate ? new Date(payment.invoice.dueDate) : new Date();
 
-        if (totalPaid >= (payment.invoice?.amount ?? 0) - 0.01) newStatus = InvoiceStatus.PAID;
-        else if (now > invoiceDueDate) newStatus = InvoiceStatus.OVERDUE;
-        else newStatus = InvoiceStatus.PENDING;
+        if (totalPaid >= (payment.invoice?.totalAmount ?? 0) - 0.01) newStatus = invoice_status.PAID;
+        else if (now > invoiceDueDate) newStatus = invoice_status.OVERDUE;
+        else newStatus = invoice_status.PENDING;
 
         // 5️⃣ Update invoice with new status
         const updatedInvoice = await tx.invoice.update({
@@ -72,7 +72,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
           totalPaid,
           remaining,
           status: newStatus,
-          invoiceAmount: updatedInvoice.amount,
+          invoiceAmount: updatedInvoice.totalAmount,
         };
       },
       { timeout: 15000 } // 15s transaction timeout
