@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { FileText, Upload, Trash2 } from "lucide-react";
-import { LeaseDocumentType } from "@prisma/client";
+import { LeaseDocument_documentType } from "@prisma/client";
 import { useParams } from "next/navigation";
 
 interface LeaseDocument {
   id: string;
   leaseId: string;
-  documentType: LeaseDocumentType;
+  documentType: LeaseDocument_documentType;
   fileName: string;
   fileUrl: string;
   fileSize: number;
@@ -24,7 +24,7 @@ export default function DocumentsManager() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<LeaseDocumentType>("OTHER");
+  const [documentType, setDocumentType] = useState<LeaseDocument_documentType>("OTHER");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
@@ -113,9 +113,9 @@ export default function DocumentsManager() {
         <select
           className="w-full border border-gray-300 rounded px-3 py-2"
           value={documentType}
-          onChange={(e) => setDocumentType(e.target.value as LeaseDocumentType)}
+          onChange={(e) => setDocumentType(e.target.value as LeaseDocument_documentType)}
         >
-          {Object.keys(LeaseDocumentType).map((type) => (
+          {Object.keys(LeaseDocument_documentType).map((type) => (
             <option key={type} value={type}>
               {type.replace(/_/g, " ")}
             </option>
