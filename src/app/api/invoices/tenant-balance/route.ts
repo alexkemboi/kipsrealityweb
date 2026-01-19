@@ -20,7 +20,7 @@ export async function getTenantBalance(leaseId: string) {
 
     // Calculate totals
     const totalInvoiced = leaseWithInvoices.invoices.reduce(
-      (sum, inv) => sum + inv.amount,
+      (sum, inv) => sum + inv.totalAmount,
       0
     );
 

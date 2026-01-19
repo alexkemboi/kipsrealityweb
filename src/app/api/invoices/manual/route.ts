@@ -35,5 +35,7 @@ export async function POST(req: NextRequest) {
     console.error("GL Posting Failed (Background task will retry):", glError);
   }
 
-  return NextResponse.json(invoice);
+  // Return the freshest version so callers can assert postingStatus/journalEntryId
+  const refreshed = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+  return NextResponse.json(refreshed || invoice);
 }

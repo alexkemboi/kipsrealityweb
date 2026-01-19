@@ -9,7 +9,7 @@ export async function GET() {
 
     // 1. Find all active leases (Batching: Take 50 at a time to stay within Vercel's timeout)
     const activeLeases = await prisma.lease.findMany({
-      where: { status: "ACTIVE" },
+      where: { leaseStatus: "ACTIVE" },
       take: 50, // Batching strategy
     });
 
@@ -44,7 +44,7 @@ export async function GET() {
             data: {
               leaseId: lease.id,
               type: "RENT",
-              amount: lease.rentAmount,
+              totalAmount: lease.rentAmount,
               dueDate,
               status: "PENDING",
             },

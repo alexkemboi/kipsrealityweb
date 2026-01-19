@@ -101,7 +101,7 @@ export async function POST(
       data: {
         status: newStatus as any,
         amountPaid: newTotalPaid,
-        balance: invoice.totalAmount - newTotalPaid
+        balance: invoice.totalAmount - newTotalPaid,
       },
     });
 
@@ -113,14 +113,18 @@ export async function POST(
       console.error("GL Payment Posting Failed:", glError);
     }
 
-    console.log("Payment successful:", { payment, newStatus, newTotalPaid });
+    const refreshedPayment = await prisma.payment.findUnique({
+      where: { id: payment.id },
+    });
+
+    console.log("Payment successful:", { payment: refreshedPayment || payment, newStatus, newTotalPaid });
 
     return NextResponse.json({
       success: true,
-      payment,
+      payment: refreshedPayment || payment,
       status: newStatus,
       totalPaid: newTotalPaid,
-      remaining: invoice.amount - newTotalPaid,
+      remaining: invoice.totalAmount - newTotalPaid,
     });
   } catch (error) {
     console.error("Error processing payment:", error);

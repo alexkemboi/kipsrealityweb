@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const invoice = await prisma.invoice.findUnique({
       where: { id },
       include: {
-        lease: {
+        Lease: {
           include: {
             tenant: {
               select: { id: true, firstName: true, lastName: true, email: true },
@@ -34,10 +34,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 },
               },
             },
-            leaseUtilities: {
+            lease_utility: {
               include: {
                 utility: true,
-                utilityReadings: {
+                utility_reading: {
                   orderBy: { readingDate: "desc" },
                   take: 1,
                 },
@@ -54,20 +54,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     // optionally map the utilities to a simpler structure
-    const utilities = invoice.lease?.leaseUtilities?.map((lu) => ({
+    const utilities = invoice.Lease?.lease_utility?.map((lu) => ({
       id: lu.utility.id,
       name: lu.utility.name,
       type: lu.utility.type,
       fixedAmount: lu.utility.fixedAmount ?? 0,
       unitPrice: lu.utility.unitPrice ?? 0,
-      isTenantResponsible: lu.isTenantResponsible,
+      isTenantResponsible: lu.is_tenant_responsible,
     }));
 
     const buildingName =
-      invoice.lease?.property?.apartmentComplexDetail?.buildingName ?? null;
+      invoice.Lease?.property?.apartmentComplexDetail?.buildingName ?? null;
 
     return NextResponse.json({
       ...invoice,
+      postingStatus: (invoice as any).postingStatus, // Handle runtime property
       buildingName,
       utilities,
     });

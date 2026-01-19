@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/Getcurrentuser"; 
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 
 export async function GET(req: Request) {
   try {
@@ -17,17 +17,17 @@ export async function GET(req: Request) {
     // Fetch invoices for this tenant
     const invoices = await prisma.invoice.findMany({
       where: {
-        lease: {
+        Lease: {
           tenantId: tenantId, // filter by tenant
         },
       },
       orderBy: { dueDate: "asc" },
       include: {
-         payments: {
-           include: { receipts: true }
-         },
-         lease: true,
-       },
+        payments: {
+          include: { receipts: true }
+        },
+        Lease: true,
+      },
     });
 
     return NextResponse.json(invoices);

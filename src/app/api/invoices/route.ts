@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     // Build the where clause with user-based filtering
     const where: any = {
       // Only show invoices for properties managed by the current user
-      lease: {
+      Lease: {
         property: {
           manager: {
             userId: user.id,
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
       where,
       include: {
         payments: true, // ✅ ADD THIS - Include payment data for balance calculation
-        lease: {
+        Lease: {
           include: {
             tenant: {
               select: { id: true, firstName: true, lastName: true, email: true },
@@ -75,13 +75,13 @@ export async function GET(req: Request) {
     // Add financial calculations and building name
     const invoicesWithFinancials = invoices.map((invoice) => {
       const totalPaid = invoice.payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-      const balance = invoice.amount - totalPaid;
+      const balance = invoice.totalAmount - totalPaid;
 
       // Get building name from property details
       const buildingName =
-        invoice.lease?.property?.apartmentComplexDetail?.buildingName ||
-        invoice.lease?.property?.houseDetail?.houseName ||
-        invoice.lease?.property?.name ||
+        invoice.Lease?.property?.apartmentComplexDetail?.buildingName ||
+        invoice.Lease?.property?.houseDetail?.houseName ||
+        invoice.Lease?.property?.name ||
         "N/A";
 
       return {
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
     const grouped = Object.values(
       invoicesWithFinancials.reduce((acc: any, inv) => {
         const dateKey = inv.dueDate.toISOString().split("T")[0];
-        const leaseKey = inv.lease?.id || "unknown";
+        const leaseKey = inv.Lease?.id || "unknown";
         const groupKey = `${leaseKey}-${dateKey}`;
 
         if (!acc[groupKey]) {
@@ -111,7 +111,7 @@ export async function GET(req: Request) {
           };
         }
 
-        acc[groupKey].totalAmount += inv.amount;
+        acc[groupKey].totalAmount += inv.totalAmount;
         acc[groupKey].invoices.push(inv);
 
         return acc;

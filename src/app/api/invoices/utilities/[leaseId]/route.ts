@@ -24,7 +24,7 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     const { leaseId } = await context.params;
 
     // Check if lease exists and get payment details
-    const leaseExists = await prisma.lease.findUnique({ 
+    const leaseExists = await prisma.lease.findUnique({
       where: { id: leaseId },
       select: {
         id: true,
@@ -32,7 +32,7 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
         paymentDueDay: true
       }
     });
-    
+
     if (!leaseExists) {
       return NextResponse.json(
         { success: false, error: "Lease not found for the given ID." },
@@ -41,11 +41,11 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     }
 
     // Fetch all utilities linked to this lease
-    const leaseUtilities = await prisma.leaseUtility.findMany({
-      where: { leaseId: leaseId },
+    const leaseUtilities = await prisma.lease_utility.findMany({
+      where: { lease_id: leaseId },
       include: {
         utility: true,
-        utilityReadings: {
+        utility_reading: {
           orderBy: { readingDate: "desc" },
           take: 1, // latest reading
         },
@@ -67,8 +67,8 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
       if (utility.type === "FIXED") {
         amount = utility.fixedAmount ?? 0;
       } else if (utility.type === "METERED") {
-        const latestReading = lu.utilityReadings[0];
-        amount = (latestReading?.readingValue ?? 0) * (utility.unitPrice ?? 0);
+        const latestReading = lu.utility_reading[0];
+        amount = (latestReading?.reading_value ?? 0) * (utility.unitPrice ?? 0);
       }
 
       return {
@@ -90,9 +90,9 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
       data: {
         leaseId: leaseId,
         type: "UTILITY",
-        amount: totalAmount,
+        totalAmount: totalAmount,
         dueDate: dueDate, // Now uses same logic as rent invoices
-        invoiceItems: {
+        InvoiceItem: {
           create: items.map((i) => ({
             description: i.name,
             amount: i.amount,
@@ -100,8 +100,8 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
         },
       },
       include: {
-        invoiceItems: true,
-        lease: {
+        InvoiceItem: true,
+        Lease: {
           include: {
             tenant: { select: { firstName: true, lastName: true, email: true } },
             property: { select: { name: true, address: true } },
