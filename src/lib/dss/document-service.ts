@@ -49,7 +49,7 @@ export async function createDocument({
     // We enforce basic sequential order logic here:
     const participantsWithOrder = participants.map((p, index) => ({
         ...p,
-        signingOrder: index + 1 // Simple 1-based sequence based on input array order
+        stepOrder: index + 1 // Simple 1-based sequence based on input array order
     }));
 
     const doc = await prisma.dssDocument.create({
@@ -66,7 +66,7 @@ export async function createDocument({
                     email: p.email,
                     role: p.role,
                     name: p.name,
-                    signingOrder: p.signingOrder
+                    stepOrder: p.stepOrder
                 }))
             }
         },
@@ -82,8 +82,8 @@ export async function createDocument({
  * Executes a signing action for a participant.
  */
 interface SignDocumentResult {
-  success: boolean;
-  result: { status: string };
+    success: boolean;
+    result: { status: string };
 }
 
 export async function signDocument(documentId: string, userEmail: string, signatureData: string): Promise<SignDocumentResult> {
@@ -103,7 +103,7 @@ export async function signDocument(documentId: string, userEmail: string, signat
     if (!participant) throw new Error("User is not a participant of this document");
 
     if (doc.signingMode === DssSigningMode.SEQUENTIAL) {
-        if (workflowStatus.nextStep !== participant.signingOrder) {
+        if (workflowStatus.nextStep !== participant.stepOrder) {
             throw new Error("It is not your turn to sign this document.");
         }
     }
