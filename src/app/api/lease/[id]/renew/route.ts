@@ -14,7 +14,7 @@ export async function renewLease(req: NextRequest, leaseId: string) {
 
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },
-      include: { property: true, tenant: true, tenantApplication: true },
+      include: { property: true, tenant: true, application: true },
     });
 
     if (!lease) return NextResponse.json({ error: "Lease not found" }, { status: 404 });
@@ -40,7 +40,7 @@ export async function renewLease(req: NextRequest, leaseId: string) {
       data: {
         leaseId,
         notificationType: "RENEWAL_REMINDER",
-        recipientEmail: lease.tenant?.email || lease.tenantApplication?.email || "",
+        recipientEmail: lease.tenant?.email || lease.application?.email || "",
         recipientRole: "TENANT",
         subject: "Lease Renewal Offer",
         message: `Your lease is eligible for renewal. New terms: Rent ${newRentAmount}, End Date: ${newEndDate}`,

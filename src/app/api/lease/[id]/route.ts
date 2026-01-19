@@ -18,7 +18,7 @@ export async function PATCH(
         tenant: true,
         property: true,
         unit: true,
-        tenantApplication: true,
+        application: true,
       }
     });
 
@@ -105,7 +105,7 @@ export async function GET(
     }
 
     // 🧮 Balance calculation
-    const totalInvoiced = lease.invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalInvoiced = lease.invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
     const totalPaid = lease.invoices.reduce(
       (sum, inv) => sum + inv.payments.reduce((pSum, p) => pSum + p.amount, 0),
       0

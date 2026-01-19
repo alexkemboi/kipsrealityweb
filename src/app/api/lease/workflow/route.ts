@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },
-      include: { property: true, tenant: true, tenantApplication: true },
+      include: { property: true, tenant: true, application: true },
     });
 
     if (!lease) {
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       case "APPROVE":
         updatedLease = await prisma.lease.update({
           where: { id: leaseId },
-          data: { status: "APPROVED" },
+          data: { leaseStatus: "APPROVED" },
         });
         auditAction = "APPROVED";
         break;
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         }
         updatedLease = await prisma.lease.update({
           where: { id: leaseId },
-          data: { status: "ACTIVE" },
+          data: { leaseStatus: "ACTIVE" },
         });
         auditAction = "ACTIVATED";
         break;
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       case "TERMINATE":
         updatedLease = await prisma.lease.update({
           where: { id: leaseId },
-          data: { status: "TERMINATED" },
+          data: { leaseStatus: "TERMINATED" },
         });
         auditAction = "TERMINATED";
         break;
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
         leaseId,
         action: auditAction,
         performedBy: user.id,
-        changes: { status: updatedLease.status } as Prisma.InputJsonValue, // ✅ cast as InputJsonValue
+        changes: { leaseStatus: updatedLease.leaseStatus } as Prisma.InputJsonValue, // ✅ cast as InputJsonValue
       } as Prisma.LeaseAuditLogUncheckedCreateInput,
     });
 
