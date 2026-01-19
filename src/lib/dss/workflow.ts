@@ -12,7 +12,7 @@ export async function getNextSigner(documentId: string): Promise<WorkflowResult>
         where: { id: documentId },
         include: {
             participants: {
-                orderBy: { signingOrder: 'asc' }
+                orderBy: { stepOrder: 'asc' }
             }
         }
     });
@@ -46,7 +46,7 @@ export async function getNextSigner(documentId: string): Promise<WorkflowResult>
     // 4. Return the next step details
     return {
         isComplete: false,
-        nextStep: nextParticipant.signingOrder,
+        nextStep: nextParticipant.stepOrder,
         nextRole: nextParticipant.role
     };
 }
@@ -74,5 +74,5 @@ export async function canUserSignNow(documentId: string, userEmail: string): Pro
     // Check if it's their turn
     // It's their turn if the "nextStep" matches their "stepOrder"
     // (In a strictly sequential flow)
-    return result.nextStep === participant.signingOrder;
+    return result.nextStep === participant.stepOrder;
 }
