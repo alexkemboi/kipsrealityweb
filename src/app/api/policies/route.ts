@@ -8,7 +8,14 @@ export async function GET() {
     const policies = await prisma.policy.findMany({
       include: { Section: true },
     });
-    return NextResponse.json(policies);
+    
+    // Map Section to sections for frontend compatibility
+    const mappedPolicies = policies.map((policy) => ({
+      ...policy,
+      sections: policy.Section || [],
+    }));
+    
+    return NextResponse.json(mappedPolicies);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to fetch policies" }, { status: 500 });
