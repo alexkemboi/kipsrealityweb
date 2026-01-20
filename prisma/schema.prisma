@@ -7,87 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// =====================================================================
-// 1. AUTHENTICATION & IDENTITY
-// =====================================================================
-
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  logoUrl   String?  @map("logo_url")
-  website   String?
-  phone     String?
-  address   String?
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  planId    Int?
-
-  // Relations
-  invites             Invite[]
-  listings            Listing[]
-  maintenanceRequests MaintenanceRequest[]
-  properties          Property[]           @relation("OrganizationToProperty")
-  users               OrganizationUser[]
-  plan                Plan?                @relation(fields: [planId], references: [id])
-  vendors             Vendor[]
-
-  // Financial & DSS Links
-  financialEntities    FinancialEntity[]
+  id                   String                   @id @default(uuid())
+  name                 String
+  slug                 String                   @unique
+  logoUrl              String?                  @map("logo_url")
+  website              String?
+  phone                String?
+  address              String?
+  isActive             Boolean                  @default(true) @map("is_active")
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+  planId               Int?
+  invites              Invite[]
+  listings             Listing[]
+  maintenanceRequests  MaintenanceRequest[]
+  properties           Property[]               @relation("OrganizationToProperty")
+  notaryRecords        BlockchainNotaryRecord[]
   dssDocuments         DssDocument[]
   dssParticipants      DssParticipant[]
-  notaryRecords        BlockchainNotaryRecord[]
   dssWorkflowTemplates DssWorkflowTemplate[]
+  financialEntities    FinancialEntity[]
+  users                OrganizationUser[]
+  plan                 Plan?                    @relation(fields: [planId], references: [id])
+  vendors              Vendor[]
 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
 
 model User {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String     @map("password_hash")
-  firstName    String?    @map("first_name")
-  lastName     String?    @map("last_name")
-  phone        String?
-  avatarUrl    String?    @map("avatar_url")
-  status       UserStatus @default(ACTIVE)
-  lastLoginAt  DateTime?  @map("last_login_at")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-
-  // Auth & Security
-  emailVerified     DateTime? @map("email_verified")
-  verificationToken String?   @unique
-
-  // Consent Flags (For Notifications/AI)
-  consentTransactional Boolean @default(true) @map("consent_transactional")
-  consentNotifications Boolean @default(true) @map("consent_notifications")
-  consentMarketing     Boolean @default(false) @map("consent_marketing")
-
-  // Relations
-  sentInvites         Invite[]             @relation("UserInvites")
-  leases              Lease[]
-  listings            Listing[]
-  passwordResetTokens PasswordResetToken[]
-  tenantApplications  Tenantapplication[]
-  organizationUsers   OrganizationUser[]
-  vendors             Vendor[]
-
-  // DSS Relations
-  dssParticipants DssParticipant[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String               @map("password_hash")
+  firstName            String?              @map("first_name")
+  lastName             String?              @map("last_name")
+  phone                String?
+  avatarUrl            String?              @map("avatar_url")
+  status               UserStatus           @default(ACTIVE)
+  lastLoginAt          DateTime?            @map("last_login_at")
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+  emailVerified        DateTime?            @map("email_verified")
+  verificationToken    String?              @unique
+  consentMarketing     Boolean              @default(false) @map("consent_marketing")
+  consentNotifications Boolean              @default(true) @map("consent_notifications")
+  consentTransactional Boolean              @default(true) @map("consent_transactional")
+  sentInvites          Invite[]             @relation("UserInvites")
+  leases               Lease[]
+  listings             Listing[]
+  passwordResetTokens  PasswordResetToken[]
+  tenantApplications   Tenantapplication[]
+  dssParticipants      DssParticipant[]
+  organizationUsers    OrganizationUser[]
+  vendors              Vendor[]
 
   @@map("users")
 }
 
 model OrganizationUser {
-  id             String   @id @default(uuid())
-  userId         String   @map("user_id")
-  organizationId String   @map("organization_id")
-  role           UserRole
-  createdAt      DateTime @default(now()) @map("created_at")
-
+  id                String               @id @default(uuid())
+  userId            String               @map("user_id")
+  organizationId    String               @map("organization_id")
+  role              UserRole
+  createdAt         DateTime             @default(now()) @map("created_at")
   adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]        @relation("AdminActionsTarget")
   createdRequests   MaintenanceRequest[] @relation("RequestCreator")
@@ -102,17 +85,16 @@ model OrganizationUser {
 }
 
 model Vendor {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  userId         String   @map("user_id")
-  companyName    String   @map("company_name")
-  serviceType    String   @map("service_type")
-  phone          String?
-  email          String?
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
+  id                 String               @id @default(uuid())
+  organizationId     String               @map("organization_id")
+  userId             String               @map("user_id")
+  companyName        String               @map("company_name")
+  serviceType        String               @map("service_type")
+  phone              String?
+  email              String?
+  isActive           Boolean              @default(true) @map("is_active")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
   MaintenanceRequest MaintenanceRequest[]
   organization       Organization         @relation(fields: [organizationId], references: [id])
   user               User                 @relation(fields: [userId], references: [id])
@@ -123,21 +105,19 @@ model Vendor {
 }
 
 model Invite {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   email          String
-  token          String   @unique
+  token          String       @unique
   role           UserRole
   organizationId String
   invitedById    String?
   expiresAt      DateTime
-  accepted       Boolean  @default(false)
-  createdAt      DateTime @default(now())
-
-  leaseId String? @db.VarChar(255)
-  lease   Lease?  @relation("LeaseInvites", fields: [leaseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Invite_Lease")
-
-  invitedBy    User?        @relation("UserInvites", fields: [invitedById], references: [id])
-  organization Organization @relation(fields: [organizationId], references: [id])
+  accepted       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  leaseId        String?      @db.VarChar(255)
+  lease          Lease?       @relation("LeaseInvites", fields: [leaseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_Invite_Lease")
+  invitedBy      User?        @relation("UserInvites", fields: [invitedById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@index([email])
@@ -156,254 +136,154 @@ model PasswordResetToken {
   @@index([userId])
 }
 
-// =====================================================================
-// 2. FINANCIAL CORE (General Ledger) - NEW
-// =====================================================================
-
 model FinancialEntity {
-  id             String  @id @default(uuid())
-  organizationId String  @map("organization_id")
-  name           String // e.g. "Smith Realty LLC"
-  taxIdEncrypted String? @map("tax_id_encrypted")
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  name           String
+  taxIdEncrypted String?        @map("tax_id_encrypted")
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  accounts       Account[]
+  journals       JournalEntry[]
 
-  accounts Account[]
-  journals JournalEntry[]
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
+  @@index([organizationId], map: "financial_entities_organization_id_fkey")
   @@map("financial_entities")
 }
 
 model Account {
-  id       String      @id @default(uuid())
-  entityId String      @map("entity_id")
-  code     String // e.g. "1000"
-  name     String // e.g. "Cash - Chase Bank"
-  type     AccountType
-  isSystem Boolean     @default(false) // If true, UI cannot delete
-
-  journalLines JournalLine[]
+  id           String          @id @default(uuid())
+  entityId     String          @map("entity_id")
+  code         String
+  name         String
+  type         AccountType
+  isSystem     Boolean         @default(false)
   entity       FinancialEntity @relation(fields: [entityId], references: [id])
+  journalLines JournalLine[]
 
   @@unique([entityId, code])
   @@map("gl_accounts")
 }
 
 model JournalEntry {
-  id              String    @id @default(uuid())
-  entityId        String    @map("entity_id")
-  transactionDate DateTime  @map("transaction_date")
-  postedAt        DateTime? @map("posted_at")
+  id              String          @id @default(uuid())
+  entityId        String          @map("entity_id")
+  transactionDate DateTime        @map("transaction_date")
+  postedAt        DateTime?       @map("posted_at")
   description     String
-  reference       String? // e.g. "INV-001" or "PAY-999"
-
-  isLocked Boolean @default(false)
-
-  lines  JournalLine[]
-  entity FinancialEntity @relation(fields: [entityId], references: [id])
-
-  // Links to source docs
-  invoice     Invoice?
-  payment     Payment?
-  utilityBill UtilityBill?
+  reference       String?
+  isLocked        Boolean         @default(false)
+  entity          FinancialEntity @relation(fields: [entityId], references: [id])
+  lines           JournalLine[]
+  invoice         Invoice?
+  payment         Payment?
+  utilityBill     UtilityBill?
 
   @@index([transactionDate])
+  @@index([entityId], map: "gl_journal_entries_entity_id_fkey")
   @@map("gl_journal_entries")
 }
 
 model JournalLine {
-  id             String @id @default(uuid())
-  journalEntryId String @map("journal_entry_id")
-  accountId      String @map("account_id")
-
-  description String?
-
-  // MONEY (Using Decimal for strict financial math)
-  debit  Decimal @default(0.00) @db.Decimal(20, 4)
-  credit Decimal @default(0.00) @db.Decimal(20, 4)
-
-  // DIMENSIONS (Reporting Tags)
-  propertyId String? @map("property_id")
-  unitId     String? @map("unit_id")
-  leaseId    String? @map("lease_id")
-  tenantId   String? @map("tenant_id")
-  vendorId   String? @map("vendor_id")
-
-  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  account      Account      @relation(fields: [accountId], references: [id])
-
-  property Property? @relation(fields: [propertyId], references: [id])
-  unit     Unit?     @relation(fields: [unitId], references: [id])
-  lease    Lease?    @relation(fields: [leaseId], references: [id])
+  id             String       @id @default(uuid())
+  journalEntryId String       @map("journal_entry_id")
+  accountId      String       @map("account_id")
+  description    String?
+  debit          Decimal      @default(0.0000) @db.Decimal(20, 4)
+  credit         Decimal      @default(0.0000) @db.Decimal(20, 4)
+  propertyId     String?      @map("property_id")
+  unitId         String?      @map("unit_id")
+  leaseId        String?      @map("lease_id")
+  tenantId       String?      @map("tenant_id")
+  vendorId       String?      @map("vendor_id")
+  account        Account      @relation(fields: [accountId], references: [id])
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  lease          Lease?       @relation(fields: [leaseId], references: [id])
+  property       Property?    @relation(fields: [propertyId], references: [id])
+  unit           Unit?        @relation(fields: [unitId], references: [id])
 
   @@index([accountId])
   @@index([propertyId])
+  @@index([journalEntryId], map: "gl_journal_lines_journal_entry_id_fkey")
+  @@index([leaseId], map: "gl_journal_lines_lease_id_fkey")
+  @@index([unitId], map: "gl_journal_lines_unit_id_fkey")
   @@map("gl_journal_lines")
 }
 
 model FinancialSnapshot {
-  id          String   @id @default(uuid())
-  entityId    String   @map("entity_id")
-  periodStart DateTime @map("period_start")
-  periodEnd   DateTime @map("period_end")
-  accountId   String   @map("account_id")
-
-  startBalance Decimal @db.Decimal(20, 4)
-  netChange    Decimal @db.Decimal(20, 4)
-  endBalance   Decimal @db.Decimal(20, 4)
-
+  id           String   @id @default(uuid())
+  entityId     String   @map("entity_id")
+  periodStart  DateTime @map("period_start")
+  periodEnd    DateTime @map("period_end")
+  accountId    String   @map("account_id")
+  startBalance Decimal  @db.Decimal(20, 4)
+  netChange    Decimal  @db.Decimal(20, 4)
+  endBalance   Decimal  @db.Decimal(20, 4)
   calculatedAt DateTime @default(now()) @map("calculated_at")
 
   @@unique([entityId, accountId, periodEnd])
   @@map("gl_financial_snapshots")
 }
 
-// =====================================================================
-// 3. UTILITY MODULE (AI + Blockchain Integration)
-// =====================================================================
-
 model UtilityBill {
-  id           String @id @default(uuid())
-  propertyId   String @map("property_id")
-  providerName String @map("provider_name")
-
-  // Financials
-  totalAmount Decimal  @db.Decimal(10, 2)
-  billDate    DateTime @map("bill_date")
-  dueDate     DateTime @map("due_date")
-
-  // AI & OCR Data (AI Feature)
-  importMethod  UtilityImportMethod @default(MANUAL_ENTRY) @map("import_method")
-  ocrConfidence Decimal?            @map("ocr_confidence") @db.Decimal(5, 2) // 0.00 to 100.00
-  rawOcrData    Json?               @map("raw_ocr_data") // Debug data
-
-  // Logic & Audit
-  splitMethod UtilitySplitMethod
-  status      UtilityBillStatus  @default(DRAFT)
-
-  approvedAt DateTime? @map("approved_at")
-  approvedBy String?   @map("approved_by")
-
-  // Financial Core Integration
-  postedAt       DateTime?     @map("posted_at")
-  journalEntryId String?       @unique @map("journal_entry_id")
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
-
-  // Blockchain Proof
-  blockchainHash String? @map("blockchain_hash")
-
-  // Relations
-  property      Property            @relation(fields: [propertyId], references: [id])
-  allocations   UtilityAllocation[]
-  childInvoices Invoice[]
+  id             String                      @id @default(uuid())
+  propertyId     String                      @map("property_id")
+  providerName   String                      @map("provider_name")
+  totalAmount    Decimal                     @db.Decimal(10, 2)
+  billDate       DateTime                    @map("bill_date")
+  dueDate        DateTime                    @map("due_date")
+  importMethod   utility_bills_import_method @default(MANUAL) @map("import_method")
+  ocrConfidence  Decimal?                    @map("ocr_confidence") @db.Decimal(5, 2)
+  status         utility_bills_status        @default(DRAFT)
+  journalEntryId String?                     @unique @map("journal_entry_id")
+  blockchainHash String?                     @map("blockchain_hash")
+  created_at     DateTime                    @default(now())
+  file_url       String?
+  split_method   utility_bills_split_method  @default(EQUAL_USAGE)
+  updated_at     DateTime
+  childInvoices  Invoice[]
+  allocations    UtilityAllocation[]
+  journalEntry   JournalEntry?               @relation(fields: [journalEntryId], references: [id])
+  property       Property                    @relation(fields: [propertyId], references: [id])
 
   @@index([propertyId])
-  @@index([status])
   @@map("utility_bills")
 }
 
 model UtilityAllocation {
-  id            String  @id @default(uuid())
-  utilityBillId String  @map("utility_bill_id")
-  unitId        String  @map("unit_id")
-  tenantId      String? @map("tenant_id") // Optional: Empty unit = Landlord cost
-
-  amount Decimal                 @db.Decimal(10, 2)
-  status UtilityAllocationStatus @default(PENDING)
-
-  // Link to the resulting Invoice
-  invoiceId String?  @unique @map("invoice_id")
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-
-  paidAmount Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt  DateTime @default(now())
-
-  // Blockchain Proof for this specific split
-  blockchainHash String? @map("blockchain_hash")
-
-  // Relations
-  utilityBill UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
-  unit        Unit        @relation(fields: [unitId], references: [id])
-
-  disputes UtilityDispute[]
-  payments UtilityPayment[]
+  id            String      @id @default(uuid())
+  utilityBillId String      @map("utility_bill_id")
+  unitId        String      @map("unit_id")
+  amount        Decimal     @db.Decimal(10, 2)
+  invoiceId     String?     @unique @map("invoice_id")
+  percentage    Decimal?    @db.Decimal(5, 2)
+  invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
+  unit          Unit        @relation(fields: [unitId], references: [id])
+  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
 
   @@index([utilityBillId])
-  @@index([tenantId])
+  @@index([unitId], map: "utility_allocations_unit_id_fkey")
   @@map("utility_allocations")
 }
 
-model UtilityPayment {
-  id           String @id @default(uuid())
-  allocationId String @map("allocation_id")
-  payerId      String @map("payer_id")
-
-  amount    Decimal              @db.Decimal(10, 2)
-  method    UtilityPaymentMethod
-  reference String? // Stripe ID / Tx Hash
-
-  status               String                      @default("COMPLETED")
-  reconciliationStatus UtilityReconciliationStatus @default(PENDING) @map("reconciliation_status")
-
-  blockchainHash String?  @map("blockchain_hash")
-  createdAt      DateTime @default(now())
-
-  allocation UtilityAllocation @relation(fields: [allocationId], references: [id])
-
-  @@index([allocationId])
-  @@map("utility_payments")
-}
-
-model UtilityDispute {
-  id           String @id @default(uuid())
-  allocationId String @map("allocation_id")
-  raisedBy     String @map("raised_by")
-
-  reason       String @db.Text
-  urgencyScore Int?   @default(1) @map("urgency_score") // AI Feature (1-5)
-
-  status          UtilityDisputeStatus @default(OPEN)
-  resolutionNotes String?              @map("resolution_notes") @db.Text
-
-  createdAt  DateTime  @default(now())
-  resolvedAt DateTime? @map("resolved_at")
-
-  allocation UtilityAllocation @relation(fields: [allocationId], references: [id])
-
-  @@index([allocationId])
-  @@map("utility_disputes")
-}
-
-// =====================================================================
-// 4. PROPERTY & UNITS (With Legacy fields restored for stability)
-// =====================================================================
-
 model Property {
-  id                 String   @id @default(uuid())
-  listingId          String?  @unique
-  managerId          String?
-  organizationId     String?
-  propertyTypeId     String?
-  locationId         String?
-  city               String
-  address            String
-  amenities          String?
-  isFurnished        Boolean  @default(false)
-  availabilityStatus String?
-  createdAt          DateTime @default(now())
-  name               String?
-
-  // --- LEGACY FIELDS (Restored to prevent app crashes) ---
-  // @deprecated Use 'manager.email' or 'organization.email'
-  contactEmail String?
-  // @deprecated Use 'manager.phone'
-  contactPhone String?
-  // @deprecated Use 'Location' relation
-  country      String?
-  zipCode      String?
-  latitude     Float?
-  longitude    Float?
-
+  id                     String                  @id @default(uuid())
+  listingId              String?                 @unique
+  managerId              String?
+  organizationId         String?
+  propertyTypeId         String?
+  locationId             String?
+  city                   String
+  address                String
+  amenities              String?
+  isFurnished            Boolean                 @default(false)
+  availabilityStatus     String?
+  createdAt              DateTime                @default(now())
+  name                   String?
+  contactEmail           String?
+  contactPhone           String?
+  country                String?
+  zipCode                String?
+  latitude               Float?
+  longitude              Float?
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
   leases                 Lease[]
@@ -414,19 +294,18 @@ model Property {
   manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
   organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
+  images                 PropertyImage[]
   tenantapplications     Tenantapplication[]
   units                  Unit[]
-  images                 PropertyImage[]
-
-  // Financial Links
-  journalLines        JournalLine[]
-  utilityBills        UtilityBill[]
-  DssDocument         DssDocument[]
-  DssWorkflowTemplate DssWorkflowTemplate[]
+  DssDocument            DssDocument[]
+  DssWorkflowTemplate    DssWorkflowTemplate[]
+  journalLines           JournalLine[]
+  utilityBills           UtilityBill[]
 
   @@index([locationId])
   @@index([managerId])
   @@index([organizationId])
+  @@index([propertyTypeId], map: "Property_propertyTypeId_fkey")
 }
 
 model PropertyImage {
@@ -462,32 +341,29 @@ model HouseDetail {
 }
 
 model Unit {
-  id              String   @id @default(uuid())
-  propertyId      String
-  complexDetailId String?
-  listingId       String?  @unique
-  unitNumber      String
-  floorNumber     Int?
-  bedrooms        Int?
-  bathrooms       Int?
-  isOccupied      Boolean  @default(false)
-  rentAmount      Float? // Kept as Float for Frontend compatibility
-  createdAt       DateTime @default(now())
-  houseDetailId   String?
-  unitName        String?
-  currency        String?  @db.VarChar(10)
-
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @db.VarChar(10)
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
   listing             Listing?             @relation("UnitListing", fields: [listingId], references: [id])
   property            Property             @relation(fields: [propertyId], references: [id])
+  DssDocument         DssDocument[]
+  journalLines        JournalLine[]
+  utilityAllocations  UtilityAllocation[]
   appliances          Appliance[]          @relation("UnitAppliances")
-
-  // Financial Links
-  journalLines       JournalLine[]
-  utilityAllocations UtilityAllocation[]
-  DssDocument        DssDocument[]
 
   @@index([propertyId])
 }
@@ -501,20 +377,17 @@ model Appliance {
 }
 
 model Tenantapplication {
-  id       String   @id @default(uuid())
-  fullName String
-  email    String
-  phone    String
-  dob      DateTime
-
-  // Security Transition
-  ssn          String? // @deprecated (Plaintext)
-  ssnEncrypted String? @map("ssn_encrypted") // New Secure Field
-
+  id                 String            @id @default(uuid())
+  fullName           String
+  email              String
+  phone              String
+  dob                DateTime
+  ssn                String?
+  ssnEncrypted       String?           @map("ssn_encrypted")
   address            String?
   employerName       String?
   jobTitle           String?
-  monthlyIncome      Float? // Float for compatibility
+  monthlyIncome      Float?
   employmentDuration String?
   leaseType          String
   occupancyType      String
@@ -534,30 +407,29 @@ model Tenantapplication {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   unitId             String?
-
-  tenantLeases Lease?
-  property     Property @relation(fields: [propertyId], references: [id])
-  unit         Unit?    @relation(fields: [unitId], references: [id])
-  user         User?    @relation(fields: [userId], references: [id])
+  tenantLeases       Lease?
+  property           Property          @relation(fields: [propertyId], references: [id])
+  unit               Unit?             @relation(fields: [unitId], references: [id])
+  user               User?             @relation(fields: [userId], references: [id])
 
   @@index([propertyId])
   @@index([userId])
+  @@index([unitId], map: "Tenantapplication_unitId_fkey")
 }
 
 model Lease {
-  id              String             @id @default(uuid())
-  applicationId   String             @unique
-  tenantId        String?
-  propertyId      String
-  unitId          String
-  startDate       DateTime
-  endDate         DateTime
-  rentAmount      Float // Float for compatibility
-  securityDeposit Float?
-  leaseStatus     Lease_leaseStatus? @default(DRAFT)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-
+  id                       String                  @id @default(uuid())
+  applicationId            String                  @unique
+  tenantId                 String?
+  propertyId               String
+  unitId                   String
+  startDate                DateTime
+  endDate                  DateTime
+  rentAmount               Float
+  securityDeposit          Float?
+  leaseStatus              Lease_leaseStatus?      @default(DRAFT)
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
   earlyTerminationFee      Float?
   gracePeriodDays          Int?
   landlordResponsibilities String?
@@ -566,50 +438,44 @@ model Lease {
   lateFeeFlat              Float?
   leaseTerm                String?
   paymentDueDay            Int?
-  paymentFrequency         String    @default("MONTHLY")
-
-  tenantPaysElectric     Boolean @default(true)
-  tenantPaysInternet     Boolean @default(false)
-  tenantPaysTrash        Boolean @default(false)
-  tenantPaysWater        Boolean @default(false)
-  tenantResponsibilities String?
-  usageType              String?
-
-  hasRenewalOption    Boolean?              @default(false)
-  renewalNoticeDays   Int?
-  renewalTermMonths   Int?
-  renewalRentIncrease Float?
-  autoRenew           Boolean?              @default(false)
-  hasRentEscalation   Boolean?              @default(false)
-  escalationType      Lease_escalationType?
-  escalationRate      Float?
-  escalationFrequency String?               @db.VarChar(20)
-  nextEscalationDate  DateTime?             @db.DateTime(0)
-
-  documentVersion     Int?                    @default(1)
-  lastDocumentUpdate  DateTime?               @db.DateTime(0)
-  complianceCheckDate DateTime?               @db.DateTime(0)
-  complianceStatus    Lease_complianceStatus? @default(PENDING)
-  complianceNotes     String?                 @db.Text
-  tenantSignedAt      DateTime?
-
-  invites     Invite[]          @relation("LeaseInvites")
-  application Tenantapplication @relation(fields: [applicationId], references: [id])
-  property    Property          @relation(fields: [propertyId], references: [id])
-  tenant      User?             @relation(fields: [tenantId], references: [id])
-  unit        Unit              @relation(fields: [unitId], references: [id])
-
-  invoices      Invoice[]
-  journalLines  JournalLine[]
-  lease_utility lease_utility[]
-  dssDocuments  DssDocument[]
-
-  LeaseAmendment    LeaseAmendment[]
-  LeaseAuditLog     LeaseAuditLog[]
-  LeaseDocument     LeaseDocument[]
-  LeaseNotification LeaseNotification[]
-  LeaseRenewal      LeaseRenewal[]
-  RentEscalation    RentEscalation[]
+  paymentFrequency         String                  @default("MONTHLY")
+  tenantPaysElectric       Boolean                 @default(true)
+  tenantPaysInternet       Boolean                 @default(false)
+  tenantPaysTrash          Boolean                 @default(false)
+  tenantPaysWater          Boolean                 @default(false)
+  tenantResponsibilities   String?
+  usageType                String?
+  hasRenewalOption         Boolean?                @default(false)
+  renewalNoticeDays        Int?
+  renewalTermMonths        Int?
+  renewalRentIncrease      Float?
+  autoRenew                Boolean?                @default(false)
+  hasRentEscalation        Boolean?                @default(false)
+  escalationType           Lease_escalationType?
+  escalationRate           Float?
+  escalationFrequency      String?                 @db.VarChar(20)
+  nextEscalationDate       DateTime?               @db.DateTime(0)
+  documentVersion          Int?                    @default(1)
+  lastDocumentUpdate       DateTime?               @db.DateTime(0)
+  complianceCheckDate      DateTime?               @db.DateTime(0)
+  complianceStatus         Lease_complianceStatus? @default(PENDING)
+  complianceNotes          String?                 @db.Text
+  tenantSignedAt           DateTime?
+  invites                  Invite[]                @relation("LeaseInvites")
+  application              Tenantapplication       @relation(fields: [applicationId], references: [id])
+  property                 Property                @relation(fields: [propertyId], references: [id])
+  tenant                   User?                   @relation(fields: [tenantId], references: [id])
+  unit                     Unit                    @relation(fields: [unitId], references: [id])
+  LeaseAmendment           LeaseAmendment[]
+  LeaseAuditLog            LeaseAuditLog[]
+  LeaseDocument            LeaseDocument[]
+  LeaseNotification        LeaseNotification[]
+  LeaseRenewal             LeaseRenewal[]
+  RentEscalation           RentEscalation[]
+  dssDocuments             DssDocument[]
+  journalLines             JournalLine[]
+  invoices                 Invoice[]
+  lease_utility            lease_utility[]
 
   @@index([propertyId])
   @@index([tenantId])
@@ -617,41 +483,30 @@ model Lease {
   @@index([endDate])
 }
 
-// =====================================================================
-// 5. INVOICING & PAYMENTS (System of Action)
-// =====================================================================
-
 model Invoice {
-  id      String       @id @default(uuid())
-  leaseId String       @map("lease_id")
-  type    invoice_type
-
-  // Mixed Types: Float for Frontend compatibility, Decimal for logic mapping
-  totalAmount Float @map("amount")
-  amountPaid  Float @default(0.00) @map("amount_paid")
-  balance     Float @default(0.00)
-
-  dueDate DateTime        @db.DateTime(0)
-  status  invoice_status? @default(PENDING)
-
-  // Financial Core Link
-  postingStatus  PostingStatus @default(PENDING) @map("posting_status")
-  journalEntryId String?       @unique @map("journal_entry_id")
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
-
-  // Utility Link
+  id                String             @id @default(uuid())
+  leaseId           String             @map("lease_id")
+  type              invoice_type
+  totalAmount       Float              @map("amount")
+  amountPaid        Float              @default(0) @map("amount_paid")
+  balance           Float              @default(0)
+  dueDate           DateTime           @db.DateTime(0)
+  status            invoice_status?    @default(PENDING)
+  postingStatus     PostingStatus      @default(PENDING) @map("posting_status")
+  journalEntryId    String?            @unique @map("journal_entry_id")
   utilityBillId     String?            @map("utility_bill_id")
+  createdAt         DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt         DateTime?          @default(now()) @db.DateTime(0)
+  InvoiceItem       InvoiceItem[]
+  journalEntry      JournalEntry?      @relation(fields: [journalEntryId], references: [id])
+  Lease             Lease              @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   utilityBill       UtilityBill?       @relation(fields: [utilityBillId], references: [id])
+  payments          Payment[]
+  receipts          Receipt[]
   utilityAllocation UtilityAllocation?
 
-  createdAt DateTime? @default(now()) @db.DateTime(0)
-  updatedAt DateTime? @default(now()) @db.DateTime(0)
-
-  InvoiceItem InvoiceItem[]
-  Lease       Lease         @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  payments    Payment[]
-  receipts    Receipt[]
-
+  @@index([leaseId], map: "invoice_lease_id_fkey")
+  @@index([utilityBillId], map: "invoice_utility_bill_id_fkey")
   @@map("invoice")
 }
 
@@ -668,26 +523,22 @@ model InvoiceItem {
 }
 
 model Payment {
-  id        String         @id @default(uuid())
-  invoiceId String         @map("invoice_id")
-  amount    Float
-  method    payment_method
-  reference String?        @db.VarChar(100)
-  paidOn    DateTime?      @default(now()) @db.DateTime(0)
-
-  // Financial Core Link
-  postingStatus  PostingStatus @default(PENDING) @map("posting_status")
-  journalEntryId String?       @unique @map("journal_entry_id")
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
-
-  createdAt      DateTime? @default(now()) @db.DateTime(0)
-  updatedAt      DateTime? @default(now()) @db.DateTime(0)
-  isReversed     Boolean   @default(false) @map("is_reversed")
-  reversedAt     DateTime? @map("reversed_at") @db.DateTime(0)
-  reversalReason String?   @map("reversal_reason") @db.VarChar(255)
-  reversedBy     String?   @map("reversed_by") @db.VarChar(100)
-
+  id               String            @id @default(uuid())
+  invoiceId        String            @map("invoice_id")
+  amount           Float
+  method           payment_method
+  reference        String?           @db.VarChar(100)
+  paidOn           DateTime?         @default(now()) @db.DateTime(0)
+  postingStatus    PostingStatus     @default(PENDING) @map("posting_status")
+  journalEntryId   String?           @unique @map("journal_entry_id")
+  createdAt        DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?         @default(now()) @db.DateTime(0)
+  isReversed       Boolean           @default(false) @map("is_reversed")
+  reversedAt       DateTime?         @map("reversed_at") @db.DateTime(0)
+  reversalReason   String?           @map("reversal_reason") @db.VarChar(255)
+  reversedBy       String?           @map("reversed_by") @db.VarChar(100)
   invoice          Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  journalEntry     JournalEntry?     @relation(fields: [journalEntryId], references: [id])
   paymentReversals PaymentReversal[]
   receipts         Receipt[]
 
@@ -695,7 +546,6 @@ model Payment {
   @@map("payment")
 }
 
-// Keep Legacy Financial Tables for backward compatibility
 model PaymentReversal {
   id          String   @id @db.Char(36)
   payment_id  String   @db.Char(36)
@@ -770,163 +620,144 @@ model utility_reading {
   @@map("utility_reading")
 }
 
-// =====================================================================
-// 6. DSS & BLOCKCHAIN (Schema for Signed Contracts)
-// =====================================================================
-
 model DssDocument {
-  id             String  @id @default(uuid())
-  organizationId String  @map("organization_id")
-  leaseId        String? @map("lease_id")
-  propertyId     String? @map("property_id")
-  unitId         String? @map("unit_id")
-
-  title       String
-  description String? @db.Text
-
-  originalFileUrl String? @map("original_file_url") @db.Text
-  originalFileKey String? @map("original_file_key")
-  mimeType        String? @map("mime_type")
-  fileSizeBytes   Int?    @map("file_size_bytes")
-
-  originalPdfSha256Hex String  @map("original_pdf_sha256_hex")
-  finalPdfSha256Hex    String? @map("final_pdf_sha256_hex")
-
-  status      DssDocumentStatus @default(DRAFT)
-  signingMode DssSigningMode    @default(SEQUENTIAL)
-  currentStep Int               @default(1) @map("current_step")
-
-  sentAt      DateTime? @map("sent_at")
-  completedAt DateTime? @map("completed_at")
-  voidedAt    DateTime? @map("voided_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  lease        Lease?       @relation(fields: [leaseId], references: [id], onDelete: SetNull)
-  property     Property?    @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  unit         Unit?        @relation(fields: [unitId], references: [id], onDelete: SetNull)
-
-  participants DssParticipant[]
-  signatures   DssSignature[]
-  notaryRecord BlockchainNotaryRecord?
+  id                   String                  @id @default(uuid())
+  organizationId       String                  @map("organization_id")
+  leaseId              String?                 @map("lease_id")
+  propertyId           String?                 @map("property_id")
+  unitId               String?                 @map("unit_id")
+  title                String
+  description          String?                 @db.Text
+  originalFileUrl      String?                 @map("original_file_url") @db.Text
+  originalFileKey      String?                 @map("original_file_key")
+  mimeType             String?                 @map("mime_type")
+  fileSizeBytes        Int?                    @map("file_size_bytes")
+  originalPdfSha256Hex String                  @map("original_pdf_sha256_hex")
+  finalPdfSha256Hex    String?                 @map("final_pdf_sha256_hex")
+  status               DssDocumentStatus       @default(DRAFT)
+  signingMode          DssSigningMode          @default(SEQUENTIAL)
+  currentStep          Int                     @default(1) @map("current_step")
+  sentAt               DateTime?               @map("sent_at")
+  completedAt          DateTime?               @map("completed_at")
+  voidedAt             DateTime?               @map("voided_at")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  notaryRecord         BlockchainNotaryRecord?
+  lease                Lease?                  @relation(fields: [leaseId], references: [id])
+  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property             Property?               @relation(fields: [propertyId], references: [id])
+  unit                 Unit?                   @relation(fields: [unitId], references: [id])
+  participants         DssParticipant[]
+  signatures           DssSignature[]
 
   @@index([organizationId])
   @@index([leaseId])
+  @@index([propertyId], map: "dss_documents_property_id_fkey")
+  @@index([unitId], map: "dss_documents_unit_id_fkey")
   @@map("dss_documents")
 }
 
 model DssParticipant {
-  id             String @id @default(uuid())
-  documentId     String @map("document_id")
-  organizationId String @map("organization_id")
-
-  userId   String?            @map("user_id")
-  email    String             @db.VarChar(255)
-  fullName String?            @map("full_name")
-  role     DssParticipantRole
-
-  stepOrder Int @default(1) @map("step_order")
-
-  hasSigned Boolean   @default(false) @map("has_signed")
-  signedAt  DateTime? @map("signed_at")
-  viewedAt  DateTime? @map("viewed_at")
-
-  accessTokenHash String? @map("access_token_hash")
-
-  document     DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user         User?          @relation(fields: [userId], references: [id])
-  organization Organization   @relation(fields: [organizationId], references: [id])
-  signatures   DssSignature[]
+  id              String             @id @default(uuid())
+  documentId      String             @map("document_id")
+  organizationId  String             @map("organization_id")
+  userId          String?            @map("user_id")
+  email           String             @db.VarChar(255)
+  fullName        String?            @map("full_name")
+  role            DssParticipantRole
+  stepOrder       Int                @default(1) @map("step_order")
+  hasSigned       Boolean            @default(false) @map("has_signed")
+  signedAt        DateTime?          @map("signed_at")
+  viewedAt        DateTime?          @map("viewed_at")
+  accessTokenHash String?            @map("access_token_hash")
+  document        DssDocument        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organization    Organization       @relation(fields: [organizationId], references: [id])
+  user            User?              @relation(fields: [userId], references: [id])
+  signatures      DssSignature[]
 
   @@unique([documentId, email], map: "uq_dss_participant_doc_email")
+  @@index([organizationId], map: "dss_participants_organization_id_fkey")
+  @@index([userId], map: "dss_participants_user_id_fkey")
   @@map("dss_participants")
 }
 
 model DssSignature {
-  id            String @id @default(uuid())
-  documentId    String @map("document_id")
-  participantId String @map("participant_id")
-
-  signatureHash String   @map("signature_hash")
-  signedAt      DateTime @default(now()) @map("signed_at")
-
-  document    DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  participant DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  id            String         @id @default(uuid())
+  documentId    String         @map("document_id")
+  participantId String         @map("participant_id")
+  signatureHash String         @map("signature_hash")
+  signedAt      DateTime       @default(now()) @map("signed_at")
+  document      DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  participant   DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, participantId], map: "uq_dss_signature_doc_participant")
+  @@index([participantId], map: "dss_signatures_participant_id_fkey")
   @@map("dss_signatures")
 }
 
 model BlockchainNotaryRecord {
-  id             String @id @default(uuid())
-  organizationId String @map("organization_id")
-  documentId     String @unique(map: "uq_notary_document") @map("document_id")
-
-  chainId         Int    @map("chain_id")
-  contractAddress String @map("contract_address")
-
-  notarizedHash String                 @map("notarized_hash")
-  txHash        String?                @map("tx_hash")
-  blockNumber   Int?                   @map("block_number")
-  status        BlockchainNotaryStatus @default(PENDING)
-
-  createdAt   DateTime  @default(now()) @map("created_at")
-  confirmedAt DateTime? @map("confirmed_at")
-
-  document     DssDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  id              String                 @id @default(uuid())
+  organizationId  String                 @map("organization_id")
+  documentId      String                 @unique(map: "uq_notary_document") @map("document_id")
+  chainId         Int                    @map("chain_id")
+  contractAddress String                 @map("contract_address")
+  notarizedHash   String                 @map("notarized_hash")
+  txHash          String?                @map("tx_hash")
+  blockNumber     Int?                   @map("block_number")
+  status          BlockchainNotaryStatus @default(PENDING)
+  createdAt       DateTime               @default(now()) @map("created_at")
+  confirmedAt     DateTime?              @map("confirmed_at")
+  document        DssDocument            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([notarizedHash])
+  @@index([organizationId], map: "blockchain_notary_records_organization_id_fkey")
   @@map("blockchain_notary_records")
 }
 
 model DssWorkflowTemplate {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
+  id             String            @id @default(uuid())
+  organizationId String            @map("organization_id")
   name           String
   description    String?
-  propertyId     String?  @map("property_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  propertyId     String?           @map("property_id")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  steps          DssWorkflowStep[]
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  property       Property?         @relation(fields: [propertyId], references: [id])
 
-  steps        DssWorkflowStep[]
-  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  property     Property?         @relation(fields: [propertyId], references: [id])
-
+  @@index([organizationId], map: "dss_workflow_templates_organization_id_fkey")
+  @@index([propertyId], map: "dss_workflow_templates_property_id_fkey")
   @@map("dss_workflow_templates")
 }
 
 model DssWorkflowStep {
-  id         String             @id @default(uuid())
-  templateId String             @map("template_id")
-  stepOrder  Int                @map("step_order")
+  id         String              @id @default(uuid())
+  templateId String              @map("template_id")
+  stepOrder  Int                 @map("step_order")
   role       DssParticipantRole
   label      String?
-  isOptional Boolean            @default(false) @map("is_optional")
-
-  template DssWorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  isOptional Boolean             @default(false) @map("is_optional")
+  template   DssWorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@unique([templateId, stepOrder])
   @@map("dss_workflow_steps")
 }
 
-// ---------------- MARKETPLACE & MISC (Abbreviated, keep your existing fields) ----------------
-
 model Listing {
-  id             String   @id @default(uuid())
-  organizationId String
-  createdBy      String
-  statusId       String?
-  locationId     String?
-  title          String
-  description    String
-  price          Float
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  propertyId     String?
-  unitId         String?
-
+  id                 String              @id @default(uuid())
+  organizationId     String
+  createdBy          String
+  statusId           String?
+  locationId         String?
+  title              String
+  description        String
+  price              Float
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  propertyId         String?
+  unitId             String?
   adminActions       AdminAction[]
   createdByUser      User                @relation(fields: [createdBy], references: [id])
   location           Location?           @relation(fields: [locationId], references: [id])
@@ -976,12 +807,11 @@ model MaintenanceRequest {
   assigned_vendor_id String?
   cost               Decimal?                  @db.Decimal(10, 2)
   assigned_at        DateTime?                 @db.DateTime(0)
-
-  organization Organization     @relation(fields: [organizationId], references: [id])
-  property     Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy  OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
-  unit         Unit?            @relation(fields: [unitId], references: [id])
-  vendors      Vendor?          @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+  organization       Organization              @relation(fields: [organizationId], references: [id])
+  property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
+  requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
+  unit               Unit?                     @relation(fields: [unitId], references: [id])
+  vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
 
   @@index([organizationId])
   @@index([propertyId])
@@ -1002,7 +832,6 @@ model OccupancyHistory {
   @@index([propertyId, year, month], map: "idx_occupancy_property_year_month")
 }
 
-// ... Keep AdminAction, ListingImage, Location, etc. (standard small tables) ...
 model AdminAction {
   id              String            @id @default(uuid())
   adminOrgUserId  String
@@ -1399,9 +1228,13 @@ model RentEscalation {
   @@index([leaseId])
 }
 
-// =====================================================================
-// 7. ALL ENUMS
-// =====================================================================
+model PropertyType {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  properties  Property[]
+}
 
 enum UserRole {
   SYSTEM_ADMIN
@@ -1574,7 +1407,6 @@ enum LeaseNotification_notificationType {
   AMENDMENT_EXECUTED
 }
 
-// DSS Enums
 enum DssDocumentStatus {
   DRAFT
   SENT
@@ -1601,83 +1433,11 @@ enum DssSigningMode {
   PARALLEL
 }
 
-enum DssSignatureType {
-  ESIGN
-  DRAW
-  TYPED
-  UPLOAD
-}
-
 enum BlockchainNotaryStatus {
   PENDING
   SUBMITTED
   CONFIRMED
   FAILED
-}
-
-// Utility Enums (New from PDF)
-enum UtilitySplitMethod {
-  EQUAL
-  OCCUPANCY
-  SQ_FOOTAGE
-  RUBS
-  AI_OPTIMIZED
-  FIXED
-}
-
-enum UtilityBillStatus {
-  DRAFT
-  PROCESSING
-  APPROVED
-  POSTED
-  REJECTED
-}
-
-enum UtilityImportMethod {
-  MANUAL_ENTRY
-  CSV_UPLOAD
-  API_SYNC
-  PDF_OCR
-  IMAGE_SCAN
-}
-
-enum UtilityAllocationStatus {
-  PENDING
-  PARTIALLY_PAID
-  PAID
-  DISPUTED
-  VOIDED
-}
-
-enum UtilityPaymentMethod {
-  ACH
-  CARD
-  WALLET
-  CRYPTO
-  BANK_TRANSFER
-  CASH
-}
-
-enum UtilityReconciliationStatus {
-  PENDING
-  MATCHED
-  FAILED
-  MANUAL_REVIEW
-}
-
-enum UtilityDisputeStatus {
-  OPEN
-  UNDER_REVIEW
-  RESOLVED
-  REJECTED
-}
-
-model PropertyType {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  properties  Property[]
 }
 
 enum AccountType {
@@ -1694,4 +1454,28 @@ enum PostingStatus {
   POSTED
   FAILED
   REVERSED
+}
+
+enum utility_bills_import_method {
+  CSV
+  API
+  PDF_OCR
+  MANUAL
+}
+
+enum utility_bills_status {
+  DRAFT
+  PROCESSING
+  REVIEW_REQUIRED
+  APPROVED
+  POSTED
+}
+
+enum utility_bills_split_method {
+  EQUAL_USAGE
+  OCCUPANCY_BASED
+  SQ_FOOTAGE
+  SUB_METERED
+  CUSTOM_RATIO
+  AI_OPTIMIZED
 }
