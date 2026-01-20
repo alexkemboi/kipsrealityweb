@@ -14,7 +14,7 @@ export async function applyRentEscalation(req: NextRequest, leaseId: string) {
 
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },
-      include: { property: true, tenant: true, tenantApplication: true },
+      include: { property: true, tenant: true, application: true },
     });
 
     if (!lease) return NextResponse.json({ error: "Lease not found" }, { status: 404 });
@@ -56,7 +56,7 @@ export async function applyRentEscalation(req: NextRequest, leaseId: string) {
       data: {
         leaseId,
         notificationType: "ESCALATION_NOTICE",
-        recipientEmail: lease.tenant?.email || lease.tenantApplication?.email || "",
+        recipientEmail: lease.tenant?.email || lease.application?.email || "",
         recipientRole: "TENANT",
         subject: "Rent Escalation Notice",
         message: `Your rent will increase from ${lease.rentAmount} to ${newRent} effective ${effectiveDate}`,

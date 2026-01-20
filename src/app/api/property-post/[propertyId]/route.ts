@@ -5,11 +5,32 @@ const prisma = new PrismaClient();
 
 interface PropertyImageData {
   url: string;
-  publicId: string;
-  order: number;
-  width: number;
-  height: number;
-  format: string;
+  publicId?: string;
+  order?: number;
+  width?: number;
+  height?: number;
+  format?: string;
+}
+
+function extractCloudinaryPublicId(url: string): string | null {
+  try {
+    const uploadIdx = url.indexOf("/upload/");
+    if (uploadIdx === -1) return null;
+
+    // Everything after /upload/
+    let rest = url.slice(uploadIdx + "/upload/".length);
+
+    // Strip version segment if present (v12345/)
+    rest = rest.replace(/^v\d+\//, "");
+
+    // Strip querystring and extension
+    rest = rest.split("?")[0] ?? rest;
+    rest = rest.replace(/\.[a-zA-Z0-9]+$/, "");
+
+    return rest || null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(
@@ -54,11 +75,6 @@ export async function POST(
           data: {
             propertyId,
             url: image.url,
-            publicId: image.publicId,
-            order: image.order,
-            width: image.width,
-            height: image.height,
-            format: image.format,
           },
         })
       )
@@ -90,7 +106,6 @@ export async function GET(
 
     const images = await prisma.propertyImage.findMany({
       where: { propertyId },
-      orderBy: { order: "asc" },
     });
 
     return NextResponse.json({
@@ -124,9 +139,12 @@ export async function DELETE(
       });
 
       if (image) {
-        // Delete from Cloudinary
+        // Delete from Cloudinary (best-effort; publicId is derived from url)
         const cloudinary = require("cloudinary").v2;
-        await cloudinary.uploader.destroy(image.publicId);
+        const publicId = extractCloudinaryPublicId(image.url);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
 
         // Delete from database
         await prisma.propertyImage.delete({
@@ -141,7 +159,10 @@ export async function DELETE(
 
       const cloudinary = require("cloudinary").v2;
       await Promise.all(
-        images.map((img) => cloudinary.uploader.destroy(img.publicId))
+        images.map((img) => {
+          const publicId = extractCloudinaryPublicId(img.url);
+          return publicId ? cloudinary.uploader.destroy(publicId) : Promise.resolve();
+        })
       );
 
       await prisma.propertyImage.deleteMany({

@@ -50,6 +50,7 @@ interface Payment {
   reference?: string;
   invoice: Invoice;
   is_reversed?: boolean;
+  postingStatus: "PENDING" | "POSTED" | "FAILED";
 }
 
 interface FullReceipt {
@@ -1239,6 +1240,7 @@ export default function PaymentsPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Invoice</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">GL Status</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -1291,6 +1293,14 @@ export default function PaymentsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-slate-900">{p.invoice.Lease?.property?.city ?? "N/A"}</div>
                         <div className="text-xs text-slate-500">Unit {p.invoice.Lease?.unit?.unitNumber ?? "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${p.postingStatus === "POSTED"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                          }`}>
+                          {p.postingStatus || "PENDING"}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <DropdownMenu>

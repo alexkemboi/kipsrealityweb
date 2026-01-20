@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     const activeLeases = await prisma.lease.count({
       where: {
         propertyId: { in: propertyIds },
-        status: { in: ["ACTIVE", "SIGNED"] },
+        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
       },
     });
 
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     const tenants = await prisma.lease.findMany({
       where: {
         propertyId: { in: propertyIds },
-        status: { in: ["ACTIVE", "SIGNED"] },
+        leaseStatus: { in: ["ACTIVE", "SIGNED"] },
       },
       select: { tenantId: true },
       distinct: ["tenantId"],

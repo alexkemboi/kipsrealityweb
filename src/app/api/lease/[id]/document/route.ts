@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { NextRequest, NextResponse } from "next/server";
-import { LeaseDocumentType, Prisma } from "@prisma/client";
+import { LeaseDocument_documentType, Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 // POST: Upload a lease document
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
       return NextResponse.json({ error: "Missing file or documentType" }, { status: 400 });
     }
 
-    const documentType = LeaseDocumentType[documentTypeStr as keyof typeof LeaseDocumentType];
+    const documentType = LeaseDocument_documentType[documentTypeStr as keyof typeof LeaseDocument_documentType];
 
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },

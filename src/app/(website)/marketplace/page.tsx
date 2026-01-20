@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import { MarketplaceClientPage } from "@/components/website/marketplace/ListingClientPage";
 import Navbar from "@/components/website/Navbar";
 
+export const dynamic = "force-dynamic";
+
 // Define the interface here to match what we're creating
 interface MarketplaceItem {
   id: string;

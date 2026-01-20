@@ -24,7 +24,7 @@ export async function GET(
             include: {
               invoice: {
                 include: {
-                  lease: {
+                  Lease: {
                     include: {
                       property: true,
                       unit: true,
@@ -46,7 +46,7 @@ export async function GET(
             include: {
               invoice: {
                 include: {
-                  lease: {
+                  Lease: {
                     include: {
                       property: true,
                       unit: true,

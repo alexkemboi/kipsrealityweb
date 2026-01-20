@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const numericIncome = monthlyIncome ? parseFloat(monthlyIncome) : null;
 
     // Create tenant application
-    const newApplication = await prisma.tenantApplication.create({
+    const newApplication = await prisma.tenantapplication.create({
       data: {
         fullName,
         email,
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
       where.propertyId = propertyId;
     }
 
-    const applications = await prisma.tenantApplication.findMany({
+    const applications = await prisma.tenantapplication.findMany({
       where,
       include: {
         property: true,

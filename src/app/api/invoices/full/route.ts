@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
 
   const lease = await prisma.lease.findUnique({ where: { id: lease_id } });
-  if (!lease ) {
+  if (!lease) {
     return NextResponse.json({ error: 'Active lease not found' }, { status: 404 });
   }
 
@@ -20,23 +20,23 @@ export async function POST(req: NextRequest) {
     amount = lease.rentAmount;
   } else {
     // Utilities: sum all fixed utilities linked to lease
-    const leaseUtilities = await prisma.leaseUtility.findMany({
-      where: { leaseId: lease_id },
+    const leaseUtilities = await prisma.lease_utility.findMany({
+      where: { lease_id: lease_id },
       include: { utility: true },
     });
     amount = leaseUtilities.reduce((sum, lu) => sum + (lu.utility.fixedAmount || 0), 0);
   }
 
-const dueDate = calculateNextDueDate({
-  ...lease,
-  paymentDueDay: lease.paymentDueDay ?? undefined,
-});
+  const dueDate = calculateNextDueDate({
+    ...lease,
+    paymentDueDay: lease.paymentDueDay ?? undefined,
+  });
 
   const invoice = await prisma.invoice.create({
     data: {
       leaseId: lease_id,
       type,
-      amount,
+      totalAmount: amount,
       dueDate,
       status: 'PENDING',
     },

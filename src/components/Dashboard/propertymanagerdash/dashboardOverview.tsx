@@ -83,7 +83,13 @@ const Dashboard = () => {
 	const userId = user?.id || 'unknown';
 	const occupancyKey = `dashboard_occupancyRate_${userId}`;
 	const [occupancyRate, setOccupancyRate] = usePersistedNumber(occupancyKey);
-	const [rentCollected, setRentCollected] = usePersistedNumber('dashboard_rentCollected');
+	const [financials, setFinancials] = useState<{ cashInBank: number, outstandingArrears: number }>(() => {
+		if (typeof window !== 'undefined') {
+			const cached = localStorage.getItem('dashboard_financials');
+			return cached ? JSON.parse(cached) : { cashInBank: 0, outstandingArrears: 0 };
+		}
+		return { cashInBank: 0, outstandingArrears: 0 };
+	});
 	const [availableProperties, setAvailableProperties] = usePersistedNumber('dashboard_availableProperties');
 
 	const [propertyUnits, setPropertyUnits] = useState<{ [propertyId: string]: number }>({});
@@ -99,26 +105,27 @@ const Dashboard = () => {
 
 	// --- EFFECT: Get Token ---
 	useEffect(() => {
-		if (typeof window !== 'undefined') {
-			const storedTokens = localStorage.getItem('rentflow_tokens');
-			if (storedTokens) {
-				try {
-					let extractedToken = null;
-					try {
-						const parsed = JSON.parse(storedTokens);
-						if (parsed && typeof parsed === 'object' && parsed.accessToken) {
-							extractedToken = parsed.accessToken;
-						} else {
-							extractedToken = storedTokens;
-						}
-					} catch {
-						extractedToken = storedTokens;
-					}
-					setToken(extractedToken);
-				} catch (error) {
-					console.error('[Dashboard] Error processing token:', error);
-				}
-			}
+		if (typeof window === 'undefined') return;
+
+		const storedTokens = localStorage.getItem('rentflow_tokens');
+		if (!storedTokens) return;
+
+		try {
+			const parsed = JSON.parse(storedTokens);
+
+			// Support multiple historical shapes:
+			// - { accessToken, refreshToken, expiresAt } (current AuthContext)
+			// - "<jwt>" (older bug where only the access token string was stored)
+			// - { tokens: { accessToken } } (common API response wrapper)
+			const extractedToken =
+				(typeof parsed === 'string' ? parsed : null) ||
+				(parsed && typeof parsed === 'object' && 'accessToken' in parsed ? (parsed as any).accessToken : null) ||
+				(parsed && typeof parsed === 'object' && (parsed as any).tokens?.accessToken ? (parsed as any).tokens.accessToken : null);
+
+			if (extractedToken) setToken(extractedToken);
+		} catch (error) {
+			// If it's not JSON, assume it's a raw token string.
+			setToken(storedTokens);
 		}
 	}, []);
 
@@ -132,7 +139,11 @@ const Dashboard = () => {
 			if (stored) {
 				try {
 					const parsed = JSON.parse(stored);
-					currentToken = parsed?.accessToken || stored;
+					currentToken =
+						(typeof parsed === 'string' ? parsed : null) ||
+						parsed?.accessToken ||
+						parsed?.tokens?.accessToken ||
+						stored;
 				} catch {
 					currentToken = stored;
 				}
@@ -201,33 +212,23 @@ const Dashboard = () => {
 		if (organizationId) fetchProperties();
 	}, [organizationId, setAvailableProperties]);
 
-	// --- FETCH: RENT COLLECTED ---
+	// --- FETCH: FINANCIAL SUMMARY (Ledger-based) ---
 	useEffect(() => {
-		async function fetchRentCollected() {
+		async function fetchFinancialSummary() {
 			if (!organizationId || !token) return;
-			let propertyId = '';
-			if (selectedProperty !== 'all') {
-				const found = myproperties.find((p) => p.id === selectedProperty || getPropertyDisplayName(p) === selectedProperty);
-				propertyId = found ? String(found.id) : String(selectedProperty);
-			}
 
-			const url = selectedProperty === 'all'
-				? `/api/payments?` // Ensure API handles empty query correctly
-				: `/api/payments?&propertyId=${propertyId}`;
+			// Call the new GL-based API
+			const data = await safeFetch(`/api/finance/summary`, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
 
-			const data = await safeFetch(url, { headers: { Authorization: `Bearer ${token}` } });
-
-			if (data && Array.isArray(data)) {
-				const total = data.reduce((sum: number, payment: any) => sum + (Number(payment.amount) || 0), 0);
-				setRentCollected(total);
-				localStorage.setItem('dashboard_rentCollected', String(total));
-			} else {
-				// If API fails or returns non-array, keep previous value or set 0
-				if (rentCollected === undefined) setRentCollected(0);
+			if (data && data.success) {
+				setFinancials(data.data);
+				localStorage.setItem('dashboard_financials', JSON.stringify(data.data));
 			}
 		}
-		fetchRentCollected();
-	}, [selectedProperty, organizationId, token, myproperties, setRentCollected]);
+		fetchFinancialSummary();
+	}, [organizationId, token]);
 
 	// --- EFFECT: CALCULATE OCCUPANCY ---
 	useEffect(() => {
@@ -323,15 +324,11 @@ const Dashboard = () => {
 
 			if (data) {
 				setStats(data);
-				if (typeof data.totalRentCollected === 'number') {
-					setRentCollected(data.totalRentCollected);
-					localStorage.setItem('dashboard_rentCollected', String(data.totalRentCollected));
-				}
 			}
 			setLoading(false);
 		}
 		fetchStats();
-	}, [selectedProperty, organizationId, token, myproperties, setRentCollected]);
+	}, [selectedProperty, organizationId, token, myproperties]);
 
 	// --- FETCH: LEASES ---
 	useEffect(() => {
@@ -475,9 +472,9 @@ const Dashboard = () => {
 							<div className="bg-white rounded-xl shadow-2xl p-4">
 								<div className="flex items-center gap-3 mb-2">
 									<DollarSign className="w-6 h-6 text-blue-600" />
-									<p className="text-sm text-gray-600">Rent Collected</p>
+									<p className="text-sm text-gray-600">Cash in Bank</p>
 								</div>
-								<p className="text-2xl font-semibold">{rentCollected !== undefined ? `$${rentCollected.toLocaleString()}` : '$0'}</p>
+								<p className="text-2xl font-semibold">${financials.cashInBank.toLocaleString()} <small className="text-xs text-red-500 font-normal">(${financials.outstandingArrears.toLocaleString()} Arrears)</small></p>
 							</div>
 							<div className="bg-white rounded-xl shadow-2xl p-4">
 								<div className="flex items-center gap-3 mb-2">

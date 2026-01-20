@@ -50,7 +50,7 @@ export const routeConfig = {
         badge: null,
         description: 'Edit company story and team info'
       },
-       {
+      {
         path: '/admin/content/ContactUs-crud',
         label: 'Contact Us Page',
         icon: Users,
@@ -85,7 +85,7 @@ export const routeConfig = {
         badge: null,
         description: 'Update call-to-action content'
       },
-      
+
       {
         path: '/admin/content/testimonial-crud',
         label: 'Testimonials',
@@ -173,9 +173,10 @@ export const routeConfig = {
       // Removed 'Assign Vendors' and 'Analytics' links as requested
     ],
     accounting: [
-       { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
+      { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
       { path: '/property-manager/content/payments', label: 'Payment Records', icon: DollarSign },
-      // { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
+      { path: '/property-manager/finance/ledger', label: 'General Ledger', icon: Calculator },
+      { path: '/property-manager/finance/journal', label: 'Journal Entries', icon: FileText },
     ],
     utilities: [
       { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },

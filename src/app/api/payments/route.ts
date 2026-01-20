@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     const payments = await prisma.payment.findMany({
       where: {
         invoice: {
-          lease: {
+          Lease: {
             property: { managerId: orgUser.id }, // Use organisation_user.id here
             ...(propertyId ? { propertyId } : {}),
             ...(unitId ? { unitId } : {}),
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       include: {
         invoice: {
           include: {
-            lease: {
+            Lease: {
               include: {
                 property: true,
                 unit: true,

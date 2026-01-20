@@ -24,7 +24,7 @@ export async function PATCH(
       }, { status: 400 });
     }
 
-    const updatedApplication = await prisma.tenantApplication.update({
+    const updatedApplication = await prisma.tenantapplication.update({
       where: { id },
       data: { status: normalizedStatus as ApplicationStatus },
       include: {
@@ -57,7 +57,7 @@ export async function GET(
   try {
     const { id } = params;
 
-    const application = await prisma.tenantApplication.findUnique({
+    const application = await prisma.tenantapplication.findUnique({
       where: { id },
       include: {
         property: true,
@@ -91,7 +91,7 @@ export async function DELETE(
   try {
     const { id } = params;
 
-    await prisma.tenantApplication.delete({
+    await prisma.tenantapplication.delete({
       where: { id },
     });
 

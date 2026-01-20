@@ -6,13 +6,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const reading = await prisma.utilityReading.findUnique({
+    const reading = await prisma.utility_reading.findUnique({
       where: { id: params.id },
       include: {
-        leaseUtility: {
+        lease_utility: {
           include: {
             utility: true,
-            lease: {
+            Lease: {
               include: {
                 tenant: true,
                 unit: true,
@@ -33,19 +33,19 @@ export async function GET(
 
     const formatted = {
       id: reading.id,
-      readingValue: reading.readingValue,
+      readingValue: reading.reading_value,
       amount: reading.amount,
       readingDate: reading.readingDate,
       leaseUtility: {
-        id: reading.leaseUtility.id,
-        utility: reading.leaseUtility.utility,
+        id: reading.lease_utility.id,
+        utility: reading.lease_utility.utility,
         lease: {
-          id: reading.leaseUtility.lease?.id,
-          tenantName: reading.leaseUtility.lease?.tenant
-            ? `${reading.leaseUtility.lease.tenant.firstName ?? ""} ${reading.leaseUtility.lease.tenant.lastName ?? ""}`.trim() || "Unknown Tenant"
+          id: reading.lease_utility.Lease?.id,
+          tenantName: reading.lease_utility.Lease?.tenant
+            ? `${reading.lease_utility.Lease.tenant.firstName ?? ""} ${reading.lease_utility.Lease.tenant.lastName ?? ""}`.trim() || "Unknown Tenant"
             : "Unknown Tenant",
-          unitNumber: reading.leaseUtility.lease?.unit?.unitNumber || "N/A",
-          propertyName: reading.leaseUtility.lease?.property?.name || "N/A",
+          unitNumber: reading.lease_utility.Lease?.unit?.unitNumber || "N/A",
+          propertyName: reading.lease_utility.Lease?.property?.name || "N/A",
         },
       },
     };
@@ -68,10 +68,10 @@ export async function PATCH(
     const body = await req.json();
     const { readingValue, readingDate, amount } = body;
 
-    const updated = await prisma.utilityReading.update({
+    const updated = await prisma.utility_reading.update({
       where: { id: params.id },
       data: {
-        readingValue,
+        reading_value: readingValue,
         readingDate: readingDate ? new Date(readingDate) : undefined,
         amount
       },
@@ -89,7 +89,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.utilityReading.delete({
+    await prisma.utility_reading.delete({
       where: { id: params.id },
     });
 

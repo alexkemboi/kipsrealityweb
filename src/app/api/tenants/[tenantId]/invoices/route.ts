@@ -21,9 +21,9 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
     const invoices = await prisma.invoice.findMany({
       where: { leaseId: { in: leaseIds } },
       include: {
-        invoiceItems: true,
+        InvoiceItem: true,
         payments: true,
-        lease: {
+        Lease: {
           include: {
             tenant: {
               select: {
@@ -55,10 +55,10 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
                 unitNumber: true,
               },
             },
-            leaseUtilities: {
+            lease_utility: {
               include: {
                 utility: true,
-                utilityReadings: { orderBy: { readingDate: "desc" }, take: 1 },
+                utility_reading: { orderBy: { readingDate: "desc" }, take: 1 },
               },
             },
           },
@@ -72,12 +72,12 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
       id: inv.id,
       leaseId: inv.leaseId,
       type: inv.type,
-      amount: Number(inv.amount),
+      amount: Number(inv.totalAmount),
       dueDate: inv.dueDate ? inv.dueDate.toISOString() : null,
       status: inv.status,
       createdAt: inv.createdAt ? inv.createdAt.toISOString() : null,
       updatedAt: inv.updatedAt ? inv.updatedAt.toISOString() : null,
-      invoiceItems: (inv.invoiceItems || []).map((it: any) => ({
+      invoiceItems: (inv.InvoiceItem || []).map((it: any) => ({
         id: it.id,
         description: it.description,
         amount: Number(it.amount),
@@ -89,46 +89,46 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
         method: p.method,
         reference: p.reference,
       })),
-      lease: inv.lease ? {
-        tenant: inv.lease.tenant
+      lease: inv.Lease ? {
+        tenant: inv.Lease.tenant
           ? {
-            firstName: inv.lease.tenant.firstName,
-            lastName: inv.lease.tenant.lastName,
-            email: inv.lease.tenant.email,
+            firstName: inv.Lease.tenant.firstName,
+            lastName: inv.Lease.tenant.lastName,
+            email: inv.Lease.tenant.email,
           }
           : undefined,
-        property: inv.lease.property
+        property: inv.Lease.property
           ? {
-            id: inv.lease.property.id,
-            name: inv.lease.property.name,
-            address: inv.lease.property.address,
-            apartmentComplexDetail: inv.lease.property.apartmentComplexDetail
+            id: inv.Lease.property.id,
+            name: inv.Lease.property.name,
+            address: inv.Lease.property.address,
+            apartmentComplexDetail: inv.Lease.property.apartmentComplexDetail
               ? {
-                buildingName: inv.lease.property.apartmentComplexDetail.buildingName,
+                buildingName: inv.Lease.property.apartmentComplexDetail.buildingName,
               }
               : undefined,
-            houseDetail: inv.lease.property.houseDetail
+            houseDetail: inv.Lease.property.houseDetail
               ? {
-                houseName: inv.lease.property.houseDetail.houseName,
+                houseName: inv.Lease.property.houseDetail.houseName,
               }
               : undefined,
           }
           : undefined,
-        unit: inv.lease.unit
+        unit: inv.Lease.unit
           ? {
-            id: inv.lease.unit.id,
-            unitNumber: inv.lease.unit.unitNumber,
+            id: inv.Lease.unit.id,
+            unitNumber: inv.Lease.unit.unitNumber,
           }
           : undefined,
       } : undefined,
-      utilities: inv.lease?.leaseUtilities?.map((lu: any) => ({
+      utilities: inv.Lease?.lease_utility?.map((lu: any) => ({
         id: lu.utility.id,
         name: lu.utility.name,
         type: lu.utility.name, // Fixed: use name as type placeholder if type is missing, or lu.utility.type if it exists
         fixedAmount: lu.utility.fixedAmount ?? 0,
         unitPrice: lu.utility.unitPrice ?? 0,
-        isTenantResponsible: lu.isTenantResponsible,
-        lastReading: lu.utilityReadings?.[0]?.readingValue ?? null,
+        isTenantResponsible: lu.is_tenant_responsible,
+        lastReading: lu.utility_reading?.[0]?.reading_value ?? null,
       })),
     }));
 

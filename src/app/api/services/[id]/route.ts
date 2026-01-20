@@ -11,9 +11,9 @@ export async function GET(req: NextRequest, context: RouteContext) {
   const id = parseInt(params.id);
 
   try {
-    const service = await prisma.service.findUnique({
+    const service = await prisma.services.findUnique({
       where: { id },
-      include: { category: true },
+      include: { categories: true },
     });
 
     if (!service) {
@@ -35,10 +35,11 @@ export async function PUT(req: NextRequest, context: RouteContext) {
   try {
     const body = await req.json();
     const { categoryId, name, description, features, impact, icon } = body;
+    const category_id = categoryId != null ? Number(categoryId) : undefined;
 
-    const updatedService = await prisma.service.update({
+    const updatedService = await prisma.services.update({
       where: { id },
-      data: { categoryId, name, description, features, impact, icon },
+      data: { category_id, name, description, features, impact, icon },
     });
 
     return NextResponse.json(updatedService);
@@ -54,7 +55,7 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
   const id = parseInt(params.id);
 
   try {
-    await prisma.service.delete({ where: { id } });
+    await prisma.services.delete({ where: { id } });
     return NextResponse.json({ message: "Service deleted successfully" });
   } catch (err: any) {
     console.error("DELETE /api/services/[id] error:", err);

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { FileText, Upload, Trash2, FileCheck } from "lucide-react";
-import { LeaseDocumentType } from "@prisma/client";
+import { LeaseDocument_documentType } from "@prisma/client";
 
 interface Lease {
   id: string;
@@ -19,7 +19,7 @@ interface Lease {
 interface LeaseDocument {
   id: string;
   leaseId: string;
-  documentType: LeaseDocumentType;
+  documentType: LeaseDocument_documentType;
   fileName: string;
   fileUrl: string;
   fileSize: number;
@@ -41,7 +41,7 @@ interface LeaseAmendment {
 
 export default function TenantLeasePage() {
   const params = useParams();
-  
+
   // Get leaseId directly from params - it's already resolved in client components
   const leaseId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
 
@@ -52,29 +52,29 @@ export default function TenantLeasePage() {
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState<LeaseDocumentType>("OTHER");
+  const [documentType, setDocumentType] = useState<LeaseDocument_documentType>("OTHER");
   const [description, setDescription] = useState("");
 
   // Fetch all lease-related data
   useEffect(() => {
     console.log("LeaseId from params:", leaseId);
-    
+
     if (!leaseId) {
       setError("No lease ID provided");
       setLoading(false);
       return;
     }
-    
+
     fetchData();
   }, [leaseId]);
 
   async function fetchData() {
     if (!leaseId) return;
-    
+
     console.log("Fetching data for lease:", leaseId);
     setLoading(true);
     setError(null);
-    
+
     try {
       // Fetch lease data
       const leaseRes = await fetch(`/api/lease/${leaseId}`);
@@ -245,17 +245,17 @@ export default function TenantLeasePage() {
         <h3 className="text-lg font-medium flex items-center gap-2">
           <FileText className="w-5 h-5 text-blue-600" /> Upload Document
         </h3>
-        <input 
-          type="file" 
-          onChange={(e) => setFile(e.target.files?.[0] || null)} 
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
           className="block w-full border border-gray-300 rounded px-3 py-2"
         />
         <select
           className="w-full border border-gray-300 rounded px-3 py-2"
           value={documentType}
-          onChange={(e) => setDocumentType(e.target.value as LeaseDocumentType)}
+          onChange={(e) => setDocumentType(e.target.value as LeaseDocument_documentType)}
         >
-          {Object.keys(LeaseDocumentType).map((type) => (
+          {Object.keys(LeaseDocument_documentType).map((type) => (
             <option key={type} value={type}>
               {type.replace(/_/g, " ")}
             </option>
@@ -296,10 +296,10 @@ export default function TenantLeasePage() {
                   </p>
                   {doc.description && <p className="text-sm text-gray-600 mt-1">{doc.description}</p>}
                 </div>
-                <a 
-                  href={doc.fileUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:underline text-sm font-medium"
                 >
                   View

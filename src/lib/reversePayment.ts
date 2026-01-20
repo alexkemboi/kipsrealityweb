@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import crypto from "crypto";
 
 export async function reversePayment(paymentId: string, userId: string, reason: string) {
   return await prisma.$transaction(async (tx) => {
@@ -14,12 +15,12 @@ export async function reversePayment(paymentId: string, userId: string, reason: 
     // 1) Create reversal audit record
     await tx.paymentReversal.create({
       data: {
-        id: crypto.randomUUID(),             // if needed for your UUID setup
-        paymentId: payment.id,
-        invoiceId: payment.invoiceId,
+        id: crypto.randomUUID(), // PaymentReversal has no default @id in schema
+        payment_id: payment.id,
+        invoice_id: payment.invoiceId,
         amount: payment.amount,
         reason,
-        reversedBy: userId,
+        reversed_by: userId,
       }
     });
 

@@ -52,7 +52,7 @@ export async function notarizeDocument(documentId: string) {
 
     // 2. Create "PENDING" Record (Idempotency)
     // We reserve the spot in the DB before calling the chain
-    const record = await prisma.dssNotaryRecord.create({
+    const record = await prisma.blockchainNotaryRecord.create({
         data: {
             documentId: doc.id,
             organizationId: doc.organizationId,
@@ -68,7 +68,7 @@ export async function notarizeDocument(documentId: string) {
         const txReceipt = await writeHashToBlockchain(doc.finalPdfSha256Hex);
 
         // 4. Update DB with Success
-        const updatedRecord = await prisma.dssNotaryRecord.update({
+        const updatedRecord = await prisma.blockchainNotaryRecord.update({
             where: { id: record.id },
             data: {
                 status: BlockchainNotaryStatus.CONFIRMED,
@@ -85,7 +85,7 @@ export async function notarizeDocument(documentId: string) {
         console.error("❌ [Notary] Blockchain Transaction Failed:", error);
 
         // 5. Handle Failure
-        await prisma.dssNotaryRecord.update({
+        await prisma.blockchainNotaryRecord.update({
             where: { id: record.id },
             data: {
                 status: BlockchainNotaryStatus.FAILED,

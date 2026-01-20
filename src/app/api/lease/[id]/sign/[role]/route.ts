@@ -43,7 +43,7 @@ export async function POST(
       id: lease.id,
       tenantSigned: !!lease.tenantSignedAt,
       landlordSigned: !!lease.landlordSignedAt,
-      status: lease.status
+      leaseStatus: lease.leaseStatus
     });
 
     // === TENANT SIGNING (may be unauthenticated) ===
@@ -107,12 +107,12 @@ export async function POST(
         where: { id: leaseId },
         data: {
           tenantSignedAt: new Date(),
-          status: lease.landlordSignedAt ? "SIGNED" : "DRAFT",
+          leaseStatus: lease.landlordSignedAt ? "SIGNED" : "DRAFT",
         },
         include: { tenant: true, property: true, unit: true },
       });
 
-      console.log("✅ Tenant signed lease successfully. New status:", updated.status);
+      console.log("✅ Tenant signed lease successfully. New status:", updated.leaseStatus);
 
       return NextResponse.json({ 
         message: "Lease signed by tenant", 
@@ -174,12 +174,12 @@ export async function POST(
         where: { id: leaseId },
         data: {
           landlordSignedAt: new Date(),
-          status: lease.tenantSignedAt ? "SIGNED" : "DRAFT",
+          leaseStatus: lease.tenantSignedAt ? "SIGNED" : "DRAFT",
         },
         include: { tenant: true, property: true, unit: true },
       });
 
-      console.log("✅ Landlord signed lease successfully. New status:", updated.status);
+      console.log("✅ Landlord signed lease successfully. New status:", updated.leaseStatus);
 
       return NextResponse.json({ 
         message: "Lease signed by landlord", 

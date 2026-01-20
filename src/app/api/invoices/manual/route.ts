@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { ManualInvoiceInput } from '@/app/data/FinanceData';
+import { financeActions } from "@/lib/finance/actions";
 
 export async function POST(req: NextRequest) {
   const body: ManualInvoiceInput = await req.json();
@@ -16,12 +17,25 @@ export async function POST(req: NextRequest) {
   const invoice = await prisma.invoice.create({
     data: {
       leaseId: body.lease_id,
-      type: body.type,
-      amount: body.amount,
+      type: body.type as any,
+      totalAmount: body.amount,
+      amountPaid: 0,
+      balance: body.amount,
       dueDate: new Date(body.dueDate),
       status: 'PENDING',
+      postingStatus: 'PENDING',
     },
   });
 
-  return NextResponse.json(invoice);
+  // TRIGGER GL POSTING
+  try {
+    console.log(`GL: Posting Invoice ${invoice.id}...`);
+    await financeActions.postInvoiceToGL(invoice.id);
+  } catch (glError) {
+    console.error("GL Posting Failed (Background task will retry):", glError);
+  }
+
+  // Return the freshest version so callers can assert postingStatus/journalEntryId
+  const refreshed = await prisma.invoice.findUnique({ where: { id: invoice.id } });
+  return NextResponse.json(refreshed || invoice);
 }

@@ -33,7 +33,7 @@ export async function GET(
       where: { id: documentId },
       include: {
         participants: {
-          orderBy: { signingOrder: 'asc' } // Show list in order
+          orderBy: { stepOrder: 'asc' } // Show list in order
         },
         organization: {
           select: { name: true } // Show org name
@@ -73,7 +73,7 @@ export async function GET(
         originalFileUrl: document.originalFileUrl, // Used by PDF Viewer
         currentStep: document.currentStep,
         participants: document.participants.map(p => ({
-          name: p.name,
+          name: p.fullName,
           email: p.email,
           role: p.role,
           status: p.hasSigned ? 'SIGNED' : 'PENDING',

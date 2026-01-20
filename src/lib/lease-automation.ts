@@ -39,11 +39,11 @@ async function checkExpiringLeases() {
   const expiringLeases = await prisma.lease.findMany({
     where: {
       endDate: { gte: today, lte: warningDate },
-      status: "ACTIVE",
+      leaseStatus: "ACTIVE",
     },
     include: {
       tenant: true,
-      tenantApplication: true,
+      application: true,
       property: { include: { manager: true } },
     },
   });
@@ -63,7 +63,7 @@ async function checkExpiringLeases() {
           id: randomUUID(),
           leaseId: lease.id,
           notificationType: "EXPIRY_WARNING",
-          recipientEmail: lease.tenant?.email || lease.tenantApplication?.email || "",
+          recipientEmail: lease.tenant?.email || lease.application?.email || "",
           recipientRole: "BOTH",
           subject: "Lease Expiring Soon",
           message: `Your lease at ${lease.property.name || "property"} expires on ${lease.endDate.toLocaleDateString()}. Please contact us regarding renewal.`,
@@ -74,7 +74,7 @@ async function checkExpiringLeases() {
 
       await prisma.lease.update({
         where: { id: lease.id },
-        data: { status: "EXPIRING_SOON" },
+        data: { leaseStatus: "EXPIRING_SOON" },
       });
     }
   }
@@ -92,11 +92,11 @@ async function checkRenewalOptions() {
     where: {
       endDate: { gte: today, lte: renewalDate },
       hasRenewalOption: true,
-      status: { in: ["ACTIVE", "EXPIRING_SOON"] },
+      leaseStatus: { in: ["ACTIVE", "EXPIRING_SOON"] },
     },
     include: {
       tenant: true,
-      tenantApplication: true,
+      application: true,
       property: { include: { manager: true } },
     },
   });
@@ -106,7 +106,7 @@ async function checkRenewalOptions() {
       where: { leaseId: lease.id, status: { in: ["PENDING", "NOTICE_SENT"] } },
     });
 
-    const recipientEmail = lease.tenant?.email || lease.tenantApplication?.email || "";
+    const recipientEmail = lease.tenant?.email || lease.application?.email || "";
 
     if (!existingRenewal && lease.autoRenew) {
       const newEndDate = new Date(lease.endDate);
@@ -173,9 +173,9 @@ async function checkRentEscalations() {
     where: {
       hasRentEscalation: true,
       nextEscalationDate: { gte: today, lte: noticeDate },
-      status: "ACTIVE",
+      leaseStatus: "ACTIVE",
     },
-    include: { tenant: true, tenantApplication: true },
+    include: { tenant: true, application: true },
   });
 
   for (const lease of escalatingLeases) {
@@ -200,7 +200,7 @@ async function checkRentEscalations() {
       },
     });
 
-    const recipientEmail = lease.tenant?.email || lease.tenantApplication?.email || "";
+    const recipientEmail = lease.tenant?.email || lease.application?.email || "";
 
     await prisma.leaseNotification.create({
       data: {
@@ -224,7 +224,7 @@ async function checkRentEscalations() {
 async function processScheduledNotifications() {
   const pendingNotifications = await prisma.leaseNotification.findMany({
     where: { status: "PENDING", scheduledFor: { lte: new Date() } },
-    include: { lease: { include: { property: true } } },
+    include: { Lease: { include: { property: true } } },
   });
 
   for (const notification of pendingNotifications) {
@@ -263,7 +263,7 @@ async function checkComplianceDates() {
         { complianceCheckDate: null },
         { complianceCheckDate: { lt: thirtyDaysAgo } },
       ],
-      status: "ACTIVE",
+      leaseStatus: "ACTIVE",
     },
     include: {
       property: {
@@ -304,18 +304,18 @@ async function updateLeaseStatuses() {
   const today = new Date();
 
   await prisma.lease.updateMany({
-    where: { endDate: { lt: today }, status: { in: ["ACTIVE", "EXPIRING_SOON"] } },
-    data: { status: "EXPIRED" },
+    where: { endDate: { lt: today }, leaseStatus: { in: ["ACTIVE", "EXPIRING_SOON"] } },
+    data: { leaseStatus: "EXPIRED" },
   });
 
   await prisma.lease.updateMany({
     where: {
       startDate: { lte: today },
-      status: "SIGNED",
+      leaseStatus: "SIGNED",
       landlordSignedAt: { not: null },
       tenantSignedAt: { not: null },
     },
-    data: { status: "ACTIVE" },
+    data: { leaseStatus: "ACTIVE" },
   });
 
   console.log("📊 Updated lease statuses");

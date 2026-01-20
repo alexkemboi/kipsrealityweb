@@ -22,9 +22,9 @@ export async function GET(
         }
       },
       include: {
-        invoiceItems: true,
+        InvoiceItem: true,
         payments: true,
-        lease: {
+        Lease: {
           include: {
             tenant: true,
             property: true,
@@ -65,12 +65,12 @@ export async function GET(
 }
 
 function generateTextContent(invoices: any[], dateString: string): string {
-  const tenant = invoices[0]?.lease?.tenant;
-  const property = invoices[0]?.lease?.property;
-  const unit = invoices[0]?.lease?.unit;
+  const tenant = invoices[0]?.Lease?.tenant;
+  const property = invoices[0]?.Lease?.property;
+  const unit = invoices[0]?.Lease?.unit;
 
   // Fixed: Added proper types for reduce functions
-  const totalAmount = invoices.reduce((sum: number, inv: any) => sum + inv.amount, 0);
+  const totalAmount = invoices.reduce((sum: number, inv: any) => sum + inv.totalAmount, 0);
   const totalPaid = invoices.reduce((sum: number, inv: any) =>
     sum + inv.payments.reduce((pSum: number, p: any) => pSum + p.amount, 0), 0
   );
@@ -90,10 +90,10 @@ INVOICE BREAKDOWN:
   invoices.forEach((invoice: any) => {
     content += `
 ${invoice.type} INVOICE:
-  Amount: USD ${invoice.amount.toLocaleString()}
+  Amount: USD ${invoice.totalAmount.toLocaleString()}
   Status: ${invoice.status}
-  Items:${invoice.invoiceItems.length > 0 ? '' : ' None'}
-${invoice.invoiceItems.map((item: any) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
+  Items:${invoice.InvoiceItem.length > 0 ? '' : ' None'}
+${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
 `;
   });
 
