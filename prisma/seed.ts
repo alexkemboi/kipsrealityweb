@@ -95,20 +95,18 @@ async function main() {
             create: type,
         });
     }
-    console.log('✅ Property types seeded!');
-    
-  
+    console.log('Property types seeded!');
 
     const backupDir = path.join(process.cwd(), 'backup');
 
     if (!fs.existsSync(backupDir)) {
-        console.log(`⚠️ Backup directory not found at ${backupDir}.`);
+        console.log(`⚠️Backup directory not found at ${backupDir}.`);
         return;
     }
 
     try {
         await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
-        console.log('🔄 Foreign key checks disabled.');
+        console.log('🔄Foreign key checks disabled.');
 
         const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
 
