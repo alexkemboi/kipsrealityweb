@@ -468,7 +468,7 @@ export default function TenantInvoicesPage() {
       toast.loading("Creating invoice...");
 
       await createManualInvoice({
-        lease_id: lease.id,
+        leaseId: lease.id,
         type: manualType,
         amount: Number(manualAmount),
         dueDate: manualDate,
@@ -606,7 +606,7 @@ export default function TenantInvoicesPage() {
               if (!lease) return toast.error("Tenant lease not found");
               try {
                 toast.loading("Generating Full Invoice...");
-                await generateFullInvoice({ lease_id: lease.id, type: "RENT" });
+                await generateFullInvoice({ leaseId: lease.id, type: "RENT" });
                 toast.dismiss();
                 toast.success("Full Invoice Created!");
                 setGroupedInvoices(await fetchInvoicesForTenant(tenantId));

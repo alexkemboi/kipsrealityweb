@@ -23,7 +23,7 @@ export default function ManualInvoiceForm({ leaseId }: ManualInvoiceFormProps) {
     }
 
     const data: ManualInvoiceInput = {
-      lease_id: leaseId,
+      leaseId: leaseId,
       type: "RENT", // fixed type
       amount: parseFloat(amount),
       dueDate,
@@ -46,7 +46,7 @@ export default function ManualInvoiceForm({ leaseId }: ManualInvoiceFormProps) {
   return (
     <div className="flex  bg-gray-50">
       <div className="bg-white shadow rounded-xl p-6 max-w-md w-full">
-        
+
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
