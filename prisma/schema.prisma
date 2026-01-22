@@ -259,119 +259,63 @@ model FinancialSnapshot {
 }
 
 // =====================================================================
-// 3. UTILITY MODULE (AI + Blockchain Integration)
+// 3. UTILITY MODULE (AI & Financial Ready)
 // =====================================================================
 
 model UtilityBill {
-  id           String @id @default(uuid())
-  propertyId   String @map("property_id")
-  providerName String @map("provider_name")
-
+  id            String   @id @default(uuid())
+  propertyId    String   @map("property_id")
+  providerName  String   @map("provider_name")
+  
   // Financials
-  totalAmount Decimal  @db.Decimal(10, 2)
-  billDate    DateTime @map("bill_date")
-  dueDate     DateTime @map("due_date")
-
-  // AI & OCR Data (AI Feature)
-  importMethod  UtilityImportMethod @default(MANUAL_ENTRY) @map("import_method")
-  ocrConfidence Decimal?            @map("ocr_confidence") @db.Decimal(5, 2) // 0.00 to 100.00
-  rawOcrData    Json?               @map("raw_ocr_data") // Debug data
-
-  // Logic & Audit
-  splitMethod UtilitySplitMethod
-  status      UtilityBillStatus  @default(DRAFT)
-
-  approvedAt DateTime? @map("approved_at")
-  approvedBy String?   @map("approved_by")
-
-  // Financial Core Integration
-  postedAt       DateTime?     @map("posted_at")
-  journalEntryId String?       @unique @map("journal_entry_id")
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  billDate      DateTime @map("bill_date")
+  dueDate       DateTime @map("due_date")
+  
+  // Configuration
+  splitMethod   UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
+  status        UtilityBillStatus  @default(DRAFT)
+  
+  // AI & OCR Metadata (From Team Doc)
+  importMethod  UtilityImportMethod @default(MANUAL) @map("import_method")
+  ocrConfidence Decimal?            @db.Decimal(5, 2) @map("ocr_confidence")
+  fileUrl       String?             @map("file_url") // The raw bill image/pdf
+  
+  // The Link to the Financial Core (Double-Entry)
+  journalEntryId String? @unique @map("journal_entry_id")
   journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
 
-  // Blockchain Proof
+  // The Link to Blockchain Proof
   blockchainHash String? @map("blockchain_hash")
-
+  
   // Relations
-  property      Property            @relation(fields: [propertyId], references: [id])
-  allocations   UtilityAllocation[]
+  property      Property  @relation(fields: [propertyId], references: [id])
+  allocations   UtilityAllocation[] 
   childInvoices Invoice[]
 
-  @@index([propertyId])
-  @@index([status])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
   @@map("utility_bills")
 }
 
 model UtilityAllocation {
-  id            String  @id @default(uuid())
-  utilityBillId String  @map("utility_bill_id")
-  unitId        String  @map("unit_id")
-  tenantId      String? @map("tenant_id") // Optional: Empty unit = Landlord cost
+  id            String      @id @default(uuid())
+  utilityBillId String      @map("utility_bill_id")
+  unitId        String      @map("unit_id")
+  
+  // The calculated share
+  amount        Decimal     @db.Decimal(10, 2)
+  percentage    Decimal?    @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
+  
+  // Link to the resulting Invoice (The "Demand" sent to tenant)
+  invoiceId     String?     @unique @map("invoice_id")
+  invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
+  
+  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
+  unit          Unit        @relation(fields: [unitId], references: [id])
 
-  amount Decimal                 @db.Decimal(10, 2)
-  status UtilityAllocationStatus @default(PENDING)
-
-  // Link to the resulting Invoice
-  invoiceId String?  @unique @map("invoice_id")
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-
-  paidAmount Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt  DateTime @default(now())
-
-  // Blockchain Proof for this specific split
-  blockchainHash String? @map("blockchain_hash")
-
-  // Relations
-  utilityBill UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
-  unit        Unit        @relation(fields: [unitId], references: [id])
-
-  disputes UtilityDispute[]
-  payments UtilityPayment[]
-
-  @@index([utilityBillId])
-  @@index([tenantId])
   @@map("utility_allocations")
-}
-
-model UtilityPayment {
-  id           String @id @default(uuid())
-  allocationId String @map("allocation_id")
-  payerId      String @map("payer_id")
-
-  amount    Decimal              @db.Decimal(10, 2)
-  method    UtilityPaymentMethod
-  reference String? // Stripe ID / Tx Hash
-
-  status               String                      @default("COMPLETED")
-  reconciliationStatus UtilityReconciliationStatus @default(PENDING) @map("reconciliation_status")
-
-  blockchainHash String?  @map("blockchain_hash")
-  createdAt      DateTime @default(now())
-
-  allocation UtilityAllocation @relation(fields: [allocationId], references: [id])
-
-  @@index([allocationId])
-  @@map("utility_payments")
-}
-
-model UtilityDispute {
-  id           String @id @default(uuid())
-  allocationId String @map("allocation_id")
-  raisedBy     String @map("raised_by")
-
-  reason       String @db.Text
-  urgencyScore Int?   @default(1) @map("urgency_score") // AI Feature (1-5)
-
-  status          UtilityDisputeStatus @default(OPEN)
-  resolutionNotes String?              @map("resolution_notes") @db.Text
-
-  createdAt  DateTime  @default(now())
-  resolvedAt DateTime? @map("resolved_at")
-
-  allocation UtilityAllocation @relation(fields: [allocationId], references: [id])
-
-  @@index([allocationId])
-  @@map("utility_disputes")
 }
 
 // =====================================================================
@@ -475,7 +419,7 @@ model Unit {
   createdAt       DateTime @default(now())
   houseDetailId   String?
   unitName        String?
-  currency        String?  @db.VarChar(10)
+  currency        String?  @default("USD") @db.VarChar(10)
 
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
@@ -1617,28 +1561,27 @@ enum BlockchainNotaryStatus {
 
 // Utility Enums (New from PDF)
 enum UtilitySplitMethod {
-  EQUAL
-  OCCUPANCY
+  EQUAL_USAGE
+  OCCUPANCY_BASED
   SQ_FOOTAGE
-  RUBS
+  SUB_METERED
+  CUSTOM_RATIO
   AI_OPTIMIZED
-  FIXED
 }
 
 enum UtilityBillStatus {
   DRAFT
-  PROCESSING
+  PROCESSING // AI is reading it
+  REVIEW_REQUIRED // AI flagged an anomaly
   APPROVED
-  POSTED
-  REJECTED
+  POSTED // Sent to GL
 }
 
 enum UtilityImportMethod {
-  MANUAL_ENTRY
-  CSV_UPLOAD
-  API_SYNC
+  CSV
+  API
   PDF_OCR
-  IMAGE_SCAN
+  MANUAL
 }
 
 enum UtilityAllocationStatus {
