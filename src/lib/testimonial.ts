@@ -1,9 +1,13 @@
-import { Testimonial } from "@/app/data/TestimonialData"; 
+import 'server-only';
+
+import { Testimonial } from "@/app/data/TestimonialData";
+import { getServerBaseUrl } from "@/lib/server-base-url";
 
 export const fetchTestimonials = async (): Promise<Testimonial[]> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/testimonials`, {
-    next: { revalidate: 60 },
+    const baseUrl = await getServerBaseUrl();
+    const response = await fetch(`${baseUrl}/api/testimonials`, {
+      next: { revalidate: 60 },
     });
 
     if (!response.ok) {
