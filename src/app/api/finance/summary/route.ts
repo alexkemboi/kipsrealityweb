@@ -21,7 +21,7 @@ export async function GET(req: Request) {
         });
 
         if (!entity) {
-            return NextResponse.json({ success: true, data: { cashInBank: 0, outstandingArrears: 0, currency: "KES" } });
+            return NextResponse.json({ success: true, data: { cashInBank: 0, outstandingArrears: 0, currency: "USD" } });
         }
 
         // 3. QUERY: CASH IN BANK (Account 1000)
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
             data: {
                 cashInBank: cashInBank.toNumber(),
                 outstandingArrears: outstandingArrears.toNumber(),
-                currency: "KES"
+                currency: "USD"
             }
         });
 

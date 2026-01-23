@@ -38,8 +38,8 @@ async function main() {
 
     console.log("\n📊 Finance Summary Results:");
     console.log("---------------------------");
-    console.log(`Cash (In Bank - 1000): ${cashCollected.toNumber()} KES`);
-    console.log(`Arrears (Outstanding - 1100): ${outstandingArrears.toNumber()} KES`);
+    console.log(`Cash (In Bank - 1000): ${cashCollected.toNumber()} USD`);
+    console.log(`Arrears (Outstanding - 1100): ${outstandingArrears.toNumber()} USD`);
     console.log("---------------------------");
 
     if (cashCollected.toNumber() === 500 && outstandingArrears.toNumber() === 1500) {

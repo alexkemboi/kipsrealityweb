@@ -914,7 +914,7 @@ export default function PaymentsPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Amount</div>
                       <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                        KES {viewingReceipt.payment.invoice.amount.toFixed(2)}
+                        $ {viewingReceipt.payment.invoice.amount.toFixed(2)}
                       </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -990,7 +990,7 @@ export default function PaymentsPage() {
                       AMOUNT PAID
                     </div>
                     <div style={{ fontSize: '48px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                      KES {viewingReceipt.payment.amount.toFixed(2)}
+                      $ {viewingReceipt.payment.amount.toFixed(2)}
                     </div>
                   </div>
 
@@ -1072,7 +1072,7 @@ export default function PaymentsPage() {
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-red-800">
                   Are you sure you want to reverse payment <span className="font-bold">#{paymentToReverse.id.slice(0, 8)}</span> of{' '}
-                  <span className="font-bold">KES {paymentToReverse.amount.toFixed(2)}</span>?
+                  <span className="font-bold">$ {paymentToReverse.amount.toFixed(2)}</span>?
                 </p>
               </div>
 
@@ -1119,7 +1119,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <div className="text-xs text-slate-500">Total Collected</div>
-                <div className="text-2xl font-bold text-slate-800">KES {totalAmount.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-slate-800">$ {totalAmount.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -1163,7 +1163,7 @@ export default function PaymentsPage() {
               </div>
               <div>
                 <div className="text-xs text-blue-100">Average Payment</div>
-                <div className="text-2xl font-bold text-white">KES {validPayments.length > 0 ? (totalAmount / validPayments.length).toFixed(2) : '0.00'}</div>              </div>
+                <div className="text-2xl font-bold text-white">$ {validPayments.length > 0 ? (totalAmount / validPayments.length).toFixed(2) : '0.00'}</div>              </div>
             </div>
           </div>
         </div>
@@ -1296,8 +1296,8 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${p.postingStatus === "POSTED"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
                           }`}>
                           {p.postingStatus || "PENDING"}
                         </span>

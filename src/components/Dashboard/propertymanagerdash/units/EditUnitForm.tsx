@@ -258,8 +258,8 @@ export default function EditUnitForm({
             type="submit"
             disabled={loading}
             className={`flex-1 py-3 px-6 rounded-xl text-white font-semibold shadow-md transition-all ${loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] hover:shadow-lg"
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] hover:shadow-lg"
               }`}
           >
             {loading ? (

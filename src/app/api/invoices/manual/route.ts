@@ -6,17 +6,17 @@ import { financeActions } from "@/lib/finance/actions";
 export async function POST(req: NextRequest) {
   const body: ManualInvoiceInput = await req.json();
 
-  if (!body.lease_id || !body.type || !body.amount || !body.dueDate) {
+  if (!body.leaseId || !body.type || !body.amount || !body.dueDate) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
   // Validate lease exists
-  const lease = await prisma.lease.findUnique({ where: { id: body.lease_id } });
+  const lease = await prisma.lease.findUnique({ where: { id: body.leaseId } });
   if (!lease) return NextResponse.json({ error: 'Lease not found' }, { status: 404 });
 
   const invoice = await prisma.invoice.create({
     data: {
-      leaseId: body.lease_id,
+      leaseId: body.leaseId,
       type: body.type as any,
       totalAmount: body.amount,
       amountPaid: 0,

@@ -72,10 +72,10 @@ export default function TenantInvoices() {
       const res = await fetch(`/api/invoices/${invoiceId}/payments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          amount: remaining, 
-          method: "CREDIT_CARD", 
-          reference 
+        body: JSON.stringify({
+          amount: remaining,
+          method: "CREDIT_CARD",
+          reference
         }),
       });
 
@@ -107,18 +107,18 @@ export default function TenantInvoices() {
   }
 
   async function viewReceipt(paymentId: string) {
-  try {
-    const res = await fetch(`/api/receipt/${paymentId}`);
-    if (!res.ok) throw new Error("Receipt not found");
-    const receipt: Receipt = await res.json();
-    setViewingReceipt(receipt); // store receipt for modal
-  } catch (err: any) {
-    console.error(err);
-    toast.error(err.message || "Failed to fetch receipt");
+    try {
+      const res = await fetch(`/api/receipt/${paymentId}`);
+      if (!res.ok) throw new Error("Receipt not found");
+      const receipt: Receipt = await res.json();
+      setViewingReceipt(receipt); // store receipt for modal
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to fetch receipt");
+    }
   }
-}
 
- function printReceipt() {
+  function printReceipt() {
     window.print();
   }
 
@@ -213,7 +213,7 @@ export default function TenantInvoices() {
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-white">Make Payment</h2>
-                  <button 
+                  <button
                     onClick={closePaymentModal}
                     className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors"
                   >
@@ -230,7 +230,7 @@ export default function TenantInvoices() {
                   const invoice = invoices.find(i => i.id === payingInvoice);
                   if (!invoice) return null;
                   const paidAmount = invoice.payment.filter(p => !p.is_reversed).reduce((sum, p) => sum + p.amount, 0);
-                  const remaining = invoice.amount - paidAmount;
+                  const remaining = invoice.amount - paidAmount;
 
                   return (
                     <>
@@ -251,7 +251,7 @@ export default function TenantInvoices() {
                         <div className="border-t border-slate-200 mt-3 pt-3">
                           <div className="flex justify-between items-center">
                             <span className="text-base font-semibold text-slate-700">Balance Remaining</span>
-                            <span className="text-2xl font-bold text-blue-600">KES {remaining.toFixed(2)}</span>
+                            <span className="text-2xl font-bold text-blue-600">$ {remaining.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -283,11 +283,11 @@ export default function TenantInvoices() {
 
                         <div>
                           <label className="block text-sm font-semibold text-slate-700 mb-2">Transaction Reference (Optional)</label>
-                          <input 
-                            type="text" 
-                            placeholder="e.g., Card Transaction ID" 
-                            value={reference} 
-                            onChange={e => setReference(e.target.value)} 
+                          <input
+                            type="text"
+                            placeholder="e.g., Card Transaction ID"
+                            value={reference}
+                            onChange={e => setReference(e.target.value)}
                             className="w-full border border-slate-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
@@ -300,14 +300,14 @@ export default function TenantInvoices() {
 
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-slate-50 rounded-b-2xl flex gap-3">
-                <Button 
+                <Button
                   onClick={closePaymentModal}
                   variant="outline"
                   className="flex-1 py-3 border-2 border-slate-300 hover:bg-slate-100"
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={() => payingInvoice && payInvoice(payingInvoice)}
                   className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold shadow-lg"
                 >
@@ -352,321 +352,321 @@ export default function TenantInvoices() {
                 </div>
               </div>
 
-                <div className="p-8" id="receipt-content">
-                  {/* Use inline styles for PDF generation - these render properly in PDFs */}
+              <div className="p-8" id="receipt-content">
+                {/* Use inline styles for PDF generation - these render properly in PDFs */}
+                <div style={{
+                  width: '100%',
+                  maxWidth: '800px',
+                  margin: '0 auto',
+                  backgroundColor: 'white',
+                  fontFamily: 'Arial, sans-serif',
+                  color: '#1a1a1a'
+                }}>
+                  {/* Header Section */}
                   <div style={{
-                    width: '100%',
-                    maxWidth: '800px',
-                    margin: '0 auto',
-                    backgroundColor: 'white',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#1a1a1a'
+                    textAlign: 'center',
+                    borderBottom: '3px solid #2563eb',
+                    paddingBottom: '20px',
+                    marginBottom: '30px'
                   }}>
-                    {/* Header Section */}
                     <div style={{
-                      textAlign: 'center',
-                      borderBottom: '3px solid #2563eb',
-                      paddingBottom: '20px',
-                      marginBottom: '30px'
+                      fontSize: '32px',
+                      fontWeight: 'bold',
+                      color: '#2563eb',
+                      marginBottom: '8px',
+                      letterSpacing: '1px'
                     }}>
-                      <div style={{
-                        fontSize: '32px',
-                        fontWeight: 'bold',
-                        color: '#2563eb',
-                        marginBottom: '8px',
-                        letterSpacing: '1px'
-                      }}>
-                        PAYMENT RECEIPT
+                      PAYMENT RECEIPT
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#64748b',
+                      marginTop: '8px'
+                    }}>
+                      Official Payment Confirmation
+                    </div>
+                  </div>
+
+                  {/* Receipt Number & Date */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '30px',
+                    padding: '15px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        Receipt No.
                       </div>
-                      <div style={{
-                        fontSize: '14px',
-                        color: '#64748b',
-                        marginTop: '8px'
-                      }}>
-                        Official Payment Confirmation
+                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
+                        {viewingReceipt.receiptNo}
                       </div>
                     </div>
-
-                    {/* Receipt Number & Date */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '30px',
-                      padding: '15px',
-                      backgroundColor: '#f8fafc',
-                      borderRadius: '8px'
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                          Receipt No.
-                        </div>
-                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#1e293b' }}>
-                          {viewingReceipt.receiptNo}
-                        </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                        Issue Date
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                          Issue Date
-                        </div>
-                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
-                          {new Date(viewingReceipt.issuedOn).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Details Grid */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '20px',
-                      marginBottom: '30px'
-                    }}>
-                      {/* Left Column - Tenant Info */}
-                      <div>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          color: '#1e293b',
-                          marginBottom: '15px',
-                          borderBottom: '2px solid #e2e8f0',
-                          paddingBottom: '8px'
-                        }}>
-                          TENANT INFORMATION
-                        </div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
-                            Name
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                            {viewingReceipt.payment.invoice.Lease.tenant.firstName} {viewingReceipt.payment.invoice.Lease.tenant.lastName}
-                          </div>
-                        </div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
-                            Email
-                          </div>
-                          <div style={{ fontSize: '14px', color: '#1e293b' }}>
-                            {viewingReceipt.payment.invoice.Lease.tenant.email}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right Column - Property Details */}
-                      <div>
-                        <div style={{
-                          fontSize: '14px',
-                          fontWeight: 'bold',
-                          color: '#1e293b',
-                          marginBottom: '15px',
-                          borderBottom: '2px solid #e2e8f0',
-                          paddingBottom: '8px'
-                        }}>
-                          PROPERTY DETAILS
-                        </div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
-                            Property
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                            {viewingReceipt.payment.invoice.Lease.property.city}
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#64748b' }}>
-                            {viewingReceipt.payment.invoice.Lease.property.address}
-                          </div>
-                        </div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
-                            Unit Number
-                          </div>
-                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
-                            {viewingReceipt.payment.invoice.Lease.unit.unitNumber}
-                            {viewingReceipt.payment.invoice.Lease.unit.unitName && 
-                              ` - ${viewingReceipt.payment.invoice.Lease.unit.unitName}`
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Invoice Details */}
-                    <div style={{
-                      backgroundColor: '#f8fafc',
-                      padding: '20px',
-                      borderRadius: '8px',
-                      marginBottom: '30px'
-                    }}>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        color: '#1e293b',
-                        marginBottom: '15px'
-                      }}>
-                        INVOICE DETAILS
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Number</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          #{viewingReceipt.payment.invoice.id.slice(0, 8)}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Type</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          {viewingReceipt.payment.invoice.type}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Due Date</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          {new Date(viewingReceipt.payment.invoice.dueDate).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Amount</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          KES {viewingReceipt.payment.invoice.amount.toFixed(2)}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Status</div>
-                        <div style={{ 
-                          fontSize: '13px', 
-                          fontWeight: 'bold',
-                          color: viewingReceipt.payment.invoice.status === 'PAID' ? '#10b981' : '#f59e0b'
-                        }}>
-                          {viewingReceipt.payment.invoice.status}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Payment Information */}
-                    <div style={{
-                      backgroundColor: '#eff6ff',
-                      border: '2px solid #2563eb',
-                      padding: '20px',
-                      borderRadius: '8px',
-                      marginBottom: '30px'
-                    }}>
-                      <div style={{
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        color: '#1e293b',
-                        marginBottom: '15px'
-                      }}>
-                        PAYMENT INFORMATION
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment ID</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          #{viewingReceipt.payment.id.slice(0, 12)}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Date</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          {viewingReceipt.payment.paidOn 
-                            ? new Date(viewingReceipt.payment.paidOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) 
-                            : 'N/A'}
-                        </div>
-
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Method</div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                          {viewingReceipt.payment.method === 'CASH' ? '💵 Cash' : '💳 Credit Card'}
-                        </div>
-                      </div>
-                      {viewingReceipt.payment.reference && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-                          <div style={{ fontSize: '13px', color: '#002b5b' }}>Reference Number</div>
-                          <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
-                            {viewingReceipt.payment.reference}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Amount Paid - Prominent */}
-                    <div style={{
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      padding: '25px',
-                      borderRadius: '12px',
-                      textAlign: 'center',
-                      marginBottom: '30px'
-                    }}>
-                      <div style={{ fontSize: '14px', marginBottom: '8px', opacity: 0.9 }}>
-                        AMOUNT PAID
-                      </div>
-                      <div style={{ fontSize: '48px', fontWeight: 'bold', letterSpacing: '1px' }}>
-                        KES {viewingReceipt.payment.amount.toFixed(2)}
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div style={{
-                      borderTop: '2px solid #e2e8f0',
-                      paddingTop: '20px',
-                      marginTop: '40px'
-                    }}>
-                      <div style={{
-                        textAlign: 'center',
-                        fontSize: '11px',
-                        color: '#64748b',
-                        lineHeight: '1.6'
-                      }}>
-                        <div style={{ marginBottom: '8px', fontWeight: '600' }}>
-                          Thank you for your payment!
-                        </div>
-                        <div style={{ marginBottom: '4px' }}>
-                          This is an official receipt for the payment received.
-                        </div>
-                        <div style={{ marginBottom: '4px' }}>
-                          Please keep this receipt for your records.
-                        </div>
-                        <div style={{ marginTop: '15px', fontSize: '10px', color: '#94a3b8' }}>
-                          Generated on {new Date().toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Verification Code */}
-                    <div style={{
-                      marginTop: '20px',
-                      textAlign: 'center',
-                      padding: '15px',
-                      backgroundColor: '#f8fafc',
-                      borderRadius: '8px'
-                    }}>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px' }}>
-                        RECEIPT VERIFICATION CODE
-                      </div>
-                      <div style={{
-                        fontFamily: 'monospace',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        color: '#1e293b',
-                        letterSpacing: '2px'
-                      }}>
-                        {viewingReceipt.receiptNo}-{viewingReceipt.payment.id.slice(0, 8).toUpperCase()}
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                        {new Date(viewingReceipt.issuedOn).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
                       </div>
                     </div>
                   </div>
-                </div>            </div>
+
+                  {/* Payment Details Grid */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '20px',
+                    marginBottom: '30px'
+                  }}>
+                    {/* Left Column - Tenant Info */}
+                    <div>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px',
+                        borderBottom: '2px solid #e2e8f0',
+                        paddingBottom: '8px'
+                      }}>
+                        TENANT INFORMATION
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                          Name
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.Lease.tenant.firstName} {viewingReceipt.payment.invoice.Lease.tenant.lastName}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                          Email
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.Lease.tenant.email}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column - Property Details */}
+                    <div>
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        color: '#1e293b',
+                        marginBottom: '15px',
+                        borderBottom: '2px solid #e2e8f0',
+                        paddingBottom: '8px'
+                      }}>
+                        PROPERTY DETAILS
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                          Property
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.Lease.property.city}
+                        </div>
+                        <div style={{ fontSize: '13px', color: '#64748b' }}>
+                          {viewingReceipt.payment.invoice.Lease.property.address}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '3px' }}>
+                          Unit Number
+                        </div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.invoice.Lease.unit.unitNumber}
+                          {viewingReceipt.payment.invoice.Lease.unit.unitName &&
+                            ` - ${viewingReceipt.payment.invoice.Lease.unit.unitName}`
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Invoice Details */}
+                  <div style={{
+                    backgroundColor: '#f8fafc',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    marginBottom: '30px'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      color: '#1e293b',
+                      marginBottom: '15px'
+                    }}>
+                      INVOICE DETAILS
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Number</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        #{viewingReceipt.payment.invoice.id.slice(0, 8)}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Type</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        {viewingReceipt.payment.invoice.type}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Due Date</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        {new Date(viewingReceipt.payment.invoice.dueDate).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Amount</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        $ {viewingReceipt.payment.invoice.amount.toFixed(2)}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Invoice Status</div>
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        color: viewingReceipt.payment.invoice.status === 'PAID' ? '#10b981' : '#f59e0b'
+                      }}>
+                        {viewingReceipt.payment.invoice.status}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Information */}
+                  <div style={{
+                    backgroundColor: '#eff6ff',
+                    border: '2px solid #2563eb',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    marginBottom: '30px'
+                  }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      color: '#1e293b',
+                      marginBottom: '15px'
+                    }}>
+                      PAYMENT INFORMATION
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment ID</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        #{viewingReceipt.payment.id.slice(0, 12)}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Date</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        {viewingReceipt.payment.paidOn
+                          ? new Date(viewingReceipt.payment.paidOn).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                          : 'N/A'}
+                      </div>
+
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <div style={{ fontSize: '13px', color: '#002b5b' }}>Payment Method</div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                        {viewingReceipt.payment.method === 'CASH' ? '💵 Cash' : '💳 Credit Card'}
+                      </div>
+                    </div>
+                    {viewingReceipt.payment.reference && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '13px', color: '#002b5b' }}>Reference Number</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b' }}>
+                          {viewingReceipt.payment.reference}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Amount Paid - Prominent */}
+                  <div style={{
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    padding: '25px',
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    marginBottom: '30px'
+                  }}>
+                    <div style={{ fontSize: '14px', marginBottom: '8px', opacity: 0.9 }}>
+                      AMOUNT PAID
+                    </div>
+                    <div style={{ fontSize: '48px', fontWeight: 'bold', letterSpacing: '1px' }}>
+                      $ {viewingReceipt.payment.amount.toFixed(2)}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{
+                    borderTop: '2px solid #e2e8f0',
+                    paddingTop: '20px',
+                    marginTop: '40px'
+                  }}>
+                    <div style={{
+                      textAlign: 'center',
+                      fontSize: '11px',
+                      color: '#64748b',
+                      lineHeight: '1.6'
+                    }}>
+                      <div style={{ marginBottom: '8px', fontWeight: '600' }}>
+                        Thank you for your payment!
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        This is an official receipt for the payment received.
+                      </div>
+                      <div style={{ marginBottom: '4px' }}>
+                        Please keep this receipt for your records.
+                      </div>
+                      <div style={{ marginTop: '15px', fontSize: '10px', color: '#94a3b8' }}>
+                        Generated on {new Date().toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Verification Code */}
+                  <div style={{
+                    marginTop: '20px',
+                    textAlign: 'center',
+                    padding: '15px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px' }}>
+                      RECEIPT VERIFICATION CODE
+                    </div>
+                    <div style={{
+                      fontFamily: 'monospace',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      color: '#1e293b',
+                      letterSpacing: '2px'
+                    }}>
+                      {viewingReceipt.receiptNo}-{viewingReceipt.payment.id.slice(0, 8).toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+              </div>            </div>
           </div>
         )}
 
@@ -688,7 +688,7 @@ export default function TenantInvoices() {
           </div>
           <div className="bg-emerald-50 rounded-xl shadow-sm border border-emerald-200 p-6 hover:shadow-md transition-shadow">
             <div className="text-sm font-medium text-emerald-800 mb-1">Outstanding</div>
-            <div className="text-2xl font-bold text-emerald-600">KES {summary.totalAmount.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-emerald-600">$ {summary.totalAmount.toFixed(2)}</div>
           </div>
         </div>
 
@@ -739,36 +739,35 @@ export default function TenantInvoices() {
                           <span className="text-sm text-slate-700">{inv.type}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-900">KES {inv.amount.toFixed(2)}</div>
+                          <div className="text-sm font-semibold text-slate-900">$ {inv.amount.toFixed(2)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-slate-700">{new Date(inv.dueDate).toLocaleDateString()}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                            inv.status === "PAID" 
-                              ? "bg-emerald-100 text-emerald-800" 
-                              : inv.status === "OVERDUE" 
-                              ? "bg-red-100 text-red-800" 
-                              : "bg-amber-100 text-amber-800"
-                          }`}>
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${inv.status === "PAID"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : inv.status === "OVERDUE"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}>
                             {inv.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-700">KES {paidAmount.toFixed(2)}</div>
+                          <div className="text-sm text-slate-700">$ {paidAmount.toFixed(2)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className={`text-sm font-semibold ${remaining > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                            KES {remaining.toFixed(2)}
+                            $ {remaining.toFixed(2)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col gap-2">
                             {/* Show Pay Now button only if invoice is pending */}
                             {inv.status === "PENDING" && (
-                              <Button 
-                                onClick={() => openPaymentModal(inv.id)} 
+                              <Button
+                                onClick={() => openPaymentModal(inv.id)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-sm"
                               >
                                 Pay Now
@@ -780,8 +779,8 @@ export default function TenantInvoices() {
                               .filter(pmt => pmt.receipt && pmt.receipt.length > 0)
                               .map(pmt =>
                                 pmt.receipt!.map(rcpt => (
-                                  <Button 
-                                    key={rcpt.id} 
+                                  <Button
+                                    key={rcpt.id}
                                     onClick={() => viewReceipt(pmt.id)}
                                     variant="outline"
                                     className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
