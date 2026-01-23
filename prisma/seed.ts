@@ -139,6 +139,23 @@ async function seedTestimonialsIfMissing() {
 }
 
 async function main() {
+    // Run this seed when setting up a new database or environment.
+    // Uses upsert to prevent duplicates - safe to run multiple times.
+    console.log('Seeding Property Types...');
+    const propertyTypes = [
+        { id: "1", name: "House", description: "Single family home" },
+        { id: "2", name: "Apartment", description: "Apartment unit" }
+    ]
+
+    for (const type of propertyTypes) {
+        await prisma.propertyType.upsert({
+            where: { id: type.id },
+            update: {},
+            create: type,
+        });
+    }
+    console.log('Property types seeded!');
+
     const backupDir = path.join(process.cwd(), 'backup');
     const hasBackupDir = fs.existsSync(backupDir);
 
