@@ -7,6 +7,7 @@ import { GroupedInvoice } from "@/app/data/FinanceData";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import CreateInvoiceModal from "@/components/Dashboard/propertymanagerdash/CreateInvoiceModal";
 
 export default function InvoicesPage() {
   const [invoiceGroups, setInvoiceGroups] = useState<GroupedInvoice[]>([]);
@@ -68,7 +69,10 @@ export default function InvoicesPage() {
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800">📄 Invoices (Grouped)</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">📄 Invoices (Grouped)</h1>
+          <CreateInvoiceModal />
+        </div>
 
         {/* Filters + Download Button */}
         <div className="flex flex-wrap gap-4 mb-6 items-center">
@@ -102,8 +106,11 @@ export default function InvoicesPage() {
 
           <button
             onClick={downloadPDF}
-            className="bg-navy-700 text-white px-5 py-2 rounded-lg shadow hover:bg-navy-800"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 font-medium border border-blue-700"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
             Download PDF
           </button>
         </div>

@@ -100,9 +100,9 @@ ${invoice.InvoiceItem.map((item: any) => `    - ${item.description}: USD ${item.
   content += `
 SUMMARY:
 ========
-Total Amount: KES ${totalAmount.toLocaleString()}
-Total Paid: KES ${totalPaid.toLocaleString()}
-Balance Due: KES ${(totalAmount - totalPaid).toLocaleString()}
+Total Amount: $ ${totalAmount.toLocaleString()}
+Total Paid: $ ${totalPaid.toLocaleString()}
+Balance Due: $ ${(totalAmount - totalPaid).toLocaleString()}
 
 Generated on: ${new Date().toLocaleDateString()}
 `;

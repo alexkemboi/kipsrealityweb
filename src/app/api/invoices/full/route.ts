@@ -3,13 +3,13 @@ import { prisma } from "@/lib/db";
 import { FullInvoiceInput } from '@/app/data/FinanceData';
 
 export async function POST(req: NextRequest) {
-  const { lease_id, type }: FullInvoiceInput = await req.json();
+  const { leaseId, type }: FullInvoiceInput = await req.json();
 
-  if (!lease_id || !type) {
-    return NextResponse.json({ error: 'lease_id and type are required' }, { status: 400 });
+  if (!leaseId || !type) {
+    return NextResponse.json({ error: 'leaseId and type are required' }, { status: 400 });
   }
 
-  const lease = await prisma.lease.findUnique({ where: { id: lease_id } });
+  const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
   if (!lease) {
     return NextResponse.json({ error: 'Active lease not found' }, { status: 404 });
   }
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   } else {
     // Utilities: sum all fixed utilities linked to lease
     const leaseUtilities = await prisma.lease_utility.findMany({
-      where: { lease_id: lease_id },
+      where: { lease_id: leaseId },
       include: { utility: true },
     });
     amount = leaseUtilities.reduce((sum, lu) => sum + (lu.utility.fixedAmount || 0), 0);
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   const invoice = await prisma.invoice.create({
     data: {
-      leaseId: lease_id,
+      leaseId: leaseId,
       type,
       totalAmount: amount,
       dueDate,
