@@ -1371,7 +1371,7 @@ export default function EnhancedTenantDashboard() {
                     <div className="bg-slate-50 p-4 rounded-lg">
                       <p className="text-sm text-slate-600 font-medium">Monthly Rent</p>
                       <p className="text-slate-900 font-semibold mt-1">
-                        KES {(selectedApplication.unit?.rentAmount || 0).toLocaleString()}
+                        $ {(selectedApplication.unit?.rentAmount || 0).toLocaleString()}
                       </p>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-lg">

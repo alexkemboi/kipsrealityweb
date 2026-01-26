@@ -181,14 +181,14 @@ export default function TenantsPage() {
                     return (
                       <tr
                         key={lease.id}
-onClick={() => router.push(`/property-manager/finance/tenants/${lease.tenant?.id || lease.id}`)}                        className="border-t hover:bg-blue-50 cursor-pointer transition"
+                        onClick={() => router.push(`/property-manager/finance/tenants/${lease.tenant?.id || lease.id}`)} className="border-t hover:bg-blue-50 cursor-pointer transition"
                       >
                         <td className="p-3">{tenantName}</td>
                         <td className="p-3">{lease.property?.name || "—"}</td>
                         <td className="p-3">{lease.unit?.unitNumber || "—"}</td>
-                        <td className="p-3">KES {Number(totalInvoiced).toLocaleString()}</td>
-                        <td className="p-3 text-emerald-700">KES {Number(totalPaid).toLocaleString()}</td>
-                        <td className={`p-3 font-semibold ${balance > 0 ? "text-red-600" : "text-emerald-700"}`}>KES {Number(balance).toLocaleString()}</td>
+                        <td className="p-3">$ {Number(totalInvoiced).toLocaleString()}</td>
+                        <td className="p-3 text-emerald-700">$ {Number(totalPaid).toLocaleString()}</td>
+                        <td className={`p-3 font-semibold ${balance > 0 ? "text-red-600" : "text-emerald-700"}`}>$ {Number(balance).toLocaleString()}</td>
                         <td className="p-3">
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${lease.leaseStatus === "SIGNED" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-700"}`}>
                             {lease.leaseStatus}

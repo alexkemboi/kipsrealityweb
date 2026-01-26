@@ -9,7 +9,7 @@ export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
 
   async function handleGenerate() {
     setLoading(true);
-    const payload: FullInvoiceInput = { lease_id: leaseId, type: "RENT" };
+    const payload: FullInvoiceInput = { leaseId: leaseId, type: "RENT" };
 
     try {
       const invoice: Invoice = await generateFullInvoice(payload);
