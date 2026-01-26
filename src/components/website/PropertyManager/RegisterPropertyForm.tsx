@@ -11,6 +11,7 @@ import { HouseDetailForm } from "@/components/website/PropertyManager/sub-proper
 import { ApartmentDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/ApartmentDetailForm";
 import { CondoDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/CondoDetailForm";
 import { LandDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/landDetailForm";
+import { TownhouseDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/TownhouseDetailForm";
 import { ContactDetailsForm } from "@/components/website/PropertyManager/sub-propertyFroms/ContactDetailsForm";
 import { Property } from "@/app/data/PropertyData";
 
@@ -190,6 +191,10 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
  
             {selectedPropertyTypeName === "land" && (
               <LandDetailForm register={register} />
+            )}
+
+            {selectedPropertyTypeName === "townhouse" && (
+              <TownhouseDetailForm register={register} />
             )}
 
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">

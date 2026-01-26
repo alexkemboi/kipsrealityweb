@@ -46,7 +46,7 @@ export interface ApartmentComplexDetail {
   bedrooms?: number;
   bathrooms?: number;
   totalUnits?: number;
-  zoning?: string;       // residential/commercial/agricultural
+  zoning?: string;
 }
 
 
@@ -97,4 +97,5 @@ export interface TownhouseDetail {
   hasBackyard?: boolean;
   backyardSize?: number;
   hoaFees?: number;
+  zoning?: string;
 }

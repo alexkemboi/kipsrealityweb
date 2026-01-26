@@ -18,7 +18,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
         <h2 className="text-xl font-bold text-gray-800">Townhouse Details</h2>
       </div>
 
-        //townhouseDetail.townhouseName
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <label htmlFor="townhouseName" className="block text-sm font-medium text-gray-700">
@@ -32,7 +31,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div>
         
-        //townhouseDetail.numberOfFloors
         <div className="space-y-2">
           <label htmlFor="numberOfFloors" className="block text-sm font-medium text-gray-700">
             Number of Floors
@@ -46,7 +44,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div>
 
-        //townhouseDetail.bedrooms
         <div className="space-y-2">
           <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">
             Bedrooms
@@ -60,7 +57,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div>
 
-        //townhouseDetail.bathrooms
         <div className="space-y-2">
           <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700">
             Bathrooms
@@ -74,7 +70,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div>
 
-        //townhouseDetail.size (sqft)
         <div className="space-y-2">
           <label htmlFor="size" className="block text-sm font-medium text-gray-700">
             Size (sqft)
@@ -88,7 +83,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div> 
 
-        //townhouseDetail.unitNumber
         <div className="space-y-2">
           <label htmlFor="unitNumber" className="block text-sm font-medium text-gray-700">
             Unit Number
@@ -102,7 +96,6 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
           />
         </div>
 
-        //townhouseDetail.endUnit (true/false)
         <div className="space-y-2">
           <label htmlFor="endUnit" className="block text-sm font-medium text-gray-700">
             Is End Unit
@@ -117,6 +110,87 @@ export function TownhouseDetailForm({ register }: TownhouseDetailsSectionProps) 
             <option value="false">No</option>
           </select>     
         </div>    
+
+        <div className="space-y-2">
+          <label htmlFor="hasGarage" className="block text-sm font-medium text-gray-700">
+            Has Garage
+          </label>
+          <select
+            id="hasGarage"
+            {...register("townhouseDetail.hasGarage")}
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>     
+        </div>    
+
+        <div className="space-y-2">
+          <label htmlFor="garageSpaces" className="block text-sm font-medium text-gray-700">
+            Garage Spaces
+          </label>
+          <input
+            id="garageSpaces"
+            type="number"
+            {...register("townhouseDetail.garageSpaces", { valueAsNumber: true })}
+            placeholder="0"
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>  
+
+        <div className="space-y-2">
+          <label htmlFor="hasBackyard" className="block text-sm font-medium text-gray-700">
+            Has Backyard
+          </label>
+          <select
+            id="hasBackyard"
+            {...register("townhouseDetail.hasBackyard")}
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>     
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="backyardSize" className="block text-sm font-medium text-gray-700">
+            Backyard Size (sqft)
+          </label>
+          <input
+            id="backyardSize"
+            type="number"
+            {...register("townhouseDetail.backyardSize", { valueAsNumber: true })}
+            placeholder="0"
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>  
+
+        <div className="space-y-2">
+          <label htmlFor="hoaFees" className="block text-sm font-medium text-gray-700">
+            HOA Fees
+          </label>
+          <input
+            id="hoaFees"
+            type="number"
+            {...register("townhouseDetail.hoaFees", { valueAsNumber: true })}
+            placeholder="0"
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="zoning" className="block text-sm font-medium text-gray-700">
+            Zoning Type
+          </label>
+          <input
+            id="zoning"
+            {...register("townhouseDetail.zoning")}
+            placeholder="e.g., Residential"
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>      
       </div>
     </div>
     )
