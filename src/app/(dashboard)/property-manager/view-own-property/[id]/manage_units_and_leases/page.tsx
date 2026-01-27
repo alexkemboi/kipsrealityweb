@@ -76,7 +76,7 @@ export default function ManageUnitsAndLeasesPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "SIGNED":
-        return "bg-green-100 text-green-800";
+        return "bg-navy-100 text-green-800";
       case "ACTIVE":
         return "bg-blue-100 text-blue-800";
       case "DRAFT":
@@ -93,7 +93,7 @@ export default function ManageUnitsAndLeasesPage() {
       return { 
         icon: <CheckCircle2 className="w-4 h-4" />, 
         text: "Fully Signed", 
-        color: "text-green-600"
+        color: "text-navy-700"
       };
     } else if (lease.landlordSignedAt || lease.tenantSignedAt) {
       return { 
@@ -180,9 +180,9 @@ export default function ManageUnitsAndLeasesPage() {
             <p className="text-sm text-gray-500 font-medium mb-1">Total Leases</p>
             <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
           </div>
-          <div className="bg-green-50 rounded-lg shadow p-5 border border-green-100">
+          <div className="bg-navy-50 rounded-lg shadow p-5 border border-green-100">
             <p className="text-sm text-gray-500 font-medium mb-1">Signed</p>
-            <p className="text-3xl font-bold text-green-600">{stats.signed}</p>
+            <p className="text-3xl font-bold text-navy-700">{stats.signed}</p>
           </div>
           <div className="bg-blue-50 rounded-lg shadow p-5 border border-blue-100">
             <p className="text-sm text-gray-500 font-medium mb-1">Active</p>

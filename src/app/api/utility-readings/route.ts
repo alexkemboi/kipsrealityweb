@@ -19,18 +19,18 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { readingDate: "desc" },
     });
 
-    const formatted = readings.map((r) => ({
+    const formatted = readings.map((r: any) => ({
       id: r.id,
-      reading_value: r.reading_value,
+      readingValue: r.reading_value,
       amount: r.amount,
       readingDate: r.readingDate,
-      lease_utility: {
-        id: r.lease_utility.id,
-        utility: r.lease_utility.utility,
-        Lease: {
+      leaseUtility: {
+        id: r.lease_utility_id, // Wait, let me check property name
+        lease_utility: r.lease_utility,
+        lease: {
           id: r.lease_utility.Lease?.id,
           tenantName: r.lease_utility.Lease?.tenant
             ? `${r.lease_utility.Lease.tenant.firstName ?? ""} ${r.lease_utility.Lease.tenant.lastName ?? ""}`.trim() || "Unknown Tenant"
@@ -55,22 +55,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lease_utility_id, reading_value, readingDate } = body;
+    const { leaseUtilityId, readingValue, readingDate } = body;
 
-    if (!lease_utility_id || reading_value == null) {
+    if (!leaseUtilityId || readingValue == null) {
       return NextResponse.json(
-        { success: false, error: "lease_utility_id and reading_value are required" },
+        { success: false, error: "leaseUtilityId and readingValue are required" },
         { status: 400 }
       );
     }
 
     const previous = await prisma.utility_reading.findFirst({
-      where: { lease_utility_id },
+      where: { lease_utility_id: leaseUtilityId },
       orderBy: { readingDate: "desc" }
     });
 
     const leaseUtility = await prisma.lease_utility.findUnique({
-      where: { id: lease_utility_id },
+      where: { id: leaseUtilityId },
       include: { utility: true }
     });
 
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     const prevVal = previous?.reading_value ?? 0;
-    const consumption = reading_value - prevVal;
+    const consumption = readingValue - prevVal;
 
     if (consumption < 0) {
       return NextResponse.json(
@@ -95,8 +95,8 @@ export async function POST(req: NextRequest) {
 
     const newReading = await prisma.utility_reading.create({
       data: {
-        lease_utility_id,
-        reading_value,
+        lease_utility_id: leaseUtilityId,
+        reading_value: readingValue,
         readingDate: readingDate ? new Date(readingDate) : new Date(),
         amount,
       },

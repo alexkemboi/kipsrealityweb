@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { FullInvoiceInput } from '@/app/data/FinanceData';
 
-
-const prisma = new PrismaClient();
-
 export async function POST(req: NextRequest) {
-  const { lease_id, type }: FullInvoiceInput = await req.json();
+  const { leaseId, type }: FullInvoiceInput = await req.json();
 
-  if (!lease_id || !type) {
-    return NextResponse.json({ error: 'lease_id and type are required' }, { status: 400 });
+  if (!leaseId || !type) {
+    return NextResponse.json({ error: 'leaseId and type are required' }, { status: 400 });
   }
 
-  const lease = await prisma.lease.findUnique({ where: { id: lease_id } });
-  if (!lease ) {
+  const lease = await prisma.lease.findUnique({ where: { id: leaseId } });
+  if (!lease) {
     return NextResponse.json({ error: 'Active lease not found' }, { status: 404 });
   }
 
@@ -22,21 +19,24 @@ export async function POST(req: NextRequest) {
   if (type === 'RENT') {
     amount = lease.rentAmount;
   } else {
-    // Utilities: sum all fixed utilities linked to unit/lease
-    const utilities = await prisma.utility.findMany({ /* filter by lease/unit */ });
-    amount = utilities.reduce((sum, u) => sum + (u.fixedAmount || 0), 0);
+    // Utilities: sum all fixed utilities linked to lease
+    const leaseUtilities = await prisma.lease_utility.findMany({
+      where: { lease_id: leaseId },
+      include: { utility: true },
+    });
+    amount = leaseUtilities.reduce((sum, lu) => sum + (lu.utility.fixedAmount || 0), 0);
   }
 
-const dueDate = calculateNextDueDate({
-  ...lease,
-  paymentDueDay: lease.paymentDueDay ?? undefined,
-});
+  const dueDate = calculateNextDueDate({
+    ...lease,
+    paymentDueDay: lease.paymentDueDay ?? undefined,
+  });
 
   const invoice = await prisma.invoice.create({
     data: {
-      lease_id,
+      leaseId: leaseId,
       type,
-      amount,
+      totalAmount: amount,
       dueDate,
       status: 'PENDING',
     },

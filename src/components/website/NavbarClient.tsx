@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Bell, ChevronDown } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/assets/Logo.png";
+import Logo from "@/assets/rf_logo.jpeg";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import { UserDropdown } from "./UserDropdown";
+import { useRouter, usePathname } from "next/navigation";
 import { MobileMenu } from "./ MobileMenu";
 
 interface NavbarItem {
@@ -27,16 +26,19 @@ interface NavbarClientProps {
 }
 
 export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
+
   const { user, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const progress = Math.min(scrollY / 100, 1);
-      setScrollProgress(progress);
+      setIsScrolled(window.scrollY > 20);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -61,88 +63,82 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
   const getUserInitials = () => {
     if (!user) return "U";
-    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase() || "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
   };
 
-  const formatRoleName = (role: string) => {
-    return role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
-  };
+  const formatRoleName = (role: string) =>
+    role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
-  const backgroundOpacity = 0.95 * scrollProgress;
-  const backdropBlur = `blur(${8 * scrollProgress}px)`;
-  const borderOpacity = 0.2 + 0.8 * scrollProgress;
-  const textColor = scrollProgress > 0.1 ? "text-neutral-700" : "text-white";
-  const hoverColor = scrollProgress > 0.1 ? "hover:text-blue-600" : "hover:text-white";
-  const logoOpacity = Math.max(0.8, scrollProgress);
-  const logoColor = scrollProgress > 0.1 ? "text-neutral-900" : "text-white";
+  // Remove Privacy Policy from the top navbar (retain link in footer)
+  const filteredNavLinks = navLinks.filter((n) => n.name !== "Privacy Policy");
+
+  // Base text color should always be dark because the landing page hero is light
+  const textColor = "text-slate-700";
+  const hoverColor = "hover:text-[#003b73]";
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-200"
-      style={{
-        background: `rgba(255, 255, 255, ${backgroundOpacity})`,
-        backdropFilter: backdropBlur,
-        borderBottom: `1px solid rgba(0, 0, 0, ${borderOpacity})`,
-        paddingTop: "0.5rem",
-        paddingBottom: "0.5rem",
-      }}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
+        ? "bg-white shadow-md py-2"
+        : "bg-white py-4 border-b border-slate-100"
+        }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between transition-all duration-200 h-14">
+      <div className="site-container">
+        <div className="flex items-center justify-between h-20 sm:h-24 transition-all duration-500">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <Image
-              src={Logo}
-              alt="RentFlow360"
-              width={40}
-              height={40}
-              className="object-contain transition-all duration-200 w-8 h-8"
-            />
-            <span
-              className={`font-bold transition-all duration-200 text-xl ${logoColor}`}
-              style={{
-                opacity: logoOpacity,
-                transform: `translateY(${(1 - scrollProgress) * -5}px)`,
-              }}
-            >
-              RentFlow360
-            </span>
+          <Link href="/" className="flex items-center group cursor-pointer">
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 transition-all duration-500 group-hover:scale-105">
+              <Image
+                src={Logo}
+                alt="RentFlow360"
+                fill
+                className="object-contain mix-blend-multiply"
+                priority
+              />
+            </div>
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden lg:flex items-center space-x-8">
-            {navLinks.map((link) => (
+          <div className="hidden md:flex items-center gap-1">
+            {filteredNavLinks.map((link) => (
               <div
                 key={link.id}
-                className="relative group"
+                className="relative group px-1"
                 onMouseEnter={() => link.children?.length && setOpenSubmenu(link.id)}
                 onMouseLeave={() => setOpenSubmenu(null)}
               >
                 {link.children && link.children.length > 0 ? (
                   <>
                     <button
-                      className={`font-medium transition-all duration-200 flex items-center gap-1 ${textColor} ${hoverColor}`}
-                      style={{
-                        opacity: scrollProgress > 0.1 ? 1 : 0.9,
-                      }}
+                      className={`font-medium text-[15px] px-3 py-2 transition-all duration-300 flex items-center gap-1 group relative
+                        ${pathname.startsWith(link.href) && link.href !== "/"
+                          ? "text-[#003b73]"
+                          : `${textColor} ${hoverColor}`
+                        }
+                        ${openSubmenu === link.id ? "text-[#003b73]" : ""}
+                      `}
                     >
                       {link.name}
-                      <ChevronDown className="h-4 w-4" />
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${openSubmenu === link.id ? 'rotate-180' : ''}`} />
+
+                      {/* Submenu Trigger Underline */}
+                      <span className={`absolute bottom-0 left-1 right-1 h-0.5 bg-[#003b73] transition-all duration-300 
+                        ${(pathname.startsWith(link.href) && link.href !== "/") || openSubmenu === link.id ? "w-[calc(100%-8px)]" : "w-0 group-hover:w-[calc(100%-8px)]"}
+                      `} />
                     </button>
 
                     {/* Submenu Dropdown */}
                     <div
-                      className={`absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 transition-all duration-200 ${
-                        openSubmenu === link.id
-                          ? "opacity-100 visible translate-y-0"
-                          : "opacity-0 invisible -translate-y-2"
-                      }`}
+                      className={`absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-2 transition-all duration-200 transform origin-top-left ${openSubmenu === link.id
+                        ? "opacity-100 visible translate-y-0 scale-100"
+                        : "opacity-0 invisible -translate-y-2 scale-95"
+                        }`}
                     >
                       {link.children.map((child) => (
                         <Link
                           key={child.id}
                           href={child.href}
-                          className="block px-4 py-2 text-sm text-neutral-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-[#003b73] hover:text-white transition-colors"
                         >
                           {child.name}
                         </Link>
@@ -152,12 +148,17 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
                 ) : (
                   <Link
                     href={link.href}
-                    className={`font-medium transition-all duration-200 ${textColor} ${hoverColor}`}
-                    style={{
-                      opacity: scrollProgress > 0.1 ? 1 : 0.9,
-                    }}
+                    className={`relative font-medium text-[15px] px-4 py-2 transition-all duration-300 block group
+                      ${pathname === link.href
+                        ? "text-[#003b73]"
+                        : `${textColor} hover:text-[#003b73]`
+                      }
+                    `}
                   >
                     {link.name}
+                    <span className={`absolute bottom-0 left-4 right-4 h-0.5 bg-[#003b73] transition-all duration-300
+                      ${pathname === link.href ? "w-[calc(100%-32px)]" : "w-0 group-hover:w-[calc(100%-32px)]"}
+                    `} />
                   </Link>
                 )}
               </div>
@@ -165,43 +166,13 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
           </div>
 
           {/* User Actions */}
-          <div className="hidden lg:flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`relative transition-all duration-200 ${
-                    scrollProgress > 0.1
-                      ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                      : "text-white hover:bg-white/20 hover:text-white"
-                  }`}
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
-                </Button>
-
-                <UserDropdown
-                  user={user}
-                  scrollProgress={scrollProgress}
-                  textColor={textColor}
-                  hoverColor={hoverColor}
-                  getDashboardPath={getDashboardPath}
-                  getUserInitials={getUserInitials}
-                  formatRoleName={formatRoleName}
-                  handleLogout={handleLogout}
-                />
-              </div>
-            ) : (
+          <div className="hidden md:flex items-center space-x-4">
+            {
               <>
                 <Link href="/login">
                   <Button
-                    variant={scrollProgress > 0.1 ? "ghost" : "outline"}
-                    className={`font-inter transition-all duration-200 ${
-                      scrollProgress > 0.1
-                        ? "text-neutral-700 hover:text-blue-600 hover:bg-blue-50"
-                        : "text-white border-white/30 hover:bg-white/20 hover:text-white"
-                    }`}
+                    variant="outline"
+                    className={`font-semibold text-[15px] px-5 h-10 rounded-full border-[#003b73] text-[#003b73] hover:bg-[#f0f7ff] hover:text-[#002b5b] transition-all duration-300`}
                   >
                     Login
                   </Button>
@@ -209,28 +180,19 @@ export const NavbarClient = ({ navLinks }: NavbarClientProps) => {
 
                 <Link href="/signup">
                   <Button
-                    className={`transition-all duration-200 ${
-                      scrollProgress > 0.1
-                        ? "bg-blue-500 text-white hover:opacity-90"
-                        : "bg-white text-neutral-900 hover:bg-white/90"
-                    }`}
+                    className="h-10 px-6 rounded-full text-[15px] font-bold text-white bg-[#003b73] hover:bg-[#002b5b] shadow-sm hover:shadow-md transition-all duration-300"
                   >
-                    Get Started
+                    Sign up
                   </Button>
                 </Link>
               </>
-            )}
+            }
           </div>
 
           {/* Mobile Menu */}
           <MobileMenu
-            user={user}
-            scrollProgress={scrollProgress}
-            getDashboardPath={getDashboardPath}
-            getUserInitials={getUserInitials}
-            formatRoleName={formatRoleName}
-            handleLogout={handleLogout}
-            navLinks={navLinks}
+            scrollProgress={isScrolled ? 1 : 0}
+            navLinks={filteredNavLinks}
           />
         </div>
       </div>

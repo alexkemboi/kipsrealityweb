@@ -11,9 +11,9 @@ export async function GET(req: Request) {
         tenant: { select: { id: true, firstName: true, lastName: true, email: true, phone: true } },
         property: { select: { id: true, name: true } },
         unit: { select: { id: true, unitNumber: true } },
-        invoice: {
+        invoices: {
           include: {
-            payment: true,
+            payments: true,
           },
         },
       },
@@ -22,9 +22,9 @@ export async function GET(req: Request) {
 
     // Compute financial summary per lease
     const result = leases.map((l) => {
-      const totalInvoiced = (l.invoice || []).reduce((s, inv) => s + (inv.amount ?? 0), 0);
-      const totalPaid = (l.invoice || []).reduce(
-        (s, inv) => s + ((inv.payment || []).reduce((ps, p) => ps + (p.amount ?? 0), 0)),
+      const totalInvoiced = (l.invoices || []).reduce((s, inv) => s + (inv.totalAmount ?? 0), 0);
+      const totalPaid = (l.invoices || []).reduce(
+        (s, inv) => s + ((inv.payments || []).reduce((ps, p) => ps + (p.amount ?? 0), 0)),
         0
       );
       const balance = totalInvoiced - totalPaid;
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
         endDate: l.endDate,
         rentAmount: l.rentAmount,
         securityDeposit: l.securityDeposit,
-        leaseStatus: l.leaseStatus,
+        status: l.leaseStatus,
         tenant: l.tenant ? {
           id: l.tenant.id,
           name: l.tenant.firstName ? `${l.tenant.firstName} ${l.tenant.lastName ?? ""}`.trim() : undefined,

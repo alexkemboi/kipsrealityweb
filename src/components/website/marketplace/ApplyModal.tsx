@@ -44,7 +44,7 @@ interface TenantFormData {
   consent: boolean;
 }
 
-// Memoized input component to prevent re-renders
+//input component to prevent re-renders
 const InputField = memo(({ name, placeholder, type = "text", value, onChange, required = false }: any) => (
   <div className="space-y-1.5">
     <label className="block text-sm font-medium text-gray-700">
@@ -65,7 +65,7 @@ const InputField = memo(({ name, placeholder, type = "text", value, onChange, re
 
 InputField.displayName = 'InputField';
 
-// Memoized select component
+// select component
 const SelectField = memo(({ name, placeholder, value, options, onChange, required = false }: any) => (
   <div className="space-y-1.5">
     <label className="block text-sm font-medium text-gray-700">
@@ -120,7 +120,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     consent: false,
   });
 
-  // Memoize the input change handler
+  // Input Change Handler
   const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, type, value } = e.target;
     const checked = (e.target as HTMLInputElement).type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
@@ -130,7 +130,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
     }));
   }, []);
 
-  // Memoize the select change handler
+  // Select Change Handler
   const handleSelectChange = useCallback((e: ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -205,8 +205,8 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-        {/* Compact Header */}
-        <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white px-6 py-5">
+        {/* Header */}
+        <div className="relative bg-blue-700 text-white px-6 py-5">
           <button
             onClick={onClose}
             className="absolute top-3 right-3 p-1.5 hover:bg-white/20 rounded-full transition-colors"
@@ -225,17 +225,17 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xl font-bold">usd {listing.price.toLocaleString()}</p>
+              <p className="text-xl font-bold">USD {listing.price.toLocaleString()}</p>
               <p className="text-xs text-blue-200">per month</p>
             </div>
           </div>
 
-          {/* Compact Progress */}
+          {/* Progress Bar */}
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <div className="relative h-1.5 bg-blue-900/40 rounded-full overflow-hidden">
                 <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 ease-out"
+                  className="absolute top-0 left-0 h-full bg-blue-400 transition-all duration-500 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -243,7 +243,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
             <span className="text-sm text-blue-100 font-medium whitespace-nowrap">Step {step}/4</span>
           </div>
 
-          {/* Compact Step Icons */}
+          {/* Step Indicators */}
           <div className="flex justify-between mt-4 gap-2">
             {stepIcons.map((item, idx) => {
               const stepNum = idx + 1;
@@ -253,13 +253,12 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
               return (
                 <div key={stepNum} className="flex items-center gap-2 flex-1">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
-                      isCompleted
-                        ? "bg-green-500"
-                        : isActive
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 ${isCompleted
+                      ? "bg-blue-500"
+                      : isActive
                         ? "bg-white text-blue-600 ring-2 ring-white/50"
                         : "bg-blue-800/50 text-blue-300"
-                    }`}
+                      }`}
                   >
                     {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                   </div>
@@ -272,7 +271,7 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
           </div>
         </div>
 
-        {/* Scrollable Form */}
+        {/* Form Content */}
         <div className="overflow-y-auto max-h-[75vh] relative">
           <div className="p-6 sm:p-8">
             {step === 1 && (
@@ -385,11 +384,10 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
             <button
               onClick={prevStep}
               disabled={step === 1}
-              className={`px-6 py-3 border-2 rounded-xl font-semibold transition-all ${
-                step === 1
-                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
-              }`}
+              className={`px-6 py-3 border-2 rounded-xl font-semibold transition-all ${step === 1
+                ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                : "border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400"
+                }`}
             >
               Back
             </button>
@@ -398,11 +396,10 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                 <button
                   onClick={nextStep}
                   disabled={!isStepValid()}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
-                    isStepValid()
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${isStepValid()
+                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   Continue →
                 </button>
@@ -410,11 +407,10 @@ export default function ApplyModal({ open, onClose, onSubmit, listing }: ApplyMo
                 <button
                   onClick={handleSubmit}
                   disabled={loading || !formData.consent}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
-                    formData.consent && !loading
-                      ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg shadow-green-500/30"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  }`}
+                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${formData.consent && !loading
+                    ? "bg-blue-700 text-white hover:bg-blue-800 shadow-lg shadow-blue-500/20"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    }`}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">

@@ -92,9 +92,9 @@ export async function POST(req: NextRequest) {
         leaseId,
         action: auditAction,
         performedBy: user.id,
-         changes: { status: updatedLease.leaseStatus } as Prisma.InputJsonValue, // ✅ cast as InputJsonValue
-  } as Prisma.LeaseAuditLogUncheckedCreateInput, 
-});
+        changes: { leaseStatus: updatedLease.leaseStatus } as Prisma.InputJsonValue, // ✅ cast as InputJsonValue
+      } as Prisma.LeaseAuditLogUncheckedCreateInput,
+    });
 
     return NextResponse.json(updatedLease);
   } catch (error: any) {

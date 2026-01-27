@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/Getcurrentuser"; 
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 
 export async function GET(req: Request) {
   try {
@@ -23,8 +23,8 @@ export async function GET(req: Request) {
       },
       orderBy: { dueDate: "asc" },
       include: {
-         payment: {
-          include: { receipt: true } 
+        payments: {
+          include: { receipts: true }
         },
         Lease: true,
       },

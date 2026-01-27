@@ -13,6 +13,7 @@ interface Invoice {
   amount: number;
   dueDate: string;
   status: "PENDING" | "PAID" | "OVERDUE";
+  postingStatus: "PENDING" | "POSTED" | "FAILED";
   createdAt: string;
   updatedAt: string;
   Lease?: {
@@ -62,13 +63,13 @@ export default function InvoiceDetailsPage() {
   const utilityTotal =
     invoice.type === "UTILITY" && invoice.utilities
       ? invoice.utilities.reduce((sum, u) => {
-          const total = u.type === "METERED" ? (u.units ?? 0) * (u.unitPrice ?? 0) : u.fixedAmount ?? u.amount ?? 0;
-          return sum + total;
-        }, 0)
+        const total = u.type === "METERED" ? (u.units ?? 0) * (u.unitPrice ?? 0) : u.fixedAmount ?? u.amount ?? 0;
+        return sum + total;
+      }, 0)
       : 0;
 
 
-      const buildingName =
+  const buildingName =
     invoice.Lease?.property?.buildingName ||
     "—";
   return (
@@ -94,7 +95,7 @@ export default function InvoiceDetailsPage() {
         {invoice.type === "RENT" && (
           <div>
             <p className="text-sm font-semibold text-gray-500 uppercase">Amount</p>
-            <p className="font-semibold text-gray-900">KES {invoice.amount.toLocaleString()}</p>
+            <p className="font-semibold text-gray-900">$ {invoice.amount.toLocaleString()}</p>
           </div>
         )}
         <div>
@@ -104,15 +105,25 @@ export default function InvoiceDetailsPage() {
         <div>
           <p className="text-sm font-semibold text-gray-500 uppercase">Status</p>
           <span
-            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${
-              invoice.status === "PAID"
-                ? "bg-green-100 text-green-700"
-                : invoice.status === "OVERDUE"
+            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${invoice.status === "PAID"
+              ? "bg-navy-100 text-navy-900"
+              : invoice.status === "OVERDUE"
                 ? "bg-red-100 text-red-700"
                 : "bg-yellow-100 text-yellow-700"
-            }`}
+              }`}
           >
             {invoice.status}
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-500 uppercase">GL Posting Status</p>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${invoice.postingStatus === "POSTED"
+              ? "bg-green-100 text-green-700"
+              : "bg-gray-100 text-gray-600"
+              }`}
+          >
+            {invoice.postingStatus || "PENDING"}
           </span>
         </div>
       </div>
@@ -160,12 +171,12 @@ export default function InvoiceDetailsPage() {
                       <td className="py-3 px-4 text-gray-800">{u.type === "METERED" ? u.units ?? 0 : "—"}</td>
                       <td className="py-3 px-4 text-gray-800">
                         {u.type === "METERED"
-                          ? `KES ${(u.unitPrice ?? 0).toLocaleString()}`
+                          ? `$ ${(u.unitPrice ?? 0).toLocaleString()}`
                           : u.fixedAmount
-                          ? `KES ${u.fixedAmount.toLocaleString()}`
-                          : "—"}
+                            ? `$ ${u.fixedAmount.toLocaleString()}`
+                            : "—"}
                       </td>
-                      <td className="py-3 px-4 text-gray-800 font-semibold">KES {total.toLocaleString()}</td>
+                      <td className="py-3 px-4 text-gray-800 font-semibold">$ {total.toLocaleString()}</td>
                     </tr>
                   );
                 })}
@@ -174,7 +185,7 @@ export default function InvoiceDetailsPage() {
           </div>
 
           <div className="flex justify-end mt-4 border-t pt-4">
-            <p className="font-bold text-gray-900">Total: KES {utilityTotal.toLocaleString()}</p>
+            <p className="font-bold text-gray-900">Total: $ {utilityTotal.toLocaleString()}</p>
           </div>
         </div>
       )}

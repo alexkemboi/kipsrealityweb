@@ -1,5 +1,8 @@
+import 'server-only';
+
 // src/lib/aboutUs.ts
 import { AboutUs } from "@/app/data/AboutUsData";
+import { getServerBaseUrl } from "@/lib/server-base-url";
 
 export interface HeroData {
   id: string;
@@ -25,7 +28,8 @@ export interface CTAData {
 
 export const fetchAboutUs = async (): Promise<AboutUs[]> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/aboutsection`, {
+    const baseUrl = await getServerBaseUrl();
+    const response = await fetch(`${baseUrl}/api/aboutsection`, {
       next: { revalidate: 60 },
     });
 
@@ -44,7 +48,8 @@ export const fetchAboutUs = async (): Promise<AboutUs[]> => {
 
 export const fetchHeroSection = async (page: string = "about"): Promise<HeroData | null> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/hero?page=${page}`, {
+    const baseUrl = await getServerBaseUrl();
+    const response = await fetch(`${baseUrl}/api/hero?page=${page}`, {
       next: { revalidate: 60 },
     });
 
@@ -64,7 +69,8 @@ export const fetchHeroSection = async (page: string = "about"): Promise<HeroData
 
 export const fetchCTA = async (page: string = "about"): Promise<CTAData | null> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/cta?page=${page}`, {
+    const baseUrl = await getServerBaseUrl();
+    const response = await fetch(`${baseUrl}/api/cta?page=${page}`, {
       next: { revalidate: 60 },
     });
 

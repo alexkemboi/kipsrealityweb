@@ -27,7 +27,7 @@ interface Lease {
 
 interface Invoice {
   id: string;
-  lease_id: string;
+  leaseId: string;
   amount: number;
   dueDate: string;
   status: "PENDING" | "PAID" | "OVERDUE";
@@ -110,7 +110,7 @@ export default function TenantInvoices({ tenantId }: TenantInvoicesProps) {
           <thead>
             <tr className="bg-gray-200">
               <th className="border px-4 py-2">Invoice No</th>
-              <th className="border px-4 py-2">Amount (KES)</th>
+              <th className="border px-4 py-2">Amount (USD)</th>
               <th className="border px-4 py-2">Due Date</th>
               <th className="border px-4 py-2">Status</th>
               <th className="border px-4 py-2">Action</th>

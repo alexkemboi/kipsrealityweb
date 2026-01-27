@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     const primaryOrgUser = user.organizationUsers[0];
-    let role = primaryOrgUser?.role || 'PROPERTY_MANAGER';
+    let role = primaryOrgUser?.role || 'TENANT';
 
     // Force system admin role for platform admin account
     if (email === process.env.ADMIN_EMAIL) {
@@ -76,10 +76,10 @@ export async function POST(request: Request) {
       organizationUserId: primaryOrgUser?.id, // <-- Added
       organization: primaryOrgUser
         ? {
-            id: primaryOrgUser.organization.id,
-            name: primaryOrgUser.organization.name,
-            slug: primaryOrgUser.organization.slug
-          }
+          id: primaryOrgUser.organization.id,
+          name: primaryOrgUser.organization.name,
+          slug: primaryOrgUser.organization.slug
+        }
         : null
     };
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         user: userResponse,
         tokens: { accessToken, refreshToken, expiresAt }
       },
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { status: 200 }
     );
 
     response.cookies.set('token', accessToken, {

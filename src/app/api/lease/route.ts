@@ -28,8 +28,7 @@ export async function POST(req: NextRequest) {
       tenantPaysTrash,
       tenantPaysInternet,
       usageType,
-      earlyTerminationFee,
-      terminationNoticeDays
+      earlyTerminationFee
     } = data;
 
     if (!applicationId || !propertyId || !unitId) {
@@ -92,7 +91,6 @@ export async function POST(req: NextRequest) {
         tenantPaysInternet,
         usageType,
         earlyTerminationFee,
-        terminationNoticeDays,
       },
       include: {
         tenant: true,
@@ -144,9 +142,9 @@ export async function GET(req: NextRequest) {
         },
          unit: true,
         application: true,
-        invoice: {
+        invoices: {
           include: {
-            payment: true,
+            payments: true,
           },
         },
       },
@@ -158,13 +156,13 @@ export async function GET(req: NextRequest) {
     // Add financial summary
     const leasesWithFinancials = leases.map((lease) => {
       const totalInvoiced =
-        lease.invoice?.reduce((sum, inv) => sum + inv.amount, 0) ?? 0;
+        lease.invoices?.reduce((sum, inv) => sum + inv.totalAmount, 0) ?? 0;
 
       const totalPaid =
-        lease.invoice?.reduce(
+        lease.invoices?.reduce(
           (sum, inv) =>
             sum +
-            inv.payment.reduce((paySum, pay) => paySum + pay.amount, 0),
+            inv.payments.reduce((paySum, pay) => paySum + pay.amount, 0),
           0
         ) ?? 0;
 

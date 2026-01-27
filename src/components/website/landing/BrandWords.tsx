@@ -8,20 +8,20 @@ import { motion } from "framer-motion";
 export function TypewriterEffectDemo() {
   const words = [
     { text: "Professional." },
-    { text: "Reliable.", className: "text-blue-400" },
-    { text: "Innovative", className: "text-cyan-400" },
+    { text: "Reliable.", className: "text-[#f0f7ff]" },
+    { text: "Innovative", className: "text-[#f0f7ff]" },
   ];
 
   return (
-    <section className="relative min-h-[15vh] flex justify-center bg-[#0b1f3a] items-center overflow-hidden">
-      
+    <section className="relative min-h-[15vh] flex justify-center bg-gray-50 items-center overflow-hidden">
+
 
       {/* --- Content --- */}
-      <div className="relative z-20 container mx-auto px-6 py-18 text-center">
+      <div className="relative z-20 container mx-auto px-6 py-8 text-center">
         {/* Section Heading */}
-        <h3 className="text-white mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.4)] pb-4">
+        <h3 className="text-gray-900 mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm pb-4">
           Our Brand{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 animate-gradient-x">
+          <span className="text-[#003b73]">
             Promise
           </span>
         </h3>
@@ -31,9 +31,9 @@ export function TypewriterEffectDemo() {
           initial={{ opacity: 0, scale: 0.9, y: 30 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
-          className="relative bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl 
+          className="relative bg-[#003b73] backdrop-blur-2xl border border-white/20 rounded-2xl 
                      p-10 md:p-14 shadow-2xl w-full max-w-6xl mx-auto flex flex-col items-center 
-                     justify-center space-y-10 hover:bg-white/15 hover:border-white/30 
+                     justify-center space-y-10 hover:border-white/40 
                       transition-all duration-500 group"
         >
           {/* Card Glow */}
@@ -52,9 +52,9 @@ export function TypewriterEffectDemo() {
             className="text-white/90 text-lg md:text-xl max-w-3xl leading-relaxed font-light tracking-wide relative z-10"
           >
             We deliver excellence through{" "}
-            <span className="text-blue-300 font-medium">professionalism</span>,{" "}
-            <span className="text-cyan-300 font-medium">reliability</span>, and{" "}
-            <span className="text-indigo-300 font-medium">innovation</span> — 
+            <span className="text-white font-medium uppercase">professionalism</span>,{" "}
+            <span className="text-white font-medium uppercase">reliability</span>, and{" "}
+            <span className="text-white font-medium uppercase">innovation</span> —
             redefining how property management feels.
           </motion.p>
 
@@ -65,11 +65,11 @@ export function TypewriterEffectDemo() {
             transition={{ delay: 1.5 }}
             className="relative z-10 mt-4"
           >
-            <div className="w-32 h-1 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full opacity-60" />
+            <div className="w-32 h-1 bg-white/40 rounded-full opacity-60" />
           </motion.div>
         </motion.div>
 
-        
+
       </div>
     </section>
   );

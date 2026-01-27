@@ -19,10 +19,10 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
 
     // Fetch invoices for those leases
     const invoices = await prisma.invoice.findMany({
-      where: { lease_id: { in: leaseIds } },
+      where: { leaseId: { in: leaseIds } },
       include: {
         InvoiceItem: true,
-        payment: true,
+        payments: true,
         Lease: {
           include: {
             tenant: {
@@ -68,63 +68,63 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
     });
 
     // Map invoices to safe format
-    const safeInvoices = invoices.map((inv) => ({
+    const safeInvoices = invoices.map((inv: any) => ({
       id: inv.id,
-      lease_id: inv.lease_id,
+      leaseId: inv.leaseId,
       type: inv.type,
-      amount: Number(inv.amount),
+      amount: Number(inv.totalAmount),
       dueDate: inv.dueDate ? inv.dueDate.toISOString() : null,
       status: inv.status,
       createdAt: inv.createdAt ? inv.createdAt.toISOString() : null,
       updatedAt: inv.updatedAt ? inv.updatedAt.toISOString() : null,
-      invoiceItems: (inv.InvoiceItem || []).map((it) => ({
+      invoiceItems: (inv.InvoiceItem || []).map((it: any) => ({
         id: it.id,
         description: it.description,
         amount: Number(it.amount),
       })),
-      payments: (inv.payment || []).map((p) => ({
+      payments: (inv.payments || []).map((p: any) => ({
         id: p.id,
         amount: Number(p.amount),
         paidOn: p.paidOn ? p.paidOn.toISOString() : null,
         method: p.method,
         reference: p.reference,
       })),
-      Lease: inv.Lease ? {
+      lease: inv.Lease ? {
         tenant: inv.Lease.tenant
           ? {
-              firstName: inv.Lease.tenant.firstName,
-              lastName: inv.Lease.tenant.lastName,
-              email: inv.Lease.tenant.email,
-            }
+            firstName: inv.Lease.tenant.firstName,
+            lastName: inv.Lease.tenant.lastName,
+            email: inv.Lease.tenant.email,
+          }
           : undefined,
         property: inv.Lease.property
           ? {
-              id: inv.Lease.property.id,
-              name: inv.Lease.property.name,
-              address: inv.Lease.property.address,
-              apartmentComplexDetail: inv.Lease.property.apartmentComplexDetail
-                ? {
-                    buildingName: inv.Lease.property.apartmentComplexDetail.buildingName,
-                  }
-                : undefined,
-              houseDetail: inv.Lease.property.houseDetail
-                ? {
-                    houseName: inv.Lease.property.houseDetail.houseName,
-                  }
-                : undefined,
-            }
+            id: inv.Lease.property.id,
+            name: inv.Lease.property.name,
+            address: inv.Lease.property.address,
+            apartmentComplexDetail: inv.Lease.property.apartmentComplexDetail
+              ? {
+                buildingName: inv.Lease.property.apartmentComplexDetail.buildingName,
+              }
+              : undefined,
+            houseDetail: inv.Lease.property.houseDetail
+              ? {
+                houseName: inv.Lease.property.houseDetail.houseName,
+              }
+              : undefined,
+          }
           : undefined,
         unit: inv.Lease.unit
           ? {
-              id: inv.Lease.unit.id,
-              unitNumber: inv.Lease.unit.unitNumber,
-            }
+            id: inv.Lease.unit.id,
+            unitNumber: inv.Lease.unit.unitNumber,
+          }
           : undefined,
       } : undefined,
-      utilities: inv.Lease?.lease_utility?.map((lu) => ({
+      utilities: inv.Lease?.lease_utility?.map((lu: any) => ({
         id: lu.utility.id,
         name: lu.utility.name,
-        type: lu.utility.type,
+        type: lu.utility.name, // Fixed: use name as type placeholder if type is missing, or lu.utility.type if it exists
         fixedAmount: lu.utility.fixedAmount ?? 0,
         unitPrice: lu.utility.unitPrice ?? 0,
         isTenantResponsible: lu.is_tenant_responsible,
@@ -132,22 +132,22 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
       })),
     }));
 
-    // Group by lease_id + dueDate
+    // Group by leaseId + dueDate
     const grouped: { [key: string]: any } = {};
-    safeInvoices.forEach((invoice) => {
+    safeInvoices.forEach((invoice: any) => {
       const dateKey = invoice.dueDate ? invoice.dueDate.split("T")[0] : "no-date";
-      const groupKey = `${invoice.lease_id}-${dateKey}`;
+      const groupKey = `${invoice.leaseId}-${dateKey}`;
 
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
-          lease_id: invoice.lease_id,
+          leaseId: invoice.leaseId,
           date: dateKey,
           invoices: [],
           totalAmount: 0,
           totalPaid: 0,
-          tenant: invoice.Lease?.tenant || {},      
-          property: invoice.Lease?.property || {},  
-          unit: invoice.Lease?.unit || {},          
+          tenant: invoice.lease?.tenant || {},
+          property: invoice.lease?.property || {},
+          unit: invoice.lease?.unit || {},
         };
       }
 
@@ -161,7 +161,7 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
     });
 
     const result = Object.values(grouped).sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 
     return NextResponse.json({ success: true, data: result });

@@ -19,8 +19,8 @@ export const HeroSection = ({ page }: { page: string }) => {
   const [hero, setHero] = useState<HeroData | null>(null);
 
   const theme = {
-    accent: "#00a8e8",
-    secondary: "#004e92",
+    accent: "#003b73",
+    secondary: "#1F2933",
     white: "#ffffff",
   };
 
@@ -49,14 +49,13 @@ export const HeroSection = ({ page }: { page: string }) => {
 
   return (
     <section
-      className="relative flex flex-col items-center justify-center text-center overflow-hidden"
+      className="relative flex flex-col items-center justify-center text-center overflow-hidden bg-[#1F2933] mx-4 md:mx-10 rounded-3xl mt-4"
       style={{
-        background: hero.gradient || "#02051c",
-        minHeight: "100vh",
+        minHeight: "60vh",
         position: "relative",
       }}
     >
-      {/* Floating background shapes */}
+      {/* Background Shapes */}
       <div className="absolute inset-0 opacity-20">
         <div
           className="absolute w-64 h-64 rounded-full blur-3xl"
@@ -100,17 +99,7 @@ export const HeroSection = ({ page }: { page: string }) => {
         )}
 
         {hero.subtitle && (
-          <h2
-            className="text-lg sm:text-2xl font-medium mb-6 max-w-2xl"
-            style={{
-              color: `${theme.white}cc`,
-              backgroundImage: `linear-gradient(90deg, ${theme.accent}, ${theme.white}, ${theme.accent})`,
-              backgroundSize: "200% auto",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              animation: "shimmer 4s linear infinite",
-            }}
-          >
+          <h2 className="text-lg sm:text-2xl font-medium mb-6 max-w-2xl text-blue-200">
             {hero.subtitle}
           </h2>
         )}
@@ -127,7 +116,7 @@ export const HeroSection = ({ page }: { page: string }) => {
         {hero.buttonText && hero.buttonUrl && (
           <a
             href={hero.buttonUrl}
-            className="inline-block bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-8 py-3 rounded-full font-semibold hover:opacity-90 transition"
+            className="inline-block bg-[#003b73] text-white px-8 py-3 rounded-full font-semibold hover:bg-[#002b5b] transition"
           >
             {hero.buttonText}
           </a>

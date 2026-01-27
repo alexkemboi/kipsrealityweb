@@ -9,7 +9,7 @@ import { fetchAppliances } from "@/lib/appliance";
 import { postProperty } from "@/lib/property-post";
 import Navbar from "@/components/website/Navbar";
 import Footer from "@/components/website/Footer";
-import { HomeIcon, Refrigerator, WashingMachine, Plug, Wind } from "lucide-react";
+import { HomeIcon } from "lucide-react";
 
 export default function PropertyForm() {
   const { register, handleSubmit, reset } = useForm();
@@ -43,11 +43,9 @@ export default function PropertyForm() {
       };
 
       const newProperty = await postProperty(payload);
-      console.log("Property created:", newProperty);
       reset();
       alert("Property created successfully!");
     } catch (error) {
-      console.error("Error creating property:", error);
       alert("Failed to create property.");
     } finally {
       setLoading(false);

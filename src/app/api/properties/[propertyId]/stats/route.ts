@@ -113,7 +113,7 @@ export async function GET(
         overduePayments = await prisma.invoice.count({
           where: {
             status: "OVERDUE",
-            lease_id: { in: leaseIds },
+            leaseId: { in: leaseIds },
           },
         });
       }

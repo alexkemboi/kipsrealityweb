@@ -20,7 +20,7 @@ export async function PATCH(
     // Fetch amendment with tenant via leaseId
     const amendment = await prisma.leaseAmendment.findUnique({
       where: { id: amendmentId },
-      include: { Lease: { include: { tenant: true } } }, // lowercase 'lease'
+      include: { Lease: { include: { tenant: true } } },
     });
 
     if (!amendment) return NextResponse.json({ error: "Amendment not found" }, { status: 404 });
@@ -133,7 +133,7 @@ export async function DELETE(
     // Audit log
     await prisma.leaseAuditLog.create({
       data: {
-        id: crypto.randomUUID(),
+        id: randomUUID(),
         leaseId,
         action: "AMENDMENT_DELETED",
         performedBy: user.id,
@@ -145,7 +145,7 @@ export async function DELETE(
     if (amendment.Lease?.tenant?.email) {
       await prisma.leaseNotification.create({
         data: {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           leaseId,
           notificationType: "CUSTOM",
           recipientEmail: amendment.Lease.tenant.email,

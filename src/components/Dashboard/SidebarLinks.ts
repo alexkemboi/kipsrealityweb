@@ -1,5 +1,5 @@
 
-import { 
+import {
   LayoutDashboard,
   FileText,
   Image,
@@ -17,7 +17,8 @@ import {
   Wrench,
   Building2,
   Calculator,
-  Zap
+  Zap,
+  FileSignature
 } from 'lucide-react'
 
 
@@ -49,7 +50,7 @@ export const routeConfig = {
         badge: null,
         description: 'Edit company story and team info'
       },
-       {
+      {
         path: '/admin/content/ContactUs-crud',
         label: 'Contact Us Page',
         icon: Users,
@@ -84,7 +85,7 @@ export const routeConfig = {
         badge: null,
         description: 'Update call-to-action content'
       },
-      
+
       {
         path: '/admin/content/testimonial-crud',
         label: 'Testimonials',
@@ -152,6 +153,9 @@ export const routeConfig = {
     main: [
       { path: '/property-manager', label: 'Dashboard Overview', icon: LayoutDashboard },
     ],
+    documents: [
+      { path: '/property-manager/dss/upload', label: 'Sign Documents', icon: FileSignature },
+    ],
     properties: [
       { path: '/property-manager/view-own-property', label: 'Manage Property', icon: Building2 },
       { path: '/property-manager/content/lease', label: 'Manage Leases', icon: Building2 },
@@ -169,9 +173,10 @@ export const routeConfig = {
       // Removed 'Assign Vendors' and 'Analytics' links as requested
     ],
     accounting: [
-       { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
+      { path: '/property-manager/finance/invoices', label: 'View Invoices', icon: BarChart3 },
       { path: '/property-manager/content/payments', label: 'Payment Records', icon: DollarSign },
-      // { path: '/property-manager/accounting/reconciliation', label: 'Reconciliation', icon: DollarSign },
+      { path: '/property-manager/finance/ledger', label: 'General Ledger', icon: Calculator },
+      { path: '/property-manager/finance/journal', label: 'Journal Entries', icon: FileText },
     ],
     utilities: [
       { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },

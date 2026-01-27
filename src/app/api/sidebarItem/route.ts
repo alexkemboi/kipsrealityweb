@@ -33,15 +33,15 @@ export async function GET(req: Request) {
     // Build WHERE clause - fetch items matching user's role OR items for ALL roles
     const whereClause = role
       ? {
-          OR: [
-            { role: role },
-            { role: UserRole.ALL },
-          ],
-          isActive: true, // Only fetch active items
-        }
+        OR: [
+          { role: role },
+          { role: UserRole.ALL },
+        ],
+        isActive: true, // Only fetch active items
+      }
       : {
-          isActive: true,
-        };
+        isActive: true,
+      };
 
     console.log("WHERE clause:", JSON.stringify(whereClause, null, 2)); // Debug log
 
@@ -57,12 +57,12 @@ export async function GET(req: Request) {
     const visibleItems = sidebarItems.filter((item) => {
       // Check if feature is active (if feature gate exists)
       const featureCheck = !item.feature || item.feature.isActive;
-      
+
       // Check if user has required plan (if plans are specified)
-      const planCheck = item.plans.length === 0 || 
-                       planIds.length === 0 || 
-                       item.plans.some((p) => planIds.includes(p.id));
-      
+      const planCheck = item.plans.length === 0 ||
+        planIds.length === 0 ||
+        item.plans.some((p: any) => planIds.includes(p.id));
+
       return featureCheck && planCheck;
     });
 

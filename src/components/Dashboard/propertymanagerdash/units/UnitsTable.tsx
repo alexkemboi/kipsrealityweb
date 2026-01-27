@@ -88,11 +88,11 @@ export default function UnitsTable({ propertyId, units, inModal = false }: Units
                   </div>
                 </td>
                 <td className="px-4 py-2">
-                  {unit.rentAmount ? `KSh ${unit.rentAmount.toLocaleString()}` : "Not set"}
+                  {unit.rentAmount ? `USD ${unit.rentAmount.toLocaleString()}` : "Not set"}
                 </td>
                 <td className="px-4 py-2">{applianceCount || "None"}</td>
                 <td className="px-4 py-2">
-                  <span className={`${unit.isOccupied ? "text-green-600" : "text-gray-500"}`}>
+                  <span className={`${unit.isOccupied ? "text-green-500" : "text-gray-500"}`}>
                     {unit.isOccupied ? "Occupied" : "Vacant"}
                   </span>
                 </td>

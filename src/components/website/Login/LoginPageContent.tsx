@@ -29,7 +29,7 @@ const LoginPageContent = () => {
     if (verified === 'true') {
       toast.success("Email verified successfully! Please log in.", {
         duration: 6000,
-        className: 'bg-green-50 text-green-800 border-green-200'
+        className: 'bg-navy-50 text-green-800 border-navy-200'
       });
       // Clean URL
       router.replace('/login');
@@ -75,12 +75,13 @@ const LoginPageContent = () => {
       if (response.ok) {
         const data = await response.json();
 
-        // ✅ FIX: Correct token property
-        login(data.user, data.tokens.accessToken);
+
+        // AuthContext.login expects the full token bundle (access/refresh/expiresAt)
+        login(data.user, data.tokens);
 
         toast.success("Login successful! Redirecting...");
 
-        // ✅ Redirect based on user role
+        // Redirect based on user role
         switch (data.user.role) {
           case "SYSTEM_ADMIN":
             router.push("/admin");
@@ -122,11 +123,11 @@ const LoginPageContent = () => {
   };
 
   return (
-    <div className="w-full p-6 lg:p-8">
-      <Logo />
+    <div className="w-full p-8 lg:p-10">
+      <Logo className="w-28 h-28" />
 
       <div className="text-center mb-8">
-        <p className="text-gray-600 text-sm lg:text-base">
+        <p className="text-neutral-500 text-sm lg:text-base">
           Sign in to manage your properties and access your dashboard
         </p>
       </div>
@@ -135,7 +136,7 @@ const LoginPageContent = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Email */}
         <div className="relative">
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400">
             <Mail className="w-5 h-5" />
           </div>
           <Input
@@ -145,13 +146,13 @@ const LoginPageContent = () => {
             value={formData.email}
             onChange={handleInputChange}
             required
-            className="h-12 pl-11 pr-4 text-base focus:border-blue-500 transition-colors"
+            className="h-12 pl-11 pr-4 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
           />
         </div>
 
         {/* Password */}
         <div className="relative">
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400">
             <Lock className="w-5 h-5" />
           </div>
           <Input
@@ -161,12 +162,12 @@ const LoginPageContent = () => {
             value={formData.password}
             onChange={handleInputChange}
             required
-            className="h-12 pl-11 pr-12 text-base focus:border-blue-500 transition-colors"
+            className="h-12 pl-11 pr-12 text-base bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:bg-white focus:border-[#003b73] focus:ring-2 focus:ring-[#003b73]/20 transition-all"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
@@ -176,7 +177,7 @@ const LoginPageContent = () => {
         <div className="text-right">
           <a
             href="/forgot-password"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
+            className="text-sm text-neutral-500 hover:text-[#003b73] font-medium hover:underline"
           >
             Forgot your password?
           </a>
@@ -192,7 +193,7 @@ const LoginPageContent = () => {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold transition-all duration-300"
+          className="w-full h-12 bg-[#003b73] hover:bg-[#002b5b] text-white text-base font-semibold transition-all duration-300"
         >
           {isLoading ? (
             <div className="flex items-center justify-center">
@@ -209,12 +210,12 @@ const LoginPageContent = () => {
       </form>
 
       {/* Sign Up Link */}
-      <div className="text-center mt-8 pt-6 border-t border-gray-200">
-        <p className="text-gray-600">
+      <div className="text-center mt-8 pt-6 border-t border-neutral-100">
+        <p className="text-neutral-500">
           Don't have an account?{" "}
           <a
             href="/signup"
-            className="text-blue-600 hover:text-blue-700 font-semibold underline underline-offset-2 transition-colors"
+            className="text-neutral-600 hover:text-[#003b73] font-semibold underline underline-offset-2 transition-colors"
           >
             Sign up here
           </a>

@@ -18,8 +18,8 @@ export async function GET(
       where: { propertyId },
       include: {
         leases: {
-          include: { 
-            tenant: true, 
+          include: {
+            tenant: true,
             application: true // Include applicant info
           },
         },

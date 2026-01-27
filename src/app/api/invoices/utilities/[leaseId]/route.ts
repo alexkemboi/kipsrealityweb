@@ -24,7 +24,7 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     const { leaseId } = await context.params;
 
     // Check if lease exists and get payment details
-    const leaseExists = await prisma.lease.findUnique({ 
+    const leaseExists = await prisma.lease.findUnique({
       where: { id: leaseId },
       select: {
         id: true,
@@ -32,7 +32,7 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
         paymentDueDay: true
       }
     });
-    
+
     if (!leaseExists) {
       return NextResponse.json(
         { success: false, error: "Lease not found for the given ID." },
@@ -88,9 +88,9 @@ export async function POST(_req: Request, context: { params: Promise<{ leaseId: 
     // Create invoice
     const invoice = await prisma.invoice.create({
       data: {
-        lease_id: leaseId,
+        leaseId: leaseId,
         type: "UTILITY",
-        amount: totalAmount,
+        totalAmount: totalAmount,
         dueDate: dueDate, // Now uses same logic as rent invoices
         InvoiceItem: {
           create: items.map((i) => ({

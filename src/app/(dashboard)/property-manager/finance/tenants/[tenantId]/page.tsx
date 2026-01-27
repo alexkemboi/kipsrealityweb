@@ -28,7 +28,7 @@ function groupInvoicesByDueDate(invoices: any[]) {
 function getStatusColor(status: string) {
   switch (status?.toLowerCase()) {
     case "paid":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-navy-100 text-green-800 border-navy-200";
     case "overdue":
       return "bg-red-100 text-red-800 border-red-200";
     case "pending":
@@ -39,7 +39,7 @@ function getStatusColor(status: string) {
 }
 
 function formatCurrency(amount: number) {
-  return `KES ${Number(amount).toLocaleString()}`;
+  return `$ ${Number(amount).toLocaleString()}`;
 }
 
 function formatDate(dateString: string) {
@@ -168,15 +168,15 @@ export default function TenantInvoicesPage() {
                     {/* Invoice Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                       {group.items.map((invoice, index) => (
-                        <Card 
-                          key={invoice.id} 
+                        <Card
+                          key={invoice.id}
                           className="hover:shadow-lg transition-all duration-200 border-2 border-gray-300 bg-white relative overflow-hidden"
                         >
                           {/* Subtle separator effect */}
                           {index > 0 && (
                             <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
                           )}
-                          
+
                           <CardHeader className="pb-3">
                             <div className="flex justify-between items-start">
                               <div>
@@ -190,8 +190,8 @@ export default function TenantInvoicesPage() {
                                   {formatCurrency(invoice.amount)}
                                 </div>
                               </div>
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={`${getStatusColor(invoice.status)} font-medium border-2`}
                               >
                                 {invoice.status}
@@ -240,7 +240,7 @@ export default function TenantInvoicesPage() {
                                   invoice.payments.map((payment: any) => (
                                     <div
                                       key={payment.id}
-                                      className="flex justify-between items-center text-sm p-2 rounded bg-green-50 border border-green-100"
+                                      className="flex justify-between items-center text-sm p-2 rounded bg-navy-50 border border-green-100"
                                     >
                                       <div className="flex-1 mr-2">
                                         <span className="text-gray-600 capitalize">{payment.method}</span>
@@ -250,7 +250,7 @@ export default function TenantInvoicesPage() {
                                           </span>
                                         )}
                                       </div>
-                                      <span className="font-medium text-green-600 whitespace-nowrap">
+                                      <span className="font-medium text-navy-700 whitespace-nowrap">
                                         {formatCurrency(payment.amount)}
                                       </span>
                                     </div>
@@ -313,15 +313,14 @@ export default function TenantInvoicesPage() {
                           </div>
                           <div className="text-center p-4 bg-white rounded-lg border-2 border-gray-200">
                             <div className="text-sm text-gray-600 mb-1">Total Paid</div>
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-2xl font-bold text-navy-700">
                               {formatCurrency(totalPaid)}
                             </div>
                           </div>
                           <div className="text-center p-4 bg-white rounded-lg border-2 border-gray-200">
                             <div className="text-sm text-gray-600 mb-1">Balance</div>
-                            <div className={`text-2xl font-bold ${
-                              balance > 0 ? "text-red-600" : "text-green-600"
-                            }`}>
+                            <div className={`text-2xl font-bold ${balance > 0 ? "text-red-600" : "text-navy-700"
+                              }`}>
                               {formatCurrency(balance)}
                             </div>
                           </div>

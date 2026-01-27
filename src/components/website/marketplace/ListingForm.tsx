@@ -51,13 +51,13 @@ export default function ListingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       console.log("Listing submitted:", formData);
       console.log("Images:", images);
-      
+
       // Reset form
       setFormData({
         title: "",
@@ -69,7 +69,7 @@ export default function ListingForm() {
         contactPhone: "",
       });
       setImages([]);
-      
+
       alert("Listing published successfully!");
     } catch (error) {
       console.error("Error submitting listing:", error);
@@ -119,6 +119,7 @@ export default function ListingForm() {
                 Description *
               </label>
               <textarea
+                id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
@@ -133,7 +134,7 @@ export default function ListingForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className=" text-sm font-semibold text-slate-700 flex items-center gap-2">
-                  Price (KES) *
+                  Price (USD) *
                 </label>
                 <Input
                   type="number"
@@ -165,7 +166,7 @@ export default function ListingForm() {
             </div>
 
             {/* Contact Information */}
-           
+
 
             {/* Category */}
             <div className="space-y-2">
@@ -173,10 +174,12 @@ export default function ListingForm() {
                 Category *
               </label>
               <select
+                id="category"
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
                 className="w-full bg-white text-slate-900 border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl transition-all duration-200 px-4 py-3 appearance-none cursor-pointer"
+                title="Select a category for your listing"
               >
                 <option value="property">Property</option>
                 <option value="furniture"> Furniture</option>
@@ -194,20 +197,18 @@ export default function ListingForm() {
                 <ImageIcon className="w-4 h-4" />
                 Images {images.length > 0 && `(${images.length}/6)`}
               </label>
-              
+
               <div
                 {...getRootProps()}
-                className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${
-                  isDragActive
-                    ? "border-blue-500 bg-blue-50/50"
-                    : "border-slate-300 bg-slate-50/50 hover:border-blue-400 hover:bg-blue-50/30"
-                }`}
+                className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 cursor-pointer ${isDragActive
+                  ? "border-blue-500 bg-blue-50/50"
+                  : "border-slate-300 bg-slate-50/50 hover:border-blue-400 hover:bg-blue-50/30"
+                  }`}
               >
                 <input {...getInputProps()} />
                 <div className="space-y-3">
-                  <Upload className={`w-12 h-12 mx-auto transition-colors ${
-                    isDragActive ? "text-blue-500" : "text-slate-400"
-                  }`} />
+                  <Upload className={`w-12 h-12 mx-auto transition-colors ${isDragActive ? "text-blue-500" : "text-slate-400"
+                    }`} />
                   <div className="space-y-1">
                     <p className="text-slate-700 font-medium">
                       {isDragActive ? "Drop images here" : "Drag & drop images here"}
@@ -232,6 +233,8 @@ export default function ListingForm() {
                       <button
                         type="button"
                         onClick={() => removeImage(index)}
+                        aria-label={`Remove image ${index + 1}`}
+                        title="Remove image"
                         className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 shadow-lg"
                       >
                         <X className="w-3 h-3" />

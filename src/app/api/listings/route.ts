@@ -1,14 +1,14 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    let {
+    const {
       organizationId,
       createdBy,
-      statusId,
       locationId,
       propertyId,
       unitId,
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       description,
       price,
     } = body;
+    let { statusId } = body;
 
     // ✅ Validate essential fields
     if (!organizationId || !createdBy || !title || !description || !price) {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
       if (!defaultStatus) {
         defaultStatus = await prisma.listingStatus.create({
-          data: { name: "Active" },
+          data: { id: crypto.randomUUID(), name: "Active" },
         });
       }
 
@@ -66,10 +67,11 @@ export async function POST(req: Request) {
       { message: "Listing created successfully", listing },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("CREATE LISTING ERROR:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to create listing", details: error.message },
+      { error: "Failed to create listing", details: errorMessage },
       { status: 500 }
     );
   }

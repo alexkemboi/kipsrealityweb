@@ -1,6 +1,6 @@
-// /app/api/invoices/[id]/payments/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { financeActions } from "@/lib/finance/actions";
 
 const VALID_PAYMENT_METHODS = ["CASH", "BANK", "CREDIT_CARD"] as const;
 
@@ -20,7 +20,8 @@ export async function POST(
       return NextResponse.json({ error: "Amount is required" }, { status: 400 });
     }
 
-    if (amount <= 0) {
+    const numericAmount = parseFloat(amount.toString());
+    if (numericAmount <= 0) {
       return NextResponse.json({ error: "Amount must be greater than 0" }, { status: 400 });
     }
 
@@ -28,15 +29,15 @@ export async function POST(
       return NextResponse.json({ error: "Payment method is required" }, { status: 400 });
     }
 
-    if (!VALID_PAYMENT_METHODS.includes(method)) {
-      return NextResponse.json({ 
-        error: `Invalid payment method: ${method}. Must be one of: ${VALID_PAYMENT_METHODS.join(", ")}` 
+    if (!VALID_PAYMENT_METHODS.includes(method as any)) {
+      return NextResponse.json({
+        error: `Invalid payment method: ${method}. Must be one of: ${VALID_PAYMENT_METHODS.join(", ")}`
       }, { status: 400 });
     }
 
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
-      include: { payment: true },
+      include: { payments: true },
     });
 
     if (!invoice) {
@@ -44,28 +45,28 @@ export async function POST(
     }
 
     // ✅ Filter out reversed payments (same as frontend)
-    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const validPayments = invoice.payments?.filter(p => !p.isReversed) || [];
     const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
-    const remaining = invoice.amount - paidAmount;
+    const remaining = invoice.totalAmount - paidAmount;
 
     console.log("Invoice details:", {
-      invoiceAmount: invoice.amount,
-      totalPayments: invoice.payment?.length,
+      invoiceAmount: invoice.totalAmount,
+      totalPayments: invoice.payments?.length,
       validPayments: validPayments.length,
       paidAmount,
       remaining,
-      newPayment: amount,
+      newPayment: numericAmount,
     });
 
-    if (amount > remaining + 0.01) {
+    if (numericAmount > remaining + 0.01) {
       return NextResponse.json(
         {
-          error: `Payment amount (${amount}) exceeds remaining balance (${remaining.toFixed(2)})`,
+          error: `Payment amount (${numericAmount}) exceeds remaining balance (${remaining.toFixed(2)})`,
           details: {
-            invoiceAmount: invoice.amount,
+            invoiceAmount: invoice.totalAmount,
             alreadyPaid: paidAmount,
             remaining: remaining,
-            attemptedPayment: amount,
+            attemptedPayment: numericAmount,
           }
         },
         { status: 400 }
@@ -74,15 +75,16 @@ export async function POST(
 
     const payment = await prisma.payment.create({
       data: {
-        invoice_id: invoiceId,
-        amount: parseFloat(amount.toString()),
-        method,
+        invoiceId: invoiceId,
+        amount: numericAmount,
+        method: method as any,
         reference: reference || null,
+        postingStatus: 'PENDING',
       },
     });
 
-    const newTotalPaid = paidAmount + amount;
-    const isPaidInFull = newTotalPaid >= invoice.amount - 0.01;
+    const newTotalPaid = paidAmount + numericAmount;
+    const isPaidInFull = newTotalPaid >= invoice.totalAmount - 0.01;
 
     let newStatus = invoice.status;
 
@@ -96,22 +98,38 @@ export async function POST(
 
     await prisma.invoice.update({
       where: { id: invoiceId },
-      data: { status: newStatus },
+      data: {
+        status: newStatus as any,
+        amountPaid: newTotalPaid,
+        balance: invoice.totalAmount - newTotalPaid,
+      },
     });
 
-    console.log("Payment successful:", { payment, newStatus, newTotalPaid });
+    // TRIGGER GL POSTING
+    try {
+      console.log(`GL: Posting Payment ${payment.id}...`);
+      await financeActions.postPaymentToGL(payment.id);
+    } catch (glError) {
+      console.error("GL Payment Posting Failed:", glError);
+    }
+
+    const refreshedPayment = await prisma.payment.findUnique({
+      where: { id: payment.id },
+    });
+
+    console.log("Payment successful:", { payment: refreshedPayment || payment, newStatus, newTotalPaid });
 
     return NextResponse.json({
       success: true,
-      payment,
+      payment: refreshedPayment || payment,
       status: newStatus,
       totalPaid: newTotalPaid,
-      remaining: invoice.amount - newTotalPaid,
+      remaining: invoice.totalAmount - newTotalPaid,
     });
   } catch (error) {
     console.error("Error processing payment:", error);
     return NextResponse.json(
-      { 
+      {
         error: "Failed to process payment",
         details: error instanceof Error ? error.message : String(error)
       },
@@ -128,7 +146,7 @@ export async function GET(
     const { id: invoiceId } = await params;
 
     const payments = await prisma.payment.findMany({
-      where: { invoice_id: invoiceId },
+      where: { invoiceId: invoiceId },
       orderBy: { paidOn: "desc" },
     });
 

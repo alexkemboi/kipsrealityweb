@@ -20,7 +20,7 @@ export default function AuthLayout({ children, mode = 'login' }: AuthLayoutProps
             {/* Background Image with Lighter Overlay */}
             <div className="absolute inset-0 z-0">
                 <Image
-                    src={heroCityscape}
+                    src="/bg-image.jpeg"
                     alt="Modern city skyline"
                     fill
                     className="object-cover"
@@ -37,7 +37,7 @@ export default function AuthLayout({ children, mode = 'login' }: AuthLayoutProps
                     <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                         {headline}
                     </h1>
-                    <div className="w-16 h-1 bg-blue-500 mb-6 rounded-full" />
+                    <div className="w-16 h-1 bg-[#003b73] mb-6 rounded-full" />
 
                     {/* Dynamic Subheading */}
                     <p className="text-lg md:text-xl text-white/80 mb-8 max-w-md leading-relaxed">
@@ -53,7 +53,7 @@ export default function AuthLayout({ children, mode = 'login' }: AuthLayoutProps
                             "24/7 support and AI-powered insights"
                         ].map((feature, index) => (
                             <div key={index} className="flex items-center space-x-3 group">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full group-hover:scale-125 transition-transform duration-300" />
+                                <div className="w-2 h-2 bg-[#003b73] rounded-full group-hover:scale-125 transition-transform duration-300" />
                                 <span className="text-white/90 group-hover:text-white transition-colors duration-300">
                                     {feature}
                                 </span>
@@ -65,7 +65,7 @@ export default function AuthLayout({ children, mode = 'login' }: AuthLayoutProps
 
             {/* Right Side - Auth Form */}
             <div className="w-full md:w-1/2 relative z-10 flex items-center justify-center p-8">
-                <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-gray-100">
+                <div className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl border border-neutral-100">
                     {children}
                 </div>
             </div>

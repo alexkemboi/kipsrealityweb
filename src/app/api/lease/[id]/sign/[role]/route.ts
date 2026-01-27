@@ -43,7 +43,7 @@ export async function POST(
       id: lease.id,
       tenantSigned: !!lease.tenantSignedAt,
       landlordSigned: !!lease.landlordSignedAt,
-      status: lease.leaseStatus
+      leaseStatus: lease.leaseStatus
     });
 
     // === TENANT SIGNING (may be unauthenticated) ===

@@ -1,81 +1,61 @@
-import Image from "next/image";
-import aboutBg from "@/assets/hero-cityscape.jpg";
+"use client";
+
 import { Users, Briefcase, ShieldCheck, HeartHandshake } from "lucide-react";
+import { motion } from "framer-motion";
+
+const expertises = [
+  {
+    title: "Property Management",
+    icon: Users,
+  },
+  {
+    title: "Financial Technology",
+    icon: Briefcase,
+  },
+  {
+    title: "Legal Compliance",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Customer Experience",
+    icon: HeartHandshake,
+  },
+];
 
 export default function OurTeam() {
   return (
-    <section
-      id="our-team"
-      className="relative min-h-[50vh] flex items-center justify-center overflow-hidden"
-    >
-     {/* --- Background --- */}
-           <div className="absolute inset-0 z-0">
-             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white"></div>
-           </div>
-
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:80px_80px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]" />
+    <section id="our-team" className="py-8 lg:py-10 bg-white overflow-hidden">
+      <div className="container mx-auto px-6">
+        <div className="text-center max-w-5xl mx-auto mb-10">
+          <h2 className="text-3xl md:text-4xl font-black text-[#003b73] mb-6 tracking-tighter">
+            Our <span className="text-black">Team</span>
+          </h2>
+          <p className="text-xl md:text-2xl text-slate-500 leading-relaxed font-bold opacity-95">
+            We're a passionate group of professionals with expertise across every corner of property management, finance, and technology.
+          </p>
         </div>
 
-        
-
-      {/* Content */}
-      <div className="relative z-20 container mx-auto px-6 py-20 lg:py-32">
-        <div className="max-w-6xl mx-auto text-center space-y-12">
-          {/* Title */}
-          <div className="space-y-4">
-            <h3 className="text-4xl md:text-5xl font-bold text-black">
-              Our{" "}
-              <span className="text-gradient-primary animate-gradient">
-                Team
-              </span>
-            </h3>
-            <p className="text-lg lg:text-2xl text-[#151b1f]/90 leading-relaxed mb-16 max-w-5xl mx-auto">
-              We’re a passionate group of professionals with expertise across
-              every corner of property management, finance, and technology.
-            </p>
-          </div>
-
-          {/* Expertise Grid */}
-          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4 mt-10">
-            {[
-              {
-                title: "Property Management",
-                icon: Users,
-                color: "from-blue-500/40 to-cyan-400/40",
-              },
-              {
-                title: "Financial Technology",
-                icon: Briefcase,
-                color: "from-emerald-500/40 to-teal-400/40",
-              },
-              {
-                title: "Legal Compliance",
-                icon: ShieldCheck,
-                color: "from-indigo-500/40 to-purple-400/40",
-              },
-              {
-                title: "Customer Experience",
-                icon: HeartHandshake,
-                color: "from-pink-500/40 to-rose-400/40",
-              },
-            ].map((member, i) => (
-              <div
-                key={i}
-                className="group bg-[#1d3d67] border-white/20 rounded-2xl p-8 backdrop-blur-lg shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-[1.03] cursor-pointer"
-              >
-                <div
-                  className={`flex items-center justify-center w-14 h-14 mx-auto mb-5 rounded-xl bg-gradient-to-r ${member.color} group-hover:opacity-90 transition-all`}
-                >
-                  <member.icon className="w-7 h-7 text-white" />
-                </div>
-                <h6 className="font-semibold text-white text-lg">
-                  {member.title}
-                </h6>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {expertises.map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-[#003b73] rounded-[24px] p-10 flex flex-col items-center text-center shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 group cursor-pointer"
+            >
+              {/* Icon Box */}
+              <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center text-[#003b73] mb-8 group-hover:scale-110 transition-transform duration-300">
+                <item.icon size={28} />
               </div>
-            ))}
-          </div>
+
+              {/* Title */}
+              <h4 className="text-xl font-bold text-white leading-tight">
+                {item.title}
+              </h4>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>

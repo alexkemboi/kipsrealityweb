@@ -56,9 +56,9 @@ export async function GET(req: Request) {
     return NextResponse.json(payments);
   } catch (error) {
     console.error("Error fetching payments:", error);
-    return NextResponse.json({ 
-      error: "Failed to fetch payments", 
-      details: error instanceof Error ? error.message : String(error) 
+    return NextResponse.json({
+      error: "Failed to fetch payments",
+      details: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }
 }

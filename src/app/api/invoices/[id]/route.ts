@@ -24,25 +24,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 address: true,
                 apartmentComplexDetail: {
                   select: {
-                    buildingName: true, 
+                    buildingName: true,
                   },
                 },
                 houseDetail: {
                   select: {
-                    houseName: true, 
+                    houseName: true,
                   },
                 },
               },
             },
-           lease_utility: {
-  include: {
-    utility: true,
-    utility_reading: {
-      orderBy: { readingDate: "desc" },
-      take: 1, 
-    },
-  },
-},
+            lease_utility: {
+              include: {
+                utility: true,
+                utility_reading: {
+                  orderBy: { readingDate: "desc" },
+                  take: 1,
+                },
+              },
+            },
 
           },
         },
@@ -63,14 +63,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       isTenantResponsible: lu.is_tenant_responsible,
     }));
 
-const buildingName =
+    const buildingName =
       invoice.Lease?.property?.apartmentComplexDetail?.buildingName ?? null;
 
     return NextResponse.json({
       ...invoice,
+      postingStatus: (invoice as any).postingStatus, // Handle runtime property
       buildingName,
       utilities,
-    });  } catch (error) {
+    });
+  } catch (error) {
     console.error("Error fetching invoice:", error);
     return NextResponse.json({ error: "Failed to fetch invoice" }, { status: 500 });
   }

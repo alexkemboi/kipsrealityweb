@@ -19,19 +19,19 @@ const integrations = [
     name: "Google Workspace",
     logo: "/google-symbol.png",
   },
-  
+
 ];
 
 export default function Integrations() {
   return (
-    <section className="relative py-20 bg-[#111d33] text-white overflow-hidden flex flex-col items-center justify-center">
-      {/* Glowing gradient orbs (background accents) */}
-      <div className="absolute top-0 left-0 w-80 h-80 bg-blue-500/20 blur-3xl rounded-full animate-float-slow"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500/20 blur-3xl rounded-full animate-float-medium"></div>
+    <section className="relative py-12 bg-[#1F2933] text-white overflow-hidden flex flex-col items-center justify-center">
+      {/* Background Accents */}
+      <div className="absolute top-0 left-0 w-80 h-80 bg-[#003b73]/10 blur-3xl rounded-full animate-float-slow"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#003b73]/10 blur-3xl rounded-full animate-float-medium"></div>
 
       <div className="relative z-10 w-[90%] max-w-6xl text-center">
         {/* Heading */}
-        <h2 className="font-poppins font-bold text-3xl md:text-4xl mb-4 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
+        <h2 className="font-poppins font-bold text-3xl md:text-4xl mb-4 text-slate-100">
           Seamlessly integrates with your favorite tools.
         </h2>
 
@@ -40,15 +40,15 @@ export default function Integrations() {
           Connect your RentFlow360 experience with trusted platforms you already use.
         </p>
 
-        {/* Grid layout */}
-        
 
-        {/* Second row with 2 cards centered */}
+
+
+        {/* Integration Cards */}
         <div className="mt-10 flex flex-wrap justify-center gap-8">
           {integrations.map((item) => (
             <div
               key={item.name}
-              className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-6 w-64 flex flex-col items-center justify-center shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300"
+              className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-6 w-64 flex flex-col items-center justify-center shadow-lg hover:shadow-[#003b73]/20 hover:scale-105 transition-all duration-300"
             >
               <div className="relative w-10 h-10 mb-4">
                 <Image

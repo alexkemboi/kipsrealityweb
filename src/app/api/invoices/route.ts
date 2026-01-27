@@ -1,9 +1,7 @@
 // src/app/api/invoices/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
-
-const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
@@ -43,17 +41,17 @@ export async function GET(req: Request) {
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
-        payment: true, // ✅ ADD THIS - Include payment data for balance calculation
+        payments: true, // ✅ ADD THIS - Include payment data for balance calculation
         Lease: {
           include: {
             tenant: {
               select: { id: true, firstName: true, lastName: true, email: true },
             },
             property: {
-              select: { 
-                id: true, 
-                name: true, 
-                address: true, 
+              select: {
+                id: true,
+                name: true,
+                address: true,
                 city: true,
                 apartmentComplexDetail: {
                   select: { buildingName: true }
@@ -76,11 +74,11 @@ export async function GET(req: Request) {
 
     // Add financial calculations and building name
     const invoicesWithFinancials = invoices.map((invoice) => {
-      const totalPaid = invoice.payment?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-      const balance = invoice.amount - totalPaid;
-      
+      const totalPaid = invoice.payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+      const balance = invoice.totalAmount - totalPaid;
+
       // Get building name from property details
-      const buildingName = 
+      const buildingName =
         invoice.Lease?.property?.apartmentComplexDetail?.buildingName ||
         invoice.Lease?.property?.houseDetail?.houseName ||
         invoice.Lease?.property?.name ||
@@ -98,29 +96,29 @@ export async function GET(req: Request) {
       };
     });
 
- const grouped = Object.values(
-  invoicesWithFinancials.reduce((acc: any, inv) => {
-    const dateKey = inv.dueDate.toISOString().split("T")[0];
-    const leaseKey = inv.Lease?.id || "unknown";
-    const groupKey = `${leaseKey}-${dateKey}`;
+    const grouped = Object.values(
+      invoicesWithFinancials.reduce((acc: any, inv) => {
+        const dateKey = inv.dueDate.toISOString().split("T")[0];
+        const leaseKey = inv.Lease?.id || "unknown";
+        const groupKey = `${leaseKey}-${dateKey}`;
 
-    if (!acc[groupKey]) {
-      acc[groupKey] = {
-        leaseId: leaseKey,
-        dueDate: inv.dueDate,
-        totalAmount: 0,
-        invoices: [],
-      };
-    }
+        if (!acc[groupKey]) {
+          acc[groupKey] = {
+            leaseId: leaseKey,
+            dueDate: inv.dueDate,
+            totalAmount: 0,
+            invoices: [],
+          };
+        }
 
-    acc[groupKey].totalAmount += inv.amount;
-    acc[groupKey].invoices.push(inv);
+        acc[groupKey].totalAmount += inv.totalAmount;
+        acc[groupKey].invoices.push(inv);
 
-    return acc;
-  }, {})
-);
+        return acc;
+      }, {})
+    );
 
-return NextResponse.json(grouped);
+    return NextResponse.json(grouped);
   } catch (err) {
     console.error("GET /api/invoices error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -101,7 +101,7 @@ export async function DELETE(
     );
   } catch (error: any) {
     console.error("Error deleting application:", error);
-    
+
     if (error.code === "P2025") {
       return NextResponse.json(
         { error: "Application not found" },

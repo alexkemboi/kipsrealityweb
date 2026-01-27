@@ -41,7 +41,7 @@ interface LeaseAmendment {
 
 export default function TenantLeasePage() {
   const params = useParams();
-  
+
   // Get leaseId directly from params - it's already resolved in client components
   const leaseId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : null;
 
@@ -58,23 +58,23 @@ export default function TenantLeasePage() {
   // Fetch all lease-related data
   useEffect(() => {
     console.log("LeaseId from params:", leaseId);
-    
+
     if (!leaseId) {
       setError("No lease ID provided");
       setLoading(false);
       return;
     }
-    
+
     fetchData();
   }, [leaseId]);
 
   async function fetchData() {
     if (!leaseId) return;
-    
+
     console.log("Fetching data for lease:", leaseId);
     setLoading(true);
     setError(null);
-    
+
     try {
       // Fetch lease data
       const leaseRes = await fetch(`/api/lease/${leaseId}`);
@@ -245,9 +245,9 @@ export default function TenantLeasePage() {
         <h3 className="text-lg font-medium flex items-center gap-2">
           <FileText className="w-5 h-5 text-blue-600" /> Upload Document
         </h3>
-        <input 
-          type="file" 
-          onChange={(e) => setFile(e.target.files?.[0] || null)} 
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
           className="block w-full border border-gray-300 rounded px-3 py-2"
         />
         <select
@@ -296,10 +296,10 @@ export default function TenantLeasePage() {
                   </p>
                   {doc.description && <p className="text-sm text-gray-600 mt-1">{doc.description}</p>}
                 </div>
-                <a 
-                  href={doc.fileUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:underline text-sm font-medium"
                 >
                   View
@@ -330,7 +330,7 @@ export default function TenantLeasePage() {
                 {amend.status === "PENDING" && (
                   <button
                     onClick={() => signAmendment(amend.id)}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm font-medium"
+                    className="px-3 py-1 bg-navy-700 text-white rounded hover:bg-navy-800 text-sm font-medium"
                   >
                     Sign Amendment
                   </button>

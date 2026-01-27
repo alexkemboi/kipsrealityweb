@@ -16,9 +16,9 @@ export async function GET(
     let receipt;
 
     if (byPayment) {
-      // Search by payment_id
+      // Search by paymentId
       receipt = await prisma.receipt.findFirst({
-        where: { payment_id: id },
+        where: { paymentId: id },
         include: {
           payment: {
             include: {

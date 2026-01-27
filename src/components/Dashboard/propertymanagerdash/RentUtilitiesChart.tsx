@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 interface Property {
   id: string;
@@ -16,14 +16,18 @@ export default function RentUtilitiesChart({ myproperties, selectedProperty }: R
   const [selectedMonth, setSelectedMonth] = useState<string>('all');
 
   // Generate last 12 months for dropdown
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    return {
-      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      label: d.toLocaleString('default', { month: 'short', year: 'numeric' })
-    };
-  });
+  const months = useMemo(() => {
+    const result = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      result.push({
+        value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleString('default', { month: 'short', year: 'numeric' })
+      });
+    }
+    return result.sort((a, b) => a.value.localeCompare(b.value));
+  }, []);
 
   useEffect(() => {
     async function fetchData() {

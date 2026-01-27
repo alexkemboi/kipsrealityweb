@@ -99,22 +99,21 @@ export default function PropertyCards() {
                   <strong>{property.occupiedUnits}</strong> / {property.totalUnits} Units Occupied
                 </p>
                 <p>
-                  <strong>KES {property.monthlyRent.toLocaleString()}</strong> Monthly Rent
+                  <strong>$ {property.monthlyRent.toLocaleString()}</strong> Monthly Rent
                 </p>
                 <p>{property.maintenanceRequests} Active Maintenance Requests</p>
-                <p className="text-green-600 font-semibold">
-                  Revenue: KES {property.revenueThisMonth.toLocaleString()}
+                <p className="text-navy-700 font-semibold">
+                  Revenue: $ {property.revenueThisMonth.toLocaleString()}
                 </p>
               </div>
 
               <p
-                className={`text-xs mt-3 font-medium ${
-                  property.availabilityStatus === "Fully Occupied"
-                    ? "text-green-600"
+                className={`text-xs mt-3 font-medium ${property.availabilityStatus === "Fully Occupied"
+                    ? "text-navy-700"
                     : property.availabilityStatus === "Partially Occupied"
-                    ? "text-yellow-600"
-                    : "text-red-600"
-                }`}
+                      ? "text-yellow-600"
+                      : "text-red-600"
+                  }`}
               >
                 {property.availabilityStatus}
               </p>

@@ -21,8 +21,7 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
       return NextResponse.json({ error: "Missing file or documentType" }, { status: 400 });
     }
 
-    const documentType =
-      LeaseDocument_documentType[documentTypeStr as keyof typeof LeaseDocument_documentType];
+    const documentType = LeaseDocument_documentType[documentTypeStr as keyof typeof LeaseDocument_documentType];
 
     const lease = await prisma.lease.findUnique({
       where: { id: leaseId },

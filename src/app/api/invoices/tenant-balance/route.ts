@@ -6,9 +6,9 @@ export async function getTenantBalance(leaseId: string) {
     const leaseWithInvoices = await prisma.lease.findUnique({
       where: { id: leaseId },
       include: {
-        invoice: {
+        invoices: {
           include: {
-            payment: true,
+            payments: true,
           },
         },
       },
@@ -19,13 +19,13 @@ export async function getTenantBalance(leaseId: string) {
     }
 
     // Calculate totals
-    const totalInvoiced = leaseWithInvoices.invoice.reduce(
-      (sum, inv) => sum + inv.amount,
+    const totalInvoiced = leaseWithInvoices.invoices.reduce(
+      (sum, inv) => sum + inv.totalAmount,
       0
     );
 
-    const totalPaid = leaseWithInvoices.invoice.reduce(
-      (sum, inv) => sum + inv.payment.reduce((pSum, p) => pSum + p.amount, 0),
+    const totalPaid = leaseWithInvoices.invoices.reduce(
+      (sum, inv) => sum + inv.payments.reduce((pSum, p) => pSum + p.amount, 0),
       0
     );
 

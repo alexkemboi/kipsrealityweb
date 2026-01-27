@@ -44,7 +44,7 @@ export default function EditUnitForm({
       floorNumber: existingUnit?.floorNumber || null,
       rentAmount: existingUnit?.rentAmount || null,
       unitName: existingUnit?.unitName || "",
-      currency: existingUnit?.currency || "KES",
+      currency: existingUnit?.currency || "USD",
 
       isOccupied: existingUnit?.isOccupied || false,
       // appliances will be handled separately
@@ -137,7 +137,7 @@ export default function EditUnitForm({
             <input
               type="number"
               min="0"
-              {...register("bedrooms", { 
+              {...register("bedrooms", {
                 required: "Number of bedrooms is required",
                 min: { value: 0, message: "Bedrooms cannot be negative" }
               })}
@@ -158,7 +158,7 @@ export default function EditUnitForm({
               type="number"
               min="0"
               step="1"
-              {...register("bathrooms", { 
+              {...register("bathrooms", {
                 required: "Number of bathrooms is required",
                 min: { value: 0, message: "Bathrooms cannot be negative" }
               })}
@@ -185,50 +185,50 @@ export default function EditUnitForm({
           </div>
 
           {/* Rent Amount */}
-        <div>
-  <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-    Rent Amount
-  </label>
-  <div className="flex gap-2">
-    <select
-      {...register("currency")}
-      className="w-1/3 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
-      defaultValue="KES"
-    >
-      <option value="KES">KES</option>
-      <option value="USD">USD</option>
-      <option value="EUR">EUR</option>
-      <option value="GBP">GBP</option>
-    </select>
+          <div>
+            <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+              Rent Amount
+            </label>
+            <div className="flex gap-2">
+              <select
+                {...register("currency")}
+                className="w-1/3 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                defaultValue="USD"
+              >
+                <option value="USD">USD</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+              </select>
 
-    
-    <input
-      type="number"
-      min="0"
-      step="0.01"
-      {...register("rentAmount", { valueAsNumber: true })}
-      placeholder="e.g. 25000"
-      className="w-2/3 px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-</div>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                {...register("rentAmount", { valueAsNumber: true })}
+                placeholder="e.g. 25000"
+                className="w-2/3 px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
 
           {/* Appliances */}
-<div className="md:col-span-2">
-  <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
-    Appliances
-  </label>
-  <input
-    type="text"
-    value={applianceInput}
-    onChange={(e) => setApplianceInput(e.target.value)}
-    placeholder="e.g. Fridge, Microwave, Washing Machine"
-    className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
-  />
-  <p className="text-xs text-gray-500 mt-1">
-    Separate multiple appliances with commas (,)
-  </p>
-</div>
+          <div className="md:col-span-2">
+            <label className="block text-gray-700 mb-2 font-semibold text-sm uppercase tracking-wide">
+              Appliances
+            </label>
+            <input
+              type="text"
+              value={applianceInput}
+              onChange={(e) => setApplianceInput(e.target.value)}
+              placeholder="e.g. Fridge, Microwave, Washing Machine"
+              className="w-full px-4 py-3 rounded-xl border placeholder:text-gray-400 border-gray-300 bg-white focus:ring-2 focus:ring-blue-500 shadow-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Separate multiple appliances with commas (,)
+            </p>
+          </div>
 
 
 
@@ -236,9 +236,9 @@ export default function EditUnitForm({
 
         {/* Occupied */}
         <div className="flex items-center gap-3 mt-4">
-          <input 
-            type="checkbox" 
-            {...register("isOccupied")} 
+          <input
+            type="checkbox"
+            {...register("isOccupied")}
             className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <span className="text-gray-700 font-medium">Currently Occupied</span>
@@ -257,11 +257,10 @@ export default function EditUnitForm({
           <button
             type="submit"
             disabled={loading}
-            className={`flex-1 py-3 px-6 rounded-xl text-white font-semibold shadow-md transition-all ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] hover:shadow-lg"
-            }`}
+            className={`flex-1 py-3 px-6 rounded-xl text-white font-semibold shadow-md transition-all ${loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:scale-[1.02] hover:shadow-lg"
+              }`}
           >
             {loading ? (
               <span className="flex items-center justify-center">

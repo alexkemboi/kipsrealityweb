@@ -20,7 +20,7 @@ interface ServiceModalProps {
   categories: Category[];
   onClose: () => void;
   onSave: () => void;
-  onChange: (field: keyof ServiceFormData, value: string | number) => void;
+  onChange: (field: keyof ServiceFormData, value: string | number | string[]) => void;
 }
 
 export default function ServiceModal({
@@ -32,16 +32,16 @@ export default function ServiceModal({
   onChange,
 }: ServiceModalProps) {
   return (
-    <Dialog 
-      open={isOpen} 
-      onClose={onClose} 
-      maxWidth="md" 
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      maxWidth="md"
       fullWidth
       PaperProps={{ sx: { borderRadius: 2 } }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <DialogTitle sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         pb: 2,
         fontWeight: 700,
@@ -51,7 +51,7 @@ export default function ServiceModal({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
+
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
           <TextField
@@ -73,16 +73,16 @@ export default function ServiceModal({
             rows={3}
           />
 
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' }, 
-            gap: 2 
+          <Box sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' },
+            gap: 2
           }}>
             <Box>
               <TextField
                 label="Features"
                 placeholder="Enter features (comma separated)"
-                value={serviceForm.features}
+                value={Array.isArray(serviceForm.features) ? serviceForm.features.join(", ") : serviceForm.features}
                 onChange={(e) => onChange('features', e.target.value)}
                 fullWidth
               />
@@ -112,8 +112,8 @@ export default function ServiceModal({
           <TextField
             select
             label="Category"
-            value={serviceForm.category_id || ''}
-            onChange={(e) => onChange('category_id', Number(e.target.value))}
+            value={serviceForm.categoryId || ''}
+            onChange={(e) => onChange('categoryId', Number(e.target.value))}
             fullWidth
             required
           >

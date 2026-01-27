@@ -102,7 +102,7 @@ export default function SectionForm({ section, policyId, onSaved, onClose }: Pro
         </button>
         <button
           onClick={handleSubmit}
-          className="px-4 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+          className="px-4 py-1 bg-green-500 text-white rounded hover:bg-green-600"
         >
           Save
         </button>

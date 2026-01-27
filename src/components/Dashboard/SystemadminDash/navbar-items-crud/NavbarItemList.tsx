@@ -93,7 +93,7 @@ export default function NavbarItemList({
             {!isChild && (
               <button
                 onClick={() => onAddSubmenu(item.id)}
-                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition"
+                className="p-1.5 bg-green-500 text-white rounded-md hover:bg-green-500 transition"
                 title="Add Submenu"
               >
                 <Plus className="w-4 h-4" />
@@ -150,7 +150,7 @@ export default function NavbarItemList({
               {!isChild && (
                 <button
                   onClick={() => onAddSubmenu(item.id)}
-                  className="p-1.5 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                  className="p-1.5 bg-green-500 text-white rounded text-sm hover:bg-green-500"
                   title="Add Submenu"
                 >
                   <Plus className="w-4 h-4" />

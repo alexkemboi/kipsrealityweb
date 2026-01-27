@@ -38,7 +38,7 @@ export default function ServiceCrud({ initialCategories }: Props) {
 
   const [serviceForm, setServiceForm] = useState<ServiceFormData>({
     id: 0,
-    category_id: 0,
+    categoryId: 0,
     name: "",
     description: "",
     features: [],
@@ -120,13 +120,13 @@ export default function ServiceCrud({ initialCategories }: Props) {
     if (service) {
       setServiceForm({
         ...service,
-        category_id: category.id,
+        categoryId: category.id,
         features: service.features || [],
       });
     } else {
       setServiceForm({
         id: 0,
-        category_id: category.id,
+        categoryId: category.id,
         name: "",
         description: "",
         features: [],
@@ -152,7 +152,7 @@ export default function ServiceCrud({ initialCategories }: Props) {
 
     const featuresArray =
       typeof serviceForm.features === "string"
-        ? serviceForm.features.split(",").map((f) => f.trim()).filter(Boolean)
+        ? (serviceForm.features as string).split(",").map((f) => f.trim()).filter(Boolean)
         : serviceForm.features;
 
     const body = { ...serviceForm, features: featuresArray };

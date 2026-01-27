@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db"; 
+import { prisma } from "@/lib/db";
 
 // GET all services or by category_id
 export async function GET(req: NextRequest) {
@@ -17,11 +17,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { category_id, name, description, features, impact, icon } = body;
+    const { categoryId, name, description, features, impact, icon } = body;
 
     const service = await prisma.services.create({
       data: {
-        category_id,
+        category_id: Number(categoryId),
         name,
         description,
         features,

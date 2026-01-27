@@ -1,4 +1,5 @@
 import { prisma } from "./db";
+import crypto from "crypto";
 
 export async function reversePayment(paymentId: string, userId: string, reason: string) {
   return await prisma.$transaction(async (tx) => {
@@ -9,14 +10,14 @@ export async function reversePayment(paymentId: string, userId: string, reason: 
 
     if (!payment) throw new Error("Payment not found");
     if (payment.method !== "CASH") throw new Error("Only cash payments can be reversed.");
-    if (payment.is_reversed) throw new Error("Payment already reversed.");
+    if (payment.isReversed) throw new Error("Payment already reversed.");
 
     // 1) Create reversal audit record
-    await tx.payment_reversal.create({
+    await tx.paymentReversal.create({
       data: {
-        id: crypto.randomUUID(),             // if needed for your UUID setup
+        id: crypto.randomUUID(), // PaymentReversal has no default @id in schema
         payment_id: payment.id,
-        invoice_id: payment.invoice_id,
+        invoice_id: payment.invoiceId,
         amount: payment.amount,
         reason,
         reversed_by: userId,
@@ -27,10 +28,10 @@ export async function reversePayment(paymentId: string, userId: string, reason: 
     await tx.payment.update({
       where: { id: paymentId },
       data: {
-        is_reversed: true,
-        reversed_at: new Date(),
-        reversal_reason: reason,
-        reversed_by: userId,
+        isReversed: true,
+        reversedAt: new Date(),
+        reversalReason: reason,
+        reversedBy: userId,
       }
     });
 

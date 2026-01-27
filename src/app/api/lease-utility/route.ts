@@ -33,18 +33,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lease_id, utility_id, is_tenant_responsible = true } = body;
+    const { leaseId, utilityId, isTenantResponsible = true } = body;
 
-    if (!lease_id || !utility_id) {
+    if (!leaseId || !utilityId) {
       return NextResponse.json(
-        { success: false, error: "lease_id and utility_id are required" },
+        { success: false, error: "leaseId and utilityId are required" },
         { status: 400 }
       );
     }
 
     // Check if the assignment already exists
     const existing = await prisma.lease_utility.findFirst({
-      where: { lease_id, utility_id },
+      where: { lease_id: leaseId, utility_id: utilityId },
     });
     if (existing) {
       return NextResponse.json(
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     const assignment = await prisma.lease_utility.create({
-      data: { lease_id, utility_id, is_tenant_responsible },
+      data: { lease_id: leaseId, utility_id: utilityId, is_tenant_responsible: isTenantResponsible },
       include: {
         Lease: {
           include: {

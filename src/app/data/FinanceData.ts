@@ -44,7 +44,7 @@ export interface Invoice {
       name?: string;
       address?: string;
     };
-     lease_utility?: {
+    lease_utility?: {
       utility: {
         id: string;
         name: string;
@@ -64,7 +64,7 @@ export interface Invoice {
     isTenantResponsible?: boolean;
   }[];
 };
- 
+
 
 
 export interface Lease {
@@ -77,14 +77,14 @@ export interface Lease {
 }
 
 export interface ManualInvoiceInput {
-  lease_id: string;
+  leaseId: string;
   type: 'RENT' | 'UTILITY';
   amount: number;
   dueDate: string;
 }
 
 export interface FullInvoiceInput {
-  lease_id: string;
+  leaseId: string;
   type: 'RENT' | 'UTILITY';
 }
 
@@ -100,7 +100,7 @@ export interface ManualUtilityItem {
   type: "FIXED" | "METERED";
   units: number; // number of units (only relevant for metered)
   amount: number; // cost per unit or fixed amount
-   fixedAmount?: number;
+  fixedAmount?: number;
   unitPrice?: number;
 }
 

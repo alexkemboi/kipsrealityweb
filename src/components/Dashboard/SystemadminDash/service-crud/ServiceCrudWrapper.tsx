@@ -14,10 +14,10 @@ export default async function ServiceCrudWrapper() {
     name: cat.name,
     tagline: cat.tagline,
     color: cat.color,
-    services: cat.services.map((service) => ({
+    services: cat.services.map((service: any) => ({
       id: service.id,
       name: service.name,
-      category_id: service.category_id,
+      categoryId: service.category_id,
       description: service.description,
       impact: service.impact,
       icon: service.icon,

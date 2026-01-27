@@ -5,11 +5,13 @@
 
 /* globals.css */
 html {
-  background: #0f172a; /* Or your dark background color */
+  background: #0f172a;
+  /* Or your dark background color */
 }
 
 body {
-  background: white; /* Your main content background */
+  background: white;
+  /* Your main content background */
   min-height: 100vh;
 }
 
@@ -22,7 +24,10 @@ body {
 
 @layer base {
   :root {
-    /* existing shadcn variables */
+    --font-heading: var(--font-plus-jakarta), sans-serif;
+    --font-sans: var(--font-inter), sans-serif;
+
+
     --radius: 0.65rem;
     --background: oklch(1 0 0);
     --foreground: oklch(0.141 0.005 285.823);
@@ -30,146 +35,134 @@ body {
     --card-foreground: oklch(0.141 0.005 285.823);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.623 0.214 259.815);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.967 0.001 286.375);
-    --muted-foreground: oklch(0.552 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
+
+    /* Primary is now Deep Navy Blue (#003b73) */
+    --primary: oklch(0.35 0.12 255);
+    --primary-foreground: oklch(1 0 0);
+
+    --secondary: oklch(0.96 0.02 255);
+    --secondary-foreground: oklch(0.30 0.10 255);
+
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.55 0 0);
+
+    --accent: oklch(0.96 0.02 255);
+    --accent-foreground: oklch(0.30 0.10 255);
+
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
-    --ring: oklch(0.623 0.214 259.815);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
+    --border: oklch(0.92 0 0);
+    --input: oklch(0.92 0 0);
+    --ring: oklch(0.35 0.12 255);
+
+    --chart-1: oklch(0.35 0.12 255);
+    /* Primary Navy */
+    --chart-2: oklch(0.45 0.10 255);
+    --chart-3: oklch(0.25 0.08 255);
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.141 0.005 285.823);
-    --sidebar-primary: oklch(0.623 0.214 259.815);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-    --sidebar-accent: oklch(0.967 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-    --sidebar-border: oklch(0.92 0.004 286.32);
-    --sidebar-ring: oklch(0.623 0.214 259.815);
 
-    /* TEAM COLOR SYSTEM */
-    --color-blue-50: oklch(0.97 0.014 254.604);
-    --color-blue-100: oklch(0.93 0.032 255.585);
-    --color-blue-200: oklch(0.85 0.065 254.624);
-    --color-blue-300: oklch(0.74 0.115 254.128);
-    --color-blue-400: oklch(0.65 0.160 254.624);
-    --color-blue-500: oklch(0.623 0.214 259.815);
-    --color-blue-600: oklch(0.55 0.245 262.881);
-    --color-blue-700: oklch(0.45 0.268 264.376);
-    --color-blue-800: oklch(0.35 0.279 265.522);
-    --color-blue-900: oklch(0.25 0.279 265.522);
+    /* navy COLOR SYSTEM - Primary Brand Colors */
+    --color-navy-50: oklch(0.97 0.01 255);
+    --color-navy-100: oklch(0.94 0.03 255);
+    --color-navy-200: oklch(0.88 0.06 255);
+    --color-navy-300: oklch(0.75 0.09 255);
+    --color-navy-400: oklch(0.60 0.12 255);
+    --color-navy-500: oklch(0.45 0.14 255);
+    /* Base Navy */
+    --color-navy-600: oklch(0.40 0.13 255);
+    /* Lighter Navy */
+    --color-navy-700: oklch(0.35 0.12 255);
+    /* Main Navy (#003b73) */
+    --color-navy-800: oklch(0.28 0.10 255);
+    /* Hover Navy (#002b5b) */
+    --color-navy-900: oklch(0.22 0.08 255);
 
-    --color-cyan-50: oklch(0.98 0.008 200.873);
-    --color-cyan-100: oklch(0.95 0.018 200.873);
-    --color-cyan-200: oklch(0.85 0.045 200.873);
-    --color-cyan-300: oklch(0.75 0.085 200.873);
-    --color-cyan-400: oklch(0.65 0.125 200.873);
-    --color-cyan-500: oklch(0.55 0.160 200.873);
-    --color-cyan-600: oklch(0.48 0.190 200.873);
-    --color-cyan-700: oklch(0.40 0.210 200.873);
-    --color-cyan-800: oklch(0.32 0.220 200.873);
-    --color-cyan-900: oklch(0.25 0.220 200.873);
-
-    --color-neutral-50: oklch(0.985 0 0);
-    --color-neutral-100: oklch(0.967 0.001 286.375);
-    --color-neutral-200: oklch(0.92 0.004 286.32);
-    --color-neutral-300: oklch(0.87 0.006 286.286);
-    --color-neutral-400: oklch(0.70 0.015 286.067);
-    --color-neutral-500: oklch(0.55 0.020 285.938);
-    --color-neutral-600: oklch(0.45 0.022 285.885);
-    --color-neutral-700: oklch(0.37 0.022 285.885);
-    --color-neutral-800: oklch(0.27 0.020 286.033);
-    --color-neutral-900: oklch(0.21 0.006 285.885);
+    --color-neutral-50: oklch(0.99 0 0);
+    --color-neutral-100: oklch(0.97 0 0);
+    --color-neutral-200: oklch(0.92 0 0);
+    --color-neutral-300: oklch(0.87 0 0);
+    --color-neutral-400: oklch(0.70 0 0);
+    --color-neutral-500: oklch(0.55 0 0);
+    --color-neutral-600: oklch(0.45 0 0);
+    --color-neutral-700: oklch(0.37 0 0);
+    --color-neutral-800: oklch(0.27 0 0);
+    --color-neutral-900: oklch(0.21 0 0);
 
     --color-success: oklch(0.696 0.17 162.48);
     --color-warning: oklch(0.769 0.188 70.08);
     --color-error: oklch(0.704 0.191 22.216);
     --color-info: oklch(0.646 0.222 41.116);
 
-    /* Standardized Gradients */
-    --gradient-primary: linear-gradient(135deg, var(--color-blue-500), var(--color-cyan-500));
-    --gradient-subtle: linear-gradient(135deg, var(--color-blue-100), var(--color-cyan-100));
-    --gradient-hero-overlay: linear-gradient(135deg, oklch(0.21 0.006 285.885 / 0.9), oklch(0.27 0.020 286.033 / 0.8));
+    /* Standardized Gradients - Updated to Navy */
+    --gradient-primary: linear-gradient(135deg, var(--color-navy-700), var(--color-navy-800));
+    --gradient-subtle: linear-gradient(135deg, var(--color-navy-50), var(--color-navy-100));
+    --gradient-hero-overlay: linear-gradient(135deg, oklch(1 0 0 / 0.8), oklch(1 0 0 / 0.6));
   }
 
   .dark {
-    /* Existing dark mode variables */
+
     --background: oklch(0.141 0.005 285.823);
     --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
+    --card: oklch(0.16 0.005 285.885);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
+    --popover: oklch(0.16 0.005 285.885);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.546 0.245 262.881);
-    --primary-foreground: oklch(0.379 0.146 265.522);
-    --secondary: oklch(0.274 0.006 286.033);
+    --primary: oklch(0.488 0.243 259.3);
+    --primary-foreground: oklch(1 0 0);
+    --secondary: oklch(0.20 0.08 259.3);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
+    --muted: oklch(0.20 0.08 259.3);
+    --muted-foreground: oklch(0.70 0 0);
+    --accent: oklch(0.20 0.08 259.3);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.488 0.243 264.376);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.21 0.006 285.885);
+    --ring: oklch(0.488 0.243 259.3);
+
+    --sidebar: oklch(0.15 0.006 285.885);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.546 0.245 262.881);
-    --sidebar-primary-foreground: oklch(0.379 0.146 265.522);
-    --sidebar-accent: oklch(0.274 0.006 286.033);
+    --sidebar-primary: oklch(0.488 0.243 259.3);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.20 0.08 259.3);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.488 0.243 264.376);
+    --sidebar-ring: oklch(0.488 0.243 259.3);
 
-    /* Dark mode overrides for team colors */
-    --gradient-primary: linear-gradient(135deg, var(--color-blue-400), var(--color-cyan-400));
+    --gradient-primary: linear-gradient(135deg, var(--color-blue-700), var(--color-blue-800));
     --gradient-hero-overlay: linear-gradient(135deg, oklch(0.141 0.005 285.823 / 0.95), oklch(0.21 0.006 285.885 / 0.9));
   }
 }
 
 @layer utilities {
 
-  /* Utility classes for team colors */
-  .bg-team-blue {
-    background-color: rgb(var(--color-blue-500));
+  /* Utility classes for navy color system */
+  .bg-navy-primary {
+    background-color: #003b73;
   }
 
-  .bg-team-cyan {
-    background-color: rgb(var(--color-cyan-500));
+  .bg-navy-hover {
+    background-color: #002b5b;
   }
 
-  .bg-team-success {
-    background-color: rgb(var(--color-success));
+  .bg-navy-soft {
+    background-color: #f0f7ff;
   }
 
-  .text-team-blue {
-    color: rgb(var(--color-blue-500));
+  .text-navy-primary {
+    color: #003b73;
   }
 
-  .text-team-cyan {
-    color: rgb(var(--color-cyan-500));
+  .text-navy-hover {
+    color: #002b5b;
   }
 
-  .border-team-blue {
-    border-color: rgb(var(--color-blue-500));
+  .border-navy-primary {
+    border-color: #003b73;
   }
 
-  .border-team-cyan {
-    border-color: rgb(var(--color-cyan-500));
+  .border-navy-border {
+    border-color: rgba(0, 59, 115, 0.25);
   }
 
   /* Standardized gradients */
@@ -193,6 +186,53 @@ body {
     background-clip: text;
   }
 }
+
+/* Responsive site container utility to standardize mobile margins/padding */
+@layer components {
+  .site-container {
+    max-width: 90rem;
+    /* 1440px - wider max-width for better utilization */
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    /* 16px - minimal mobile padding */
+    padding-right: 1rem;
+  }
+
+  /* Use standard media queries so linters/tooling that don't expand Tailwind @screen won't error */
+  @media (min-width: 640px) {
+    .site-container {
+      padding-left: 1.5rem;
+      /* 24px */
+      padding-right: 1.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .site-container {
+      padding-left: 2rem;
+      /* 32px */
+      padding-right: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-container {
+      padding-left: 3rem;
+      /* 48px - reduced from 64px */
+      padding-right: 3rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .site-container {
+      padding-left: 4rem;
+      /* 64px - only on extra large screens */
+      padding-right: 4rem;
+    }
+  }
+}
+
 /* Custom Scrollbar Styles */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
