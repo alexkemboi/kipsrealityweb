@@ -228,57 +228,57 @@ model FinancialSnapshot {
 // =====================================================================
 
 model UtilityBill {
-  id            String   @id @default(uuid())
-  propertyId    String   @map("property_id")
-  providerName  String   @map("provider_name")
-  
+  id           String @id @default(uuid())
+  propertyId   String @map("property_id")
+  providerName String @map("provider_name")
+
   // Financials
-  totalAmount   Decimal  @db.Decimal(10, 2)
-  billDate      DateTime @map("bill_date")
-  dueDate       DateTime @map("due_date")
-  
+  totalAmount Decimal  @db.Decimal(10, 2)
+  billDate    DateTime @map("bill_date")
+  dueDate     DateTime @map("due_date")
+
   // Configuration
-  splitMethod   UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
-  status        UtilityBillStatus  @default(DRAFT)
-  
+  splitMethod UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
+  status      UtilityBillStatus  @default(DRAFT)
+
   // AI & OCR Metadata (From Team Doc)
   importMethod  UtilityImportMethod @default(MANUAL) @map("import_method")
-  ocrConfidence Decimal?            @db.Decimal(5, 2) @map("ocr_confidence")
+  ocrConfidence Decimal?            @map("ocr_confidence") @db.Decimal(5, 2)
   fileUrl       String?             @map("file_url") // The raw bill image/pdf
-  
+
   // The Link to the Financial Core (Double-Entry)
-  journalEntryId String? @unique @map("journal_entry_id")
+  journalEntryId String?       @unique @map("journal_entry_id")
   journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
 
   // The Link to Blockchain Proof
   blockchainHash String? @map("blockchain_hash")
-  
+
   // Relations
-  property      Property  @relation(fields: [propertyId], references: [id])
-  allocations   UtilityAllocation[] 
+  property      Property            @relation(fields: [propertyId], references: [id])
+  allocations   UtilityAllocation[]
   childInvoices Invoice[]
 
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("utility_bills")
 }
 
 model UtilityAllocation {
-  id            String      @id @default(uuid())
-  utilityBillId String      @map("utility_bill_id")
-  unitId        String      @map("unit_id")
-  
+  id            String @id @default(uuid())
+  utilityBillId String @map("utility_bill_id")
+  unitId        String @map("unit_id")
+
   // The calculated share
-  amount        Decimal     @db.Decimal(10, 2)
-  percentage    Decimal?    @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
-  
+  amount     Decimal  @db.Decimal(10, 2)
+  percentage Decimal? @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
+
   // Link to the resulting Invoice (The "Demand" sent to tenant)
-  invoiceId     String?     @unique @map("invoice_id")
-  invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
-  
-  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
-  unit          Unit        @relation(fields: [unitId], references: [id])
+  invoiceId String?  @unique @map("invoice_id")
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+
+  utilityBill UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
+  unit        Unit        @relation(fields: [unitId], references: [id])
 
   @@map("utility_allocations")
 }
@@ -1520,14 +1520,6 @@ enum UtilityDisputeStatus {
   REJECTED
 }
 
-model PropertyType {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  properties  Property[]
-}
-
 enum AccountType {
   ASSET
   LIABILITY
@@ -1542,28 +1534,4 @@ enum PostingStatus {
   POSTED
   FAILED
   REVERSED
-}
-
-enum utility_bills_import_method {
-  CSV
-  API
-  PDF_OCR
-  MANUAL
-}
-
-enum utility_bills_status {
-  DRAFT
-  PROCESSING
-  REVIEW_REQUIRED
-  APPROVED
-  POSTED
-}
-
-enum utility_bills_split_method {
-  EQUAL_USAGE
-  OCCUPANCY_BASED
-  SQ_FOOTAGE
-  SUB_METERED
-  CUSTOM_RATIO
-  AI_OPTIMIZED
 }

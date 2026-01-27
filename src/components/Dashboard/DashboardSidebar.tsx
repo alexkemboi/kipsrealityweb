@@ -30,12 +30,12 @@ export function DashboardSidebar({
   const DesktopSidebar = () => (
     <div
       className={cn(
-        "hidden md:flex flex-col bg-[#0a1628] border-r border-neutral-800 transition-all duration-300 ease-in-out h-screen sticky top-0",
+        "hidden md:flex flex-col bg-[#003b73] border-r border-[#002b59] transition-all duration-300 ease-in-out h-screen sticky top-0",
         open ? "w-64" : "w-20"
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+      <div className="flex items-center justify-between p-4 border-b border-[#002b59]">
         {open && (
           <div className="flex items-center gap-3">
             <div>
@@ -60,27 +60,6 @@ export function DashboardSidebar({
       <div className="flex-1 overflow-y-auto">
         <DashboardSidebarLinks user={user} open={open} isCollapsed={!open} />
       </div>
-
-      {/* Footer */}
-      <div className="border-t border-neutral-800 p-4">
-        {open ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-              {user.firstName.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
-                {user.firstName}
-              </p>
-              <p className="text-xs text-neutral-400 truncate">{user.email}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium mx-auto">
-            {user.firstName.charAt(0).toUpperCase()}
-          </div>
-        )}
-      </div>
     </div>
   );
 
@@ -96,8 +75,8 @@ export function DashboardSidebar({
           />
 
           {/* Drawer */}
-          <div className="fixed left-0 top-0 h-full w-72 z-50 flex flex-col bg-neutral-950 border-r border-neutral-800 md:hidden">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+          <div className="fixed left-0 top-0 h-full w-72 z-50 flex flex-col bg-[#003b73] border-r border-[#002b59] md:hidden">
+            <div className="flex items-center justify-between p-4 border-b border-[#002b59]">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
                   <Building2 className="w-4 h-4 text-white" />
@@ -121,7 +100,7 @@ export function DashboardSidebar({
               <DashboardSidebarLinks user={user} open={true} isCollapsed={false} />
             </div>
 
-            <div className="border-t border-neutral-800 p-4">
+            <div className="border-t border-[#002b59] p-4">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-neutral-800/50">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
                   {user.firstName.charAt(0).toUpperCase()}

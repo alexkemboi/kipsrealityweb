@@ -24,10 +24,7 @@ import {
 
 
 // System routes (common for all roles)
-export const systemRoutes = [
-  { path: '/dashboard/profile', label: 'Profile', icon: User, badge: null },
-  { path: '/dashboard/settings', label: 'Settings', icon: Settings, badge: null },
-]
+export const systemRoutes = []
 
 // Role-based route configuration
 export const routeConfig = {
