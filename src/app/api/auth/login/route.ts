@@ -29,6 +29,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
+    // SECURITY CHECK: Is Email Verified?
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: 'Please verify your email address before logging in.',
+          requiresVerification: true
+        },
+        { status: 403 }
+      );
+    }
+
     const primaryOrgUser = user.organizationUsers[0];
     let role = primaryOrgUser?.role || 'PROPERTY_MANAGER';
 
