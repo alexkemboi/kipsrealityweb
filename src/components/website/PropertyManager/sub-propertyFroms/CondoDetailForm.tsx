@@ -1,45 +1,44 @@
 'use client'
 import React from "react";
 import { UseFormRegister } from "react-hook-form";
+import { HomeIcon } from "lucide-react";
 import { Property } from "@/app/data/PropertyData";
 
-interface ApartmentDetailsSectionProps {
+interface CondoDetailsSectionProps {
   register: UseFormRegister<Property>;
 }
 
-export function ApartmentDetailForm({ register }: ApartmentDetailsSectionProps) {
-  return (
+export function CondoDetailForm({ register }: CondoDetailsSectionProps) {
+    return (
     <div className="p-6 bg-gray-50 rounded-2xl">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 rounded-lg">
-          <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
-          </svg>
+          <HomeIcon className="w-6 h-6 text-gray-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Apartment Details</h2>
+        <h2 className="text-xl font-bold text-gray-800">Condo Details</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <label htmlFor="buildingName" className="block text-sm font-medium text-gray-700">
-            Building Name
+          <label htmlFor="condoName" className="block text-sm font-medium text-gray-700">
+            Condo Name
           </label>
           <input
-            id="buildingName"
-            {...register("apartmentComplexDetail.buildingName")}
-            placeholder="e.g., Skyline Towers"
+            id="condoName"
+            {...register("condoDetail.buildingName")}
+            placeholder="e.g., Oceanview Condos"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="totalFloors" className="block text-sm font-medium text-gray-700">
-            Total Floors
+          <label htmlFor="floorNumber" className="block text-sm font-medium text-gray-700">
+            Floor Number
           </label>
           <input
-            id="totalFloors"
+            id="floorNumber"
             type="number"
-            {...register("apartmentComplexDetail.totalFloors", { valueAsNumber: true })}
+            {...register("condoDetail.floorNumber", { valueAsNumber: true })}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -52,25 +51,24 @@ export function ApartmentDetailForm({ register }: ApartmentDetailsSectionProps) 
           <input
             id="unitNumber"
             type="text"
-            {...register("apartmentComplexDetail.unitNumber")}
-            placeholder="e.g., 101"
+            {...register("condoDetail.unitNumber")}
+            placeholder="e.g., 12A"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="sizeInSqFt" className="block text-sm font-medium text-gray-700">
-            Size (sq ft)
+          <label htmlFor="totalFloorsInBuilding" className="block text-sm font-medium text-gray-700">
+            Total Floors in Building
           </label>
           <input
-            id="sizeInSqFt"
+            id="totalFloorsInBuilding"
             type="number"
-            {...register("apartmentComplexDetail.size", { valueAsNumber: true })}
+            {...register("condoDetail.totalFloorsInBuilding", { valueAsNumber: true })}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-
 
         <div className="space-y-2">
           <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700">
@@ -79,7 +77,7 @@ export function ApartmentDetailForm({ register }: ApartmentDetailsSectionProps) 
           <input
             id="bedrooms"
             type="number"
-            {...register("apartmentComplexDetail.bedrooms", { valueAsNumber: true })}
+            {...register("condoDetail.bedrooms", { valueAsNumber: true })}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
@@ -92,34 +90,61 @@ export function ApartmentDetailForm({ register }: ApartmentDetailsSectionProps) 
           <input
             id="bathrooms"
             type="number"
-            {...register("apartmentComplexDetail.bathrooms", { valueAsNumber: true })}
+            {...register("condoDetail.bathrooms", { valueAsNumber: true })}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-
-
+        
         <div className="space-y-2">
-          <label htmlFor="totalUnits" className="block text-sm font-medium text-gray-700">
-            Total Units
+          <label htmlFor="sizeInSqFt" className="block text-sm font-medium text-gray-700">
+            Size (sq ft)
           </label>
           <input
-            id="totalUnits"
+            id="sizeInSqFt"
             type="number"
-            {...register("apartmentComplexDetail.totalUnits", { valueAsNumber: true })}
+            {...register("condoDetail.size", { valueAsNumber: true })}
             placeholder="0"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="zoning" className="block text-sm font-medium text-gray-700">
-            Zoning Type
+          <label htmlFor="hoaFees" className="block text-sm font-medium text-gray-700">
+            HOA Fees ($)
           </label>
           <input
-            id="zoning"
-            {...register("apartmentComplexDetail.zoning")}
-            placeholder="e.g., Residential, Mixed-Use"
+            id="hoaFees"
+            type="number"
+            {...register("condoDetail.hoaFees", { valueAsNumber: true })}
+            placeholder="0.00"
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="hasBalcony" className="block text-sm font-medium text-gray-700">
+            Has Balcony
+          </label>
+          <select
+            id="hasBalcony"
+            {...register("condoDetail.hasBalcony")}
+            className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select an option</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="amenities" className="block text-sm font-medium text-gray-700">
+            Amenities
+          </label>
+          <input
+            id="amenities"
+            {...register("condoDetail.amenities")}
+            placeholder="e.g., Pool, Gym, Parking"
             className="w-full px-3 py-2 text-sm bg-white border-1 border-gray-200 rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>

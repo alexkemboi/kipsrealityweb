@@ -309,6 +309,11 @@ model Property {
   longitude              Float?
   apartmentComplexDetail ApartmentComplexDetail?
   houseDetail            HouseDetail?
+
+  condoDetail            CondoDetail?     
+  landDetail             LandDetail?      
+  townhouseDetail        TownhouseDetail? 
+
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
@@ -347,9 +352,16 @@ model ApartmentComplexDetail {
   propertyId   String   @unique
   buildingName String?
   totalFloors  Int?
+  unitNumber   String? @db.VarChar(50)
+  size         Float?    // square feet
+  bedrooms     Int?
+  bathrooms    Int?
   totalUnits   Int?
-  property     Property @relation(fields: [propertyId], references: [id])
+  zoning        String?   // residential/commercial/agricultural
+
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
+
 
 model HouseDetail {
   id             String   @id @default(uuid())
@@ -360,7 +372,60 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
-  property       Property @relation(fields: [propertyId], references: [id])
+  zoning        String?   // residential/commercial/agricultural
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model CondoDetail {
+  id                    String    @id @default(uuid())
+  propertyId            String    @unique
+  buildingName          String?
+  floorNumber                 Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean   @default(false)
+  amenities             Json?     //arr of amenities 
+
+  zoning        String?   // residential/commercial/agricultural
+  property              Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id            String    @id @default(uuid())
+  propertyId    String    @unique
+  lotSize       Float?    // in acres or sqft
+  zoning        String?   // residential/commercial/agricultural
+  isSubdivided  Boolean   @default(false)
+  hasUtilities  Boolean   @default(false)
+  topography    String?   // flat/sloped/hilly
+  soilType      String?
+  accessRoad    Boolean   @default(false)
+  landUse       String?   // buildable/agricultural/recreational
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String    @id @default(uuid())
+  propertyId     String    @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean   @default(false)
+  hasGarage      Boolean   @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean   @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning        String?   // residential/commercial/agricultural
+
+  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Unit {

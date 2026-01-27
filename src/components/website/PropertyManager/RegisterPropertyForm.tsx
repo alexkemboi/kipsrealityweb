@@ -9,6 +9,9 @@ import { useGeocoding } from "@/hooks/useGeocoding";
 import { LocationForm } from "@/components/website/PropertyManager/sub-propertyFroms/LocationForm";
 import { HouseDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/HouseDetailForm";
 import { ApartmentDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/ApartmentDetailForm";
+import { CondoDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/CondoDetailForm";
+import { LandDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/landDetailForm";
+import { TownhouseDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/TownhouseDetailForm";
 import { ContactDetailsForm } from "@/components/website/PropertyManager/sub-propertyFroms/ContactDetailsForm";
 import { Property } from "@/app/data/PropertyData";
 
@@ -152,11 +155,11 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-200">
+    <div className="bg-white">
       <Toaster position="top-center" reverseOrder={false} />
 
       <main className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
-        <div className="bg-white rounded-3xl shadow-2xl p-10 border border-white/20">
+        <div className="bg-white">
           <div className="flex items-center gap-2 mb-8">
             <h2 className="text-3xl font-bold text-gray-800">Property Details</h2>
           </div>
@@ -178,6 +181,20 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
 
             {selectedPropertyTypeName === "apartment" && (
               <ApartmentDetailForm register={register} />
+            )}
+            
+            {(selectedPropertyTypeName === "condominium (condo)" || 
+              selectedPropertyTypeName === "condo" || 
+              selectedPropertyTypeName === "condominium") && (
+              <CondoDetailForm register={register} />
+            )}
+ 
+            {selectedPropertyTypeName === "land" && (
+              <LandDetailForm register={register} />
+            )}
+
+            {selectedPropertyTypeName === "townhouse" && (
+              <TownhouseDetailForm register={register} />
             )}
 
             <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">

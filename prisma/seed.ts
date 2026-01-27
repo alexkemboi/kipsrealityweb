@@ -144,7 +144,10 @@ async function main() {
     console.log('Seeding Property Types...');
     const propertyTypes = [
         { id: "1", name: "House", description: "Single family home" },
-        { id: "2", name: "Apartment", description: "Apartment unit" }
+        { id: "2", name: "Apartment", description: "Apartment unit" },
+        { id: "3", name: "condominium (Condos)", description: "Condominium units" },
+        { id: "4", name: "Land", description: "Vacant land or plots" },
+        { id: "5", name: "Townhouse", description: "Townhouse or row house" },
     ]
 
     for (const type of propertyTypes) {
