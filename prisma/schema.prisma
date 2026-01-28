@@ -224,10 +224,6 @@ model FinancialSnapshot {
   @@map("gl_financial_snapshots")
 }
 
-// =====================================================================
-// 3. UTILITY MODULE (AI & Financial Ready)
-// =====================================================================
-
 model UtilityBill {
   id             String                      @id @default(uuid())
   propertyId     String                      @map("property_id")
@@ -240,10 +236,9 @@ model UtilityBill {
   status         utility_bills_status        @default(DRAFT)
   journalEntryId String?                     @unique @map("journal_entry_id")
   blockchainHash String?                     @map("blockchain_hash")
-  created_at     DateTime                    @default(now())
-  file_url       String?
-  split_method   utility_bills_split_method  @default(EQUAL_USAGE)
-  updated_at     DateTime
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  splitMethod    UtilitySplitMethod          @default(EQUAL_USAGE) @map("split_method")
+  updatedAt      DateTime                    @updatedAt @map("updated_at")
   consumption    Float?                      @db.Float
   periodEnd      DateTime?                   @map("period_end")
   periodStart    DateTime?                   @map("period_start")
@@ -290,6 +285,8 @@ model UtilityBill {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  @@index([propertyId])
+  @@index([utility_id])
   @@map("utility_bills")
 }
 
@@ -297,24 +294,17 @@ model UtilityAllocation {
   id            String      @id @default(uuid())
   utilityBillId String      @map("utility_bill_id")
   unitId        String      @map("unit_id")
-  
-  // The calculated share
   amount        Decimal     @db.Decimal(10, 2)
-  percentage    Decimal?    @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
-  
-  // Link to the resulting Invoice (The "Demand" sent to tenant)
   invoiceId     String?     @unique @map("invoice_id")
+  percentage    Decimal?    @db.Decimal(5, 2)
   invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
-  
-  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
   unit          Unit        @relation(fields: [unitId], references: [id])
+  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
 
+  @@index([unitId], map: "utility_allocations_unit_id_fkey")
+  @@index([utilityBillId])
   @@map("utility_allocations")
 }
-
-// =====================================================================
-// 4. PROPERTY & UNITS (With Legacy fields restored for stability)
-// =====================================================================
 
 model Property {
   id                     String                  @id @default(uuid())
@@ -339,10 +329,7 @@ model Property {
   apartmentComplexDetail ApartmentComplexDetail?
   CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
-  LandDetail             LandDetail?
-
-  condoDetail            CondoDetail?     
-  landDetail             LandDetail?      
+  LandDetail             LandDetail?   
   townhouseDetail        TownhouseDetail? 
 
   leases                 Lease[]
@@ -384,21 +371,14 @@ model ApartmentComplexDetail {
   propertyId   String   @unique
   buildingName String?
   totalFloors  Int?
-  unitNumber   String? @db.VarChar(50)
-  size         Float?    // square feet
+  unitNumber   String?  @db.VarChar(50)
+  size         Float? // square feet
   bedrooms     Int?
   bathrooms    Int?
   totalUnits   Int?
-  bathrooms    Int?
-  bedrooms     Int?
-  size         Float?
-  unitNumber   String?  @db.VarChar(50)
   zoning       String?
-  zoning        String?   // residential/commercial/agricultural
-
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
-
 
 model HouseDetail {
   id             String   @id @default(uuid())
@@ -433,73 +413,72 @@ model Unit {
 }
 
 model CondoDetail {
-  id                    String    @id @default(uuid())
-  propertyId            String    @unique
+  id                    String  @id @default(uuid())
+  propertyId            String  @unique
   buildingName          String?
-  floorNumber                 Int?
+  floorNumber           Int?
   unitNumber            String?
   totalFloorsInBuilding Int?
   bedrooms              Int?
   bathrooms             Int?
   size                  Float?
   hoaFees               Float?
-  hasBalcony            Boolean   @default(false)
-  amenities             Json?     //arr of amenities 
+  hasBalcony            Boolean @default(false)
+  amenities             Json? //arr of amenities 
 
-  zoning        String?   // residential/commercial/agricultural
-  property              Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  zoning   String? // residential/commercial/agricultural
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model LandDetail {
-  id            String    @id @default(uuid())
-  propertyId    String    @unique
-  lotSize       Float?    // in acres or sqft
-  zoning        String?   // residential/commercial/agricultural
-  isSubdivided  Boolean   @default(false)
-  hasUtilities  Boolean   @default(false)
-  topography    String?   // flat/sloped/hilly
-  soilType      String?
-  accessRoad    Boolean   @default(false)
-  landUse       String?   // buildable/agricultural/recreational
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  propertyId   String   @unique
+  lotSize      Float? // in acres or sqft
+  zoning       String? // residential/commercial/agricultural
+  isSubdivided Boolean  @default(false)
+  hasUtilities Boolean  @default(false)
+  topography   String? // flat/sloped/hilly
+  soilType     String?
+  accessRoad   Boolean  @default(false)
+  landUse      String? // buildable/agricultural/recreational
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model TownhouseDetail {
-  id             String    @id @default(uuid())
-  propertyId     String    @unique
+  id             String  @id @default(uuid())
+  propertyId     String  @unique
   townhouseName  String?
   numberOfFloors Int?
   bedrooms       Int?
   bathrooms      Int?
   size           Float?
   unitNumber     String?
-  endUnit        Boolean   @default(false)
-  hasGarage      Boolean   @default(false)
+  endUnit        Boolean @default(false)
+  hasGarage      Boolean @default(false)
   garageSpaces   Int?
-  hasBackyard    Boolean   @default(false)
+  hasBackyard    Boolean @default(false)
   backyardSize   Float?
   hoaFees        Float?
-  zoning        String?   // residential/commercial/agricultural
+  zoning         String? // residential/commercial/agricultural
 
-  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Unit {
-  id              String   @id @default(uuid())
-  propertyId      String
-  complexDetailId String?
-  listingId       String?  @unique
-  unitNumber      String
-  floorNumber     Int?
-  bedrooms        Int?
-  bathrooms       Int?
-  isOccupied      Boolean  @default(false)
-  rentAmount      Float? // Kept as Float for Frontend compatibility
-  createdAt       DateTime @default(now())
-  houseDetailId   String?
-  unitName        String?
-  currency        String?  @default("USD") @db.VarChar(10)
-
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @default("USD") @db.VarChar(10)
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
@@ -1649,7 +1628,6 @@ enum BlockchainNotaryStatus {
   FAILED
 }
 
-// Utility Enums (New from PDF)
 enum UtilitySplitMethod {
   EQUAL_USAGE
   OCCUPANCY_BASED
@@ -1661,10 +1639,10 @@ enum UtilitySplitMethod {
 
 enum UtilityBillStatus {
   DRAFT
-  PROCESSING // AI is reading it
-  REVIEW_REQUIRED // AI flagged an anomaly
+  PROCESSING
+  REVIEW_REQUIRED
   APPROVED
-  POSTED // Sent to GL
+  POSTED
 }
 
 enum UtilityImportMethod {
@@ -1721,28 +1699,31 @@ enum PostingStatus {
   REVERSED
 }
 
-enum utility_bills_import_method {
-  CSV
-  API
-  PDF_OCR
-  MANUAL
+enum Invite_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }
 
-enum utility_bills_status {
-  DRAFT
-  PROCESSING
-  REVIEW_REQUIRED
-  APPROVED
-  POSTED
+enum organization_users_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }
 
-enum utility_bills_split_method {
-  EQUAL_USAGE
-  OCCUPANCY_BASED
-  SQ_FOOTAGE
-  SUB_METERED
-  CUSTOM_RATIO
-  AI_OPTIMIZED
+enum SidebarItem_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }
 
 enum Invite_role {

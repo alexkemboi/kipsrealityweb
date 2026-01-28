@@ -22,8 +22,8 @@ export function DashboardSidebarLinks({ user, open = true, isCollapsed = false, 
   }
 
   return (
-    <div className="flex flex-1 flex-col justify-between overflow-hidden">
-      <div className="flex-1 pr-2">
+    <motion.div className="flex flex-1 flex-col justify-between overflow-hidden" layout>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 pb-4">
         {userRoutes.main && <RouteGroup routes={userRoutes.main} open={open} isCollapsed={isCollapsed} darkMode={darkMode} />}
         {Object.entries(userRoutes).map(([key, routes]: any) => key !== 'main' && routes && (
           <RouteGroup
@@ -36,21 +36,6 @@ export function DashboardSidebarLinks({ user, open = true, isCollapsed = false, 
           />
         ))}
       </div>
-
-      <div className="border-t pt-4 transition-colors duration-300">
-        <RouteGroup routes={systemRoutes} open={open} isCollapsed={isCollapsed} darkMode={darkMode} />
-        <div className="px-2 pb-2">
-          <motion.button
-            whileHover={{ scale: 1.02, x: 2 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleLogout}
-            className="flex items-center gap-3 rounded-xl p-3 w-full text-blue-200 hover:text-white hover:bg-white/10"
-          >
-            <LogOut className="w-5 h-5" />
-            {open && <span className="text-sm font-medium whitespace-nowrap">Logout</span>}
-          </motion.button>
-        </div>
-      </div>
-    </div>
+    </motion.div>
   )
 }
