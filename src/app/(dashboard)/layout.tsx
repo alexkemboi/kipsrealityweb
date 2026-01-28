@@ -75,7 +75,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden bg-gray-50">
 
       {/* Sidebar with dark background */}
-      <div className="bg-[ #0c1b33] text-white">
+      <div className="bg-[#003b73] text-white">
         <DashboardSidebar
           user={user}
           isCollapsed={isSidebarCollapsed}
@@ -86,7 +86,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Navbar with dark background */}
-        <header className="flex-shrink-0 z-10 bg-[ #0c1b33] border-b border-[#0f172a] text-white">
+        <header className="flex-shrink-0 z-10 bg-[#003b73] border-b border-[#002b5b] text-white">
           <DashboardNavbar
             user={user}
             onMenuClick={() => setMobileDrawerOpen(true)}

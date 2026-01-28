@@ -1,38 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Trash2, Edit2, Save, X, ArrowLeft, Plus, AlertCircle, Filter, Building2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Loader2, ArrowLeft, AlertCircle, Gauge, FileText, PieChart, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
-interface Lease {
-  id: string;
-  rentAmount: number;
-  tenant?: {
-    name?: string;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-  };
-  unit?: {
-    number?: string;
-    unitNumber?: string;
-    floor?: string;
-  };
-  property?: {
-    id: string;
-    name: string;
-  };
-  application?: { id: string };
-}
-
-interface LeaseUtility {
-  id: string;
-  lease_id: string;
-  utility_id: string;
-  is_tenant_responsible: boolean;
-  Lease?: Lease;
-  utility?: { name: string; type: "FIXED" | "METERED"; unitPrice?: number; fixedAmount?: number };
-}
+// Tab type
+type TabId = "overview" | "readings" | "bills" | "allocations";
 
 interface Utility {
   id: string;
@@ -40,294 +16,80 @@ interface Utility {
   type: "FIXED" | "METERED";
   unitPrice?: number;
   fixedAmount?: number;
+  propertyId?: string;
+  propertyName?: string;
 }
 
-interface Property {
-  id: string;
-  name: string;
-}
-
-export default function AssignUtilityPage() {
+export default function UtilityDetailsPage() {
+  // Keep [id] in route, use utilityId in code
   const { id } = useParams();
+  const utilityId = id as string;
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [utility, setUtility] = useState<Utility | null>(null);
-  const [leases, setLeases] = useState<Lease[]>([]);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [assigned, setAssigned] = useState<LeaseUtility[]>([]);
-
-  const [selectedProperty, setSelectedProperty] = useState<string>(searchParams.get('property') || "all");
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
-  const [selectedLease, setSelectedLease] = useState<string>("");
-  const [responsibility, setResponsibility] = useState("true");
-
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [isLoading, setIsLoading] = useState(true);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    type: "FIXED" as "FIXED" | "METERED",
-    unitPrice: "",
-    fixedAmount: "",
-  });
-
   useEffect(() => {
-    loadData();
-  }, [id]);
+    loadUtility();
+  }, [utilityId]);
 
-  const loadData = async () => {
+  // Handle hash-based navigation
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "") as TabId;
+    if (hash && ["overview", "readings", "bills", "allocations"].includes(hash)) {
+      setActiveTab(hash);
+    }
+  }, []);
+
+  const loadUtility = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const utilRes = await fetch(`/api/utilities/${id}`);
-      const utilData = await utilRes.json();
+      const res = await fetch(`/api/utilities/${utilityId}`);
+      const data = await res.json();
 
       let utilityData = null;
-      if (utilData?.success && utilData?.data) {
-        utilityData = utilData.data;
-      } else if (utilData?.id) {
-        utilityData = utilData;
+      if (data?.success && data?.data) {
+        utilityData = data.data;
+      } else if (data?.id) {
+        utilityData = data;
       }
 
       if (utilityData) {
         setUtility(utilityData);
-        setEditForm({
-          name: utilityData.name || "",
-          type: utilityData.type || "FIXED",
-          unitPrice: utilityData.unitPrice?.toString() || "",
-          fixedAmount: utilityData.fixedAmount?.toString() || "",
-        });
       } else {
         setError("Utility not found");
-        return;
       }
-
-      const leaseRes = await fetch("/api/lease");
-      const leaseData = await leaseRes.json();
-
-      if (leaseData?.success && leaseData?.data) {
-        setLeases(leaseData.data);
-      } else if (Array.isArray(leaseData)) {
-        setLeases(leaseData);
-      }
-
-      const propRes = await fetch("/api/propertymanager");
-      const propData = await propRes.json();
-
-      if (propData.success && propData.data) {
-        setProperties(propData.data);
-      } else if (Array.isArray(propData)) {
-        setProperties(propData);
-      }
-
-      const leaseUtilRes = await fetch("/api/lease-utility");
-      const leaseUtilData = await leaseUtilRes.json();
-
-      let assignedData = [];
-      if (leaseUtilData?.success && leaseUtilData?.data) {
-        assignedData = leaseUtilData.data;
-      } else if (Array.isArray(leaseUtilData)) {
-        assignedData = leaseUtilData;
-      }
-
-      const filtered = assignedData.filter((a: LeaseUtility) => a.utility_id === id);
-      setAssigned(filtered);
-
     } catch (err) {
-      console.error("Load data error:", err);
-      setError("Failed to load data");
+      console.error("Load utility error:", err);
+      setError("Failed to load utility");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    if (utility) {
-      setEditForm({
-        name: utility.name,
-        type: utility.type,
-        unitPrice: utility.unitPrice?.toString() || "",
-        fixedAmount: utility.fixedAmount?.toString() || "",
-      });
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editForm.name.trim()) {
-      alert("Please enter a utility name");
-      return;
-    }
-
-    if (editForm.type === "METERED" && (!editForm.unitPrice || parseFloat(editForm.unitPrice) <= 0)) {
-      alert("Please enter a valid unit price for metered utilities");
-      return;
-    }
-
-    if (editForm.type === "FIXED" && (!editForm.fixedAmount || parseFloat(editForm.fixedAmount) <= 0)) {
-      alert("Please enter a valid fixed amount");
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const res = await fetch(`/api/utilities/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editForm.name.trim(),
-          type: editForm.type,
-          unitPrice: editForm.type === "METERED" ? parseFloat(editForm.unitPrice) : null,
-          fixedAmount: editForm.type === "FIXED" ? parseFloat(editForm.fixedAmount) : null,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success || res.ok) {
-        alert("Utility updated successfully!");
-        const updatedUtility = data.data || data;
-        setUtility(updatedUtility);
-        setIsEditing(false);
-      } else {
-        alert(data.error || "Failed to update utility");
-      }
-    } catch (err) {
-      console.error("Update error:", err);
-      alert("An error occurred while updating the utility");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAssign = async () => {
-    if (!selectedLease) {
-      alert("Please select a lease");
-      return;
-    }
-
-    const alreadyAssigned = assigned.some((a) => a.lease_id === selectedLease);
-    if (alreadyAssigned) {
-      alert("This utility is already assigned to the selected lease");
-      return;
-    }
-
-    setIsAssigning(true);
-
-    try {
-      const res = await fetch("/api/lease-utility", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lease_id: selectedLease,
-          utility_id: id,
-          is_tenant_responsible: responsibility === "true",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success || res.ok) {
-        alert("Utility assigned successfully!");
-        const newAssignment = data.data || data;
-        setAssigned((prev) => [...prev, newAssignment]);
-        setSelectedLease("");
-        setResponsibility("true");
-      } else {
-        alert(data.error || "Failed to assign utility");
-      }
-    } catch (err) {
-      console.error("Assign error:", err);
-      alert("An error occurred while assigning");
-    } finally {
-      setIsAssigning(false);
-    }
-  };
-
-  const handleUnassign = async (assignmentId: string) => {
-    if (!confirm("Are you sure you want to remove this assignment?")) {
-      return;
-    }
-
-    setDeletingId(assignmentId);
-
-    try {
-      const res = await fetch(`/api/lease-utility/${assignmentId}`, {
-        method: "DELETE"
-      });
-
-      const data = await res.json();
-
-      if (data.success || res.ok) {
-        alert("Assignment removed successfully");
-        setAssigned((prev) => prev.filter((a) => a.id !== assignmentId));
-      } else {
-        alert(data.error || "Failed to unassign");
-      }
-    } catch (err) {
-      console.error("Unassign error:", err);
-      alert("Error while unassigning");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleTabChange = (tab: TabId) => {
+    setActiveTab(tab);
+    // Update URL hash without full navigation
+    window.history.replaceState(null, "", `#${tab}`);
   };
 
   const formatCurrency = (amount?: number | null) => {
     if (amount === null || amount === undefined) return "N/A";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD"
+      currency: "USD",
     }).format(amount);
   };
-
-  // Filter leases by property and unit
-  const filteredLeases = leases.filter((l) => {
-    const propertyMatch = selectedProperty === "all" || l.property?.id === selectedProperty;
-    const unitMatch = selectedUnit === "all" || l.unit?.unitNumber === selectedUnit || l.unit?.number === selectedUnit;
-    return propertyMatch && unitMatch;
-  });
-
-  const availableLeases = filteredLeases.filter((l) => !assigned.some((a) => a.lease_id === l.id));
-
-  // Get unique units for the selected property
-  const availableUnits = Array.from(
-    new Set(
-      filteredLeases
-        .filter(l => selectedProperty === "all" || l.property?.id === selectedProperty)
-        .map(l => l.unit?.unitNumber || l.unit?.number)
-        .filter(Boolean)
-    )
-  );
-
-  // Group assigned leases by property
-  const assignedByProperty = assigned.reduce((acc, a) => {
-    const lease = leases.find((l) => l.id === a.lease_id);
-    const propertyId = a.Lease?.property?.id || lease?.property?.id || "unknown";
-    const propertyName = a.Lease?.property?.name || lease?.property?.name || "Unknown Property";
-
-    if (!acc[propertyId]) {
-      acc[propertyId] = { name: propertyName, assignments: [] };
-    }
-    acc[propertyId].assignments.push({ ...a, lease });
-    return acc;
-  }, {} as Record<string, { name: string; assignments: Array<LeaseUtility & { lease?: Lease }> }>);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
         <Loader2 className="w-8 h-8 animate-spin text-[#30D5C8]" />
-        <span className="ml-3 text-[#15386a]">Loading...</span>
+        <span className="ml-3 text-[#15386a]">Loading utility...</span>
       </div>
     );
   }
@@ -341,402 +103,241 @@ export default function AssignUtilityPage() {
               <AlertCircle className="w-8 h-8 text-red-500" />
             </div>
             <p className="text-[#15386a]/70">{error || "Utility not found"}</p>
-            <a href="/property-manager/content/utilities">
-              <button className="px-4 py-2 border border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
+            <Link href="/property-manager/content/utilities">
+              <Button
+                variant="outline"
+                className="text-[#30D5C8] border-[#30D5C8]/30 hover:bg-[#30D5C8]/5"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Utilities
-              </button>
-            </a>
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
     );
   }
 
+  const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+    { id: "overview", label: "Overview", icon: <Info className="w-4 h-4" /> },
+    { id: "readings", label: "Readings", icon: <Gauge className="w-4 h-4" /> },
+    { id: "bills", label: "Bills", icon: <FileText className="w-4 h-4" /> },
+    { id: "allocations", label: "Allocations", icon: <PieChart className="w-4 h-4" /> },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Back Button */}
         <div className="flex items-center gap-4">
-          <a href="/property-manager/content/utilities">
-            <button className="px-3 py-2 text-[#15386a] hover:text-[#0b1f3a] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" /> Back to Utilities
-            </button>
-          </a>
+          <Link href="/property-manager/content/utilities">
+            <Button
+              variant="ghost"
+              className="text-[#15386a] hover:text-[#0b1f3a] hover:bg-[#30D5C8]/5"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Utilities
+            </Button>
+          </Link>
         </div>
 
-        {/* Utility Info Card */}
-        <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
-          <div className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white p-6">
+        {/* Utility Header */}
+        <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-bold">{utility.name}</h2>
-                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${utility.type === "FIXED" ? "bg-white/20 text-white" : "bg-[#30D5C8] text-[#0b1f3a]"
-                  }`}>
+                <CardTitle className="text-2xl">{utility.name}</CardTitle>
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${utility.type === "FIXED"
+                    ? "bg-white/20 text-white"
+                    : "bg-[#30D5C8] text-[#0b1f3a]"
+                    }`}
+                >
                   {utility.type === "FIXED" ? "Fixed" : "Metered"}
                 </span>
               </div>
-              {!isEditing && (
-                <button onClick={handleEdit} className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg flex items-center gap-2">
-                  <Edit2 className="w-4 h-4" />
-                  Edit
-                </button>
-              )}
             </div>
-          </div>
-
-          <div className="p-6 space-y-6">
-            {isEditing ? (
-              <div className="space-y-4 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 p-6 rounded-xl border-2 border-[#30D5C8]/20">
-                <div className="space-y-2">
-                  <label className="text-[#0b1f3a] font-semibold block">
-                    Utility Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    placeholder="e.g., Electricity, Water, Gas"
-                    disabled={isSaving}
-                    className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[#0b1f3a] font-semibold block">
-                    Billing Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={editForm.type}
-                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value as "FIXED" | "METERED", unitPrice: "", fixedAmount: "" })}
-                    disabled={isSaving}
-                    className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                  >
-                    <option value="FIXED">Fixed Amount</option>
-                    <option value="METERED">Metered</option>
-                  </select>
-                </div>
-
-                {editForm.type === "METERED" && (
-                  <div className="space-y-2">
-                    <label className="text-[#0b1f3a] font-semibold block">
-                      Unit Price <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editForm.unitPrice}
-                      onChange={(e) => setEditForm({ ...editForm, unitPrice: e.target.value })}
-                      placeholder="e.g., 12.50"
-                      disabled={isSaving}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                    />
-                  </div>
-                )}
-
-                {editForm.type === "FIXED" && (
-                  <div className="space-y-2">
-                    <label className="text-[#0b1f3a] font-semibold block">
-                      Fixed Amount <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={editForm.fixedAmount}
-                      onChange={(e) => setEditForm({ ...editForm, fixedAmount: e.target.value })}
-                      placeholder="e.g., 50.00"
-                      disabled={isSaving}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                    />
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-2">
-                  <button onClick={handleSaveEdit} disabled={isSaving} className="px-4 py-2 bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white rounded-lg shadow-lg flex items-center gap-2 disabled:opacity-50">
-                    {isSaving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
-                  <button onClick={handleCancelEdit} disabled={isSaving} className="px-4 py-2 border-2 border-slate-300 text-[#0b1f3a] hover:bg-slate-50 rounded-lg flex items-center gap-2 disabled:opacity-50">
-                    <X className="w-4 h-4" />
-                    Cancel
-                  </button>
-                </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-[#15386a]/5 to-[#15386a]/10 p-4 rounded-xl border border-[#15386a]/20">
+                <p className="text-sm text-[#15386a]/70 mb-1 font-medium">Billing Type</p>
+                <p className="text-lg font-bold text-[#0b1f3a]">
+                  {utility.type === "FIXED" ? "Fixed Amount" : "Metered"}
+                </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-[#15386a]/5 to-[#15386a]/10 p-6 rounded-xl border border-[#15386a]/20">
-                  <p className="text-sm text-[#15386a]/70 mb-2 font-medium">Unit Price</p>
-                  <p className="text-2xl font-bold text-[#0b1f3a]">
-                    {utility.type === "METERED" ? formatCurrency(utility.unitPrice) : "N/A"}
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-[#30D5C8]/5 to-[#30D5C8]/10 p-6 rounded-xl border border-[#30D5C8]/20">
-                  <p className="text-sm text-[#15386a]/70 mb-2 font-medium">Fixed Amount</p>
-                  <p className="text-2xl font-bold text-[#0b1f3a]">
-                    {utility.type === "FIXED" ? formatCurrency(utility.fixedAmount) : "N/A"}
-                  </p>
-                </div>
+              <div className="bg-gradient-to-br from-[#30D5C8]/5 to-[#30D5C8]/10 p-4 rounded-xl border border-[#30D5C8]/20">
+                <p className="text-sm text-[#15386a]/70 mb-1 font-medium">
+                  {utility.type === "FIXED" ? "Fixed Amount" : "Unit Price"}
+                </p>
+                <p className="text-lg font-bold text-[#0b1f3a]">
+                  {utility.type === "FIXED"
+                    ? formatCurrency(utility.fixedAmount)
+                    : formatCurrency(utility.unitPrice)}
+                </p>
               </div>
-            )}
-          </div>
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border border-slate-200">
+                <p className="text-sm text-[#15386a]/70 mb-1 font-medium">Property</p>
+                <p className="text-lg font-bold text-[#0b1f3a]">
+                  {utility.propertyName ?? "Not assigned"}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border border-slate-200">
+                <p className="text-sm text-[#15386a]/70 mb-1 font-medium">Utility ID</p>
+                <p className="text-sm font-mono text-[#0b1f3a] truncate">
+                  {utilityId}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabs */}
+        <div className="border-b border-slate-200">
+          <nav className="flex gap-1" aria-label="Tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors ${activeTab === tab.id
+                  ? "bg-white text-[#0b1f3a] border-t border-l border-r border-slate-200 -mb-px"
+                  : "text-[#15386a]/70 hover:text-[#0b1f3a] hover:bg-slate-50"
+                  }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
 
-        {/* Filters & Assign Utility Card */}
-        {!isEditing && (
-          <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
-            <div className="bg-gradient-to-r from-[#30D5C8] to-[#30D5C8]/80 text-white p-6">
-              <h3 className="text-xl font-bold flex items-center">
-                <Plus className="w-5 h-5 mr-2" />
-                Assign Utility to Lease
-              </h3>
+        {/* Tab Content */}
+        <Card className="border-slate-200 shadow-xl rounded-2xl overflow-hidden">
+          <CardContent className="p-6">
+            {activeTab === "overview" && (
+              <OverviewTab utility={utility} />
+            )}
+            {activeTab === "readings" && (
+              <ReadingsTab utilityId={utilityId} utilityType={utility.type} />
+            )}
+            {activeTab === "bills" && (
+              <BillsTab utilityId={utilityId} />
+            )}
+            {activeTab === "allocations" && (
+              <AllocationsTab utilityId={utilityId} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// TAB COMPONENTS
+// =============================================================================
+
+function OverviewTab({ utility }: { utility: Utility }) {
+  return (
+    <div className="space-y-6">
+      <h3 className="text-xl font-bold text-[#0b1f3a]">Utility Overview</h3>
+      <p className="text-[#15386a]/70">
+        This is the overview tab for <strong>{utility.name}</strong>.
+        Use the tabs above to view readings, bills, and allocations.
+      </p>
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="p-6 bg-gradient-to-br from-[#15386a]/5 to-transparent rounded-xl border border-[#15386a]/10">
+          <h4 className="font-semibold text-[#0b1f3a] mb-2">Quick Actions</h4>
+          <ul className="space-y-2 text-[#15386a]/70">
+            <li>• View and add meter readings in the <strong>Readings</strong> tab</li>
+            <li>• Manage provider bills in the <strong>Bills</strong> tab</li>
+            <li>• View cost allocations in the <strong>Allocations</strong> tab</li>
+          </ul>
+        </div>
+        <div className="p-6 bg-gradient-to-br from-[#30D5C8]/5 to-transparent rounded-xl border border-[#30D5C8]/10">
+          <h4 className="font-semibold text-[#0b1f3a] mb-2">Utility Details</h4>
+          <dl className="space-y-2 text-[#15386a]/70">
+            <div className="flex justify-between">
+              <dt>Type:</dt>
+              <dd className="font-medium text-[#0b1f3a]">{utility.type}</dd>
             </div>
-
-            <div className="p-6 space-y-6">
-              {/* Filters */}
-              <div className="bg-gradient-to-br from-slate-50 to-blue-50 p-4 rounded-xl border border-slate-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <Filter className="w-5 h-5 text-[#15386a]" />
-                  <span className="font-semibold text-[#0b1f3a]">Filter Leases</span>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[#0b1f3a] font-semibold block mb-2">Property</label>
-                    <select
-                      value={selectedProperty}
-                      onChange={(e) => {
-                        setSelectedProperty(e.target.value);
-                        setSelectedUnit("all");
-                        setSelectedLease("");
-                      }}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                    >
-                      <option value="all">All Properties</option>
-                      {properties.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[#0b1f3a] font-semibold block mb-2">Unit</label>
-                    <select
-                      value={selectedUnit}
-                      onChange={(e) => {
-                        setSelectedUnit(e.target.value);
-                        setSelectedLease("");
-                      }}
-                      disabled={selectedProperty === "all"}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="all">All Units</option>
-                      {availableUnits.map((unit) => (
-                        <option key={unit} value={unit}>{unit}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {(selectedProperty !== "all" || selectedUnit !== "all") && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedProperty("all");
-                        setSelectedUnit("all");
-                        setSelectedLease("");
-                      }}
-                      className="px-3 py-1 text-sm text-[#15386a] border border-[#15386a]/30 hover:bg-[#15386a]/5 rounded-lg"
-                    >
-                      Clear Filters
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Assignment Form */}
-              {availableLeases.length === 0 ? (
-                <div className="text-center py-8 bg-gradient-to-br from-[#30D5C8]/5 to-[#15386a]/5 rounded-xl space-y-3">
-                  <p className="text-[#15386a]/70">
-                    {leases.length === 0
-                      ? "No leases available. Create a lease first."
-                      : filteredLeases.length === 0
-                        ? "No leases match the selected filters."
-                        : "All filtered leases already have this utility assigned."}
-                  </p>
-                  {leases.length === 0 && (
-                    <a href="/property-manager/content/lease/new">
-                      <button className="px-4 py-2 border border-[#30D5C8] text-[#30D5C8] hover:bg-[#30D5C8]/5 rounded-lg flex items-center gap-2 mx-auto">
-                        <Plus className="w-4 h-4" />
-                        Create Lease
-                      </button>
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="text-[#0b1f3a] font-semibold block mb-2">Select Lease</label>
-                    <select
-                      value={selectedLease}
-                      onChange={(e) => setSelectedLease(e.target.value)}
-                      disabled={isAssigning}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                    >
-                      <option value="">Choose a lease</option>
-                      {availableLeases.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.property?.name || "Unknown"} - Unit {l.unit?.unitNumber ?? l.unit?.number ?? "N/A"} - {l.tenant?.firstName ?? l.tenant?.name ?? "Unknown"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-[#0b1f3a] font-semibold block mb-2">Who Pays?</label>
-                    <select
-                      value={responsibility}
-                      onChange={(e) => setResponsibility(e.target.value)}
-                      disabled={isAssigning}
-                      className="w-full px-3 py-2 border-2 border-slate-200 focus:border-[#30D5C8] rounded-lg text-[#0b1f3a] outline-none"
-                    >
-                      <option value="true">Tenant</option>
-                      <option value="false">Landlord</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <button
-                      onClick={handleAssign}
-                      disabled={isAssigning}
-                      className="w-full px-4 py-2 bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white rounded-lg shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isAssigning ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> Assigning...
-                        </>
-                      ) : (
-                        "Assign Utility"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
+            <div className="flex justify-between">
+              <dt>Billing:</dt>
+              <dd className="font-medium text-[#0b1f3a]">
+                {utility.type === "FIXED" ? "Fixed Monthly" : "Usage-based"}
+              </dd>
             </div>
-          </div>
-        )}
+          </dl>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Assigned Leases - Grouped by Property */}
-        {!isEditing && (
-          <div className="border border-slate-200 shadow-xl rounded-2xl overflow-hidden bg-white">
-            <div className="bg-gradient-to-r from-[#0b1f3a] to-[#15386a] text-white p-6">
-              <h3 className="text-xl font-bold">Assigned Leases ({assigned.length})</h3>
-            </div>
+function ReadingsTab({ utilityId, utilityType }: { utilityId: string; utilityType: "FIXED" | "METERED" }) {
+  if (utilityType === "FIXED") {
+    return (
+      <div className="text-center py-12 space-y-4">
+        <div className="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center">
+          <Gauge className="w-8 h-8 text-slate-400" />
+        </div>
+        <p className="text-[#15386a]/70">
+          Meter readings are not available for fixed-rate utilities.
+        </p>
+      </div>
+    );
+  }
 
-            <div className="p-6">
-              {assigned.length === 0 ? (
-                <div className="text-center py-12 space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-[#30D5C8]/10 rounded-full flex items-center justify-center">
-                    <AlertCircle className="w-8 h-8 text-[#30D5C8]" />
-                  </div>
-                  <p className="text-[#15386a]/70">No leases assigned yet.</p>
-                  <p className="text-sm text-[#15386a]/50">
-                    Select a lease above to assign this utility.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {Object.entries(assignedByProperty).map(([propertyId, { name: propertyName, assignments }]) => (
-                    <div key={propertyId} className="border border-slate-200 rounded-xl overflow-hidden">
-                      <div className="bg-gradient-to-r from-[#15386a]/10 to-[#15386a]/5 px-4 py-3 border-b border-slate-200">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-5 h-5 text-[#15386a]" />
-                          <h4 className="font-bold text-[#0b1f3a]">{propertyName}</h4>
-                          <span className="ml-auto text-sm text-[#15386a]/70">
-                            {assignments.length} {assignments.length === 1 ? 'lease' : 'leases'}
-                          </span>
-                        </div>
-                      </div>
+  // TODO: Implement ReadingsTab content
+  // This will be replaced with the full readings module
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-[#0b1f3a]">Meter Readings</h3>
+        <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white">
+          Add Reading
+        </Button>
+      </div>
+      <div className="text-center py-12 text-[#15386a]/70">
+        <p>Readings module placeholder - will be implemented in Phase 3</p>
+        <p className="text-sm mt-2">Utility ID: {utilityId}</p>
+      </div>
+    </div>
+  );
+}
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-slate-100 bg-slate-50">
-                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Unit</th>
-                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Tenant</th>
-                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Rent Amount</th>
-                              <th className="text-left p-3 text-[#0b1f3a] font-semibold text-sm">Responsibility</th>
-                              <th className="text-right p-3 text-[#0b1f3a] font-semibold text-sm">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {assignments.map((a) => (
-                              <tr key={a.id} className="border-b border-slate-100 hover:bg-[#30D5C8]/5 transition-colors">
-                                <td className="p-3 text-[#0b1f3a]">
-                                  {a.Lease?.unit?.unitNumber ?? a.Lease?.unit?.number ?? a.lease?.unit?.unitNumber ?? a.lease?.unit?.number ?? "N/A"}
-                                </td>
-                                <td className="p-3">
-                                  <div className="flex flex-col">
-                                    <span className="text-[#0b1f3a]">
-                                      {a.Lease?.tenant?.firstName ?? a.Lease?.tenant?.name ?? a.lease?.tenant?.firstName ?? a.lease?.tenant?.name ?? "Unknown"}
-                                      {" "}
-                                      {a.Lease?.tenant?.lastName ?? a.lease?.tenant?.lastName ?? ""}
-                                    </span>
-                                    {(a.Lease?.tenant?.email || a.lease?.tenant?.email) && (
-                                      <span className="text-xs text-[#15386a]/70">
-                                        {a.Lease?.tenant?.email ?? a.lease?.tenant?.email}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-3 text-[#15386a]">
-                                  {formatCurrency(a.Lease?.rentAmount ?? a.lease?.rentAmount)}
-                                </td>
-                                <td className="p-3">
-                                  <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${a.is_tenant_responsible
-                                        ? "bg-[#30D5C8]/10 text-[#30D5C8]"
-                                        : "bg-orange-100 text-orange-800"
-                                      }`}
-                                  >
-                                    {a.is_tenant_responsible ? "Tenant" : "Landlord"}
-                                  </span>
-                                </td>
-                                <td className="p-3 text-right">
-                                  <button
-                                    onClick={() => handleUnassign(a.id)}
-                                    disabled={deletingId === a.id}
-                                    title="Remove Assignment"
-                                    className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg disabled:opacity-50"
-                                  >
-                                    {deletingId === a.id ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+function BillsTab({ utilityId }: { utilityId: string }) {
+  // TODO: Implement BillsTab content
+  // This will be replaced with the full bills module
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-[#0b1f3a]">Provider Bills</h3>
+        <Button className="bg-[#30D5C8] hover:bg-[#30D5C8]/90 text-white">
+          Create Bill
+        </Button>
+      </div>
+      <div className="text-center py-12 text-[#15386a]/70">
+        <p>Bills module placeholder - will be implemented in Phase 4</p>
+        <p className="text-sm mt-2">Utility ID: {utilityId}</p>
+      </div>
+    </div>
+  );
+}
+
+function AllocationsTab({ utilityId }: { utilityId: string }) {
+  // TODO: Implement AllocationsTab content
+  // This will be replaced with the full allocations module
+  return (
+    <div className="space-y-6">
+      <h3 className="text-xl font-bold text-[#0b1f3a]">Bill Allocations</h3>
+      <p className="text-[#15386a]/70">
+        View how utility costs are allocated across units.
+        Allocations are calculated by the backend and displayed here for transparency.
+      </p>
+      <div className="text-center py-12 text-[#15386a]/70">
+        <p>Allocations module placeholder - will be implemented in Phase 5</p>
+        <p className="text-sm mt-2">Utility ID: {utilityId}</p>
       </div>
     </div>
   );

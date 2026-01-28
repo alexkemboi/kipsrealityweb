@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { usePathname } from 'next/navigation'
 import { RouteItem } from './RouteItem'
 
 interface RouteGroupProps {
@@ -12,17 +13,16 @@ interface RouteGroupProps {
 }
 
 export function RouteGroup({ routes, open, categoryLabel, isCollapsed, darkMode }: RouteGroupProps) {
+  const pathname = usePathname()
+
   return (
-    <motion.div className="w-full mb-6" layout transition={{ duration: 0.2, ease: "easeIn" }}>
+    <div className="w-full mb-2">
       {categoryLabel && open && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className={darkMode ? "text-neutral-500 text-xs font-semibold uppercase tracking-wider mb-3 px-3" : "text-neutral-500 text-xs font-semibold uppercase tracking-wider mb-3 px-3"}
+        <p
+          className={darkMode ? "text-blue-200 text-xs font-semibold uppercase tracking-wider mb-3 px-3" : "text-blue-200 text-xs font-semibold uppercase tracking-wider mb-3 px-3"}
         >
           {categoryLabel}
-        </motion.p>
+        </p>
       )}
       <div className="space-y-1 px-2">
         {routes.map((route) => (
@@ -30,12 +30,12 @@ export function RouteGroup({ routes, open, categoryLabel, isCollapsed, darkMode 
             key={route.label}
             route={route}
             open={open}
-            isActive={typeof window !== 'undefined' ? window.location.pathname === route.label : false}
+            isActive={pathname === route.path}
             isCollapsed={isCollapsed}
             darkMode={darkMode}
           />
         ))}
       </div>
-    </motion.div>
+    </div>
   )
 }

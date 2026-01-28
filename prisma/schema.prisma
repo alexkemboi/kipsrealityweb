@@ -53,6 +53,7 @@ model User {
   consentMarketing     Boolean              @default(false) @map("consent_marketing")
   consentNotifications Boolean              @default(true) @map("consent_notifications")
   consentTransactional Boolean              @default(true) @map("consent_transactional")
+  AgentInvite          AgentInvite[]
   sentInvites          Invite[]             @relation("UserInvites")
   leases               Lease[]
   listings             Listing[]
@@ -66,18 +67,18 @@ model User {
 }
 
 model OrganizationUser {
-  id                String               @id @default(uuid())
-  userId            String               @map("user_id")
-  organizationId    String               @map("organization_id")
-  role              UserRole
-  createdAt         DateTime             @default(now()) @map("created_at")
-  adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
-  targetActions     AdminAction[]        @relation("AdminActionsTarget")
-  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
+  id                String                  @id @default(uuid())
+  userId            String                  @map("user_id")
+  organizationId    String                  @map("organization_id")
+  role              organization_users_role
+  createdAt         DateTime                @default(now()) @map("created_at")
+  adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
+  targetActions     AdminAction[]           @relation("AdminActionsTarget")
+  createdRequests   MaintenanceRequest[]    @relation("RequestCreator")
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
-  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
@@ -108,7 +109,7 @@ model Invite {
   id             String       @id @default(cuid())
   email          String
   token          String       @unique
-  role           UserRole
+  role           Invite_role
   organizationId String
   invitedById    String?
   expiresAt      DateTime
@@ -228,6 +229,34 @@ model FinancialSnapshot {
 // =====================================================================
 
 model UtilityBill {
+  id             String                      @id @default(uuid())
+  propertyId     String                      @map("property_id")
+  providerName   String                      @map("provider_name")
+  totalAmount    Decimal                     @db.Decimal(10, 2)
+  billDate       DateTime                    @map("bill_date")
+  dueDate        DateTime                    @map("due_date")
+  importMethod   utility_bills_import_method @default(MANUAL) @map("import_method")
+  ocrConfidence  Decimal?                    @map("ocr_confidence") @db.Decimal(5, 2)
+  status         utility_bills_status        @default(DRAFT)
+  journalEntryId String?                     @unique @map("journal_entry_id")
+  blockchainHash String?                     @map("blockchain_hash")
+  created_at     DateTime                    @default(now())
+  file_url       String?
+  split_method   utility_bills_split_method  @default(EQUAL_USAGE)
+  updated_at     DateTime
+  consumption    Float?                      @db.Float
+  periodEnd      DateTime?                   @map("period_end")
+  periodStart    DateTime?                   @map("period_start")
+  rate           Float?                      @db.Float
+  utilityId      String?                     @map("utility_id") @db.Char(36)
+  childInvoices  Invoice[]
+  allocations    UtilityAllocation[]
+  journalEntry   JournalEntry?               @relation(fields: [journalEntryId], references: [id])
+  property       Property                    @relation(fields: [propertyId], references: [id])
+  utility        utility?                    @relation(fields: [utilityId], references: [id])
+
+  @@index([propertyId])
+  @@index([utilityId])
   id            String   @id @default(uuid())
   propertyId    String   @map("property_id")
   providerName  String   @map("provider_name")
@@ -308,7 +337,9 @@ model Property {
   latitude               Float?
   longitude              Float?
   apartmentComplexDetail ApartmentComplexDetail?
+  CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
+  LandDetail             LandDetail?
 
   condoDetail            CondoDetail?     
   landDetail             LandDetail?      
@@ -324,6 +355,7 @@ model Property {
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
   images                 PropertyImage[]
   tenantapplications     Tenantapplication[]
+  TownhouseDetail        TownhouseDetail?
   units                  Unit[]
   DssDocument            DssDocument[]
   DssWorkflowTemplate    DssWorkflowTemplate[]
@@ -357,6 +389,11 @@ model ApartmentComplexDetail {
   bedrooms     Int?
   bathrooms    Int?
   totalUnits   Int?
+  bathrooms    Int?
+  bedrooms     Int?
+  size         Float?
+  unitNumber   String?  @db.VarChar(50)
+  zoning       String?
   zoning        String?   // residential/commercial/agricultural
 
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -372,6 +409,25 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
+  zoning         String?
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Unit {
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @default("USD") @db.VarChar(10)
   zoning        String?   // residential/commercial/agricultural
   property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
@@ -675,6 +731,7 @@ model utility {
   createdAt     DateTime?       @default(now()) @db.DateTime(0)
   updatedAt     DateTime?       @default(now()) @db.DateTime(0)
   lease_utility lease_utility[]
+  utilityBills  UtilityBill[]
 
   @@map("utility")
 }
@@ -1168,7 +1225,7 @@ model Feature {
 }
 
 model SidebarItem {
-  id          Int      @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   label       String
   path        String
   icon        String?
@@ -1176,15 +1233,15 @@ model SidebarItem {
   order       Int?
   badge       String?
   description String?
-  isActive    Boolean  @default(true)
-  isExternal  Boolean  @default(false)
+  isActive    Boolean          @default(true)
+  isExternal  Boolean          @default(false)
   target      String?
   featureId   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  role        UserRole
-  feature     Feature? @relation(fields: [featureId], references: [id])
-  plans       Plan[]   @relation("SidebarItemPlans")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  role        SidebarItem_role
+  feature     Feature?         @relation(fields: [featureId], references: [id])
+  plans       Plan[]           @relation("SidebarItemPlans")
 
   @@index([featureId])
 }
@@ -1317,6 +1374,77 @@ model RentEscalation {
   @@index([leaseId])
 }
 
+model PropertyType {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?
+  createdAt   DateTime   @default(now())
+  properties  Property[]
+}
+
+model AgentInvite {
+  id              String    @id
+  inviteTokenHash String    @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  isUsed          Boolean   @default(false)
+  tenantId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  users           User      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([tenantId])
+}
+
+model CondoDetail {
+  id                    String   @id
+  propertyId            String   @unique
+  buildingName          String?
+  floorNumber           Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean  @default(false)
+  amenities             Json?
+  zoning                String?
+  Property              Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id           String   @id
+  propertyId   String   @unique
+  lotSize      Float?
+  zoning       String?
+  isSubdivided Boolean  @default(false)
+  hasUtilities Boolean  @default(false)
+  topography   String?
+  soilType     String?
+  accessRoad   Boolean  @default(false)
+  landUse      String?
+  Property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String   @id
+  propertyId     String   @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean  @default(false)
+  hasGarage      Boolean  @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean  @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning         String?
+  Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -1615,4 +1743,31 @@ enum utility_bills_split_method {
   SUB_METERED
   CUSTOM_RATIO
   AI_OPTIMIZED
+}
+
+enum Invite_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum organization_users_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum SidebarItem_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }

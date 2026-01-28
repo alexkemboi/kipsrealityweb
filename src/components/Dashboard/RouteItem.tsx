@@ -20,7 +20,7 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
     // Default to the vendor dashboard route when a route path isn't provided.
     // The vendor dashboard lives at `/vendor` (the `(dashboard)` folder is a
     // Next.js route group and does not appear in the public URL).
-    router.push(route.path || '/vendor')
+    router.push(route.path || '/vendor', { scroll: false })
   }
 
   const ItemContent = () => (
@@ -34,7 +34,7 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
         darkMode
           ? isActive
             ? "bg-gradient-to-r from-blue-500/10 to-cyan-500/5 text-cyan-400 border-cyan-500 shadow-lg shadow-cyan-500/10"
-            : "text-neutral-400 hover:text-white hover:bg-neutral-800/60 border-transparent hover:border-cyan-500/30"
+            : "text-blue-200 hover:text-white hover:bg-white/10 border-transparent hover:border-cyan-500/30"
           : isActive
             ? "bg-gradient-to-r from-blue-50 to-cyan-50/50 text-blue-700 border-blue-500 shadow-sm"
             : "text-neutral-700 hover:text-blue-600 hover:bg-blue-50 border-transparent hover:border-blue-200"
@@ -44,7 +44,7 @@ export function RouteItem({ route, open, isActive, isCollapsed, darkMode }: Rout
         className={cn(
           "w-5 h-5 flex-shrink-0 transition-colors duration-300",
           darkMode
-            ? isActive ? "text-cyan-400" : "text-neutral-500 group-hover:text-cyan-400"
+            ? isActive ? "text-cyan-400" : "text-blue-300 group-hover:text-cyan-400"
             : isActive ? "text-blue-600" : "text-neutral-500 group-hover:text-blue-500"
         )}
       />
