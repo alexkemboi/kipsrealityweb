@@ -224,6 +224,10 @@ model FinancialSnapshot {
   @@map("gl_financial_snapshots")
 }
 
+// =====================================================================
+// 3. UTILITY MODULE (AI & Financial Ready)
+// =====================================================================
+
 model UtilityBill {
   id             String                      @id @default(uuid())
   propertyId     String                      @map("property_id")
@@ -253,6 +257,39 @@ model UtilityBill {
 
   @@index([propertyId])
   @@index([utilityId])
+  id            String   @id @default(uuid())
+  propertyId    String   @map("property_id")
+  providerName  String   @map("provider_name")
+  
+  // Financials
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  billDate      DateTime @map("bill_date")
+  dueDate       DateTime @map("due_date")
+  
+  // Configuration
+  splitMethod   UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
+  status        UtilityBillStatus  @default(DRAFT)
+  
+  // AI & OCR Metadata (From Team Doc)
+  importMethod  UtilityImportMethod @default(MANUAL) @map("import_method")
+  ocrConfidence Decimal?            @db.Decimal(5, 2) @map("ocr_confidence")
+  fileUrl       String?             @map("file_url") // The raw bill image/pdf
+  
+  // The Link to the Financial Core (Double-Entry)
+  journalEntryId String? @unique @map("journal_entry_id")
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  // The Link to Blockchain Proof
+  blockchainHash String? @map("blockchain_hash")
+  
+  // Relations
+  property      Property  @relation(fields: [propertyId], references: [id])
+  allocations   UtilityAllocation[] 
+  childInvoices Invoice[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
   @@map("utility_bills")
 }
 
@@ -260,17 +297,24 @@ model UtilityAllocation {
   id            String      @id @default(uuid())
   utilityBillId String      @map("utility_bill_id")
   unitId        String      @map("unit_id")
+  
+  // The calculated share
   amount        Decimal     @db.Decimal(10, 2)
+  percentage    Decimal?    @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
+  
+  // Link to the resulting Invoice (The "Demand" sent to tenant)
   invoiceId     String?     @unique @map("invoice_id")
-  percentage    Decimal?    @db.Decimal(5, 2)
   invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
-  unit          Unit        @relation(fields: [unitId], references: [id])
+  
   utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
+  unit          Unit        @relation(fields: [unitId], references: [id])
 
-  @@index([utilityBillId])
-  @@index([unitId], map: "utility_allocations_unit_id_fkey")
   @@map("utility_allocations")
 }
+
+// =====================================================================
+// 4. PROPERTY & UNITS (With Legacy fields restored for stability)
+// =====================================================================
 
 model Property {
   id                     String                  @id @default(uuid())
@@ -296,6 +340,11 @@ model Property {
   CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
   LandDetail             LandDetail?
+
+  condoDetail            CondoDetail?     
+  landDetail             LandDetail?      
+  townhouseDetail        TownhouseDetail? 
+
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
@@ -335,14 +384,21 @@ model ApartmentComplexDetail {
   propertyId   String   @unique
   buildingName String?
   totalFloors  Int?
+  unitNumber   String? @db.VarChar(50)
+  size         Float?    // square feet
+  bedrooms     Int?
+  bathrooms    Int?
   totalUnits   Int?
   bathrooms    Int?
   bedrooms     Int?
   size         Float?
   unitNumber   String?  @db.VarChar(50)
   zoning       String?
+  zoning        String?   // residential/commercial/agricultural
+
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
+
 
 model HouseDetail {
   id             String   @id @default(uuid())
@@ -372,6 +428,78 @@ model Unit {
   houseDetailId       String?
   unitName            String?
   currency            String?              @default("USD") @db.VarChar(10)
+  zoning        String?   // residential/commercial/agricultural
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model CondoDetail {
+  id                    String    @id @default(uuid())
+  propertyId            String    @unique
+  buildingName          String?
+  floorNumber                 Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean   @default(false)
+  amenities             Json?     //arr of amenities 
+
+  zoning        String?   // residential/commercial/agricultural
+  property              Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id            String    @id @default(uuid())
+  propertyId    String    @unique
+  lotSize       Float?    // in acres or sqft
+  zoning        String?   // residential/commercial/agricultural
+  isSubdivided  Boolean   @default(false)
+  hasUtilities  Boolean   @default(false)
+  topography    String?   // flat/sloped/hilly
+  soilType      String?
+  accessRoad    Boolean   @default(false)
+  landUse       String?   // buildable/agricultural/recreational
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String    @id @default(uuid())
+  propertyId     String    @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean   @default(false)
+  hasGarage      Boolean   @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean   @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning        String?   // residential/commercial/agricultural
+
+  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Unit {
+  id              String   @id @default(uuid())
+  propertyId      String
+  complexDetailId String?
+  listingId       String?  @unique
+  unitNumber      String
+  floorNumber     Int?
+  bedrooms        Int?
+  bathrooms       Int?
+  isOccupied      Boolean  @default(false)
+  rentAmount      Float? // Kept as Float for Frontend compatibility
+  createdAt       DateTime @default(now())
+  houseDetailId   String?
+  unitName        String?
+  currency        String?  @default("USD") @db.VarChar(10)
+
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
@@ -1317,6 +1445,12 @@ model TownhouseDetail {
   hoaFees        Float?
   zoning         String?
   Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
 }
 
 enum Priority {
@@ -1513,6 +1647,62 @@ enum BlockchainNotaryStatus {
   SUBMITTED
   CONFIRMED
   FAILED
+}
+
+// Utility Enums (New from PDF)
+enum UtilitySplitMethod {
+  EQUAL_USAGE
+  OCCUPANCY_BASED
+  SQ_FOOTAGE
+  SUB_METERED
+  CUSTOM_RATIO
+  AI_OPTIMIZED
+}
+
+enum UtilityBillStatus {
+  DRAFT
+  PROCESSING // AI is reading it
+  REVIEW_REQUIRED // AI flagged an anomaly
+  APPROVED
+  POSTED // Sent to GL
+}
+
+enum UtilityImportMethod {
+  CSV
+  API
+  PDF_OCR
+  MANUAL
+}
+
+enum UtilityAllocationStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  DISPUTED
+  VOIDED
+}
+
+enum UtilityPaymentMethod {
+  ACH
+  CARD
+  WALLET
+  CRYPTO
+  BANK_TRANSFER
+  CASH
+}
+
+enum UtilityReconciliationStatus {
+  PENDING
+  MATCHED
+  FAILED
+  MANUAL_REVIEW
+}
+
+enum UtilityDisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
 }
 
 enum AccountType {

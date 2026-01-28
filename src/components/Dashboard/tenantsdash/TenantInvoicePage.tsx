@@ -27,7 +27,7 @@ interface Lease {
 
 interface Invoice {
   id: string;
-  lease_id: string;
+  leaseId: string;
   amount: number;
   dueDate: string;
   status: "PENDING" | "PAID" | "OVERDUE";

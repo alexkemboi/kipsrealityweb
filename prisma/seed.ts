@@ -79,36 +79,116 @@ const toCamelCase = (str: string) => {
     return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
 };
 
-async function main() {
-    const backupDir = path.join(process.cwd(), 'backup');
-
-    if (!fs.existsSync(backupDir)) {
-        console.log(`⚠️ Backup directory not found at ${backupDir}.`);
+async function seedNavbarItemsIfMissing() {
+    const existingCount = await prisma.navbarItem.count();
+    if (existingCount > 0) {
+        console.log(`ℹ️ Navbar items already exist (${existingCount}). Skipping navbar seed.`);
         return;
     }
 
-    try {
-        await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
-        console.log('🔄 Foreign key checks disabled.');
+    console.log('🌱 Seeding default navbar items...');
 
-        const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
+    await prisma.navbarItem.createMany({
+        data: [
+            { name: 'Home', href: '/', order: 0, isVisible: true, isAvailable: true },
+            { name: 'About', href: '/about', order: 10, isVisible: true, isAvailable: true },
+            { name: 'Plans', href: '/plans', order: 20, isVisible: true, isAvailable: true },
+            { name: 'Marketplace', href: '/marketplace', order: 30, isVisible: true, isAvailable: true },
+            { name: 'Blog', href: '/blog', order: 40, isVisible: true, isAvailable: true },
+            { name: 'Contact', href: '/contact', order: 50, isVisible: true, isAvailable: true },
+        ],
+        skipDuplicates: true,
+    });
 
-        const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.json')).sort((a, b) => {
-            const modelA = a.replace('.json', '');
-            const modelB = b.replace('.json', '');
-            const idxA = PRIORITY.indexOf(modelA);
-            const idxB = PRIORITY.indexOf(modelB);
-            if (idxA > -1 && idxB > -1) return idxA - idxB;
-            if (idxA > -1) return -1;
-            if (idxB > -1) return 1;
-            return 0;
+    console.log('✅ Default navbar items seeded.');
+}
+
+async function seedTestimonialsIfMissing() {
+    const existingCount = await prisma.testimonial.count();
+    if (existingCount > 0) {
+        console.log(`ℹ️ Testimonials already exist (${existingCount}). Skipping testimonial seed.`);
+        return;
+    }
+
+    console.log('🌱 Seeding default testimonials...');
+
+    await prisma.testimonial.createMany({
+        data: [
+            {
+                name: 'Sarah Johnson',
+                role: 'Property Manager',
+                image: '/lady.jpg',
+                text: 'RentFlow360 has completely transformed how I manage my properties. The automation features save me hours every week!',
+            },
+            {
+                name: 'Michael Chen',
+                role: 'Real Estate Investor',
+                image: '/man.jpeg',
+                text: "The financial analytics are incredible. I now have complete visibility into my portfolio's performance.",
+            },
+            {
+                name: 'Emily Rodriguez',
+                role: 'Landlord',
+                image: '/smile.jpeg',
+                text: 'The tenant portal has dramatically improved communication with my tenants. Maintenance requests are now handled seamlessly.',
+            },
+        ],
+    });
+
+    console.log('✅ Default testimonials seeded.');
+}
+
+async function main() {
+    // Run this seed when setting up a new database or environment.
+    // Uses upsert to prevent duplicates - safe to run multiple times.
+    console.log('Seeding Property Types...');
+    const propertyTypes = [
+        { id: "1", name: "House", description: "Single family home" },
+        { id: "2", name: "Apartment", description: "Apartment unit" },
+        { id: "3", name: "condominium (Condos)", description: "Condominium units" },
+        { id: "4", name: "Land", description: "Vacant land or plots" },
+        { id: "5", name: "Townhouse", description: "Townhouse or row house" },
+    ]
+
+    for (const type of propertyTypes) {
+        await prisma.propertyType.upsert({
+            where: { id: type.id },
+            update: {},
+            create: type,
         });
+    }
+    console.log('Property types seeded!');
 
-        const processedModels = new Set<string>();
+    const backupDir = path.join(process.cwd(), 'backup');
+    const hasBackupDir = fs.existsSync(backupDir);
 
-        for (const file of files) {
-            const rawModelName = file.replace('.json', '');
-            let clientKey = rawModelName;
+    if (!hasBackupDir) {
+        console.log(`⚠️ Backup directory not found at ${backupDir}. Skipping restore.`);
+    }
+
+    try {
+        if (hasBackupDir) {
+            await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
+            console.log('🔄 Foreign key checks disabled.');
+
+            const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
+
+            const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.json')).sort((a, b) => {
+                const modelA = a.replace('.json', '');
+                const modelB = b.replace('.json', '');
+                const idxA = PRIORITY.indexOf(modelA);
+                const idxB = PRIORITY.indexOf(modelB);
+                if (idxA > -1 && idxB > -1) return idxA - idxB;
+                if (idxA > -1) return -1;
+                if (idxB > -1) return 1;
+                return 0;
+            });
+
+            const processedModels = new Set<string>();
+
+            for (const file of files) {
+                const rawModelName = file.replace('.json', '');
+                let clientKey = rawModelName;
 
             // Map common plural/casing issues
             if (clientKey === 'vendors') clientKey = 'vendor';
@@ -194,10 +274,19 @@ async function main() {
             }
         }
         console.log('✅ Done.');
+        }
+
+        // Always ensure navbar items exist for the website top nav
+        await seedNavbarItemsIfMissing();
+
+        // Ensure the marketing testimonials section has content
+        await seedTestimonialsIfMissing();
     } catch (e) {
         console.error(e);
     } finally {
-        await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=1;');
+        if (hasBackupDir) {
+            await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=1;');
+        }
         await prisma.$disconnect();
     }
 }

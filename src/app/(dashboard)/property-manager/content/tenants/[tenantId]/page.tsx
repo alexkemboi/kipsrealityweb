@@ -126,7 +126,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
     doc.text(`${invoice.type}`, 25, y);
 
     doc.setFont("helvetica", "normal");
-    doc.text(`KES ${invoice.amount?.toLocaleString() || "0"}`, 100, y);
+    doc.text(`$ ${invoice.amount?.toLocaleString() || "0"}`, 100, y);
 
     // Status with color coding
     const status = invoice.status?.toLowerCase();
@@ -154,9 +154,9 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
         let line = `• ${u.name} (${utilType})`;
 
         if (utilType === "FIXED" && u.fixedAmount) {
-          line += ` - KES ${u.fixedAmount.toLocaleString()}`;
+          line += ` - $ ${u.fixedAmount.toLocaleString()}`;
         } else if (utilType === "METERED" && u.unitPrice) {
-          line += ` - KES ${u.unitPrice.toLocaleString()}/unit`;
+          line += ` - $ ${u.unitPrice.toLocaleString()}/unit`;
         }
 
         doc.setFont("helvetica", "normal");
@@ -210,7 +210,7 @@ async function generateCombinedInvoicePDF(groupData: any): Promise<Blob> {
   doc.text("BALANCE DUE:", 30, y + 5);
 
   doc.setTextColor(239, 68, 68); // Red color for balance due
-  doc.text(`KES ${balanceDue.toLocaleString()}`, 150, y + 5, { align: "right" });
+  doc.text(`$ ${balanceDue.toLocaleString()}`, 150, y + 5, { align: "right" });
 
   y += 30;
 
@@ -468,7 +468,7 @@ export default function TenantInvoicesPage() {
       toast.loading("Creating invoice...");
 
       await createManualInvoice({
-        lease_id: lease.id,
+        leaseId: lease.id,
         type: manualType,
         amount: Number(manualAmount),
         dueDate: manualDate,
@@ -606,7 +606,7 @@ export default function TenantInvoicesPage() {
               if (!lease) return toast.error("Tenant lease not found");
               try {
                 toast.loading("Generating Full Invoice...");
-                await generateFullInvoice({ lease_id: lease.id, type: "RENT" });
+                await generateFullInvoice({ leaseId: lease.id, type: "RENT" });
                 toast.dismiss();
                 toast.success("Full Invoice Created!");
                 setGroupedInvoices(await fetchInvoicesForTenant(tenantId));
