@@ -53,6 +53,7 @@ model User {
   consentMarketing     Boolean              @default(false) @map("consent_marketing")
   consentNotifications Boolean              @default(true) @map("consent_notifications")
   consentTransactional Boolean              @default(true) @map("consent_transactional")
+  AgentInvite          AgentInvite[]
   sentInvites          Invite[]             @relation("UserInvites")
   leases               Lease[]
   listings             Listing[]
@@ -66,18 +67,18 @@ model User {
 }
 
 model OrganizationUser {
-  id                String               @id @default(uuid())
-  userId            String               @map("user_id")
-  organizationId    String               @map("organization_id")
-  role              UserRole
-  createdAt         DateTime             @default(now()) @map("created_at")
-  adminActions      AdminAction[]        @relation("AdminActionsByAdmin")
-  targetActions     AdminAction[]        @relation("AdminActionsTarget")
-  createdRequests   MaintenanceRequest[] @relation("RequestCreator")
+  id                String                  @id @default(uuid())
+  userId            String                  @map("user_id")
+  organizationId    String                  @map("organization_id")
+  role              organization_users_role
+  createdAt         DateTime                @default(now()) @map("created_at")
+  adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
+  targetActions     AdminAction[]           @relation("AdminActionsTarget")
+  createdRequests   MaintenanceRequest[]    @relation("RequestCreator")
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
-  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
@@ -108,7 +109,7 @@ model Invite {
   id             String       @id @default(cuid())
   email          String
   token          String       @unique
-  role           UserRole
+  role           Invite_role
   organizationId String
   invitedById    String?
   expiresAt      DateTime
@@ -223,69 +224,53 @@ model FinancialSnapshot {
   @@map("gl_financial_snapshots")
 }
 
-// =====================================================================
-// 3. UTILITY MODULE (AI & Financial Ready)
-// =====================================================================
-
 model UtilityBill {
-  id           String @id @default(uuid())
-  propertyId   String @map("property_id")
-  providerName String @map("provider_name")
+  id             String              @id @default(uuid())
+  propertyId     String              @map("property_id")
+  providerName   String              @map("provider_name")
+  totalAmount    Decimal             @db.Decimal(10, 2)
+  billDate       DateTime            @map("bill_date")
+  dueDate        DateTime            @map("due_date")
+  importMethod   UtilityImportMethod @default(MANUAL) @map("import_method")
+  ocrConfidence  Decimal?            @map("ocr_confidence") @db.Decimal(5, 2)
+  status         UtilityBillStatus   @default(DRAFT)
+  journalEntryId String?             @unique @map("journal_entry_id")
+  blockchainHash String?             @map("blockchain_hash")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  fileUrl        String?             @map("file_url")
+  splitMethod    UtilitySplitMethod  @default(EQUAL_USAGE) @map("split_method")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  consumption    Float?              @db.Float
+  period_end     DateTime?
+  period_start   DateTime?
+  rate           Float?              @db.Float
+  utility_id     String?             @db.Char(36)
+  childInvoices  Invoice[]
+  allocations    UtilityAllocation[]
+  journalEntry   JournalEntry?       @relation(fields: [journalEntryId], references: [id])
+  property       Property            @relation(fields: [propertyId], references: [id])
+  utility        utility?            @relation(fields: [utility_id], references: [id])
 
-  // Financials
-  totalAmount Decimal  @db.Decimal(10, 2)
-  billDate    DateTime @map("bill_date")
-  dueDate     DateTime @map("due_date")
-
-  // Configuration
-  splitMethod UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
-  status      UtilityBillStatus  @default(DRAFT)
-
-  // AI & OCR Metadata (From Team Doc)
-  importMethod  UtilityImportMethod @default(MANUAL) @map("import_method")
-  ocrConfidence Decimal?            @map("ocr_confidence") @db.Decimal(5, 2)
-  fileUrl       String?             @map("file_url") // The raw bill image/pdf
-
-  // The Link to the Financial Core (Double-Entry)
-  journalEntryId String?       @unique @map("journal_entry_id")
-  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
-
-  // The Link to Blockchain Proof
-  blockchainHash String? @map("blockchain_hash")
-
-  // Relations
-  property      Property            @relation(fields: [propertyId], references: [id])
-  allocations   UtilityAllocation[]
-  childInvoices Invoice[]
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
+  @@index([propertyId])
+  @@index([utility_id])
   @@map("utility_bills")
 }
 
 model UtilityAllocation {
-  id            String @id @default(uuid())
-  utilityBillId String @map("utility_bill_id")
-  unitId        String @map("unit_id")
+  id            String      @id @default(uuid())
+  utilityBillId String      @map("utility_bill_id")
+  unitId        String      @map("unit_id")
+  amount        Decimal     @db.Decimal(10, 2)
+  invoiceId     String?     @unique @map("invoice_id")
+  percentage    Decimal?    @db.Decimal(5, 2)
+  invoice       Invoice?    @relation(fields: [invoiceId], references: [id])
+  unit          Unit        @relation(fields: [unitId], references: [id])
+  utilityBill   UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
 
-  // The calculated share
-  amount     Decimal  @db.Decimal(10, 2)
-  percentage Decimal? @db.Decimal(5, 2) // Audit trail: "Why did I pay $50? Because you used 10%"
-
-  // Link to the resulting Invoice (The "Demand" sent to tenant)
-  invoiceId String?  @unique @map("invoice_id")
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-
-  utilityBill UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
-  unit        Unit        @relation(fields: [unitId], references: [id])
-
+  @@index([unitId], map: "utility_allocations_unit_id_fkey")
+  @@index([utilityBillId])
   @@map("utility_allocations")
 }
-
-// =====================================================================
-// 4. PROPERTY & UNITS (With Legacy fields restored for stability)
-// =====================================================================
 
 model Property {
   id                     String                  @id @default(uuid())
@@ -308,7 +293,9 @@ model Property {
   latitude               Float?
   longitude              Float?
   apartmentComplexDetail ApartmentComplexDetail?
+  CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
+  LandDetail             LandDetail?
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
@@ -319,6 +306,7 @@ model Property {
   propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
   images                 PropertyImage[]
   tenantapplications     Tenantapplication[]
+  TownhouseDetail        TownhouseDetail?
   units                  Unit[]
   DssDocument            DssDocument[]
   DssWorkflowTemplate    DssWorkflowTemplate[]
@@ -348,7 +336,12 @@ model ApartmentComplexDetail {
   buildingName String?
   totalFloors  Int?
   totalUnits   Int?
-  property     Property @relation(fields: [propertyId], references: [id])
+  bathrooms    Int?
+  bedrooms     Int?
+  size         Float?
+  unitNumber   String?  @db.VarChar(50)
+  zoning       String?
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model HouseDetail {
@@ -360,25 +353,25 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
-  property       Property @relation(fields: [propertyId], references: [id])
+  zoning         String?
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Unit {
-  id              String   @id @default(uuid())
-  propertyId      String
-  complexDetailId String?
-  listingId       String?  @unique
-  unitNumber      String
-  floorNumber     Int?
-  bedrooms        Int?
-  bathrooms       Int?
-  isOccupied      Boolean  @default(false)
-  rentAmount      Float? // Kept as Float for Frontend compatibility
-  createdAt       DateTime @default(now())
-  houseDetailId   String?
-  unitName        String?
-  currency        String?  @default("USD") @db.VarChar(10)
-
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @default("USD") @db.VarChar(10)
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
@@ -610,6 +603,7 @@ model utility {
   createdAt     DateTime?       @default(now()) @db.DateTime(0)
   updatedAt     DateTime?       @default(now()) @db.DateTime(0)
   lease_utility lease_utility[]
+  utility_bills UtilityBill[]
 
   @@map("utility")
 }
@@ -1103,7 +1097,7 @@ model Feature {
 }
 
 model SidebarItem {
-  id          Int      @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   label       String
   path        String
   icon        String?
@@ -1111,15 +1105,15 @@ model SidebarItem {
   order       Int?
   badge       String?
   description String?
-  isActive    Boolean  @default(true)
-  isExternal  Boolean  @default(false)
+  isActive    Boolean          @default(true)
+  isExternal  Boolean          @default(false)
   target      String?
   featureId   Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  role        UserRole
-  feature     Feature? @relation(fields: [featureId], references: [id])
-  plans       Plan[]   @relation("SidebarItemPlans")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  role        SidebarItem_role
+  feature     Feature?         @relation(fields: [featureId], references: [id])
+  plans       Plan[]           @relation("SidebarItemPlans")
 
   @@index([featureId])
 }
@@ -1260,12 +1254,69 @@ model PropertyType {
   properties  Property[]
 }
 
-enum UserRole {
-  SYSTEM_ADMIN
-  PROPERTY_MANAGER
-  TENANT
-  VENDOR
-  ALL
+model AgentInvite {
+  id              String    @id
+  inviteTokenHash String    @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  isUsed          Boolean   @default(false)
+  tenantId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+  users           User      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([tenantId])
+}
+
+model CondoDetail {
+  id                    String   @id
+  propertyId            String   @unique
+  buildingName          String?
+  floorNumber           Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean  @default(false)
+  amenities             Json?
+  zoning                String?
+  Property              Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id           String   @id
+  propertyId   String   @unique
+  lotSize      Float?
+  zoning       String?
+  isSubdivided Boolean  @default(false)
+  hasUtilities Boolean  @default(false)
+  topography   String?
+  soilType     String?
+  accessRoad   Boolean  @default(false)
+  landUse      String?
+  Property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String   @id
+  propertyId     String   @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean  @default(false)
+  hasGarage      Boolean  @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean  @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning         String?
+  Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 enum Priority {
@@ -1464,7 +1515,6 @@ enum BlockchainNotaryStatus {
   FAILED
 }
 
-// Utility Enums (New from PDF)
 enum UtilitySplitMethod {
   EQUAL_USAGE
   OCCUPANCY_BASED
@@ -1476,10 +1526,10 @@ enum UtilitySplitMethod {
 
 enum UtilityBillStatus {
   DRAFT
-  PROCESSING // AI is reading it
-  REVIEW_REQUIRED // AI flagged an anomaly
+  PROCESSING
+  REVIEW_REQUIRED
   APPROVED
-  POSTED // Sent to GL
+  POSTED
 }
 
 enum UtilityImportMethod {
@@ -1487,37 +1537,6 @@ enum UtilityImportMethod {
   API
   PDF_OCR
   MANUAL
-}
-
-enum UtilityAllocationStatus {
-  PENDING
-  PARTIALLY_PAID
-  PAID
-  DISPUTED
-  VOIDED
-}
-
-enum UtilityPaymentMethod {
-  ACH
-  CARD
-  WALLET
-  CRYPTO
-  BANK_TRANSFER
-  CASH
-}
-
-enum UtilityReconciliationStatus {
-  PENDING
-  MATCHED
-  FAILED
-  MANUAL_REVIEW
-}
-
-enum UtilityDisputeStatus {
-  OPEN
-  UNDER_REVIEW
-  RESOLVED
-  REJECTED
 }
 
 enum AccountType {
@@ -1534,4 +1553,31 @@ enum PostingStatus {
   POSTED
   FAILED
   REVERSED
+}
+
+enum Invite_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum organization_users_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum SidebarItem_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }
