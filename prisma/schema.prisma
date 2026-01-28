@@ -295,25 +295,24 @@ model Property {
   apartmentComplexDetail ApartmentComplexDetail?
   CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
-  LandDetail             LandDetail?    
-  townhouseDetail        TownhouseDetail? 
+  LandDetail             LandDetail?
+  townhouseDetail        TownhouseDetail?
 
-  leases                 Lease[]
-  maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
-  OccupancyHistory       OccupancyHistory[]
-  listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
-  location               Location?               @relation(fields: [locationId], references: [id])
-  manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
-  organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
-  images                 PropertyImage[]
-  tenantapplications     Tenantapplication[]
-  TownhouseDetail        TownhouseDetail?
-  units                  Unit[]
-  DssDocument            DssDocument[]
-  DssWorkflowTemplate    DssWorkflowTemplate[]
-  journalLines           JournalLine[]
-  utilityBills           UtilityBill[]
+  leases              Lease[]
+  maintenanceRequests MaintenanceRequest[]  @relation("PropertyMaintenanceRequests")
+  OccupancyHistory    OccupancyHistory[]
+  listing             Listing?              @relation("PropertyListing", fields: [listingId], references: [id])
+  location            Location?             @relation(fields: [locationId], references: [id])
+  manager             OrganizationUser?     @relation(fields: [managerId], references: [id])
+  organization        Organization?         @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType        PropertyType?         @relation(fields: [propertyTypeId], references: [id])
+  images              PropertyImage[]
+  tenantapplications  Tenantapplication[]
+  units               Unit[]
+  DssDocument         DssDocument[]
+  DssWorkflowTemplate DssWorkflowTemplate[]
+  journalLines        JournalLine[]
+  utilityBills        UtilityBill[]
 
   @@index([locationId])
   @@index([managerId])
@@ -337,19 +336,14 @@ model ApartmentComplexDetail {
   propertyId   String   @unique
   buildingName String?
   totalFloors  Int?
-  unitNumber   String? @db.VarChar(50)
-  size         Float?    // square feet
+  unitNumber   String?  @db.VarChar(50)
+  size         Float? // square feet
   bedrooms     Int?
   bathrooms    Int?
   totalUnits   Int?
-  bathrooms    Int?
-  bedrooms     Int?
-  size         Float?
-  unitNumber   String?  @db.VarChar(50)
   zoning       String?
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
-
 
 model HouseDetail {
   id             String   @id @default(uuid())
@@ -360,60 +354,60 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
-  zoning        String?   // residential/commercial/agricultural
+  zoning         String? // residential/commercial/agricultural
   property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model CondoDetail {
-  id                    String    @id @default(uuid())
-  propertyId            String    @unique
+  id                    String  @id @default(uuid())
+  propertyId            String  @unique
   buildingName          String?
-  floorNumber                 Int?
+  floorNumber           Int?
   unitNumber            String?
   totalFloorsInBuilding Int?
   bedrooms              Int?
   bathrooms             Int?
   size                  Float?
   hoaFees               Float?
-  hasBalcony            Boolean   @default(false)
-  amenities             Json?     //arr of amenities 
+  hasBalcony            Boolean @default(false)
+  amenities             Json? //arr of amenities 
 
-  zoning        String?   // residential/commercial/agricultural
-  property              Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  zoning   String? // residential/commercial/agricultural
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model LandDetail {
-  id            String    @id @default(uuid())
-  propertyId    String    @unique
-  lotSize       Float?    // in acres or sqft
-  zoning        String?   // residential/commercial/agricultural
-  isSubdivided  Boolean   @default(false)
-  hasUtilities  Boolean   @default(false)
-  topography    String?   // flat/sloped/hilly
-  soilType      String?
-  accessRoad    Boolean   @default(false)
-  landUse       String?   // buildable/agricultural/recreational
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  propertyId   String   @unique
+  lotSize      Float? // in acres or sqft
+  zoning       String? // residential/commercial/agricultural
+  isSubdivided Boolean  @default(false)
+  hasUtilities Boolean  @default(false)
+  topography   String? // flat/sloped/hilly
+  soilType     String?
+  accessRoad   Boolean  @default(false)
+  landUse      String? // buildable/agricultural/recreational
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model TownhouseDetail {
-  id             String    @id @default(uuid())
-  propertyId     String    @unique
+  id             String  @id @default(uuid())
+  propertyId     String  @unique
   townhouseName  String?
   numberOfFloors Int?
   bedrooms       Int?
   bathrooms      Int?
   size           Float?
   unitNumber     String?
-  endUnit        Boolean   @default(false)
-  hasGarage      Boolean   @default(false)
+  endUnit        Boolean @default(false)
+  hasGarage      Boolean @default(false)
   garageSpaces   Int?
-  hasBackyard    Boolean   @default(false)
+  hasBackyard    Boolean @default(false)
   backyardSize   Float?
   hoaFees        Float?
-  zoning        String?   // residential/commercial/agricultural
+  zoning         String? // residential/commercial/agricultural
 
-  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Unit {
@@ -1328,54 +1322,6 @@ model AgentInvite {
   @@index([tenantId])
 }
 
-model CondoDetail {
-  id                    String   @id
-  propertyId            String   @unique
-  buildingName          String?
-  floorNumber           Int?
-  unitNumber            String?
-  totalFloorsInBuilding Int?
-  bedrooms              Int?
-  bathrooms             Int?
-  size                  Float?
-  hoaFees               Float?
-  hasBalcony            Boolean  @default(false)
-  amenities             Json?
-  zoning                String?
-  Property              Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-}
-
-model LandDetail {
-  id           String   @id
-  propertyId   String   @unique
-  lotSize      Float?
-  zoning       String?
-  isSubdivided Boolean  @default(false)
-  hasUtilities Boolean  @default(false)
-  topography   String?
-  soilType     String?
-  accessRoad   Boolean  @default(false)
-  landUse      String?
-  Property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-}
-
-model TownhouseDetail {
-  id             String   @id
-  propertyId     String   @unique
-  townhouseName  String?
-  numberOfFloors Int?
-  bedrooms       Int?
-  bathrooms      Int?
-  size           Float?
-  unitNumber     String?
-  endUnit        Boolean  @default(false)
-  hasGarage      Boolean  @default(false)
-  garageSpaces   Int?
-  hasBackyard    Boolean  @default(false)
-  backyardSize   Float?
-  hoaFees        Float?
-  zoning         String?
-  Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
