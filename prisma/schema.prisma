@@ -1317,14 +1317,6 @@ model RentEscalation {
   @@index([leaseId])
 }
 
-model PropertyType {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?
-  createdAt   DateTime   @default(now())
-  properties  Property[]
-}
-
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER

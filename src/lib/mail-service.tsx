@@ -45,7 +45,16 @@ export const sendPasswordResetEmail = async (email: string, token: string) => {
  * 2. Verification Wrapper
  */
 export const sendVerificationEmail = async (email: string, token: string) => {
-    const verifyUrl = `${getBaseUrl()}/api/auth/verify-email?token=${token}`;
+    // 1. Get the Base URL dynamically
+    const baseUrl = getBaseUrl();
+
+    // 2. Construct the full link
+    const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`;
+
+    // 🔍 DEBUG LOG: Check this in your VS Code terminal when you sign up
+    console.log("-------------------------------------------------------");
+    console.log("🔗 GENERATED VERIFICATION LINK:", verifyUrl);
+    console.log("-------------------------------------------------------");
 
     const emailBody = (
         <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px', color: '#333' }}>

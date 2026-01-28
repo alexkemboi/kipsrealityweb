@@ -24,6 +24,10 @@ export async function getServerBaseUrl(): Promise<string> {
 
   if (host) return `${proto}://${host}`;
 
-  // Last-resort fallback for non-request contexts.
-  return 'http://localhost:3000';
+  // Removed hardcoded fallback to localhost
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new Error('Environment variable NEXT_PUBLIC_BASE_URL is not set.');
+  }
+  return baseUrl;
 }
