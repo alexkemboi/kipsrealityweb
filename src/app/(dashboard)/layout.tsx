@@ -86,7 +86,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Navbar with dark background */}
-        <header className="flex-shrink-0 z-10 bg-[#003b73] border-b border-[#002b59] text-white">
+        <header className="flex-shrink-0 z-10 bg-[#003b73] border-b border-[#002b5b] text-white">
           <DashboardNavbar
             user={user}
             onMenuClick={() => setMobileDrawerOpen(true)}

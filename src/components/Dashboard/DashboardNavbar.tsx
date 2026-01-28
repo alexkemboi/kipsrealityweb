@@ -20,6 +20,7 @@ interface DashboardNavbarProps {
 export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [showMobileSearch, setShowMobileSearch] = useState(false)
+  const { logout, isLoggingOut } = useLogout()
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -31,11 +32,19 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
   return (
     <div className="bg-[#003b73] border-b border-[#002b59] sticky top-0 z-30">
       <div className="flex items-center justify-between px-4 md:px-6 py-3">
+  const handleLogout = async () => {
+    await logout()
+  }
+
+  return (
+    <div className="bg-[#003b73] border-b border-[#002b5b]">
+      {/* Top row: title + menu */}
+      <div className="flex h-20 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-4">
           {isMobile && onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition"
+              className="p-2 text-blue-200 hover:text-white hover:bg-[#002b5b] rounded-lg transition"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -106,4 +115,3 @@ export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
     </div>
   )
 }
-
