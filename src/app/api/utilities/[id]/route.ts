@@ -2,17 +2,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// app/api/utilities/[id]/route.ts
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+// GET /api/utilities/[id] -> Get utility details
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const id = params.id;
-    const utility = await prisma.utility.findUnique({ where: { id } });
+    const { id: utilityId } = await params;
+    const utility = await prisma.utility.findUnique({ where: { id: utilityId } });
 
     if (!utility) {
       return NextResponse.json({ success: false, error: "Utility not found" }, { status: 404 });
     }
 
-    // ✅ Return in expected frontend shape
     return NextResponse.json({ success: true, data: utility });
   } catch (error) {
     console.error(error);
@@ -20,10 +22,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-// PUT /api/utilities/:id -> Update utility
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+// PUT /api/utilities/[id] -> Update utility
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
+    const { id: utilityId } = await params;
     const body = await req.json();
     const { name, type, unitPrice, fixedAmount } = body;
 
@@ -41,25 +46,30 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const updatedUtility = await prisma.utility.update({
-      where: { id },
+      where: { id: utilityId },
       data: { name, type, unitPrice, fixedAmount },
     });
 
     return NextResponse.json({ success: true, data: updatedUtility });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
-// DELETE /api/utilities/:id -> Remove utility
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+// DELETE /api/utilities/[id] -> Remove utility
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = params;
-    await prisma.utility.delete({ where: { id } });
+    const { id: utilityId } = await params;
+    await prisma.utility.delete({ where: { id: utilityId } });
     return NextResponse.json({ success: true, message: "Utility deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
