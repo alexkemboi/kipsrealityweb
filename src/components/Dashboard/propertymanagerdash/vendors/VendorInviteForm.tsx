@@ -181,7 +181,10 @@ export default function VendorInviteForm() {
     }
   };
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    throw new Error("Environment variable NEXT_PUBLIC_BASE_URL is not set.");
+  }
   const generateInviteLink = (token: string, inviteEmail: string) => {
     return `${baseUrl}/inviteor?email=${encodeURIComponent(inviteEmail)}&token=${token}`;
   };

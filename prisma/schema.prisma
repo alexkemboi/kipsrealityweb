@@ -295,7 +295,9 @@ model Property {
   apartmentComplexDetail ApartmentComplexDetail?
   CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
-  LandDetail             LandDetail?
+  LandDetail             LandDetail?    
+  townhouseDetail        TownhouseDetail? 
+
   leases                 Lease[]
   maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
   OccupancyHistory       OccupancyHistory[]
@@ -335,6 +337,10 @@ model ApartmentComplexDetail {
   propertyId   String   @unique
   buildingName String?
   totalFloors  Int?
+  unitNumber   String? @db.VarChar(50)
+  size         Float?    // square feet
+  bedrooms     Int?
+  bathrooms    Int?
   totalUnits   Int?
   bathrooms    Int?
   bedrooms     Int?
@@ -343,6 +349,7 @@ model ApartmentComplexDetail {
   zoning       String?
   property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
+
 
 model HouseDetail {
   id             String   @id @default(uuid())
@@ -353,8 +360,60 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
-  zoning         String?
+  zoning        String?   // residential/commercial/agricultural
   property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model CondoDetail {
+  id                    String    @id @default(uuid())
+  propertyId            String    @unique
+  buildingName          String?
+  floorNumber                 Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean   @default(false)
+  amenities             Json?     //arr of amenities 
+
+  zoning        String?   // residential/commercial/agricultural
+  property              Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id            String    @id @default(uuid())
+  propertyId    String    @unique
+  lotSize       Float?    // in acres or sqft
+  zoning        String?   // residential/commercial/agricultural
+  isSubdivided  Boolean   @default(false)
+  hasUtilities  Boolean   @default(false)
+  topography    String?   // flat/sloped/hilly
+  soilType      String?
+  accessRoad    Boolean   @default(false)
+  landUse       String?   // buildable/agricultural/recreational
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String    @id @default(uuid())
+  propertyId     String    @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean   @default(false)
+  hasGarage      Boolean   @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean   @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning        String?   // residential/commercial/agricultural
+
+  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
 model Unit {
@@ -1317,6 +1376,12 @@ model TownhouseDetail {
   hoaFees        Float?
   zoning         String?
   Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
 }
 
 enum Priority {
@@ -1537,6 +1602,37 @@ enum UtilityImportMethod {
   API
   PDF_OCR
   MANUAL
+}
+
+enum UtilityAllocationStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  DISPUTED
+  VOIDED
+}
+
+enum UtilityPaymentMethod {
+  ACH
+  CARD
+  WALLET
+  CRYPTO
+  BANK_TRANSFER
+  CASH
+}
+
+enum UtilityReconciliationStatus {
+  PENDING
+  MATCHED
+  FAILED
+  MANUAL_REVIEW
+}
+
+enum UtilityDisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
 }
 
 enum AccountType {

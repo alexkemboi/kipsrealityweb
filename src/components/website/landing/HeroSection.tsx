@@ -16,7 +16,11 @@ interface HeroData {
 
 async function getHeroData(): Promise<HeroData | null> {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/hero?page=home`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) {
+        throw new Error("Environment variable NEXT_PUBLIC_API_URL is not set.");
+    }
+    const res = await fetch(`${apiUrl}/api/hero?page=home`, {
       cache: "no-store",
       next: { revalidate: 0 }
     });
