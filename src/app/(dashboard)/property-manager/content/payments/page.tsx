@@ -49,7 +49,7 @@ interface Payment {
   paidOn: string;
   reference?: string;
   invoice: Invoice;
-  is_reversed?: boolean;
+  isReversed?: boolean;
   postingStatus: "PENDING" | "POSTED" | "FAILED";
 }
 
@@ -57,8 +57,8 @@ interface FullReceipt {
   id: string;
   receiptNo: string;
   issuedOn: string;
-  payment_id: string;
-  invoice_id: string;
+  paymentId: string;
+  invoiceId: string;
   payment: {
     id: string;
     amount: number;
@@ -239,7 +239,7 @@ export default function PaymentsPage() {
       pendingInvoices.find(inv => inv.id === selectedInvoice);
     if (!invoice) return toast.error("Invoice not found");
 
-    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const validPayments = invoice.payment?.filter(p => !p.isReversed) || [];
     const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
@@ -426,7 +426,7 @@ export default function PaymentsPage() {
   }
 
   // Filter out reversed payments for calculations
-  const validPay = payments.filter(p => !p.is_reversed);
+  const validPay = payments.filter(p => !p.isReversed);
   const totalAmount = validPay.reduce((sum, p) => sum + p.amount, 0);
   const paymentMethods = {
     CASH: validPay.filter(p => p.method === "CASH").length,
@@ -434,7 +434,7 @@ export default function PaymentsPage() {
   };
 
   const selectedInvoiceData = filteredInvoices.find(inv => inv.id === selectedInvoice);
-  const validPayments = selectedInvoiceData?.payment?.filter(p => !p.is_reversed) || [];
+  const validPayments = selectedInvoiceData?.payment?.filter(p => !p.isReversed) || [];
   const paidSoFar = validPayments.reduce((sum, p) => sum + p.amount, 0);
   const remainingBalance = selectedInvoiceData ? selectedInvoiceData.amount - paidSoFar : 0;
 
@@ -548,7 +548,7 @@ export default function PaymentsPage() {
                     >
                       <option value="">Choose an invoice...</option>
                       {filteredInvoices.map((inv) => {
-                        const validPayments = inv.payment?.filter(p => !p.is_reversed) || [];
+                        const validPayments = inv.payment?.filter(p => !p.isReversed) || [];
                         const paid = validPayments.reduce((sum, p) => sum + p.amount, 0);
                         const remaining = inv.amount - paid;
                         return (
@@ -1327,7 +1327,7 @@ export default function PaymentsPage() {
                             </DropdownMenuItem>
 
 
-                            {p.is_reversed && (
+                            {p.isReversed && (
                               <DropdownMenuItem disabled className="opacity-50">
                                 Already Reversed
                               </DropdownMenuItem>
@@ -1337,7 +1337,7 @@ export default function PaymentsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${p.is_reversed
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${p.isReversed
                             ? 'bg-gradient-to-br from-red-500 to-red-600'
                             : 'bg-gradient-to-br from-blue-500 to-blue-600'
                             }`}>
@@ -1347,7 +1347,7 @@ export default function PaymentsPage() {
                           </div>
                           <div>
                             <div className="text-sm font-semibold text-slate-900">#{p.id.slice(0, 8)}</div>
-                            {p.is_reversed && (
+                            {p.isReversed && (
                               <div className="text-xs text-red-600 font-semibold">REVERSED</div>
                             )}
                             {p.reference && (

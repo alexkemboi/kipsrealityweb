@@ -91,11 +91,26 @@ export async function POST(request: Request) {
       { status: 200 }
     );
 
+    // Detect if we are in production BUT running on a local IP/HTTP
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isLocalNetwork = request.url.includes("192.168.") || request.url.includes("localhost");
+
     response.cookies.set('token', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // ONLY set Secure if in production AND NOT on local network
+      secure: isProduction && !isLocalNetwork,
       sameSite: 'lax',
-      maxAge: 60 * 60
+      path: '/',
+      maxAge: 60 * 15
+    });
+
+    response.cookies.set('refreshToken', refreshToken, {
+      httpOnly: true,
+      // ONLY set Secure if in production AND NOT on local network
+      secure: isProduction && !isLocalNetwork,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7
     });
 
     return response;

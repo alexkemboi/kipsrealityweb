@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
                 billDate: true,
                 dueDate: true,
                 status: true,
-                split_method: true,
-                created_at: true,
+                splitMethod: true,
+                createdAt: true,
                 property: {
                     select: {
                         name: true,
@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
             consumption: bill.consumption,
             rate: bill.rate,
             status: bill.status,
-            splitMethod: bill.split_method,
+            splitMethod: bill.splitMethod,
             billDate: bill.billDate.toISOString(),
             dueDate: bill.dueDate.toISOString(),
             periodStart: bill.periodStart?.toISOString(),
             periodEnd: bill.periodEnd?.toISOString(),
             allocationCount: bill.allocations.length,
-            createdAt: bill.created_at.toISOString(),
+            createdAt: bill.createdAt.toISOString(),
         }));
 
         return NextResponse.json({ bills: formattedBills });

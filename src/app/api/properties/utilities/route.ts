@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       invoice: {
         lease: { propertyId: { in: properties.map((p: { id: string }) => p.id) } }
       },
-      is_reversed: false,
+      isReversed: false,
       ...dateFilter,
     },
     include: {

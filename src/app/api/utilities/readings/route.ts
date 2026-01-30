@@ -59,13 +59,13 @@ export async function GET(request: NextRequest) {
         });
 
         // Filter by property/utility if provided
-        const filtered = readings.filter((r) => {
+        const filtered = readings.filter((r: any) => {
             const matchProperty = !propertyId || r.lease_utility.Lease.propertyId === propertyId;
             const matchUtility = !utilityId || r.lease_utility.utility_id === utilityId;
             return matchProperty && matchUtility;
         });
 
-        const formattedReadings = filtered.map((reading) => {
+        const formattedReadings = filtered.map((reading: any) => {
             const lease = reading.lease_utility.Lease;
             const tenant = lease.tenant;
 

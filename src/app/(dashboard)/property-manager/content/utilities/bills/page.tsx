@@ -207,7 +207,7 @@ export default function UtilityOperationsPage() {
             consumption: generatedBill.consumption,
             rate: generatedBill.rate,
             status: generatedBill.status,
-            splitMethod: "EQUAL_USAGE",
+            splitMethod: "EQUAL",
             billDate: new Date().toISOString(),
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             periodStart: null,

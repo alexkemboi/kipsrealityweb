@@ -48,7 +48,7 @@ export async function GET(
             orderBy: { readingDate: "desc" },
         });
 
-        const formatted = readings.map((r) => ({
+        const formatted = readings.map((r: any) => ({
             id: r.id,
             leaseUtilityId: r.lease_utility_id,
             readingValue: r.reading_value,

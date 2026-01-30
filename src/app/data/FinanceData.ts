@@ -2,17 +2,17 @@
 
 export interface Payment {
   id: string;
-  invoice_id: string;
+  invoiceId: string;
   amount: number;
   method: string; // or use a union type if you know the possible values
   reference?: string;
   paidOn?: string;
   createdAt?: string;
   updatedAt?: string;
-  is_reversed: boolean;
-  reversed_at?: string;
-  reversal_reason?: string;
-  reversed_by?: string;
+  isReversed: boolean;
+  reversedAt?: string;
+  reversalReason?: string;
+  reversedBy?: string;
 }
 
 export interface InvoiceItem {
@@ -25,7 +25,7 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id: string;
-  lease_id: string;
+  leaseId: string;
   type: "RENT" | "UTILITY";
   amount: number;
   dueDate: string;
@@ -44,7 +44,7 @@ export interface Invoice {
       name?: string;
       address?: string;
     };
-    lease_utility?: {
+    leaseUtility?: {
       utility: {
         id: string;
         name: string;
@@ -52,7 +52,7 @@ export interface Invoice {
         fixedAmount?: number;
         unitPrice?: number;
       };
-      is_tenant_responsible?: boolean;
+      isTenantResponsible?: boolean;
     }[];
   };
   utilities?: {

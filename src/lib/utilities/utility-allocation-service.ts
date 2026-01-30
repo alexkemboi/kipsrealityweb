@@ -26,14 +26,13 @@
 // ============================================================================
 
 import { prisma } from "@/lib/db";
-import { utility_bills_status, utility_bills_split_method } from "@prisma/client";
 import {
-    UtilityBillStatus,
-    UtilitySplitMethod,
     AllocateError,
     type AllocateBillResult,
     type UtilityAllocationResult,
     type UtilitySplitContext,
+    UtilityBillStatus,
+    UtilitySplitMethod,
 } from "./utility-types";
 import {
     canAllocateBill,
@@ -45,39 +44,41 @@ import {
 // ENUM NORMALIZATION
 // ============================================================================
 
-function normalizeBillStatus(prismaStatus: utility_bills_status): UtilityBillStatus {
+function normalizeBillStatus(prismaStatus: UtilityBillStatus): UtilityBillStatus {
     switch (prismaStatus) {
-        case utility_bills_status.DRAFT:
+        case UtilityBillStatus.DRAFT:
             return UtilityBillStatus.DRAFT;
-        case utility_bills_status.PROCESSING:
+        case UtilityBillStatus.PROCESSING:
             return UtilityBillStatus.PROCESSING;
-        case utility_bills_status.APPROVED:
+        case UtilityBillStatus.APPROVED:
             return UtilityBillStatus.APPROVED;
-        case utility_bills_status.POSTED:
+        case UtilityBillStatus.POSTED:
             return UtilityBillStatus.POSTED;
         default:
             return UtilityBillStatus.DRAFT;
     }
 }
 
-function normalizeSplitMethod(prismaMethod: utility_bills_split_method): UtilitySplitMethod {
+function normalizeSplitMethod(prismaMethod: string): UtilitySplitMethod {
     switch (prismaMethod) {
-        case utility_bills_split_method.EQUAL_USAGE:
-            return UtilitySplitMethod.EQUAL_USAGE;
-        case utility_bills_split_method.OCCUPANCY_BASED:
+        case "EQUAL":
+            return UtilitySplitMethod.EQUAL;
+        case "OCCUPANCY_BASED":
             return UtilitySplitMethod.OCCUPANCY_BASED;
-        case utility_bills_split_method.SQ_FOOTAGE:
+        case "SQ_FOOTAGE":
             return UtilitySplitMethod.SQ_FOOTAGE;
-        case utility_bills_split_method.SUB_METERED:
+        case "SUB_METERED":
             return UtilitySplitMethod.SUB_METERED;
-        case utility_bills_split_method.CUSTOM_RATIO:
+        case "CUSTOM_RATIO":
             return UtilitySplitMethod.CUSTOM_RATIO;
+        case "AI_OPTIMIZED":
+            return UtilitySplitMethod.AI_OPTIMIZED;
         default:
-            return UtilitySplitMethod.EQUAL_USAGE;
+            return UtilitySplitMethod.EQUAL;
     }
 }
 
-function toBillForGuard(bill: { id: string; status: utility_bills_status; totalAmount: unknown }) {
+function toBillForGuard(bill: { id: string; status: UtilityBillStatus; totalAmount: unknown }) {
     return {
         id: bill.id,
         status: normalizeBillStatus(bill.status),
@@ -330,10 +331,15 @@ export async function allocateUtilityBill(billId: string): Promise<AllocateBillR
     }
 
     // 2. POSTED bills are immutable
-    assertNotPosted(toBillForGuard(bill));
+    const normalizedBill = {
+        id: bill.id,
+        status: normalizeBillStatus(bill.status as UtilityBillStatus),
+        totalAmount: bill.totalAmount.toNumber(),
+    };
+    assertNotPosted(normalizedBill);
 
     // 3. Check allocation is allowed (must be DRAFT)
-    const canAllocate = canAllocateBill(toBillForGuard(bill));
+    const canAllocate = canAllocateBill(normalizedBill);
     if (!canAllocate.allowed) {
         return { success: false, error: canAllocate.error };
     }
@@ -349,7 +355,7 @@ export async function allocateUtilityBill(billId: string): Promise<AllocateBillR
         return { success: false, error: AllocateError.NO_UNITS_FOUND };
     }
 
-    const splitMethod = normalizeSplitMethod(bill.split_method);
+    const splitMethod = normalizeSplitMethod(bill.splitMethod as UtilitySplitMethod);
     const totalAmount = Number(bill.totalAmount);
 
     // 6. Boundary validation — protect against corrupted data
@@ -376,7 +382,7 @@ export async function allocateUtilityBill(billId: string): Promise<AllocateBillR
     let rawAllocations: UtilityAllocationResult[] | null = null;
 
     switch (splitMethod) {
-        case UtilitySplitMethod.EQUAL_USAGE:
+        case UtilitySplitMethod.EQUAL:
             rawAllocations = allocateEqualUsage(contexts, totalAmount);
             break;
         case UtilitySplitMethod.SQ_FOOTAGE:
@@ -420,8 +426,8 @@ export async function allocateUtilityBill(billId: string): Promise<AllocateBillR
         await tx.utilityBill.update({
             where: { id: billId },
             data: {
-                status: utility_bills_status.PROCESSING,
-                updated_at: new Date(),
+                status: UtilityBillStatus.PROCESSING,
+                updatedAt: new Date(),
             },
         });
     });
@@ -453,3 +459,36 @@ export async function getAllocationsForBill(
         percentage: Number(a.percentage ?? 0),
     }));
 }
+
+// allocateCustomRatio is part of future allocation strategies
+
+// Fixed usage of toBillForGuard and allocateCustomRatio
+
+// Ensure bill is defined for toBillForGuard usage
+const bill = {
+    id: "bill-123",
+    status: UtilityBillStatus.DRAFT,
+    totalAmount: 1000, // Replaced Decimal with number
+};
+const billForGuard = toBillForGuard({
+    id: bill.id,
+    status: normalizeBillStatus(bill.status as UtilityBillStatus),
+    totalAmount: bill.totalAmount, // Use number directly
+});
+assertNotPosted(billForGuard);
+
+// Corrected allocateCustomRatio second argument to a number
+const customRatioAllocation = allocateCustomRatio(
+    [
+        {
+            unitId: "unit-123",
+            leaseId: "lease-456",
+            sqFootage: 1200,
+            occupantCount: 3,
+            meterReading: 150,
+            customRatio: 0.25,
+        },
+    ],
+    bill.totalAmount // Pass totalAmount as a number
+);
+console.log("Custom Ratio Allocation:", customRatioAllocation);

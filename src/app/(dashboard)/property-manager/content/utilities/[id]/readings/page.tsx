@@ -76,7 +76,7 @@ export default function ReadingsPage() {
 
             const allLeaseUtilities = leaseUtilData?.data || leaseUtilData || [];
             const filteredLeaseUtilities = allLeaseUtilities.filter(
-                (lu: { utility_id: string }) => lu.utility_id === utilityId
+                (lu: { utilityId: string }) => lu.utilityId === utilityId
             );
             setLeaseUtilities(filteredLeaseUtilities);
         } catch (err) {

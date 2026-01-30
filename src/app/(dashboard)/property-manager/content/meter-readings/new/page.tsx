@@ -87,16 +87,16 @@ export default function NewMeterReadingPage() {
     const fetchReadings = async () => {
       if (!selectedLU) return;
       try {
-        const res = await fetch(`/api/utility-readings?lease_utility_id=${selectedLU}`);
+        const res = await fetch(`/api/utility-readings?leaseUtilityId=${selectedLU}`);
         const data = await res.json();
         if (data.success) {
           const readings = (data.data || []).sort(
             (a: any, b: any) => new Date(a.readingDate).getTime() - new Date(b.readingDate).getTime()
           );
 
-          const initial = readings.length ? readings[0].reading_value : null;
+          const initial = readings.length ? readings[0].readingValue : null;
           const previous =
-            readings.length > 1 ? readings[readings.length - 1].reading_value : readings[0]?.reading_value || 0;
+            readings.length > 1 ? readings[readings.length - 1].readingValue : readings[0]?.readingValue || 0;
 
           setReadingsMap((prev) => ({
             ...prev,
@@ -143,8 +143,8 @@ export default function NewMeterReadingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lease_utility_id: selectedLU,
-          reading_value: value,
+          leaseUtilityId: selectedLU,
+          readingValue: value,
           amount,
           readingDate: new Date().toISOString(),
         }),

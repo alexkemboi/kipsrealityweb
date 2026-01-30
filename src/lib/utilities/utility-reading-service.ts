@@ -104,7 +104,7 @@ export async function getReadingsForLeaseUtility(
     });
 
     return {
-        readings: readings.map((r) => ({
+        readings: readings.map((r: any) => ({
             id: r.id,
             leaseUtilityId: r.lease_utility_id,
             readingValue: r.reading_value,

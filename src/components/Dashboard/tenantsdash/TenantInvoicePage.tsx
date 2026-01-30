@@ -8,8 +8,8 @@ interface Receipt {
   id: string;
   receiptNo: string;
   issuedOn: string;
-  payment_id: string;
-  invoice_id: string;
+  paymentId: string;
+  invoiceId: string;
 }
 
 interface Payment {

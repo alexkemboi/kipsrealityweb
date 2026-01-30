@@ -521,7 +521,7 @@ export default function EnhancedTenantDashboard() {
 
       // Sum paid ignoring reversed payments
       const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
-        const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
+        const paid = inv.payment?.filter(p => !p.isReversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
         return sum + paid;
       }, 0) || 0;
 
@@ -784,7 +784,7 @@ export default function EnhancedTenantDashboard() {
                               // Calculate adjusted totals considering reversed payments
                               const totalInvoiced = lease.invoice?.reduce((sum: any, inv: { amount: any; }) => sum + (inv.amount || 0), 0) || 0;
                               const totalPaid = lease.invoice?.reduce((sum: any, inv: { payment: any[]; }) => {
-                                const paid = inv.payment?.filter(p => !p.is_reversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
+                                const paid = inv.payment?.filter(p => !p.isReversed).reduce((pSum, p) => pSum + (p.amount || 0), 0) || 0;
                                 return sum + paid;
                               }, 0) || 0;
                               const balance = totalInvoiced - totalPaid;

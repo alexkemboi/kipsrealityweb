@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         }));
 
         // Format recent readings for display
-        const recentReadings = readings.map((reading) => ({
+        const recentReadings = readings.map((reading: any) => ({
             id: reading.id,
             utilityName: reading.lease_utility.utility.name,
             unitNumber: reading.lease_utility.Lease.unit.unitNumber,
