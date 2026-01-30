@@ -124,7 +124,7 @@ export async function GET(req: Request, context: { params: { tenantId: string } 
       utilities: inv.Lease?.lease_utility?.map((lu: any) => ({
         id: lu.utility.id,
         name: lu.utility.name,
-        type: lu.utility.name, // Fixed: use name as type placeholder if type is missing, or lu.utility.type if it exists
+        type: lu.utility.type || lu.utility.name,
         fixedAmount: lu.utility.fixedAmount ?? 0,
         unitPrice: lu.utility.unitPrice ?? 0,
         isTenantResponsible: lu.is_tenant_responsible,

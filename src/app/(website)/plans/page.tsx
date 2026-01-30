@@ -4,6 +4,8 @@ import { HeroSection } from "@/components/website/plans/HeroSection";
 import Footer from "@/components/website/Footer";
 import Navbar from "@/components/website/Navbar";
 
+export const dynamic = "force-dynamic";
+
 export default function PlansPage() {
   return (
     <>

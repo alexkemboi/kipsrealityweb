@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 
 // Types
-interface Receipt { id: string; receiptNo: string; issuedOn: string; payment_id: string; payment: Payment; invoice_id: string; }
-interface Payment { id: string; amount: number; method: string; reference?: string; paidOn?: string; is_reversed?: boolean; invoice: Invoice; receipt?: Receipt[]; }
+interface Receipt { id: string; receiptNo: string; issuedOn: string; paymentId: string; payment: Payment; invoiceId: string; }
+interface Payment { id: string; amount: number; method: string; reference?: string; paidOn?: string; isReversed?: boolean; invoice: Invoice; receipt?: Receipt[]; }
 interface Lease {
   id: string;
   property: Property;
@@ -31,7 +31,7 @@ interface Tenant {
   lastName?: string;
   email: string;
 }
-interface Invoice { id: string; lease_id: string; amount: number; dueDate: string; status: "PENDING" | "PAID" | "OVERDUE"; type: string; Lease: Lease; payment: Payment[]; }
+interface Invoice { id: string; leaseId: string; amount: number; dueDate: string; status: "PENDING" | "PAID" | "OVERDUE"; type: string; Lease: Lease; payment: Payment[]; }
 
 export default function TenantInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -62,7 +62,7 @@ export default function TenantInvoices() {
     if (!invoice) return toast.error("Invoice not found");
 
     // Only consider non-reversed payments
-    const validPayments = invoice.payment?.filter(p => !p.is_reversed) || [];
+    const validPayments = invoice.payment?.filter(p => !p.isReversed) || [];
     const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
@@ -191,7 +191,7 @@ export default function TenantInvoices() {
     overdue: invoices.filter(i => i.status === "OVERDUE").length,
     paid: invoices.filter(i => i.status === "PAID").length,
     totalAmount: invoices.reduce((sum, inv) => {
-      const paidAmount = inv.payment.filter(p => !p.is_reversed).reduce((s, p) => s + p.amount, 0);
+      const paidAmount = inv.payment.filter(p => !p.isReversed).reduce((s, p) => s + p.amount, 0);
       return sum + (inv.amount - paidAmount);
     }, 0)
   };
@@ -229,7 +229,7 @@ export default function TenantInvoices() {
                 {(() => {
                   const invoice = invoices.find(i => i.id === payingInvoice);
                   if (!invoice) return null;
-                  const paidAmount = invoice.payment.filter(p => !p.is_reversed).reduce((sum, p) => sum + p.amount, 0);
+                  const paidAmount = invoice.payment.filter(p => !p.isReversed).reduce((sum, p) => sum + p.amount, 0);
                   const remaining = invoice.amount - paidAmount;
 
                   return (
@@ -726,14 +726,14 @@ export default function TenantInvoices() {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {invoices.map((inv) => {
-                    const paidAmount = inv.payment.filter(p => !p.is_reversed).reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const paidAmount = inv.payment.filter(p => !p.isReversed).reduce((sum, p) => sum + (p.amount || 0), 0);
                     const remaining = inv.amount - paidAmount;
 
                     return (
                       <tr key={inv.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">#{inv.id.slice(0, 8)}</div>
-                          <div className="text-xs text-slate-500">{inv.lease_id}</div>
+                          <div className="text-xs text-slate-500">{inv.leaseId}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-sm text-slate-700">{inv.type}</span>

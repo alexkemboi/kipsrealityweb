@@ -11,6 +11,8 @@ export const metadata: Metadata = {
   keywords: 'jobs, careers, hiring, employment, Kips Reality',
 };
 
+export const dynamic = "force-dynamic";
+
 export default function JobsPage() {
   return (
     <div className="min-h-screen bg-background">

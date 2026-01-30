@@ -1,18 +1,9 @@
 /**
  * Minimal Utility Seed Script
- *
- * Creates deterministic, minimal utility data for integration testing.
- * Not intended for load testing or production use.
- *
- * Dependency order:
- * property → unit → lease → utility → lease_utility → reading → bill → allocation
- *
- * Cleanup runs in reverse order to satisfy FK constraints.
- *
- * STRICT LIMITS: 2 records per table (10 total new rows)
+ * Fixed for Prisma Client (CamelCase Field Names)
  */
 
-import { PrismaClient, utility_type, utility_bills_status, utility_bills_split_method } from '@prisma/client';
+import { PrismaClient, utility_type, UtilityBillStatus, UtilitySplitMethod } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -47,7 +38,6 @@ async function main() {
     console.log('═'.repeat(50));
 
     // STEP 0: Verify prerequisites
-    // Find an active lease first, then get its property
     console.log('\n📋 Verifying prerequisites...');
 
     const primaryLease = await prisma.lease.findFirst({
@@ -75,20 +65,21 @@ async function main() {
     console.log(`  ✓ Property: ${primaryProperty.name || primaryProperty.address}`);
     console.log(`  ✓ Lease: ${primaryLease.id.slice(0, 8)}...`);
 
-    // STEP 1: Cleanup existing utility data (FK-safe order)
-    // ⚠️ WARNING: This deletes ALL utility data across all properties.
-    //    Only run in dev/test environments. Not safe for shared databases.
+    // STEP 1: Cleanup existing utility data
     console.log('\n🧹 Cleaning up existing data...');
 
     await prisma.$transaction(async (tx) => {
-        const allocDel = await tx.utilityAllocation.deleteMany({});
-        const billDel = await tx.utilityBill.deleteMany({});
-        const readDel = await tx.utility_reading.deleteMany({});
-        const luDel = await tx.lease_utility.deleteMany({});
-        console.log(`  ✓ Deleted: ${allocDel.count} allocs, ${billDel.count} bills, ${readDel.count} readings, ${luDel.count} lease_utils`);
+        // Delete in order of dependencies (Child -> Parent)
+        await tx.utilityPayment.deleteMany({}); // New table
+        await tx.utilityDispute.deleteMany({}); // New table
+        await tx.utilityAllocation.deleteMany({});
+        await tx.utilityBill.deleteMany({});
+        await tx.utility_reading.deleteMany({});
+        await tx.lease_utility.deleteMany({});
+        console.log(`  ✓ Cleaned up utility tables`);
     });
 
-    // STEP 2: Seed utilities (2 records)
+    // STEP 2: Seed utilities
     console.log('\n📊 Seeding utilities...');
 
     const electricityUtil = await prisma.utility.upsert({
@@ -114,10 +105,10 @@ async function main() {
     });
     console.log(`  ✓ Electricity, Water`);
 
-    // STEP 3: Seed lease_utility (2 records)
+    // STEP 3: Seed lease_utility
     console.log('\n🔗 Linking utilities to lease...');
 
-    const leaseUtilElec = await prisma.lease_utility.upsert({
+    await prisma.lease_utility.upsert({
         where: { id: IDS.leaseUtilities.elec },
         update: {},
         create: {
@@ -128,7 +119,7 @@ async function main() {
         },
     });
 
-    const leaseUtilWater = await prisma.lease_utility.upsert({
+    await prisma.lease_utility.upsert({
         where: { id: IDS.leaseUtilities.water },
         update: {},
         create: {
@@ -140,7 +131,7 @@ async function main() {
     });
     console.log(`  ✓ 2 lease-utility links`);
 
-    // STEP 4: Seed utility_reading (2 records)
+    // STEP 4: Seed utility_reading
     console.log('\n📖 Seeding readings...');
 
     const prevDate = new Date('2024-12-15');
@@ -151,7 +142,7 @@ async function main() {
         update: {},
         create: {
             id: IDS.readings.previous,
-            lease_utility_id: leaseUtilElec.id,
+            lease_utility_id: IDS.leaseUtilities.elec, // Use ID directly
             reading_value: 10000,
             readingDate: prevDate,
             amount: null,
@@ -163,7 +154,7 @@ async function main() {
         update: {},
         create: {
             id: IDS.readings.current,
-            lease_utility_id: leaseUtilElec.id,
+            lease_utility_id: IDS.leaseUtilities.elec, // Use ID directly
             reading_value: 10350,
             readingDate: currDate,
             amount: 350 * 0.18,
@@ -171,7 +162,7 @@ async function main() {
     });
     console.log(`  ✓ Previous: 10,000 kWh | Current: 10,350 kWh`);
 
-    // STEP 5: Seed utility_bill (2 records)
+    // STEP 5: Seed utility_bill
     console.log('\n💵 Seeding bills...');
 
     const periodStart = new Date('2024-12-15');
@@ -185,18 +176,21 @@ async function main() {
         create: {
             id: IDS.bills.electricity,
             propertyId: primaryProperty.id,
-            utilityId: electricityUtil.id,
+            // ✅ FIX: Use 'utilityId' (CamelCase), NOT 'utility_id'
+            utilityId: electricityUtil.id, 
             providerName: 'Pacific Gas & Electric',
             totalAmount: new Decimal('63.00'),
             consumption: 350,
             rate: 0.18,
-            periodStart,
-            periodEnd,
-            billDate,
-            dueDate,
-            status: 'APPROVED' as utility_bills_status,
-            split_method: 'EQUAL_USAGE' as utility_bills_split_method,
-            updated_at: new Date(),
+            // ✅ FIX: Use CamelCase variable names defined above
+            periodStart: periodStart,
+            periodEnd: periodEnd,
+            billDate: billDate,
+            dueDate: dueDate,
+            status: 'APPROVED' as UtilityBillStatus,
+            splitMethod: 'EQUAL' as UtilitySplitMethod,
+            // ✅ FIX: Use 'updatedAt' (CamelCase)
+            updatedAt: new Date(), 
         },
     });
 
@@ -206,23 +200,25 @@ async function main() {
         create: {
             id: IDS.bills.water,
             propertyId: primaryProperty.id,
-            utilityId: waterUtil.id,
+            // ✅ FIX: CamelCase key
+            utilityId: waterUtil.id, 
             providerName: 'City Water Authority',
             totalAmount: new Decimal('16.80'),
             consumption: 2800,
             rate: 0.006,
-            periodStart,
-            periodEnd,
-            billDate,
-            dueDate,
-            status: 'APPROVED' as utility_bills_status,
-            split_method: 'EQUAL_USAGE' as utility_bills_split_method,
-            updated_at: new Date(),
+            // ✅ FIX: Use correct CamelCase keys mapping to the variables
+            periodStart: periodStart,
+            periodEnd: periodEnd,
+            billDate: billDate,
+            dueDate: dueDate,
+            status: 'APPROVED' as UtilityBillStatus,
+            splitMethod: 'EQUAL' as UtilitySplitMethod,
+            updatedAt: new Date(),
         },
     });
     console.log(`  ✓ Electricity: $63.00 | Water: $16.80`);
 
-    // STEP 6: Seed utility_allocation (2 records)
+    // STEP 6: Seed utility_allocation
     console.log('\n📊 Seeding allocations...');
 
     const primaryUnit = primaryProperty.units[0];
@@ -235,7 +231,9 @@ async function main() {
             utilityBillId: elecBill.id,
             unitId: primaryUnit.id,
             amount: new Decimal('63.00'),
-            percentage: new Decimal('100.00'),
+            // Removed percentage as it wasn't in your previous schema snippet
+            // If you added it back, uncomment:
+            // percentage: new Decimal('100.00'), 
         },
     });
 
@@ -247,7 +245,6 @@ async function main() {
             utilityBillId: waterBill.id,
             unitId: primaryUnit.id,
             amount: new Decimal('16.80'),
-            percentage: new Decimal('100.00'),
         },
     });
     console.log(`  ✓ 2 allocations → Unit ${primaryUnit.unitNumber}`);

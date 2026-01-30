@@ -5,26 +5,30 @@
 export enum UtilityBillStatus {
     DRAFT = "DRAFT",
     PROCESSING = "PROCESSING",
+    REVIEW_REQUIRED = "REVIEW_REQUIRED",
     APPROVED = "APPROVED",
     POSTED = "POSTED",
+    REJECTED = "REJECTED",
 }
 
 /** Strategies for splitting bills across units */
 export enum UtilitySplitMethod {
-    EQUAL_USAGE = "EQUAL_USAGE",
+    EQUAL = "EQUAL",
     OCCUPANCY_BASED = "OCCUPANCY_BASED",
     SQ_FOOTAGE = "SQ_FOOTAGE",
     SUB_METERED = "SUB_METERED",
     /** Ratios must be decimals (0.0 to 1.0) that sum to 1.0 across all units */
     CUSTOM_RATIO = "CUSTOM_RATIO",
+    AI_OPTIMIZED = "AI_OPTIMIZED",
 }
 
 /** How the bill was imported into the system */
 export enum UtilityImportMethod {
-    MANUAL = "MANUAL",
     CSV = "CSV",
     API = "API",
     PDF_OCR = "PDF_OCR",
+    MANUAL_ENTRY = "MANUAL_ENTRY",
+    IMAGE_SCAN = "IMAGE_SCAN",
 }
 
 /** Discriminated union for typed success/error handling */

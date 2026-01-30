@@ -28,8 +28,8 @@ export async function GET() {
       amount: r.amount,
       readingDate: r.readingDate,
       leaseUtility: {
-        id: r.lease_utility_id, // Wait, let me check property name
-        lease_utility: r.lease_utility,
+        id: r.lease_utility_id,
+        leaseUtility: r.lease_utility,
         lease: {
           id: r.lease_utility.Lease?.id,
           tenantName: r.lease_utility.Lease?.tenant

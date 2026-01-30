@@ -63,6 +63,10 @@ export function DashboardSidebar({
     </div>
   );
 
+  return (
+    <>
+      <DesktopSidebar />
+
       {/* Mobile Drawer */}
       {mobileDrawerOpen && (
         <>

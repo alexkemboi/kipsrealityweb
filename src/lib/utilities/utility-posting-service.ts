@@ -5,12 +5,11 @@
 
 import { prisma } from "@/lib/db";
 import { createHash } from "crypto";
-import { utility_bills_status } from "@prisma/client";
-import {
-    UtilityBillStatus,
-    PostError,
-    type PostBillResult,
-    type UtilityAllocationResult,
+import { 
+    UtilityBillStatus, 
+    UtilityAllocationResult,
+    PostBillResult,
+    PostError 
 } from "./utility-types";
 import { assertNotPosted } from "./utility-validators";
 import { getAllocationsForBill } from "./utility-allocation-service";
@@ -29,22 +28,26 @@ const ACCOUNT_CODES = {
 // ENUM NORMALIZATION
 // ============================================================================
 
-function normalizeBillStatus(prismaStatus: utility_bills_status): UtilityBillStatus {
+function normalizeBillStatus(prismaStatus: string): UtilityBillStatus {
     switch (prismaStatus) {
-        case utility_bills_status.DRAFT:
+        case "DRAFT":
             return UtilityBillStatus.DRAFT;
-        case utility_bills_status.PROCESSING:
+        case "PROCESSING":
             return UtilityBillStatus.PROCESSING;
-        case utility_bills_status.APPROVED:
+        case "REVIEW_REQUIRED":
+            return UtilityBillStatus.REVIEW_REQUIRED;
+        case "APPROVED":
             return UtilityBillStatus.APPROVED;
-        case utility_bills_status.POSTED:
+        case "POSTED":
             return UtilityBillStatus.POSTED;
+        case "REJECTED":
+            return UtilityBillStatus.REJECTED;
         default:
             return UtilityBillStatus.DRAFT;
     }
 }
 
-function toBillForGuard(bill: { id: string; status: utility_bills_status; totalAmount: unknown }) {
+function toBillForGuard(bill: { id: string; status: string; totalAmount: unknown }) {
     return {
         id: bill.id,
         status: normalizeBillStatus(bill.status),
@@ -94,7 +97,7 @@ export async function postUtilityBill(
     }
 
     // 3. Only APPROVED bills can be posted
-    if (bill.status !== utility_bills_status.APPROVED) {
+    if (bill.status !== UtilityBillStatus.APPROVED) {
         return { success: false, error: PostError.NOT_APPROVED };
     }
 
@@ -154,10 +157,10 @@ export async function postUtilityBill(
         await tx.utilityBill.update({
             where: { id: billId },
             data: {
-                status: utility_bills_status.POSTED,
+                status: UtilityBillStatus.POSTED,
                 journalEntryId: journalEntryId,
                 blockchainHash: blockchainHash,
-                updated_at: new Date(),
+                updatedAt: new Date(),
             },
         });
     });
@@ -183,5 +186,5 @@ export async function isBillPosted(billId: string): Promise<boolean> {
         select: { status: true },
     });
 
-    return bill?.status === utility_bills_status.POSTED;
+    return bill?.status === UtilityBillStatus.POSTED;
 }

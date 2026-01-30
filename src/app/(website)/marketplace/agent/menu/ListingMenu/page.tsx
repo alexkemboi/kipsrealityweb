@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   keywords: 'marketplace, listings',
 };
 
+export const dynamic = "force-dynamic";
+
 export default function AgentMenu() {
   return (
     <div className="min-h-screen bg-background">
