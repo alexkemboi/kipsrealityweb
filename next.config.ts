@@ -51,9 +51,7 @@ const nextConfig: NextConfig = {
   },
 
   // ⚠️ Safety: Ignored ESLint during build to prevent styling nitpicks from failing deployment
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  
 
   // Optional: Uncomment this if Type Errors are blocking your build 
   // and you need to force a deploy (Not recommended long term, but good for MVP crunch)
