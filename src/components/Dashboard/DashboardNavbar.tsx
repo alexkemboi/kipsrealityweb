@@ -1,117 +1,155 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { Bell, Search, Menu, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { UserNav } from './UserNav'
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Bell,
+  Search,
+  Menu,
+  User,
+  Settings,
+  LogOut,
+  ChevronDown
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-interface DashboardNavbarProps {
-  user: {
-    id: string
-    firstName: string
-    lastName?: string
-    role: string
-    email: string
-    avatarUrl?: string | null
-  }
-  onMenuClick?: () => void
-}
+export function DashboardNavbar({ toggleSidebar }: { toggleSidebar: () => void }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-export function DashboardNavbar({ user, onMenuClick }: DashboardNavbarProps) {
-  const [isMobile, setIsMobile] = useState(false)
-  const [showMobileSearch, setShowMobileSearch] = useState(false)
-  const { logout, isLoggingOut } = useLogout()
-
+  // Close dropdown when clicking outside
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  return (
-    <div className="bg-[#003b73] border-b border-[#002b59] sticky top-0 z-30">
-      <div className="flex items-center justify-between px-4 md:px-6 py-3">
+  // ✅ FIX: Logout Logic
   const handleLogout = async () => {
-    await logout()
-  }
+    try {
+      // 1. Clear Local Storage
+      localStorage.removeItem("rentflow_tokens");
+      localStorage.removeItem("rentflow_user"); // Also clear user data if it exists under this key
+
+      // 2. Call Logout API (Optional, to clear cookies)
+      await fetch("/api/auth/logout", { method: "POST" });
+
+      // 3. Force Redirect to Login
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout failed", error);
+      // Force redirect anyway
+      window.location.href = "/login";
+    }
+  };
+
+  // Get Initials for Avatar
+  const getInitials = () => {
+    if (!user) return "U";
+    return `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase();
+  };
 
   return (
-    <div className="bg-[#003b73] border-b border-[#002b5b]">
-      {/* Top row: title + menu */}
-      <div className="flex h-20 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-4">
-          {isMobile && onMenuClick && (
-            <button
-              onClick={onMenuClick}
-              className="p-2 text-blue-200 hover:text-white hover:bg-[#002b5b] rounded-lg transition"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
+    <header className="h-16 bg-white border-b border-gray-200 sticky top-0 z-30 transition-all duration-300">
+      <div className="h-full px-6 flex items-center justify-between">
 
-          <div className="hidden md:block">
-            <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">
-              Dashboard
-            </h2>
-          </div>
-        </div>
-
-        {/* Right Section */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Desktop Search */}
-          {!isMobile && (
-            <div className="relative mr-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="pl-10 pr-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:border-blue-500 w-48 lg:w-64 text-sm"
-              />
-            </div>
-          )}
-
-          {/* Mobile Search Toggle */}
-          {isMobile && (
-            <button
-              onClick={() => setShowMobileSearch(!showMobileSearch)}
-              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-          )}
-
-          {/* Notification Bell */}
-          <button className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#002b59]"></span>
+        {/* Left: Mobile Menu & Search */}
+        <div className="flex items-center gap-4 flex-1">
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-md text-gray-600"
+          >
+            <Menu size={20} />
           </button>
 
-          {/* User Profile Dropdown */}
-          <UserNav user={user} />
-        </div>
-      </div>
-
-      {/* Mobile Search Bar Expansion */}
-      {isMobile && showMobileSearch && (
-        <div className="px-4 pb-3 animate-in slide-in-from-top duration-200">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          {/* Search Bar */}
+          <div className="hidden md:flex items-center w-full max-w-md bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+            <Search size={18} className="text-gray-400 mr-2" />
             <input
               type="text"
-              placeholder="Search..."
-              className="pl-10 pr-10 py-2 w-full bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder-neutral-400 focus:outline-none focus:border-blue-500 text-sm"
-              autoFocus
+              placeholder="Search properties, tenants, invoices..."
+              className="bg-transparent border-none outline-none text-sm w-full text-gray-700 placeholder-gray-400"
             />
-            <button
-              onClick={() => setShowMobileSearch(false)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-neutral-400 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         </div>
-      )}
-    </div>
-  )
+
+        {/* Right: Notifications & Profile */}
+        <div className="flex items-center gap-4">
+          <button className="p-2 text-gray-500 hover:bg-gray-100 rounded-full relative">
+            <Bell size={20} />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          </button>
+
+          {/* Profile Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-3 hover:bg-gray-50 p-1.5 rounded-lg transition-colors"
+            >
+              <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                {getInitials()}
+              </div>
+              <div className="hidden md:block text-left">
+                <p className="text-sm font-medium text-gray-900 leading-none">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {user?.role?.replace("_", " ") || "User"}
+                </p>
+              </div>
+              <ChevronDown size={16} className="text-gray-400 hidden md:block" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+
+                {/* Mobile User Info (Only shows on mobile inside dropdown) */}
+                <div className="md:hidden px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-900">{user?.firstName} {user?.lastName}</p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                </div>
+
+                <div className="py-1">
+                  <Link
+                    href="/property-manager/settings/profile"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    <User size={16} />
+                    Profile
+                  </Link>
+                  <Link
+                    href="/property-manager/settings"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </Link>
+                </div>
+
+                <div className="border-t border-gray-100 my-1"></div>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
 }

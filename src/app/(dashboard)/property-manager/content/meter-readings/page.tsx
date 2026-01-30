@@ -20,11 +20,11 @@ import Link from "next/link";
 
 interface Reading {
   id: string;
-  reading_value: number;
+  readingValue: number;
   amount: number | null;
   readingDate: string;
   createdAt: string;
-  lease_utility: {
+  leaseUtility: {
     id: string;
     Lease: {
       id: string;
@@ -65,13 +65,13 @@ export default function MeterReadingsPage() {
   }, []);
 
   useEffect(() => {
-    if (searchTerm) {
+      if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       const filtered = readings.filter((r) => {
-        const tenantName = (r.lease_utility.Lease.tenantName || "").toLowerCase();
-        const propertyName = (r.lease_utility.Lease.propertyName || "").toLowerCase();
-        const unitNumber = (r.lease_utility.Lease.unitNumber || "").toLowerCase();
-        const utilityName = r.lease_utility.utility.name.toLowerCase();
+          const tenantName = (r.leaseUtility.Lease.tenantName || "").toLowerCase();
+          const propertyName = (r.leaseUtility.Lease.propertyName || "").toLowerCase();
+          const unitNumber = (r.leaseUtility.Lease.unitNumber || "").toLowerCase();
+          const utilityName = r.leaseUtility.utility.name.toLowerCase();
         return (
           tenantName.includes(searchLower) ||
           propertyName.includes(searchLower) ||
@@ -316,26 +316,26 @@ export default function MeterReadingsPage() {
                       >
                         <td className="px-4 py-3 font-medium text-[#0b1f3a]">
                           {(() => {
-                            const tenant = r.lease_utility.Lease.tenant; // use the tenant object
-                            if (!tenant) return r.lease_utility.Lease.tenantName || "Unknown Tenant"; // fallback
+                            const tenant = r.leaseUtility.Lease.tenant; // use the tenant object
+                            if (!tenant) return r.leaseUtility.Lease.tenantName || "Unknown Tenant"; // fallback
                             const name = `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim();
-                            return name || r.lease_utility.Lease.tenantName || "Unknown Tenant";
+                            return name || r.leaseUtility.Lease.tenantName || "Unknown Tenant";
                           })()}
                         </td>
                         <td className="px-4 py-3 text-gray-700">
-                          {r.lease_utility.Lease.propertyName || "N/A"}
+                          {r.leaseUtility.Lease.propertyName || "N/A"}
                         </td>
                         <td className="px-4 py-3 text-gray-700">
-                          {r.lease_utility.Lease.unitNumber ?? r.lease_utility.Lease.unit?.number ?? "N/A"}
+                          {r.leaseUtility.Lease.unitNumber ?? r.leaseUtility.Lease.unit?.number ?? "N/A"}
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                             <Zap className="w-3 h-3" />
-                            {r.lease_utility.utility.name}
+                            {r.leaseUtility.utility.name}
                           </span>
                         </td>
                         <td className="px-4 py-3 font-semibold text-[#15386a]">
-                          {r.reading_value} units
+                          {r.readingValue} units
                         </td>
                         <td className="px-4 py-3 font-bold text-emerald-600">
                           {formatCurrency(r.amount)}

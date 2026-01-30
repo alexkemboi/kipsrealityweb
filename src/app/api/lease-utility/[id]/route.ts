@@ -27,15 +27,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const { id } = params;
     const body = await req.json();
-    const { is_tenant_responsible } = body;
+    const { isTenantResponsible } = body;
 
-    if (is_tenant_responsible === undefined) {
-      return NextResponse.json({ success: false, error: "is_tenant_responsible is required" }, { status: 400 });
+    if (isTenantResponsible === undefined) {
+      return NextResponse.json({ success: false, error: "isTenantResponsible is required" }, { status: 400 });
     }
 
     const updated = await prisma.lease_utility.update({
       where: { id },
-      data: { is_tenant_responsible: is_tenant_responsible },
+      data: { is_tenant_responsible: isTenantResponsible },
     });
 
     return NextResponse.json({ success: true, data: updated });

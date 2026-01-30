@@ -58,7 +58,7 @@ export function CreateBillModal({
     const [billDate, setBillDate] = useState(new Date().toISOString().split("T")[0]);
     const [dueDate, setDueDate] = useState("");
     const [splitMethod, setSplitMethod] = useState<UtilitySplitMethod>(
-        UtilitySplitMethod.EQUAL_USAGE
+        UtilitySplitMethod.EQUAL
     );
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingProperties, setIsLoadingProperties] = useState(false);
@@ -173,17 +173,18 @@ export function CreateBillModal({
         setTotalAmount("");
         setBillDate(new Date().toISOString().split("T")[0]);
         setDueDate("");
-        setSplitMethod(UtilitySplitMethod.EQUAL_USAGE);
+        setSplitMethod(UtilitySplitMethod.EQUAL);
         setError(null);
         onClose();
     };
 
     const splitMethodLabels: Record<UtilitySplitMethod, string> = {
-        [UtilitySplitMethod.EQUAL_USAGE]: "Equal Usage",
+        [UtilitySplitMethod.EQUAL]: "Equal Usage",
         [UtilitySplitMethod.OCCUPANCY_BASED]: "Occupancy-based",
         [UtilitySplitMethod.SQ_FOOTAGE]: "Square Footage",
         [UtilitySplitMethod.SUB_METERED]: "Sub-metered",
         [UtilitySplitMethod.CUSTOM_RATIO]: "Custom Ratio",
+        [UtilitySplitMethod.AI_OPTIMIZED]: "AI Optimized",
     };
 
     const selectedProperty = properties.find(p => p.id === selectedPropertyId);

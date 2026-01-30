@@ -48,8 +48,8 @@ export async function GET(
             billDate: bill.billDate,
             dueDate: bill.dueDate,
             status: bill.status,
-            splitMethod: bill.split_method,
-            createdAt: bill.created_at,
+            splitMethod: bill.splitMethod, 
+            createdAt: bill.createdAt,    
             allocationsCount: bill.allocations.length
         }));
 

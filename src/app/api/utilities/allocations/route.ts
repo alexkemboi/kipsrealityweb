@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
                         periodStart: true,
                         periodEnd: true,
                         billDate: true,
-                        split_method: true,
+                        splitMethod: true,
                         property: {
                             select: {
                                 name: true,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
                 period,
                 periodRaw: bill.periodEnd?.toISOString() || bill.billDate.toISOString(),
                 amount: Number(alloc.amount),
-                basis: getBasisDescription(bill.split_method, alloc.percentage),
+                basis: getBasisDescription(bill.splitMethod, alloc.percentage),
                 property: bill.property.name || bill.property.address,
                 propertyId: bill.propertyId,
             };
@@ -115,16 +115,18 @@ function getBasisDescription(splitMethod: string, percentage: unknown): string {
     const pct = percentage ? `${Number(percentage).toFixed(1)}%` : "";
 
     switch (splitMethod) {
-        case "EQUAL_USAGE":
+        case "EQUAL":
             return `Equal split${pct ? ` (${pct})` : ""}`;
-        case "METERED":
-            return "Metered usage";
+        case "SUB_METERED":
+            return "Sub-metered usage";
         case "SQ_FOOTAGE":
             return `Square footage${pct ? ` (${pct})` : ""}`;
         case "OCCUPANCY_BASED":
             return `Occupancy based${pct ? ` (${pct})` : ""}`;
-        case "CUSTOM":
-            return `Custom${pct ? ` (${pct})` : ""}`;
+        case "CUSTOM_RATIO":
+            return `Custom ratio${pct ? ` (${pct})` : ""}`;
+        case "AI_OPTIMIZED":
+            return `AI optimized${pct ? ` (${pct})` : ""}`;
         default:
             return pct || "Allocated";
     }

@@ -48,7 +48,7 @@ export const CreateUtilityReadingInputSchema = z.object({
 
 interface BillForGuard {
     id: string;
-    status: UtilityBillStatus;
+    status: string;
     totalAmount: number;
 }
 

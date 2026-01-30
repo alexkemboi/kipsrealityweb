@@ -50,7 +50,7 @@ export async function GET(
                 totalAmount: Number(bill.totalAmount),
                 billDate: bill.billDate,
                 status: bill.status,
-                splitMethod: bill.split_method,
+                splitMethod: bill.splitMethod,
                 property: bill.property,
                 allocations: formattedAllocations
             }

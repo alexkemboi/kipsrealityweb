@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   keywords: 'real estate, property, market news, articles',
 }
 
+export const dynamic = "force-dynamic";
+
 export default function BlogPage() {
   return (
     <div className="min-h-screen bg-background">

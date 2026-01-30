@@ -2,19 +2,20 @@
 // No allocation math, no journals, no blockchain. State machine enforcement.
 
 import { prisma } from "@/lib/db";
-import {
-    utility_bills_status,
-    utility_bills_split_method,
-    utility_bills_import_method,
-    invoice_type,
+import { 
+    UtilityBillStatus as PrismaUtilityBillStatus,
+    UtilitySplitMethod as PrismaUtilitySplitMethod, 
+    UtilityImportMethod as PrismaUtilityImportMethod,
+    invoice_type // Ensure this matches your generated client enum name
 } from "@prisma/client";
 import {
-    UtilityBillStatus,
-    UtilitySplitMethod,
     CreateBillError,
     TransitionError,
     ApproveError,
     InvoiceError,
+    UtilityBillStatus,
+    UtilitySplitMethod,
+    UtilityImportMethod,
     type CreateUtilityBillInput,
     type CreateBillResult,
     type ApproveBillResult,
@@ -28,45 +29,55 @@ import {
     assertNotPosted,
 } from "./utility-validators";
 
+type TransitionResult = Result<
+    { status: UtilityBillStatus },
+    TransitionError
+>;
+
 // ============================================================================
 // ENUM NORMALIZATION
-// Prisma enums stay inside services; domain enums at boundaries
 // ============================================================================
 
-function normalizeBillStatus(prismaStatus: utility_bills_status): UtilityBillStatus {
+function normalizeBillStatus(prismaStatus: string): UtilityBillStatus {
     switch (prismaStatus) {
-        case utility_bills_status.DRAFT:
+        case "DRAFT":
             return UtilityBillStatus.DRAFT;
-        case utility_bills_status.PROCESSING:
+        case "PROCESSING":
             return UtilityBillStatus.PROCESSING;
-        case utility_bills_status.APPROVED:
+        case "REVIEW_REQUIRED":
+            return UtilityBillStatus.REVIEW_REQUIRED;
+        case "APPROVED":
             return UtilityBillStatus.APPROVED;
-        case utility_bills_status.POSTED:
+        case "POSTED":
             return UtilityBillStatus.POSTED;
+        case "REJECTED":
+            return UtilityBillStatus.REJECTED;
         default:
             return UtilityBillStatus.DRAFT;
     }
 }
 
-function normalizeSplitMethod(prismaMethod: utility_bills_split_method): UtilitySplitMethod {
+function normalizeSplitMethod(prismaMethod: string): UtilitySplitMethod {
     switch (prismaMethod) {
-        case utility_bills_split_method.EQUAL_USAGE:
-            return UtilitySplitMethod.EQUAL_USAGE;
-        case utility_bills_split_method.OCCUPANCY_BASED:
+        case "EQUAL":
+            return UtilitySplitMethod.EQUAL;
+        case "OCCUPANCY_BASED":
             return UtilitySplitMethod.OCCUPANCY_BASED;
-        case utility_bills_split_method.SQ_FOOTAGE:
+        case "SQ_FOOTAGE":
             return UtilitySplitMethod.SQ_FOOTAGE;
-        case utility_bills_split_method.SUB_METERED:
+        case "SUB_METERED":
             return UtilitySplitMethod.SUB_METERED;
-        case utility_bills_split_method.CUSTOM_RATIO:
+        case "CUSTOM_RATIO":
             return UtilitySplitMethod.CUSTOM_RATIO;
+        case "AI_OPTIMIZED":
+            return UtilitySplitMethod.AI_OPTIMIZED;
         default:
-            return UtilitySplitMethod.EQUAL_USAGE;
+            return UtilitySplitMethod.EQUAL;
     }
 }
 
 // Build guard-compatible object from Prisma bill
-function toBillForGuard(bill: { id: string; status: utility_bills_status; totalAmount: unknown }) {
+function toBillForGuard(bill: { id: string; status: string; totalAmount: unknown }) {
     return {
         id: bill.id,
         status: normalizeBillStatus(bill.status),
@@ -128,12 +139,13 @@ export async function createBill(
                 totalAmount,
                 billDate,
                 dueDate,
-                split_method: splitMethod as unknown as utility_bills_split_method,
-                importMethod: (importMethod ?? "MANUAL") as unknown as utility_bills_import_method,
-                file_url: fileUrl ?? null,
+                // ✅ FIX: Use camelCase field names (splitMethod, not split_method)
+                splitMethod: splitMethod as PrismaUtilitySplitMethod,
+                importMethod: (importMethod ?? "MANUAL_ENTRY") as PrismaUtilityImportMethod,
+                fileUrl: fileUrl ?? null,       // ✅ CamelCase
                 ocrConfidence: ocrConfidence ?? null,
-                status: utility_bills_status.DRAFT,
-                updated_at: new Date(),
+                status: PrismaUtilityBillStatus.DRAFT,
+                updatedAt: new Date(),          // ✅ CamelCase
             },
         });
     });
@@ -166,20 +178,15 @@ export async function getBillById(billId: string): Promise<UtilityBillDTO | null
         billDate: bill.billDate,
         dueDate: bill.dueDate,
         status: normalizeBillStatus(bill.status),
-        splitMethod: normalizeSplitMethod(bill.split_method),
-        createdAt: bill.created_at,
+        // ✅ FIX: Access via camelCase
+        splitMethod: normalizeSplitMethod(bill.splitMethod), 
+        createdAt: bill.createdAt, 
     };
 }
 
 // ============================================================================
 // TRANSITION TO PROCESSING
-// Called by allocation engine after allocations are created
 // ============================================================================
-
-export type TransitionResult = Result<
-    { status: UtilityBillStatus },
-    TransitionError
->;
 
 export async function transitionToProcessing(billId: string): Promise<TransitionResult> {
     const bill = await prisma.utilityBill.findUnique({
@@ -191,19 +198,17 @@ export async function transitionToProcessing(billId: string): Promise<Transition
         return { success: false, error: TransitionError.BILL_NOT_FOUND };
     }
 
-    // POSTED bills are immutable
     assertNotPosted(toBillForGuard(bill));
 
-    // Only DRAFT bills can transition to PROCESSING
-    if (bill.status !== utility_bills_status.DRAFT) {
+    if (bill.status !== UtilityBillStatus.DRAFT) {
         return { success: false, error: TransitionError.INVALID_STATUS };
     }
 
     await prisma.utilityBill.update({
         where: { id: billId },
         data: {
-            status: utility_bills_status.PROCESSING,
-            updated_at: new Date(),
+            status: UtilityBillStatus.PROCESSING,
+            updatedAt: new Date(), // ✅ CamelCase
         },
     });
 
@@ -215,7 +220,6 @@ export async function transitionToProcessing(billId: string): Promise<Transition
 // ============================================================================
 
 export async function approveBill(billId: string): Promise<ApproveBillResult> {
-    // 1. Fetch bill with allocations
     const bill = await prisma.utilityBill.findUnique({
         where: { id: billId },
         include: {
@@ -229,29 +233,26 @@ export async function approveBill(billId: string): Promise<ApproveBillResult> {
         return { success: false, error: ApproveError.BILL_NOT_FOUND };
     }
 
-    // POSTED bills are immutable
     assertNotPosted(toBillForGuard(bill));
 
-    // 2. Build allocation results for validator
     const allocations: UtilityAllocationResult[] = bill.allocations.map((a) => ({
         unitId: a.unitId,
         amount: Number(a.amount),
         percentage: Number(a.percentage ?? 0),
     }));
 
-    // 3. Check approval rules (using normalized status)
     const canApprove = canApproveBill(toBillForGuard(bill), allocations);
     if (!canApprove.allowed) {
         return { success: false, error: canApprove.error };
     }
 
-    // 4. Update to APPROVED (transactional)
     await prisma.$transaction(async (tx) => {
         await tx.utilityBill.update({
             where: { id: billId },
             data: {
-                status: utility_bills_status.APPROVED,
-                updated_at: new Date(),
+                status: PrismaUtilityBillStatus.APPROVED,
+                updatedAt: new Date(), // ✅ CamelCase
+                approvedAt: new Date(), // ✅ Added tracking
             },
         });
     });
@@ -267,15 +268,11 @@ export async function approveBill(billId: string): Promise<ApproveBillResult> {
 
 // ============================================================================
 // GENERATE INVOICES
-// Creates one invoice per allocation — no math, just records
-// IMPORTANT: Bill remains APPROVED after invoice generation.
-// Posting to GL is handled separately by accounting service.
 // ============================================================================
 
 export async function generateInvoicesForBill(
     billId: string
 ): Promise<GenerateInvoicesResult> {
-    // 1. Fetch bill with allocations
     const bill = await prisma.utilityBill.findUnique({
         where: { id: billId },
         include: {
@@ -298,20 +295,17 @@ export async function generateInvoicesForBill(
         return { success: false, error: InvoiceError.BILL_NOT_FOUND };
     }
 
-    // POSTED bills are immutable — cannot generate more invoices
     assertNotPosted(toBillForGuard(bill));
 
-    // 2. Must be APPROVED to generate invoices
-    if (bill.status !== utility_bills_status.APPROVED) {
+    if (bill.status !== UtilityBillStatus.APPROVED) {
         return { success: false, error: InvoiceError.INVALID_STATUS };
     }
 
-    // 3. Must have allocations
     if (bill.allocations.length === 0) {
         return { success: false, error: InvoiceError.NO_ALLOCATIONS };
     }
 
-    // 4. Each allocation must have an active lease
+    // Validation loop
     for (const alloc of bill.allocations) {
         if (!alloc.unit.leases[0]) {
             return {
@@ -322,7 +316,7 @@ export async function generateInvoicesForBill(
         }
     }
 
-    // 5. Check if invoices already exist (idempotency guard)
+    // Idempotency check
     const existingInvoices = await prisma.invoice.count({
         where: { utilityBillId: billId },
     });
@@ -331,7 +325,7 @@ export async function generateInvoicesForBill(
         return { success: false, error: InvoiceError.ALREADY_EXISTS };
     }
 
-    // 6. Create invoices in transaction
+    // Transaction
     const invoiceIds = await prisma.$transaction(async (tx) => {
         const ids: string[] = [];
 
@@ -341,12 +335,13 @@ export async function generateInvoicesForBill(
             const invoice = await tx.invoice.create({
                 data: {
                     leaseId: lease.id,
-                    type: invoice_type.UTILITY,
-                    totalAmount: Number(alloc.amount),
+                    type: invoice_type.UTILITY, // ✅ Ensure imported correctly
+                    totalAmount: Number(alloc.amount), // Map Decimal to Float (Legacy compat)
                     amountPaid: 0,
                     balance: Number(alloc.amount),
                     dueDate: bill.dueDate,
                     utilityBillId: bill.id,
+                    status: "PENDING", // Explicit default
                 },
             });
 
@@ -372,13 +367,13 @@ export async function generateInvoicesForBill(
 }
 
 // ============================================================================
-// TEMPORARY BRIDGE — Get allocations for a bill
-// TODO: Move to allocation service when implemented
+// GET ALLOCATIONS
 // ============================================================================
 
 export async function getAllocationsForBill(
     billId: string
 ): Promise<UtilityAllocationResult[]> {
+    // ✅ FIX: Use camelCase 'utilityBillId'
     const allocations = await prisma.utilityAllocation.findMany({
         where: { utilityBillId: billId },
         select: { unitId: true, amount: true, percentage: true },

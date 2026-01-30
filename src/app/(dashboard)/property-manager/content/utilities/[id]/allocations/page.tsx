@@ -148,11 +148,12 @@ export default function AllocationsPage() {
 
     const formatAllocationBasis = (method: string) => {
         const labels: Record<string, string> = {
-            EQUAL_USAGE: "Equal Usage",
+            EQUAL: "Equal Usage",
             OCCUPANCY_BASED: "Occupancy-based",
             SQ_FOOTAGE: "Square Footage",
             SUB_METERED: "Sub-metered",
             CUSTOM_RATIO: "Custom Ratio",
+            AI_OPTIMIZED: "AI Optimized",
         };
         return labels[method] ?? method;
     };
