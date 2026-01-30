@@ -176,19 +176,14 @@ export const routeConfig = {
       { path: '/property-manager/finance/journal', label: 'Journal Entries', icon: FileText },
     ],
     utilities: [
-      { path: '/property-manager/content/utilities', label: 'Track Usage', icon: BarChart3 },
-      // { path: '/property-manager/content/meter-readings', label: 'Allocate Bills', icon: BarChart3 },
-      // { path: '/property-manager/utilities/reports', label: 'Reports', icon: BarChart3 },
+      { path: '/property-manager/content/utilities', label: 'Overview', icon: Zap },
+      { path: '/property-manager/content/utilities/bills', label: 'Utility Operations', icon: FileText },
+      { path: '/property-manager/content/utilities/allocations', label: 'Allocations', icon: Calculator },
     ],
 
-    // analytics: [
-    //   { path: '/property-manager/analytics/revenue', label: 'Revenue Insights', icon: BarChart3 },
-    //   { path: '/property-manager/analytics/satisfaction', label: 'Tenant Satisfaction', icon: BarChart3 },
-    //   { path: '/property-manager/analytics/occupancy', label: 'Occupancy', icon: BarChart3 },
-    // ],
+
     settings: [
       { path: '/property-manager/settings/integrations', label: 'Integrations', icon: Settings },
-      { path: '/property-manager/settings/notifications', label: 'Notifications', icon: Settings },
       { path: '/property-manager/settings/roles', label: 'Role Management', icon: Settings },
     ],
   },
@@ -213,9 +208,8 @@ export const routeConfig = {
       { path: '/dashboard/tenant/past-requests', label: 'View Past Requests', icon: Wrench },
     ],
     utilities: [
-      { path: '/dashboard/tenant/usage-summary', label: 'Usage Summary', icon: Zap },
-      { path: '/dashboard/tenant/shared-bills', label: 'Shared Utility Bills', icon: Zap },
-      { path: '/dashboard/tenant/payment-breakdown', label: 'Payment Breakdown', icon: Zap },
+      { path: '/tenant/content/utilities', label: 'My Utility Bills', icon: Zap },
+      { path: '/tenant/content/utilities/bill-t001', label: 'Bill Details', icon: FileText },
     ],
     insurance: [
       { path: '/dashboard/tenant/insurance-purchase', label: 'Purchase / Upload Policy', icon: Users },

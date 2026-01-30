@@ -225,31 +225,65 @@ model FinancialSnapshot {
 }
 
 model UtilityBill {
-  id             String              @id @default(uuid())
-  propertyId     String              @map("property_id")
-  providerName   String              @map("provider_name")
-  totalAmount    Decimal             @db.Decimal(10, 2)
-  billDate       DateTime            @map("bill_date")
-  dueDate        DateTime            @map("due_date")
-  importMethod   UtilityImportMethod @default(MANUAL) @map("import_method")
-  ocrConfidence  Decimal?            @map("ocr_confidence") @db.Decimal(5, 2)
-  status         UtilityBillStatus   @default(DRAFT)
-  journalEntryId String?             @unique @map("journal_entry_id")
-  blockchainHash String?             @map("blockchain_hash")
-  createdAt      DateTime            @default(now()) @map("created_at")
-  fileUrl        String?             @map("file_url")
-  splitMethod    UtilitySplitMethod  @default(EQUAL_USAGE) @map("split_method")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
-  consumption    Float?              @db.Float
-  period_end     DateTime?
-  period_start   DateTime?
-  rate           Float?              @db.Float
-  utility_id     String?             @db.Char(36)
+  id             String                      @id @default(uuid())
+  propertyId     String                      @map("property_id")
+  providerName   String                      @map("provider_name")
+  totalAmount    Decimal                     @db.Decimal(10, 2)
+  billDate       DateTime                    @map("bill_date")
+  dueDate        DateTime                    @map("due_date")
+  importMethod   utility_bills_import_method @default(MANUAL) @map("import_method")
+  ocrConfidence  Decimal?                    @map("ocr_confidence") @db.Decimal(5, 2)
+  status         utility_bills_status        @default(DRAFT)
+  journalEntryId String?                     @unique @map("journal_entry_id")
+  blockchainHash String?                     @map("blockchain_hash")
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  splitMethod    UtilitySplitMethod          @default(EQUAL_USAGE) @map("split_method")
+  updatedAt      DateTime                    @updatedAt @map("updated_at")
+  consumption    Float?                      @db.Float
+  periodEnd      DateTime?                   @map("period_end")
+  periodStart    DateTime?                   @map("period_start")
+  rate           Float?                      @db.Float
+  utilityId      String?                     @map("utility_id") @db.Char(36)
   childInvoices  Invoice[]
   allocations    UtilityAllocation[]
-  journalEntry   JournalEntry?       @relation(fields: [journalEntryId], references: [id])
-  property       Property            @relation(fields: [propertyId], references: [id])
-  utility        utility?            @relation(fields: [utility_id], references: [id])
+  journalEntry   JournalEntry?               @relation(fields: [journalEntryId], references: [id])
+  property       Property                    @relation(fields: [propertyId], references: [id])
+  utility        utility?                    @relation(fields: [utilityId], references: [id])
+
+  @@index([propertyId])
+  @@index([utilityId])
+  id            String   @id @default(uuid())
+  propertyId    String   @map("property_id")
+  providerName  String   @map("provider_name")
+  
+  // Financials
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  billDate      DateTime @map("bill_date")
+  dueDate       DateTime @map("due_date")
+  
+  // Configuration
+  splitMethod   UtilitySplitMethod @default(EQUAL_USAGE) @map("split_method")
+  status        UtilityBillStatus  @default(DRAFT)
+  
+  // AI & OCR Metadata (From Team Doc)
+  importMethod  UtilityImportMethod @default(MANUAL) @map("import_method")
+  ocrConfidence Decimal?            @db.Decimal(5, 2) @map("ocr_confidence")
+  fileUrl       String?             @map("file_url") // The raw bill image/pdf
+  
+  // The Link to the Financial Core (Double-Entry)
+  journalEntryId String? @unique @map("journal_entry_id")
+  journalEntry   JournalEntry? @relation(fields: [journalEntryId], references: [id])
+
+  // The Link to Blockchain Proof
+  blockchainHash String? @map("blockchain_hash")
+  
+  // Relations
+  property      Property  @relation(fields: [propertyId], references: [id])
+  allocations   UtilityAllocation[] 
+  childInvoices Invoice[]
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([propertyId])
   @@index([utility_id])
@@ -295,24 +329,25 @@ model Property {
   apartmentComplexDetail ApartmentComplexDetail?
   CondoDetail            CondoDetail?
   houseDetail            HouseDetail?
-  LandDetail             LandDetail?
-  townhouseDetail        TownhouseDetail?
+  LandDetail             LandDetail?   
+  townhouseDetail        TownhouseDetail? 
 
-  leases              Lease[]
-  maintenanceRequests MaintenanceRequest[]  @relation("PropertyMaintenanceRequests")
-  OccupancyHistory    OccupancyHistory[]
-  listing             Listing?              @relation("PropertyListing", fields: [listingId], references: [id])
-  location            Location?             @relation(fields: [locationId], references: [id])
-  manager             OrganizationUser?     @relation(fields: [managerId], references: [id])
-  organization        Organization?         @relation("OrganizationToProperty", fields: [organizationId], references: [id])
-  propertyType        PropertyType?         @relation(fields: [propertyTypeId], references: [id])
-  images              PropertyImage[]
-  tenantapplications  Tenantapplication[]
-  units               Unit[]
-  DssDocument         DssDocument[]
-  DssWorkflowTemplate DssWorkflowTemplate[]
-  journalLines        JournalLine[]
-  utilityBills        UtilityBill[]
+  leases                 Lease[]
+  maintenanceRequests    MaintenanceRequest[]    @relation("PropertyMaintenanceRequests")
+  OccupancyHistory       OccupancyHistory[]
+  listing                Listing?                @relation("PropertyListing", fields: [listingId], references: [id])
+  location               Location?               @relation(fields: [locationId], references: [id])
+  manager                OrganizationUser?       @relation(fields: [managerId], references: [id])
+  organization           Organization?           @relation("OrganizationToProperty", fields: [organizationId], references: [id])
+  propertyType           PropertyType?           @relation(fields: [propertyTypeId], references: [id])
+  images                 PropertyImage[]
+  tenantapplications     Tenantapplication[]
+  TownhouseDetail        TownhouseDetail?
+  units                  Unit[]
+  DssDocument            DssDocument[]
+  DssWorkflowTemplate    DssWorkflowTemplate[]
+  journalLines           JournalLine[]
+  utilityBills           UtilityBill[]
 
   @@index([locationId])
   @@index([managerId])
@@ -354,7 +389,26 @@ model HouseDetail {
   size           Float?
   totalUnits     Int?
   houseName      String?  @db.VarChar(255)
-  zoning         String? // residential/commercial/agricultural
+  zoning         String?
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Unit {
+  id                  String               @id @default(uuid())
+  propertyId          String
+  complexDetailId     String?
+  listingId           String?              @unique
+  unitNumber          String
+  floorNumber         Int?
+  bedrooms            Int?
+  bathrooms           Int?
+  isOccupied          Boolean              @default(false)
+  rentAmount          Float?
+  createdAt           DateTime             @default(now())
+  houseDetailId       String?
+  unitName            String?
+  currency            String?              @default("USD") @db.VarChar(10)
+  zoning        String?   // residential/commercial/agricultural
   property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
 
@@ -656,7 +710,7 @@ model utility {
   createdAt     DateTime?       @default(now()) @db.DateTime(0)
   updatedAt     DateTime?       @default(now()) @db.DateTime(0)
   lease_utility lease_utility[]
-  utility_bills UtilityBill[]
+  utilityBills  UtilityBill[]
 
   @@map("utility")
 }
@@ -1322,6 +1376,54 @@ model AgentInvite {
   @@index([tenantId])
 }
 
+model CondoDetail {
+  id                    String   @id
+  propertyId            String   @unique
+  buildingName          String?
+  floorNumber           Int?
+  unitNumber            String?
+  totalFloorsInBuilding Int?
+  bedrooms              Int?
+  bathrooms             Int?
+  size                  Float?
+  hoaFees               Float?
+  hasBalcony            Boolean  @default(false)
+  amenities             Json?
+  zoning                String?
+  Property              Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model LandDetail {
+  id           String   @id
+  propertyId   String   @unique
+  lotSize      Float?
+  zoning       String?
+  isSubdivided Boolean  @default(false)
+  hasUtilities Boolean  @default(false)
+  topography   String?
+  soilType     String?
+  accessRoad   Boolean  @default(false)
+  landUse      String?
+  Property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model TownhouseDetail {
+  id             String   @id
+  propertyId     String   @unique
+  townhouseName  String?
+  numberOfFloors Int?
+  bedrooms       Int?
+  bathrooms      Int?
+  size           Float?
+  unitNumber     String?
+  endUnit        Boolean  @default(false)
+  hasGarage      Boolean  @default(false)
+  garageSpaces   Int?
+  hasBackyard    Boolean  @default(false)
+  backyardSize   Float?
+  hoaFees        Float?
+  zoning         String?
+  Property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 enum UserRole {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -1595,6 +1697,33 @@ enum PostingStatus {
   POSTED
   FAILED
   REVERSED
+}
+
+enum Invite_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum organization_users_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
+}
+
+enum SidebarItem_role {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  AGENT
+  VENDOR
+  ALL
 }
 
 enum Invite_role {

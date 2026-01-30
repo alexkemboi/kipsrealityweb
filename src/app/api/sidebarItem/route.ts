@@ -1,7 +1,17 @@
 // app/api/sidebarItem/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { UserRole } from "@prisma/client";
+
+// UserRole enum - local definition since it doesn't exist in Prisma schema
+const UserRole = {
+  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
+  PROPERTY_MANAGER: 'PROPERTY_MANAGER',
+  TENANT: 'TENANT',
+  VENDOR: 'VENDOR',
+  AGENT: 'AGENT',
+  ALL: 'ALL',
+} as const;
+type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export async function GET(req: Request) {
   try {

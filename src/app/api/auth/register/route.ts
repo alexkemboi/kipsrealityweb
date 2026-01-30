@@ -3,9 +3,11 @@ import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendVerificationEmail } from "@/lib/mail-service";
-import { UserRole } from '@prisma/client';
 
-// Define the roles we allow for registration (subset of UserRole enum)
+// UserRole type - matches OrganizationUser.role accepted values
+type UserRole = 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'VENDOR' | 'TENANT' | 'AGENT';
+
+// Define the roles we allow for registration (subset of UserRole)
 const ALLOWED_ROLES: UserRole[] = ['SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'VENDOR', 'TENANT'];
 
 export async function POST(request: Request) {
@@ -62,10 +64,10 @@ export async function POST(request: Request) {
       // B. Branch Logic: Anchored vs. Floating Users
       if (role === 'PROPERTY_MANAGER') {
         // --- ANCHORED PATH (Property Manager) ---
-        
+
         // Check duplicate org name
         const existingOrg = await tx.organization.findFirst({
-            where: { name: organizationName }
+          where: { name: organizationName }
         });
         if (existingOrg) throw new Error("ORGANIZATION_EXISTS");
 
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
         if (!organizationName) {
           throw new Error('Organization name is required for this role');
         }
-        
+
         const existingOrg = await tx.organization.findFirst({
           where: { name: organizationName }
         });
@@ -138,11 +140,11 @@ export async function POST(request: Request) {
 
   } catch (error: unknown) {
     console.error('Registration error:', error);
-    
+
     if (error instanceof Error && error.message === "ORGANIZATION_EXISTS") {
-        return NextResponse.json({ error: "Organization name already taken" }, { status: 409 });
+      return NextResponse.json({ error: "Organization name already taken" }, { status: 409 });
     }
-    
+
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
