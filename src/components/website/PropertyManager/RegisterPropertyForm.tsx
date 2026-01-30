@@ -1,6 +1,7 @@
 // src/components/website/PropertyManager/RegisterPropertyForm.tsx
 'use client'
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { postProperty, PropertyPayload } from "@/lib/property-manager";
 import { usePropertyForm } from "@/hooks/usePropertyForm";
@@ -14,6 +15,7 @@ import { CondoDetailForm } from "@/components/website/PropertyManager/sub-proper
 import { LandDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/landDetailForm";
 import { TownhouseDetailForm } from "@/components/website/PropertyManager/sub-propertyFroms/TownhouseDetailForm";
 import { ContactDetailsForm } from "@/components/website/PropertyManager/sub-propertyFroms/ContactDetailsForm";
+import PropertyCreationSuccessModal from "./PropertyCreationSuccessModal";
 import { Property } from "@/app/data/PropertyData";
 
 interface PropertyFormProps {
@@ -21,12 +23,16 @@ interface PropertyFormProps {
 }
 
 export default function PropertyForm({ onSuccess }: PropertyFormProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const { form, propertyTypes, appliances } = usePropertyForm();
   const { register, handleSubmit, watch, reset, setValue } = form;
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadProgress, setUploadProgress] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
+  const [successfulImageCount, setSuccessfulImageCount] = useState(0);
 
   const selectedPropertyTypeId = watch("propertyTypeId");
   const selectedPropertyTypeName = propertyTypes.find(
@@ -107,7 +113,10 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
 
       console.log("Property created with ID:", propertyId);
       toast.success("Property created successfully!");
+      setCreatedPropertyId(propertyId);
 
+      let imageCount = 0;
+      
       // Upload images if any
       if (data.images && data.images.length > 0) {
         setUploadingImages(true);
@@ -133,9 +142,12 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
 
         const uploadResult = await imageUploadRes.json();
         console.log("Images uploaded and saved:", uploadResult);
+        
+        imageCount = uploadResult.images.length;
+        setSuccessfulImageCount(imageCount);
 
         toast.success(
-          `All done! ${uploadResult.images.length} images uploaded to Cloudinary and saved to database.`
+          `All done! ${imageCount} images uploaded to Cloudinary and saved to database.`
         );
         setUploadingImages(false);
       }
@@ -146,17 +158,48 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
       setShowMap(false);
       setUploadProgress("");
 
+      // Show success modal
+      setShowSuccessModal(true);
+
       if (onSuccess) {
         onSuccess();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating property:", error);
-      toast.error(error.message || "Failed to create property.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create property.";
+      toast.error(errorMessage);
       setUploadProgress("");
     } finally {
       setLoading(false);
       setUploadingImages(false);
     }
+  };
+
+  // Navigation handlers
+  const handleViewPropertyAnalytics = (propertyId: string) => {
+    // Use property detail page (simpler route that exists)
+    router.push(`/property-manager`);
+    setShowSuccessModal(false);
+    // TODO: In future, use property detail page when Next.js type issues are resolved
+    // router.push(`/property-manager/view-own-property/${propertyId}`);
+  };
+
+  const handleReturnToDashboard = () => {
+    router.push('/property-manager');
+    setShowSuccessModal(false);
+  };
+
+  const handleAddAnotherProperty = () => {
+    // Modal will close, form is already reset
+    setShowSuccessModal(false);
+    // Optional: Scroll to top of form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
+    // Default action: return to dashboard if user closes modal
+    router.push('/property-manager');
   };
 
   return (
@@ -259,6 +302,17 @@ export default function PropertyForm({ onSuccess }: PropertyFormProps) {
           </form>
         </div>
       </main>
+
+      {/* Success Modal */}
+      <PropertyCreationSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleCloseModal}
+        propertyId={createdPropertyId}
+        imageCount={successfulImageCount}
+        onViewPropertyAnalytics={handleViewPropertyAnalytics}
+        onReturnToDashboard={handleReturnToDashboard}
+        onAddAnotherProperty={handleAddAnotherProperty}
+      />
     </div>
   );
 }
