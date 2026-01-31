@@ -45,12 +45,12 @@ function capturePreviousValues(lease: any, amendmentType: string, changes: any) 
 }
 
 // POST: Create a new amendment
-export async function POST(req: NextRequest, context: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id: leaseId } = context.params;
+    const { id: leaseId } = await params;
     const body = await req.json();
     const { amendmentType, effectiveDate, description, changes, requiresSignature = true } = body;
 
@@ -116,9 +116,9 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
 }
 
 // GET: Fetch all amendments for a lease
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: leaseId } = context.params;
+    const { id: leaseId } = await params;
 
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

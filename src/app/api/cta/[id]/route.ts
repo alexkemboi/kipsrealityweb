@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 interface Context {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function GET(req: Request, context: Context) {
   try {
-    const params = await context.params; 
-    const id = Number(params.id);
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
 
     const cta = await prisma.cTA.findUnique({ where: { id } });
 
@@ -23,9 +23,10 @@ export async function GET(req: Request, context: Context) {
   }
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(req: Request, context: Context) {
   try {
-    const id = Number(context.params.id)
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
     const { page, title, subtitle, buttonText, buttonUrl, gradient } = await req.json()
     const updatedCTA = await prisma.cTA.update({
       where: { id },
@@ -38,9 +39,10 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
   }
 }
 
-export async function DELETE(req: Request, context: { params: { id: string } }) {
+export async function DELETE(req: Request, context: Context) {
   try {
-    const id = Number(context.params.id)
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
     await prisma.cTA.delete({ where: { id } })
     return NextResponse.json({ message: 'CTA deleted successfully' })
   } catch (error) {

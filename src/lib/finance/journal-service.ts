@@ -1,82 +1,84 @@
-import { prisma } from "@/lib/db";
-import { PostEntryRequest } from "./types";
-import { Decimal } from "@prisma/client/runtime/library";
+import { prisma } from '@/lib/db';
+import { Decimal } from '@prisma/client/runtime/library';
+import { PostJournalEntryInput } from './types';
 
-/**
- * THE POSTING ENGINE
- * Converts business logic into immutable GL records.
- */
 export const journalService = {
-
     /**
-     * Post a Double-Entry Journal to the General Ledger
+     * Post a Journal Entry to the General Ledger.
+     * THROWS ERROR if Debits != Credits.
+     * Accepts an optional transaction client (tx) for atomic operations.
      */
-    async post(request: PostEntryRequest) {
-        const { organizationId, date, reference, description, lines } = request;
+    async post(input: PostJournalEntryInput, prismaTx?: any) {
+        const { organizationId, date, description, reference, lines } = input;
+        const client = prismaTx || prisma;
 
-        // 1. Validation: Debits must equal Credits
+        // 1. Get Financial Entity for this Org
+        const entity = await client.financialEntity.findFirst({
+            where: { organizationId },
+            include: { accounts: true },
+        });
+
+        if (!entity) throw new Error(`Financial Entity not found for Org: ${organizationId}`);
+
+        // 2. Validate Double-Entry Math (Debits MUST equal Credits)
         let totalDebit = new Decimal(0);
         let totalCredit = new Decimal(0);
 
-        lines.forEach(line => {
-            totalDebit = totalDebit.add(new Decimal(line.debit));
-            totalCredit = totalCredit.add(new Decimal(line.credit));
+        lines.forEach((line) => {
+            totalDebit = totalDebit.plus(new Decimal(line.debit));
+            totalCredit = totalCredit.plus(new Decimal(line.credit));
         });
 
         if (!totalDebit.equals(totalCredit)) {
-            throw new Error(`GL Imbalance: Debit (${totalDebit}) != Credit (${totalCredit})`);
+            throw new Error(
+                `GL IMBALANCE: Debits ($${totalDebit}) do not equal Credits ($${totalCredit}). Transaction blocked.`
+            );
         }
 
-        // 2. Get Financial Entity for this Org
-        const entity = await prisma.financialEntity.findFirst({
-            where: { organizationId }
-        });
-
-        if (!entity) throw new Error("Organization has no Financial Entity configured.");
-
-        // 3. Resolve Account Codes to IDs (Optimization: Batch fetch)
-        const codes = lines.map(l => l.accountCode);
-        const accounts = await prisma.account.findMany({
-            where: {
-                entityId: entity.id,
-                code: { in: codes }
+        // 3. Resolve Account IDs from Codes
+        // We map "1100" to the actual UUID in the database
+        const lineData = lines.map((line) => {
+            const account = entity.accounts.find((a: any) => a.code === line.accountCode);
+            if (!account) {
+                throw new Error(`Account Code ${line.accountCode} not configured for this entity.`);
             }
+
+            return {
+                accountId: account.id,
+                description: line.description || description,
+                debit: line.debit,
+                credit: line.credit,
+                propertyId: line.propertyId,
+                unitId: line.unitId,
+                leaseId: line.leaseId,
+                tenantId: line.tenantId,
+            };
         });
 
-        const accountMap = new Map(accounts.map(a => [a.code, a.id]));
-
-        // 4. Prepare Transaction Data
-        return await prisma.$transaction(async (tx) => {
-            // Create Header
-            const entry = await tx.journalEntry.create({
+        // 4. Write to Database (Atomic Transaction or part of parent tx)
+        // Helper to create entry using any client (tx or prisma)
+        const createEntry = async (tx: any) => {
+            return await tx.journalEntry.create({
                 data: {
                     entityId: entity.id,
                     transactionDate: date,
-                    postedAt: new Date(),
-                    reference,
+                    postedAt: new Date(), // Now
                     description,
+                    reference,
                     isLocked: true, // Auto-lock system entries
                     lines: {
-                        create: lines.map(line => {
-                            const accountId = accountMap.get(line.accountCode);
-                            if (!accountId) throw new Error(`Account Code ${line.accountCode} not found.`);
-
-                            return {
-                                accountId,
-                                description: line.description || description,
-                                debit: line.debit,
-                                credit: line.credit,
-                                propertyId: line.propertyId,
-                                unitId: line.unitId,
-                                leaseId: line.leaseId,
-                                tenantId: line.tenantId
-                            };
-                        })
-                    }
-                }
+                        create: lineData,
+                    },
+                },
             });
+        };
 
-            return entry;
-        });
-    }
+        if (prismaTx) {
+            return await createEntry(prismaTx);
+        } else {
+            return await prisma.$transaction(async (tx) => {
+                return await createEntry(tx);
+            });
+        }
+    },
 };

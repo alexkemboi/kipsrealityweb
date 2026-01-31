@@ -52,10 +52,10 @@ export async function PATCH(
 // Optional: Add GET method to fetch single application
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const application = await prisma.tenantapplication.findUnique({
       where: { id },
@@ -86,10 +86,10 @@ export async function GET(
 // Optional: Add DELETE method
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     await prisma.tenantapplication.delete({
       where: { id },

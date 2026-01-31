@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 
 // Allow async params handling
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 // GET /api/feature/[id]
@@ -18,7 +18,7 @@ export async function GET(req: Request, context: RouteContext) {
   try {
     const feature = await prisma.feature.findUnique({
       where: { id: featureId },
-      include: { plans: true }, 
+      include: { plans: true },
     });
 
     if (!feature) {
@@ -33,7 +33,7 @@ export async function GET(req: Request, context: RouteContext) {
 }
 
 export async function PUT(req: Request, context: RouteContext) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const featureId = Number(id);
 
   if (isNaN(featureId)) {
@@ -50,8 +50,8 @@ export async function PUT(req: Request, context: RouteContext) {
         title,
         description,
         plans: planId
-          ? { set: [{ id: Number(planId) }] } 
-          : undefined, 
+          ? { set: [{ id: Number(planId) }] }
+          : undefined,
       },
       include: { plans: true },
     });

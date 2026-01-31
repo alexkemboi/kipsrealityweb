@@ -58,6 +58,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
+    "decimal.js": "^10.6.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "file-saver": "^2.0.5",

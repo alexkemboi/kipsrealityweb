@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 interface RouteContext {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 
 export async function GET(req: Request, context: RouteContext) {
-  const id = Number(context.params.id);
+  const { id: idStr } = await context.params;
+  const id = Number(idStr);
   if (isNaN(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   try {
@@ -25,7 +26,8 @@ export async function GET(req: Request, context: RouteContext) {
 
 // app/api/sidebarItem/[id]/route.ts
 export async function PUT(req: Request, context: RouteContext) {
-  const id = Number(context.params.id);
+  const { id: idStr } = await context.params;
+  const id = Number(idStr);
   if (isNaN(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   try {
@@ -73,7 +75,8 @@ export async function PUT(req: Request, context: RouteContext) {
   }
 }
 export async function DELETE(req: Request, context: RouteContext) {
-  const id = Number(context.params.id);
+  const { id: idStr } = await context.params;
+  const id = Number(idStr);
   if (isNaN(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   try {

@@ -5,9 +5,9 @@ import { LeaseDocument_documentType, Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 
 // POST: Upload a lease document
-export async function POST(req: NextRequest, context: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: leaseId } = context.params;
+    const { id: leaseId } = await params;
 
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,9 +73,9 @@ export async function POST(req: NextRequest, context: { params: { id: string } }
 }
 
 // GET: Fetch all documents for a lease
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: leaseId } = context.params;
+    const { id: leaseId } = await params;
 
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

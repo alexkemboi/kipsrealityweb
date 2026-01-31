@@ -9,6 +9,8 @@ import {
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import RevenueChart from "./RevenueChart";
+import { FinancialSummaryCard } from "./financial-summary-card";
+import { PendingLeasesCard } from "./pending-leases-card";
 import { toast } from "sonner"; // Assuming sonner is used for toasts
 
 // Metric Card Component
@@ -102,6 +104,12 @@ export default function Dashboard() {
 
 	return (
 		<div className="p-6 max-w-7xl mx-auto space-y-8">
+
+			{/* NEW: Financial Summary Card from General Ledger */}
+			<FinancialSummaryCard />
+
+			{/* NEW: Pending Leases Action Center */}
+			<PendingLeasesCard />
 
 			{/* SECTION 1: Financial Health (Row 1) */}
 			<div>

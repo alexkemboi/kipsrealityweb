@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Calendar, Home, Wrench, CreditCard, AlertCircle, CheckCircle, Clock, DollarSign } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { TenantLeasesCard } from "@/components/Dashboard/tenant-leases-card";
 
 // Mock lease data - TO DO: replace with API call
 const mockLeaseData = {
@@ -41,21 +42,21 @@ const DashboardPage = () => {
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
 
   const generateInviteLink = async () => {
-  setIsGeneratingInvite(true);
+    setIsGeneratingInvite(true);
 
-  // TODO: Replace with API call
-  setTimeout(() => {
-    const fakeToken = Math.random().toString(36).substring(2, 10);
-    setInviteLink(`${window.location.origin}/agent/invite/${fakeToken}`);
-    setIsGeneratingInvite(false);
-  }, 1000);
-};
+    // TODO: Replace with API call
+    setTimeout(() => {
+      const fakeToken = Math.random().toString(36).substring(2, 10);
+      setInviteLink(`${window.location.origin}/agent/invite/${fakeToken}`);
+      setIsGeneratingInvite(false);
+    }, 1000);
+  };
 
-const copyInviteLink = async () => {
-  if (!inviteLink) return;
-  await navigator.clipboard.writeText(inviteLink);
-  alert("Invite link copied to clipboard");
-};
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    await navigator.clipboard.writeText(inviteLink);
+    alert("Invite link copied to clipboard");
+  };
 
   // Calculate days remaining in lease
   const calculateDaysRemaining = (endDate: string) => {
@@ -189,172 +190,177 @@ const copyInviteLink = async () => {
             )}
           </div>
 
+          {/* Financial Overview - New Component */}
+          <div className="mb-7">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Financial Overview</h2>
+            <p className="text-gray-600 mb-6">View your leases, balances, and invoices in one place</p>
+            <TenantLeasesCard />
+          </div>
 
           {/* Main Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pb-6">
-          {/* Lease Duration Card */}
-          <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
-                <Home className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-xl font-semibold text-gray-900">Lease Information</h2>
-                <p className="text-sm text-gray-500 truncate">{mockLeaseData.address}, Unit {mockLeaseData.unitNumber}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center gap-4">
-                <span className="text-gray-600 flex-shrink-0">Lease Period</span>
-                <span className="font-medium text-gray-900 text-right text-sm">
-                  {new Date(mockLeaseData.leaseStartDate).toLocaleDateString()} - {new Date(mockLeaseData.leaseEndDate).toLocaleDateString()}
-                </span>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-600">Days Remaining</span>
-                  <span className="font-bold text-2xl text-blue-600">{daysRemaining}</span>
+            {/* Lease Duration Card */}
+            <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                  <Home className="w-6 h-6 text-blue-600" />
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(leasePercentComplete, 100)}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">{leasePercentComplete.toFixed(0)}% of lease period completed</p>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">Lease ends on {new Date(mockLeaseData.leaseEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                <div className="min-w-0">
+                  <h2 className="text-xl font-semibold text-gray-900">Lease Information</h2>
+                  <p className="text-sm text-gray-500 truncate">{mockLeaseData.address}, Unit {mockLeaseData.unitNumber}</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Payment Reminder Card */}
-          <div className={`bg-white rounded-lg shadow-sm border p-6 ${getPaymentStatusColor(mockLeaseData.paymentStatus)}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-lg ${mockLeaseData.paymentStatus === 'overdue' ? 'bg-red-100' : 'bg-blue-100'}`}>
-                <CreditCard className={`w-6 h-6 ${mockLeaseData.paymentStatus === 'overdue' ? 'text-red-600' : 'text-blue-600'}`} />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">Rent Payment</h2>
-            </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-gray-600 flex-shrink-0">Lease Period</span>
+                  <span className="font-medium text-gray-900 text-right text-sm">
+                    {new Date(mockLeaseData.leaseStartDate).toLocaleDateString()} - {new Date(mockLeaseData.leaseEndDate).toLocaleDateString()}
+                  </span>
+                </div>
 
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Monthly Rent</p>
-                <p className="text-3xl font-bold text-gray-900">${mockLeaseData.monthlyRent.toLocaleString()}</p>
-              </div>
-
-              <div className="pt-3 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Next Payment Due</p>
-                <p className="font-semibold text-gray-900">{new Date(mockLeaseData.nextPaymentDue).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                
-                {mockLeaseData.paymentStatus === 'upcoming' && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
-                    <Clock className="w-4 h-4" />
-                    <span>{mockLeaseData.daysUntilPayment} days remaining</span>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Days Remaining</span>
+                    <span className="font-bold text-2xl text-blue-600">{daysRemaining}</span>
                   </div>
-                )}
-              </div>
-
-              <button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Pay Rent Now
-              </button>
-            </div>
-          </div>
-
-          {/* Maintenance Status Card */}
-          <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6 gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
-                  <Wrench className="w-6 h-6 text-green-600" />
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-blue-600 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(leasePercentComplete, 100)}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{leasePercentComplete.toFixed(0)}% of lease period completed</p>
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 truncate">Maintenance Requests</h2>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">Lease ends on {new Date(mockLeaseData.leaseEndDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                </div>
               </div>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0">
-                New Request
-              </button>
             </div>
 
-            <div className="space-y-3">
-              {mockMaintenanceRequests.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Wrench className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No maintenance requests</p>
+            {/* Payment Reminder Card */}
+            <div className={`bg-white rounded-lg shadow-sm border p-6 ${getPaymentStatusColor(mockLeaseData.paymentStatus)}`}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`p-2 rounded-lg ${mockLeaseData.paymentStatus === 'overdue' ? 'bg-red-100' : 'bg-blue-100'}`}>
+                  <CreditCard className={`w-6 h-6 ${mockLeaseData.paymentStatus === 'overdue' ? 'text-red-600' : 'text-blue-600'}`} />
                 </div>
-              ) : (
-                mockMaintenanceRequests.map((request) => (
-                  <div key={request.id} className={`p-4 rounded-lg border ${getStatusColor(request.status)}`}>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="font-semibold text-gray-900 truncate">{request.title}</h3>
-                          <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${
-                            request.priority === 'high' ? 'bg-red-100 text-red-700' :
-                            request.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {request.priority}
+                <h2 className="text-xl font-semibold text-gray-900">Rent Payment</h2>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Monthly Rent</p>
+                  <p className="text-3xl font-bold text-gray-900">${mockLeaseData.monthlyRent.toLocaleString()}</p>
+                </div>
+
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 mb-1">Next Payment Due</p>
+                  <p className="font-semibold text-gray-900">{new Date(mockLeaseData.nextPaymentDue).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+
+                  {mockLeaseData.paymentStatus === 'upcoming' && (
+                    <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
+                      <Clock className="w-4 h-4" />
+                      <span>{mockLeaseData.daysUntilPayment} days remaining</span>
+                    </div>
+                  )}
+                </div>
+
+                <button className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Pay Rent Now
+                </button>
+              </div>
+            </div>
+
+            {/* Maintenance Status Card */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6 gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+                    <Wrench className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900 truncate">Maintenance Requests</h2>
+                </div>
+                <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0">
+                  New Request
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {mockMaintenanceRequests.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Wrench className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>No maintenance requests</p>
+                  </div>
+                ) : (
+                  mockMaintenanceRequests.map((request) => (
+                    <div key={request.id} className={`p-4 rounded-lg border ${getStatusColor(request.status)}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h3 className="font-semibold text-gray-900 truncate">{request.title}</h3>
+                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${request.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                request.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                              }`}>
+                              {request.priority}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
+                            <span className="whitespace-nowrap">ID: {request.id}</span>
+                            <span className="whitespace-nowrap">Submitted: {new Date(request.submittedDate).toLocaleDateString()}</span>
+                            {request.completedDate && (
+                              <span className="whitespace-nowrap">Completed: {new Date(request.completedDate).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {request.status === 'completed' ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : request.status === 'in_progress' ? (
+                            <Clock className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <AlertCircle className="w-5 h-5 text-yellow-600" />
+                          )}
+                          <span className="text-sm font-medium capitalize whitespace-nowrap">
+                            {request.status.replace('_', ' ')}
                           </span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-                          <span className="whitespace-nowrap">ID: {request.id}</span>
-                          <span className="whitespace-nowrap">Submitted: {new Date(request.submittedDate).toLocaleDateString()}</span>
-                          {request.completedDate && (
-                            <span className="whitespace-nowrap">Completed: {new Date(request.completedDate).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {request.status === 'completed' ? (
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                        ) : request.status === 'in_progress' ? (
-                          <Clock className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <AlertCircle className="w-5 h-5 text-yellow-600" />
-                        )}
-                        <span className="text-sm font-medium capitalize whitespace-nowrap">
-                          {request.status.replace('_', ' ')}
-                        </span>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Quick Actions */}
-          <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
-                <CreditCard className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
-                <h3 className="font-semibold text-gray-900 truncate">Payment History</h3>
-                <p className="text-sm text-gray-600 truncate">View all transactions</p>
-              </button>
-              <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
-                <Home className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
-                <h3 className="font-semibold text-gray-900 truncate">Lease Documents</h3>
-                <p className="text-sm text-gray-600 truncate">Access your lease</p>
-              </button>
-              <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
-                <Wrench className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
-                <h3 className="font-semibold text-gray-900 truncate">Request Service</h3>
-                <p className="text-sm text-gray-600 truncate">Report an issue</p>
-              </button>
+            {/* Quick Actions */}
+            <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
+                  <CreditCard className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
+                  <h3 className="font-semibold text-gray-900 truncate">Payment History</h3>
+                  <p className="text-sm text-gray-600 truncate">View all transactions</p>
+                </button>
+                <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
+                  <Home className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
+                  <h3 className="font-semibold text-gray-900 truncate">Lease Documents</h3>
+                  <p className="text-sm text-gray-600 truncate">Access your lease documents</p>
+                </button>
+                <button className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0">
+                  <Wrench className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
+                  <h3 className="font-semibold text-gray-900 truncate">Maintenance</h3>
+                  <p className="text-sm text-gray-600 truncate">View your requests</p>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };

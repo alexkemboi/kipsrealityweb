@@ -1,6 +1,7 @@
 import { journalService } from "./journal-service";
 import { prisma } from "@/lib/db";
 import { PostingStatus } from "@prisma/client";
+import { CHART_OF_ACCOUNTS } from "./types";
 
 export const financeActions = {
 
@@ -32,7 +33,7 @@ export const financeActions = {
                 lines: [
                     // Debit AR (Asset)
                     {
-                        accountCode: "1100",
+                        accountCode: CHART_OF_ACCOUNTS.ACCOUNTS_RECEIVABLE,
                         debit: amount,
                         credit: 0,
                         leaseId: invoice.leaseId,
@@ -41,7 +42,7 @@ export const financeActions = {
                     },
                     // Credit Income
                     {
-                        accountCode: "4000",
+                        accountCode: CHART_OF_ACCOUNTS.RENTAL_INCOME,
                         debit: 0,
                         credit: amount,
                         leaseId: invoice.leaseId,
@@ -99,14 +100,14 @@ export const financeActions = {
                 lines: [
                     // Debit Cash (Asset) - Money enters bank
                     {
-                        accountCode: "1000", // "Cash - Operating Account"
+                        accountCode: CHART_OF_ACCOUNTS.CASH_IN_BANK, // "Cash - Operating Account"
                         debit: amount,
                         credit: 0,
                         propertyId: payment.invoice?.Lease.propertyId
                     },
                     // Credit Accounts Receivable (Asset) - Tenant owes less
                     {
-                        accountCode: "1100", // "Accounts Receivable"
+                        accountCode: CHART_OF_ACCOUNTS.ACCOUNTS_RECEIVABLE, // "Accounts Receivable"
                         debit: 0,
                         credit: amount,
                         leaseId: payment.invoice?.leaseId,

@@ -9,9 +9,10 @@ import { verifyAccessToken } from "@/lib/auth";
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
+    const { propertyId } = await params;
     // Verify auth
     const token = request.headers.get("authorization")?.split(" ")[1];
     if (!token) {
@@ -29,7 +30,7 @@ export async function GET(
       );
     }
 
-    const propertyId = params.propertyId;
+    // const propertyId = params.propertyId; // already destructured above
 
     // Verify property exists and user has access
     const property = await prisma.property.findUnique({

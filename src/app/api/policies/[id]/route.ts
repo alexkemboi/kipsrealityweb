@@ -7,10 +7,11 @@ interface RouteContext {
 }
 
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const policy = await prisma.policy.findUnique({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       include: { Section: true },
     });
     if (!policy) return NextResponse.json({ error: "Policy not found" }, { status: 404 });
@@ -20,11 +21,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const updatedPolicy = await prisma.policy.update({
-      where: { id: Number(params.id) },
+      where: { id: Number(id) },
       data: body,
     });
     return NextResponse.json(updatedPolicy);
