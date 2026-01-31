@@ -8,6 +8,7 @@ export const ROLE_HIERARCHY: Record<DssParticipantRole, number> = {
     AGENT: 2,
     WITNESS: 3,          // Signs Last
     NOTARY: 4,           // Final seal
+    CUSTODIAN: 2,        // Equivalent to Landlord/Property Manager (signs on behalf of someone)
     VENDOR: 0,
     OTHER: 0
 };
