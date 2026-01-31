@@ -58,7 +58,7 @@ export default function RentUtilitiesChart({ myproperties, selectedProperty }: R
   }, [myproperties, selectedProperty, selectedMonth]);
 
   return (
-    <div className="w-full h-96 p-4 bg-white rounded-2xl shadow-md">
+    <div className="w-full h-full min-h-[300px] p-4 bg-white rounded-2xl shadow-md flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Rent & Utilities Overview</h2>
         <div>

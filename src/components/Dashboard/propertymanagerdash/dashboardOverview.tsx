@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import RevenueChart from "./RevenueChart";
+import OccupancyLineChart from "./OccupancyLineChart";
 import { toast } from "sonner"; // Assuming sonner is used for toasts
 
 // Metric Card Component
@@ -62,12 +63,23 @@ const OnboardingState = () => (
 export default function Dashboard() {
 	const [data, setData] = useState<any>(null);
 	const [loading, setLoading] = useState(true);
+	const [selectedProperty, setSelectedProperty] = useState("all");
+	const [selectedTimeRange, setSelectedTimeRange] = useState("6m");
 
 	useEffect(() => {
-		const fetchData = async () => {
+		const fetchData = async (propId: string, timeRange: string) => {
 			try {
 				setLoading(true);
-				const res = await fetch("/api/dashboard/analytics");
+				let url = "/api/dashboard/analytics";
+				const params = new URLSearchParams();
+				if (propId && propId !== "all") params.append("propertyId", propId);
+				if (timeRange) params.append("timeRange", timeRange);
+
+				if (Array.from(params).length > 0) {
+					url += `?${params.toString()}`;
+				}
+
+				const res = await fetch(url);
 				if (res.ok) {
 					const json = await res.json();
 					setData(json);
@@ -79,8 +91,8 @@ export default function Dashboard() {
 				setLoading(false);
 			}
 		};
-		fetchData();
-	}, []);
+		fetchData(selectedProperty, selectedTimeRange);
+	}, [selectedProperty, selectedTimeRange]);
 
 	if (loading) {
 		return (
@@ -183,13 +195,136 @@ export default function Dashboard() {
 				</div>
 			</div>
 
+			{/* SECTION 3: Risk & Efficiency (Row 3) */}
+			<div>
+				<h2 className="text-xl font-extrabold text-gray-900 mb-6 flex items-center gap-3">
+					<div className="p-1.5 bg-purple-50 rounded-lg">
+						<TrendingUp className="w-6 h-6 text-purple-600" />
+					</div>
+					Risk & Efficiency
+				</h2>
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+					<MetricCard
+						title="Op. Expense Ratio"
+						value={`${kpis.operatingExpenseRatio}%`}
+						subtext="Expenses vs Revenue"
+						icon={TrendingUp}
+						color="bg-red-500"
+					/>
+					<MetricCard
+						title="Maint. Response Time"
+						value={`${kpis.averageMaintenanceResponseTime}h`}
+						subtext="Avg time to resolve"
+						icon={Wrench}
+						color="bg-blue-500"
+					/>
+					<MetricCard
+						title="Time to Fill"
+						value={`${kpis.averageTimeToFillVacancy}d`}
+						subtext="Avg vacancy duration"
+						icon={Home}
+						color="bg-emerald-500"
+					/>
+					<MetricCard
+						title="Debt Service Cover."
+						value={kpis.debtServiceCoverageRatio || "N/A"}
+						subtext="NOI / Debt Payments"
+						icon={DollarSign}
+						color="bg-orange-500"
+					/>
+				</div>
+			</div>
+
 			{/* SECTION 3: Visual Analytics */}
 			<div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-				<div className="mb-8">
-					<h3 className="text-lg font-bold text-gray-900">Revenue Trends</h3>
-					<p className="text-sm text-gray-500 font-medium">Income vs Expenses (Last 6 Months)</p>
+				<div className="mb-8 flex justify-between items-center sm:flex-row flex-col gap-4 sm:gap-0">
+					<div>
+						<h3 className="text-lg font-bold text-gray-900">Revenue Trends</h3>
+						<p className="text-sm text-gray-500 font-medium">Income vs Expenses (Last {selectedTimeRange})</p>
+					</div>
+					<div className="flex flex-wrap gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+						<select
+							className="flex-1 sm:flex-none border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-gray-50 text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+							value={selectedTimeRange}
+							onChange={(e) => setSelectedTimeRange(e.target.value)}
+						>
+							<option value="30d">Last 30 Days</option>
+							<option value="90d">Last 90 Days</option>
+							<option value="6m">Last 6 Months</option>
+							<option value="12m">Last 12 Months</option>
+							<option value="all">All Time</option>
+						</select>
+						<select
+							className="flex-1 sm:flex-none border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-gray-50 text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+							value={selectedProperty}
+							onChange={(e) => setSelectedProperty(e.target.value)}
+						>
+							<option value="all">All Properties</option>
+							{data?.properties?.map((p: any) => (
+								<option key={p.id} value={p.id}>{p.name}</option>
+							))}
+						</select>
+
+						{/* EXPORT BUTTONS */}
+						<div className="flex gap-2 print:hidden ml-auto sm:ml-0">
+							<button
+								onClick={() => {
+									// CSV Export Logic
+									if (!data) return;
+									const rows = [
+										["Metric", "Value"],
+										["Total Revenue", data.kpis.revenue],
+										["Net Operating Income", data.kpis.noi],
+										["Arrears", data.kpis.arrears],
+										["Vacancy Loss", data.kpis.vacancyLoss],
+										["Occupancy Rate", `${data.kpis.occupancyRate}%`],
+										["Op. Expense Ratio", `${data.kpis.operatingExpenseRatio}%`],
+										["Maint. Response Time", `${data.kpis.averageMaintenanceResponseTime}h`],
+										["Time to Fill", `${data.kpis.averageTimeToFillVacancy}d`],
+										[],
+										["Month", "Revenue", "Expenses"],
+										...data.chartData.map((d: any) => [d.month, d.revenue, d.expenses])
+									];
+
+									const csvContent = "data:text/csv;charset=utf-8,"
+										+ rows.map(e => e.join(",")).join("\n");
+
+									const encodedUri = encodeURI(csvContent);
+									const link = document.createElement("a");
+									link.setAttribute("href", encodedUri);
+									link.setAttribute("download", `dashboard_report_${new Date().toISOString().split('T')[0]}.csv`);
+									document.body.appendChild(link);
+									link.click();
+									document.body.removeChild(link);
+								}}
+								className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition-colors"
+								title="Export CSV"
+							>
+								<FileText size={18} />
+							</button>
+							<button
+								onClick={() => window.print()}
+								className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-md transition-colors"
+								title="Print Report"
+							>
+								<Building2 size={18} />
+							</button>
+						</div>
+					</div>
 				</div>
 				<RevenueChart data={data.chartData} />
+
+				<div className="border-t border-gray-100 my-8"></div>
+
+				<div className="mb-6">
+					<h3 className="text-lg font-bold text-gray-900">Occupancy & Utilities</h3>
+					<p className="text-sm text-gray-500 font-medium">Occupancy rates and utility cost analysis</p>
+				</div>
+
+				<OccupancyLineChart
+					selectedProperty={selectedProperty}
+					myproperties={data?.properties || []}
+				/>
 			</div>
 
 			{/* SECTION 4: Quick Actions */}
