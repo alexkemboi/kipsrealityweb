@@ -138,25 +138,29 @@ model PasswordResetToken {
 }
 
 model FinancialEntity {
-  id             String         @id @default(uuid())
-  organizationId String         @map("organization_id")
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
   name           String
-  taxIdEncrypted String?        @map("tax_id_encrypted")
-  organization   Organization   @relation(fields: [organizationId], references: [id])
-  accounts       Account[]
-  journals       JournalEntry[]
+  taxIdEncrypted String? @map("tax_id_encrypted")
+
+  // Relations
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  accounts     Account[]
+  journals     JournalEntry[]
 
   @@index([organizationId], map: "financial_entities_organization_id_fkey")
   @@map("financial_entities")
 }
 
 model Account {
-  id           String          @id @default(uuid())
-  entityId     String          @map("entity_id")
-  code         String
-  name         String
-  type         AccountType
-  isSystem     Boolean         @default(false)
+  id       String      @id @default(uuid())
+  entityId String      @map("entity_id")
+  code     String // e.g. "1100", "4000"
+  name     String // e.g. "Accounts Receivable"
+  type     AccountType // Uses your existing Enum
+  isSystem Boolean     @default(false) // If true, cannot be deleted (e.g. AR)
+
+  // Relations
   entity       FinancialEntity @relation(fields: [entityId], references: [id])
   journalLines JournalLine[]
 
@@ -165,18 +169,23 @@ model Account {
 }
 
 model JournalEntry {
-  id              String          @id @default(uuid())
-  entityId        String          @map("entity_id")
-  transactionDate DateTime        @map("transaction_date")
-  postedAt        DateTime?       @map("posted_at")
+  id              String    @id @default(uuid())
+  entityId        String    @map("entity_id")
+  transactionDate DateTime  @map("transaction_date")
+  postedAt        DateTime? @map("posted_at")
   description     String
-  reference       String?
-  isLocked        Boolean         @default(false)
-  entity          FinancialEntity @relation(fields: [entityId], references: [id])
-  lines           JournalLine[]
-  invoice         Invoice?
-  payment         Payment?
-  utilityBill     UtilityBill?
+  reference       String? // ID of Invoice, Payment, or UtilityBill
+  isLocked        Boolean   @default(false)
+
+  // Relations
+  entity FinancialEntity @relation(fields: [entityId], references: [id])
+  lines  JournalLine[]
+
+  // Link backs (Optional - helps trace origin)
+  invoice            Invoice?
+  payment            Payment?
+  utilityBill        UtilityBill?
+  maintenanceRequest MaintenanceRequest?
 
   @@index([transactionDate])
   @@index([entityId], map: "gl_journal_entries_entity_id_fkey")
@@ -184,22 +193,28 @@ model JournalEntry {
 }
 
 model JournalLine {
-  id             String       @id @default(uuid())
-  journalEntryId String       @map("journal_entry_id")
-  accountId      String       @map("account_id")
+  id             String  @id @default(uuid())
+  journalEntryId String  @map("journal_entry_id")
+  accountId      String  @map("account_id")
   description    String?
-  debit          Decimal      @default(0.0000) @db.Decimal(20, 4)
-  credit         Decimal      @default(0.0000) @db.Decimal(20, 4)
-  propertyId     String?      @map("property_id")
-  unitId         String?      @map("unit_id")
-  leaseId        String?      @map("lease_id")
-  tenantId       String?      @map("tenant_id")
-  vendorId       String?      @map("vendor_id")
-  account        Account      @relation(fields: [accountId], references: [id])
-  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
-  lease          Lease?       @relation(fields: [leaseId], references: [id])
-  property       Property?    @relation(fields: [propertyId], references: [id])
-  unit           Unit?        @relation(fields: [unitId], references: [id])
+
+  // MONEY FIELDS: Use Decimal for GAAP compliance
+  debit  Decimal @default(0.0000) @db.Decimal(20, 4)
+  credit Decimal @default(0.0000) @db.Decimal(20, 4)
+
+  // DIMENSIONS (For Reporting)
+  propertyId String? @map("property_id")
+  unitId     String? @map("unit_id")
+  leaseId    String? @map("lease_id")
+  tenantId   String? @map("tenant_id")
+  vendorId   String? @map("vendor_id")
+
+  // Relations
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id])
+  lease        Lease?       @relation(fields: [leaseId], references: [id])
+  property     Property?    @relation(fields: [propertyId], references: [id])
+  unit         Unit?        @relation(fields: [unitId], references: [id])
 
   @@index([accountId])
   @@index([propertyId])
@@ -284,6 +299,7 @@ model UtilityAllocation {
   id            String  @id @default(uuid())
   utilityBillId String  @map("utility_bill_id")
   unitId        String  @map("unit_id")
+  leaseId       String? @map("lease_id") // Added for tracking
   tenantId      String? @map("tenant_id") // Optional: Empty unit = Landlord cost
 
   // Financials
@@ -305,12 +321,14 @@ model UtilityAllocation {
   // Relations
   utilityBill UtilityBill @relation(fields: [utilityBillId], references: [id], onDelete: Cascade)
   unit        Unit        @relation(fields: [unitId], references: [id])
+  lease       Lease?      @relation(fields: [leaseId], references: [id])
 
   payments UtilityPayment[]
   disputes UtilityDispute[]
 
   @@index([utilityBillId])
   @@index([tenantId])
+  @@index([leaseId])
   @@map("utility_allocations")
 }
 
@@ -500,6 +518,7 @@ model Unit {
   houseDetailId       String?
   unitName            String?
   currency            String?              @default("USD") @db.VarChar(10)
+  squareFootage       Float?               @map("square_footage") // Added for utility split
   leases              Lease[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
@@ -621,6 +640,7 @@ model Lease {
   journalLines             JournalLine[]
   invoices                 Invoice[]
   lease_utility            lease_utility[]
+  utilityAllocations       UtilityAllocation[]
 
   @@index([propertyId])
   @@index([tenantId])
@@ -629,26 +649,27 @@ model Lease {
 }
 
 model Invoice {
-  id                String             @id @default(uuid())
-  leaseId           String             @map("lease_id")
-  type              invoice_type
-  totalAmount       Float              @map("amount")
-  amountPaid        Float              @default(0) @map("amount_paid")
-  balance           Float              @default(0)
-  dueDate           DateTime           @db.DateTime(0)
-  status            invoice_status?    @default(PENDING)
-  postingStatus     PostingStatus      @default(PENDING) @map("posting_status")
-  journalEntryId    String?            @unique @map("journal_entry_id")
-  utilityBillId     String?            @map("utility_bill_id")
-  createdAt         DateTime?          @default(now()) @db.DateTime(0)
-  updatedAt         DateTime?          @default(now()) @db.DateTime(0)
-  InvoiceItem       InvoiceItem[]
-  journalEntry      JournalEntry?      @relation(fields: [journalEntryId], references: [id])
-  Lease             Lease              @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  utilityBill       UtilityBill?       @relation(fields: [utilityBillId], references: [id])
-  payments          Payment[]
-  receipts          Receipt[]
-  utilityAllocation UtilityAllocation?
+  id                 String              @id @default(uuid())
+  leaseId            String              @map("lease_id")
+  type               invoice_type
+  totalAmount        Float               @map("amount")
+  amountPaid         Float               @default(0) @map("amount_paid")
+  balance            Float               @default(0)
+  dueDate            DateTime            @db.DateTime(0)
+  status             invoice_status?     @default(PENDING)
+  postingStatus      PostingStatus       @default(PENDING) @map("posting_status")
+  journalEntryId     String?             @unique @map("journal_entry_id")
+  utilityBillId      String?             @map("utility_bill_id")
+  createdAt          DateTime?           @default(now()) @db.DateTime(0)
+  updatedAt          DateTime?           @default(now()) @db.DateTime(0)
+  InvoiceItem        InvoiceItem[]
+  journalEntry       JournalEntry?       @relation(fields: [journalEntryId], references: [id])
+  Lease              Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  utilityBill        UtilityBill?        @relation(fields: [utilityBillId], references: [id])
+  payments           Payment[]
+  receipts           Receipt[]
+  utilityAllocation  UtilityAllocation?
+  maintenanceRequest MaintenanceRequest?
 
   @@index([leaseId], map: "invoice_lease_id_fkey")
   @@index([utilityBillId], map: "invoice_utility_bill_id_fkey")
@@ -955,11 +976,20 @@ model MaintenanceRequest {
   assigned_vendor_id String?
   cost               Decimal?                  @db.Decimal(10, 2)
   assigned_at        DateTime?                 @db.DateTime(0)
-  organization       Organization              @relation(fields: [organizationId], references: [id])
-  property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
-  requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
-  unit               Unit?                     @relation(fields: [unitId], references: [id])
-  vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+
+  // Financial Integration
+  isTenantChargeable Boolean @default(false) @map("is_tenant_chargeable")
+  journalEntryId     String? @unique @map("journal_entry_id")
+  invoiceId          String? @unique @map("invoice_id")
+
+  // Relations
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  property     Property         @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
+  requestedBy  OrganizationUser @relation("RequestCreator", fields: [requestedById], references: [id])
+  unit         Unit?            @relation(fields: [unitId], references: [id])
+  vendors      Vendor?          @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+  journalEntry JournalEntry?    @relation(fields: [journalEntryId], references: [id])
+  invoice      Invoice?         @relation(fields: [invoiceId], references: [id])
 
   @@index([organizationId])
   @@index([propertyId])
@@ -1437,6 +1467,8 @@ enum ApplicationStatus {
 enum invoice_type {
   RENT
   UTILITY
+  MAINTENANCE
+  DAMAGE
 }
 
 enum utility_type {

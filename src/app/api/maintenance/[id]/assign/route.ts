@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { verifyAccessToken } from "@/lib/auth";
 
 // POST /api/maintenance/:id/assign
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
     }
 
-    const requestId = params.id;
+    const { id: requestId } = await params;
     const body = await req.json();
     const { vendorId } = body;
 

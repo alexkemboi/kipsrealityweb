@@ -8,10 +8,10 @@ const DEFAULT_ORG_ID = "46e17dc1-137b-4e7a-a254-797a8ce16b0d";
 
 export async function POST(
     req: NextRequest,
-    { params }: { params: { billId: string } }
+    { params }: { params: Promise<{ billId: string }> }
 ) {
     try {
-        const billId = params.billId;
+        const { billId } = await params;
 
         // Get organization ID from request body or use default
         // TODO: In production, get from auth/session

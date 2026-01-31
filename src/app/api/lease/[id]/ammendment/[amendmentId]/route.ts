@@ -109,14 +109,13 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string; amendmentId: string } }
+  context: { params: Promise<{ id: string; amendmentId: string }> }
 ) {
   try {
     const user = await getCurrentUser(req);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // NO await here!
-    const { id: leaseId, amendmentId } = context.params;
+    const { id: leaseId, amendmentId } = await context.params;
 
     const amendment = await prisma.leaseAmendment.findUnique({
       where: { id: amendmentId },
