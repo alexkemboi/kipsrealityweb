@@ -3,9 +3,9 @@ import { prisma } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: propertyId } = params;
+  const { id: propertyId } = await params;
 
   console.log("API called for propertyId:", propertyId);
 

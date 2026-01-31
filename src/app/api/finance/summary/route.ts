@@ -1,19 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { Decimal } from "@prisma/client/runtime/library";
+import { CHART_OF_ACCOUNTS } from "@/lib/finance/types";
 
 export async function GET(req: Request) {
     try {
-        // 1. Auth Check (Mocked for dev, switch to verifyAccessToken in prod)
+        // 1. Authentication
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
-        // if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        if (!token) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
-        const { searchParams } = new URL(req.url);
+        let payload;
+        try {
+            payload = verifyAccessToken(token);
+        } catch (authError) {
+            console.error("Auth Token Verification Error:", authError);
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
-        // Mock Org ID (From your Seed) - fallback preserved
-        const orgId = searchParams.get("organizationId") || "46e17dc1-137b-4e7a-a254-797a8ce16b0d";
+        if (!payload?.organizationId) {
+            return NextResponse.json({ error: "Organization required" }, { status: 403 });
+        }
+
+        const orgId = payload.organizationId;
 
         // 2. Get Financial Entity
         const entity = await prisma.financialEntity.findFirst({
@@ -21,45 +34,110 @@ export async function GET(req: Request) {
         });
 
         if (!entity) {
-            return NextResponse.json({ success: true, data: { cashInBank: 0, outstandingArrears: 0, currency: "USD" } });
+            return NextResponse.json({
+                cashInBank: 0,
+                accountsReceivable: 0,
+                accountsPayable: 0,
+                rentalIncome: 0,
+                utilityExpense: 0,
+                netOperatingIncome: 0,
+                currency: "USD"
+            });
         }
 
-        // 3. QUERY: CASH IN BANK (Account 1000)
-        // Asset Account: Net Balance = Debits - Credits
-        const cashResult = await prisma.journalLine.aggregate({
-            where: {
-                account: { code: "1000", entityId: entity.id }
-            },
-            _sum: { debit: true, credit: true }
-        });
+        // 3. PARALLEL QUERIES for all account balances
+        const [
+            cashBalance,
+            arBalance,
+            apBalance,
+            rentalIncomeBalance,
+            utilityExpenseBalance
+        ] = await Promise.all([
+            // Cash (Asset - Debit Normal) - Account 1000
+            prisma.journalLine.aggregate({
+                where: { 
+                    account: { 
+                        code: CHART_OF_ACCOUNTS.CASH_IN_BANK, 
+                        entityId: entity.id 
+                    }
+                },
+                _sum: { debit: true, credit: true }
+            }),
+            
+            // Accounts Receivable (Asset - Debit Normal) - Account 1100
+            prisma.journalLine.aggregate({
+                where: { 
+                    account: { 
+                        code: CHART_OF_ACCOUNTS.ACCOUNTS_RECEIVABLE, 
+                        entityId: entity.id 
+                    }
+                },
+                _sum: { debit: true, credit: true }
+            }),
+            
+            // Accounts Payable (Liability - Credit Normal) - Account 2200
+            prisma.journalLine.aggregate({
+                where: { 
+                    account: { 
+                        code: CHART_OF_ACCOUNTS.ACCOUNTS_PAYABLE, 
+                        entityId: entity.id 
+                    }
+                },
+                _sum: { debit: true, credit: true }
+            }),
+            
+            // Rental Income (Revenue - Credit Normal) - Account 4000
+            prisma.journalLine.aggregate({
+                where: { 
+                    account: { 
+                        code: CHART_OF_ACCOUNTS.RENTAL_INCOME, 
+                        entityId: entity.id 
+                    }
+                },
+                _sum: { debit: true, credit: true }
+            }),
+            
+            // Utility Expense (Expense - Debit Normal) - Account 5200
+            prisma.journalLine.aggregate({
+                where: { 
+                    account: { 
+                        code: CHART_OF_ACCOUNTS.UTILITY_EXPENSE, 
+                        entityId: entity.id 
+                    }
+                },
+                _sum: { debit: true, credit: true }
+            })
+        ]);
 
-        const cashInBank = (cashResult._sum.debit || new Decimal(0))
-            .minus(cashResult._sum.credit || new Decimal(0));
+        // 4. Calculate balances based on account type normal balances
+        // Assets/Expenses: Debit - Credit (Debit normal)
+        // Liabilities/Revenue: Credit - Debit (Credit normal)
+        const cash = Number(cashBalance._sum.debit || 0) - Number(cashBalance._sum.credit || 0);
+        const ar = Number(arBalance._sum.debit || 0) - Number(arBalance._sum.credit || 0);
+        const ap = Number(apBalance._sum.credit || 0) - Number(apBalance._sum.debit || 0);
+        const rentalIncome = Number(rentalIncomeBalance._sum.credit || 0) - Number(rentalIncomeBalance._sum.debit || 0);
+        const utilityExpense = Number(utilityExpenseBalance._sum.debit || 0) - Number(utilityExpenseBalance._sum.credit || 0);
 
-        // 4. QUERY: OUTSTANDING ARREARS (Account 1100)
-        // Asset Account: Net Balance = Debits (Invoiced) - Credits (Paid)
-        const arResult = await prisma.journalLine.aggregate({
-            where: {
-                account: { code: "1100", entityId: entity.id }
-            },
-            _sum: { debit: true, credit: true }
-        });
+        // 5. Calculate Net Operating Income
+        const netOperatingIncome = rentalIncome - utilityExpense;
 
-        const outstandingArrears = (arResult._sum.debit || new Decimal(0))
-            .minus(arResult._sum.credit || new Decimal(0));
-
-        // 5. Return Data
+        // 6. Return Data in the format expected by FinancialSummaryCard
         return NextResponse.json({
-            success: true,
-            data: {
-                cashInBank: cashInBank.toNumber(),
-                outstandingArrears: outstandingArrears.toNumber(),
-                currency: "USD"
-            }
+            cashInBank: cash,
+            accountsReceivable: ar,
+            accountsPayable: ap,
+            rentalIncome: rentalIncome,
+            utilityExpense: utilityExpense,
+            netOperatingIncome: netOperatingIncome,
+            currency: 'USD'
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("[Finance Summary Error]", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json(
+            { error: errorMessage },
+            { status: 500 }
+        );
     }
 }

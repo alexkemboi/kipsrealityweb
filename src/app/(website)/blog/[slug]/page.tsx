@@ -2,12 +2,8 @@ import { notFound } from "next/navigation";
 import BlogContentClient from "./BlogContentClient";
 import { blogPosts } from "@/app/data/blogData";
 
-interface BlogPostPageProps {
-  params: { slug: string };
-}
-
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const { slug } = params;
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const post = blogPosts.find((p) => p.slug === slug);
 
   if (!post) {

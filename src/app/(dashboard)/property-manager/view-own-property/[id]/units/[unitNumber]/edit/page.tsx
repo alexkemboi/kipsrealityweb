@@ -5,10 +5,9 @@ import { fetchUnitDetails } from "@/lib/units";
 export default async function EditUnitPage({
   params,
 }: {
-  params: { id: string; unitNumber: string };
+  params: Promise<{ id: string; unitNumber: string }>;
 }) {
-  // params is a plain object, no await needed
-  const { id: propertyId, unitNumber } = params;
+  const { id: propertyId, unitNumber } = await params;
 
   // Ensure fetchUnitDetails uses a full URL on the server
   const unit = await fetchUnitDetails(propertyId, unitNumber, true);

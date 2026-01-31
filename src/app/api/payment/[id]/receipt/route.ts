@@ -7,9 +7,9 @@ function generateReceiptNo(count: number) {
   return `INV-${year}-${String(count + 1).padStart(3, "0")}`;
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const paymentId = params.id;
+    const { id: paymentId } = await params;
 
     // Find payment with its invoice
     const payment = await prisma.payment.findUnique({

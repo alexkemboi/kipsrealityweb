@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET(req: Request, context: { params: { tenantId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ tenantId: string }> }) {
   try {
-    const { tenantId } = context.params;
+    const { tenantId } = await params;
 
     // Fetch all leases for this tenant
     const leases = await prisma.lease.findMany({

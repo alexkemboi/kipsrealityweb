@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 interface Context {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(req: Request, context: Context) {
   try {
-    const id = Number(await context.params.id)
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
     const hero = await prisma.heroSection.findUnique({ where: { id } })
 
     if (!hero) {
@@ -23,7 +24,8 @@ export async function GET(req: Request, context: Context) {
 
 export async function PUT(req: Request, context: Context) {
   try {
-    const id = Number(await context.params.id)
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
     const data = await req.json()
 
     const updated = await prisma.heroSection.update({
@@ -40,7 +42,8 @@ export async function PUT(req: Request, context: Context) {
 
 export async function DELETE(req: Request, context: Context) {
   try {
-    const id = Number(await context.params.id)
+    const { id: idStr } = await context.params;
+    const id = Number(idStr);
     await prisma.heroSection.delete({ where: { id } })
     return NextResponse.json({ message: 'Hero section deleted successfully' })
   } catch (error) {

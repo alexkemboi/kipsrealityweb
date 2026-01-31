@@ -3,8 +3,8 @@ import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { NextResponse } from "next/server";
 import { invoice_status } from "@prisma/client";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
   let body: any;
   try {

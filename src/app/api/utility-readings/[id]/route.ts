@@ -3,11 +3,12 @@ import { prisma } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const reading = await prisma.utility_reading.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         lease_utility: {
           include: {
@@ -62,14 +63,15 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await req.json();
     const { readingValue, readingDate, amount } = body;
 
     const updated = await prisma.utility_reading.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         reading_value: readingValue,
         readingDate: readingDate ? new Date(readingDate) : undefined,
@@ -86,11 +88,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     await prisma.utility_reading.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true, message: "Reading deleted" });

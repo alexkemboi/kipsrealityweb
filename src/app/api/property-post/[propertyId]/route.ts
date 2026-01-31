@@ -35,10 +35,10 @@ function extractCloudinaryPublicId(url: string): string | null {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params;
+    const { propertyId } = await params;
     const body = await request.json();
     const { images } = body as { images: PropertyImageData[] };
 
@@ -99,10 +99,10 @@ export async function POST(
 // GET endpoint to retrieve property images
 export async function GET(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params;
+    const { propertyId } = await params;
 
     const images = await prisma.propertyImage.findMany({
       where: { propertyId },
@@ -126,10 +126,10 @@ export async function GET(
 // Optional: DELETE endpoint to remove images
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { propertyId: string } }
+  { params }: { params: Promise<{ propertyId: string }> }
 ) {
   try {
-    const { propertyId } = params;
+    const { propertyId } = await params;
     const { imageId } = await request.json();
 
     if (imageId) {

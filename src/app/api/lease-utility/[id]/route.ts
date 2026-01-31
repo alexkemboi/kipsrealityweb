@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 // GET /api/lease-utilities/:id -> Get lease utility assignment
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const assignment = await prisma.lease_utility.findUnique({
       where: { id },
       include: { utility: true, Lease: true },
@@ -23,9 +23,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 // PUT /api/lease-utilities/:id -> Update assignment (e.g., is_tenant_responsible)
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
     const { isTenantResponsible } = body;
 
@@ -46,9 +46,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // DELETE /api/lease-utilities/:id -> Remove assignment
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await prisma.lease_utility.delete({ where: { id } });
     return NextResponse.json({ success: true, message: "Lease utility removed successfully" });
   } catch (error: any) {

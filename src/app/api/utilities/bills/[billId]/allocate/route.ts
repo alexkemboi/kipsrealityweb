@@ -5,10 +5,10 @@ import { allocateUtilityBill } from "@/lib/utilities/utility-allocation-service"
 
 export async function POST(
     _req: NextRequest,
-    { params }: { params: { billId: string } }
+    { params }: { params: Promise<{ billId: string }> }
 ) {
     try {
-        const billId = params.billId;
+        const { billId } = await params;
 
         // Use the backend allocation service
         const result = await allocateUtilityBill(billId);
