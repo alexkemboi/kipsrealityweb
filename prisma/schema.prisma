@@ -833,6 +833,8 @@ model DssSignature {
   participantId String         @map("participant_id")
   signatureHash String         @map("signature_hash")
   signedAt      DateTime       @default(now()) @map("signed_at")
+  isProxy       Boolean        @default(false) @map("is_proxy")
+  onBehalfOf    String?        @map("on_behalf_of")
   document      DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
   participant   DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
@@ -1586,6 +1588,7 @@ enum DssParticipantRole {
   VENDOR
   WITNESS
   NOTARY
+  CUSTODIAN
   OTHER
 }
 

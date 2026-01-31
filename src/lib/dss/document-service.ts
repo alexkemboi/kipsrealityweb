@@ -86,7 +86,7 @@ interface SignDocumentResult {
     result: { status: string };
 }
 
-export async function signDocument(documentId: string, userEmail: string, signatureData: string): Promise<SignDocumentResult> {
+export async function signDocument(documentId: string, userEmail: string, signatureData: string, onBehalfOf?: string): Promise<SignDocumentResult> {
     // 1. Get Security Baseline & Permissions
     const workflowStatus = await getNextSigner(documentId);
 
@@ -112,6 +112,15 @@ export async function signDocument(documentId: string, userEmail: string, signat
         throw new Error("You have already signed this document.");
     }
 
+    // 2.5 Validate proxy signing requirements
+    const isProxy = participant.role === "CUSTODIAN";
+    if (isProxy && !onBehalfOf) {
+        throw new Error("Custodian must specify who they are signing on behalf of (onBehalfOf).");
+    }
+    if (!isProxy && onBehalfOf) {
+        throw new Error("Only custodians can sign on behalf of others.");
+    }
+
     // 3. Apply Signature (Atomic Transaction)
     // We compute a "Server-Proof" of the signature.
     const signatureProof = computeDocumentHash(Buffer.from(signatureData + doc.originalPdfSha256Hex));
@@ -132,6 +141,8 @@ export async function signDocument(documentId: string, userEmail: string, signat
                 documentId,
                 participantId: participant.id,
                 signatureHash: signatureProof,
+                isProxy,
+                onBehalfOf
             }
         });
 
