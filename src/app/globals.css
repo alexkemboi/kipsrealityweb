@@ -265,3 +265,33 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
 }
+
+@media print {
+  /* Hide Sidebar and Navbar */
+  aside, nav, header, .sidebar, .navbar {
+    display: none !important;
+  }
+
+  /* Hide Action Cards and Export Buttons */
+  .grid-cols-3, .print\:hidden {
+    display: none !important;
+  }
+
+  /* Expand Dashboard to Full Width */
+  main, .p-6 {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Ensure background colors print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body {
+    background: white !important;
+  }
+}

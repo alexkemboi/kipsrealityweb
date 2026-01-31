@@ -42,14 +42,14 @@ export async function GET(req: Request) {
   const payments: Array<any> = await prisma.payment.findMany({
     where: {
       invoice: {
-        lease: { propertyId: { in: properties.map((p: { id: string }) => p.id) } }
+        Lease: { propertyId: { in: properties.map((p: { id: string }) => p.id) } }
       },
       isReversed: false,
       ...dateFilter,
     },
     include: {
       invoice: {
-        select: { type: true, lease: { select: { propertyId: true } } }
+        select: { type: true, Lease: { select: { propertyId: true } } }
       }
     }
   });
@@ -60,7 +60,10 @@ export async function GET(req: Request) {
     result[p.id] = { propertyId: p.id, propertyName: p.name, rentCollected: 0, utilitiesPaid: 0 };
   }
   for (const pay of payments) {
-    const propId: string = pay.invoice.lease.propertyId;
+    // Optional chaining in case of bad data, though schema enforces it
+    if (!pay.invoice?.Lease?.propertyId) continue;
+
+    const propId: string = pay.invoice.Lease.propertyId;
     if (!result[propId]) continue;
     if (pay.invoice.type === 'RENT') result[propId].rentCollected += pay.amount;
     if (pay.invoice.type === 'UTILITY') result[propId].utilitiesPaid += pay.amount;

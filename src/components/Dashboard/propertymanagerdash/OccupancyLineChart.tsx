@@ -84,14 +84,14 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 	}));
 
 	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-			<CardContent className="p-2 flex flex-col justify-center">
-				<div className="mb-2 ml-0">
+		<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+			<CardContent className="p-0 flex flex-col justify-center min-h-[300px]">
+				<div className="mb-4">
 					<h3 className="text-lg font-semibold text-gray-900">Occupancy Rate</h3>
 				</div>
-				<div className="w-full overflow-x-auto pl-0" style={{ height: 270 }}>
-					<div style={{ minWidth: 600, width: Math.max(600, chartData.length * 60) }}>
-						<ResponsiveContainer width={Math.max(600, chartData.length * 60)} height={250}>
+				<div className="w-full overflow-x-auto custom-scrollbar pb-2">
+					<div style={{ minWidth: "100%", width: Math.max(600, chartData.length * 60) }}>
+						<ResponsiveContainer width="100%" height={300}>
 							<LineChart
 								data={chartData}
 								margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
@@ -137,7 +137,7 @@ const OccupancyLineChart: React.FC<OccupancyLineChartProps> = ({ selectedPropert
 					</div>
 				</div>
 			</CardContent>
-			<div className="flex flex-col justify-center items-center h-[270px]">
+			<div className="h-full min-h-[300px]">
 				<RentUtilitiesChart selectedProperty={selectedProperty} myproperties={safeMyProperties} />
 			</div>
 		</div>
