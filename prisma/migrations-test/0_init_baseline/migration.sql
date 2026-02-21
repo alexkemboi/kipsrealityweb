@@ -309,58 +309,65 @@ BEGIN
   SELECT COUNT(*) INTO v_exists
   FROM INFORMATION_SCHEMA.TABLES
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'tenant_payment_methods';
+    AND TABLE_NAME = 'users';
 
-  IF v_exists = 0 THEN
-    CREATE TABLE `tenant_payment_methods` (
-      `id` VARCHAR(191) NOT NULL,
-      `user_id` VARCHAR(191) NOT NULL,
-      `type` VARCHAR(191) NOT NULL,
-      `plaid_access_token` VARCHAR(191) NULL,
-      `plaid_account_id` VARCHAR(191) NULL,
-      `stripe_payment_method_id` VARCHAR(191) NOT NULL,
-      `is_default` BOOLEAN NOT NULL DEFAULT false,
-      `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-      `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-      PRIMARY KEY (`id`),
-      INDEX `tenant_payment_methods_user_id_idx` (`user_id`),
-      CONSTRAINT `tenant_payment_methods_user_id_fkey`
-        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-        ON DELETE CASCADE ON UPDATE CASCADE
-    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-  ELSE
-    -- Patch key columns/defaults if table already exists
+  IF v_exists > 0 THEN
     SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'plaid_account_id';
-    IF v_exists = 0 THEN
-      ALTER TABLE `tenant_payment_methods` ADD COLUMN `plaid_account_id` VARCHAR(191) NULL;
-    END IF;
-
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'stripe_payment_method_id';
-    IF v_exists = 0 THEN
-      ALTER TABLE `tenant_payment_methods` ADD COLUMN `stripe_payment_method_id` VARCHAR(191) NULL;
-    END IF;
-
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'is_default';
-    IF v_exists > 0 THEN
-      ALTER TABLE `tenant_payment_methods`
-        MODIFY COLUMN `is_default` BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.STATISTICS
+    FROM INFORMATION_SCHEMA.TABLES
     WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'tenant_payment_methods'
-      AND INDEX_NAME = 'tenant_payment_methods_user_id_idx';
+      AND TABLE_NAME = 'tenant_payment_methods';
+
     IF v_exists = 0 THEN
-      ALTER TABLE `tenant_payment_methods`
-        ADD INDEX `tenant_payment_methods_user_id_idx` (`user_id`);
+      CREATE TABLE `tenant_payment_methods` (
+        `id` VARCHAR(191) NOT NULL,
+        `user_id` VARCHAR(191) NOT NULL,
+        `type` VARCHAR(191) NOT NULL,
+        `plaid_access_token` VARCHAR(191) NULL,
+        `plaid_account_id` VARCHAR(191) NULL,
+        `stripe_payment_method_id` VARCHAR(191) NOT NULL,
+        `is_default` BOOLEAN NOT NULL DEFAULT false,
+        `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+        PRIMARY KEY (`id`),
+        INDEX `tenant_payment_methods_user_id_idx` (`user_id`),
+        CONSTRAINT `tenant_payment_methods_user_id_fkey`
+          FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+          ON DELETE CASCADE ON UPDATE CASCADE
+      ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    ELSE
+      -- Patch key columns/defaults if table already exists
+      SELECT COUNT(*) INTO v_exists
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'plaid_account_id';
+      IF v_exists = 0 THEN
+        ALTER TABLE `tenant_payment_methods` ADD COLUMN `plaid_account_id` VARCHAR(191) NULL;
+      END IF;
+
+      SELECT COUNT(*) INTO v_exists
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'stripe_payment_method_id';
+      IF v_exists = 0 THEN
+        ALTER TABLE `tenant_payment_methods` ADD COLUMN `stripe_payment_method_id` VARCHAR(191) NULL;
+      END IF;
+
+      SELECT COUNT(*) INTO v_exists
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenant_payment_methods' AND COLUMN_NAME = 'is_default';
+      IF v_exists > 0 THEN
+        ALTER TABLE `tenant_payment_methods`
+          MODIFY COLUMN `is_default` BOOLEAN NOT NULL DEFAULT false;
+      END IF;
+
+      SELECT COUNT(*) INTO v_exists
+      FROM INFORMATION_SCHEMA.STATISTICS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'tenant_payment_methods'
+        AND INDEX_NAME = 'tenant_payment_methods_user_id_idx';
+      IF v_exists = 0 THEN
+        ALTER TABLE `tenant_payment_methods`
+          ADD INDEX `tenant_payment_methods_user_id_idx` (`user_id`);
+      END IF;
     END IF;
   END IF;
 
