@@ -1857,8 +1857,26 @@ enum payment_method {
   CREDIT_CARD
 }
 
+enum payment_gateway {
+  STRIPE
+  PLAID
+  PAYSTACK
+  MPESA_DIRECT
+  MANUAL
+}
 
-// -------PAYMENT INFRASTRUCTURE ENUMS--------
+// If you already have payment_status elsewhere, DO NOT paste this again.
+enum payment_status {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REVERSED
+  REFUNDED
+  CANCELLED
+}
+
+// ------- PAYMENT INFRASTRUCTURE ENUMS --------
 
 enum Region {
   USA
@@ -1870,14 +1888,6 @@ enum KycStatus {
   PENDING
   VERIFIED
   FAILED
-}
-
-enum PaymentGateway {
-  STRIPE
-  PLAID
-  PAYSTACK
-  MPESA_DIRECT
-  MANUAL // for existing cash/bank logic
 }
 
 enum TransactionStatus {
