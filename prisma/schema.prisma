@@ -1469,19 +1469,21 @@ model ListingAuditEntry {
   @@map("listing_audit_entries")
 }
 
-model tenant_payment_methods {
-  id                       String   @id
-  user_id                  String
-  type                     String
-  plaid_access_token       String?
-  plaid_account_id         String?
-  stripe_payment_method_id String
-  is_default               Boolean  @default(false)
-  created_at               DateTime @default(now())
-  updated_at               DateTime
-  users                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+model TenantPaymentMethod {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  type                  String
+  plaidAccessToken      String?  @map("plaid_access_token")
+  plaidAccountId        String?  @map("plaid_account_id")
+  stripePaymentMethodId String   @map("stripe_payment_method_id")
+  isDefault             Boolean  @default(false) @map("is_default")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
-  @@index([user_id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("tenant_payment_methods")
 }
 
 enum Priority {
