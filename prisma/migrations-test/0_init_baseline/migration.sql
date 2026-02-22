@@ -26,11 +26,11 @@ ALTER TABLE `sidebar_items`
 -- 1) organizations: region + payout fields
 -- =========================================================
 ALTER TABLE `organizations`
-  MODIFY COLUMN `region` ENUM('USA','KEN','AFRICA','GLOBAL') NULL DEFAULT 'USA';
+  MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
 
 UPDATE `organizations`
 SET `region` = 'AFRICA'
-WHERE `region` = 'KEN';
+WHERE `region` = 'USA';
 
 ALTER TABLE `organizations`
   MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
@@ -382,3 +382,4 @@ SET @sql := IF(
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET FOREIGN_KEY_CHECKS = @prev_fk_checks;
+
