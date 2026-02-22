@@ -41,7 +41,7 @@ export default async function Page() {
       {/* Spacer for sticky navbar */}
       <div className="pt-20">
         {companyInfo ? (
-          <Contact companyInfo={companyInfo} cta={contactCta} />
+          <Contact companyInfo={companyInfo} cta={contactCta ?? null} />
         ) : (
           <section className="mx-auto max-w-5xl px-4 py-16">
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
