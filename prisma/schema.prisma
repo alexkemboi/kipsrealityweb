@@ -37,7 +37,7 @@ model Organization {
   users                  OrganizationUser[]
   vendors                Vendor[]
   plan                   Plan?                   @relation(fields: [planId], references: [id])
-
+  dssAuditEvents DssAuditEvent[] @relation("DssAuditEventOrganization") 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
@@ -79,7 +79,7 @@ model User {
 
   // Relation to OTPs
   otps Otp[]
-
+  dssAuditEvents DssAuditEvent[] @relation("DssAuditEventUser")
   // Payment methods
   paymentMethods TenantPaymentMethod[]
 
@@ -803,10 +803,6 @@ model utility_reading {
   @@map("utility_reading")
 }
 
-/// ======================================================
-/// DSS ENUMS (ADD ONLY IF NOT ALREADY PRESENT ELSEWHERE)
-/// ======================================================
-
 enum DssAuditEventType {
   DOCUMENT_CREATED
   DOCUMENT_UPDATED
@@ -839,10 +835,6 @@ enum BlockchainNotaryAttemptStatus {
   CONFIRMED
   FAILED
 }
-
-/// ======================================================
-/// DSS DOCUMENT
-/// ======================================================
 
 model DssDocument {
   id                   String                  @id @default(uuid())
@@ -901,9 +893,6 @@ model DssDocument {
   @@map("dss_documents")
 }
 
-/// ======================================================
-/// DSS PARTICIPANT
-/// ======================================================
 
 model DssParticipant {
   id                   String             @id @default(uuid())
@@ -950,10 +939,6 @@ model DssParticipant {
   @@map("dss_participants")
 }
 
-/// ======================================================
-/// DSS SIGNATURE
-/// ======================================================
-
 model DssSignature {
   id            String         @id @default(uuid())
   documentId    String         @map("document_id")
@@ -976,10 +961,6 @@ model DssSignature {
 
   @@map("dss_signatures")
 }
-
-/// ======================================================
-/// BLOCKCHAIN NOTARY RECORD
-/// ======================================================
 
 model BlockchainNotaryRecord {
   id              String                 @id @default(uuid())
@@ -1011,10 +992,6 @@ model BlockchainNotaryRecord {
   @@map("blockchain_notary_records")
 }
 
-/// ======================================================
-/// OPTIONAL: NOTARY ATTEMPTS (RETRY / HISTORY)
-/// ======================================================
-
 model BlockchainNotaryAttempt {
   id              String                        @id @default(uuid())
   notaryRecordId  String                        @map("notary_record_id")
@@ -1035,10 +1012,6 @@ model BlockchainNotaryAttempt {
 
   @@map("blockchain_notary_attempts")
 }
-
-/// ======================================================
-/// DSS WORKFLOW TEMPLATE
-/// ======================================================
 
 model DssWorkflowTemplate {
   id             String            @id @default(uuid())
@@ -1078,10 +1051,6 @@ model DssWorkflowStep {
   @@map("dss_workflow_steps")
 }
 
-/// ======================================================
-/// DSS AUDIT EVENT
-/// ======================================================
-
 model DssAuditEvent {
   id              String            @id @default(uuid())
   organizationId  String            @map("organization_id")
@@ -1099,9 +1068,9 @@ model DssAuditEvent {
   metadata        Json?             @map("metadata")
 
   document        DssDocument       @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization    Organization      @relation("DssAuditEventOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
   participant     DssParticipant?   @relation(fields: [participantId], references: [id], onDelete: SetNull)
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user            User?             @relation("DssAuditEventUser", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([organizationId], map: "dss_audit_events_org_idx")
   @@index([documentId, occurredAt], map: "dss_audit_events_doc_time_idx")
