@@ -1838,43 +1838,6 @@ enum payment_status {
   REVERSED
 }
 
-enum users_region {
-  USA
-  AFRICA
-  GLOBAL
-}
-
-enum payment_type {
-  RENT
-  DEPOSIT
-  SAAS_FEE
-  MAINTENANCE
-}
-
-enum payment_method {
-  CASH
-  BANK
-  CREDIT_CARD
-}
-
-enum payment_gateway {
-  STRIPE
-  PLAID
-  PAYSTACK
-  MPESA_DIRECT
-  MANUAL
-}
-
-// If you already have payment_status elsewhere, DO NOT paste this again.
-enum payment_status {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  REVERSED
-  REFUNDED
-  CANCELLED
-}
 
 // ------- PAYMENT INFRASTRUCTURE ENUMS --------
 
