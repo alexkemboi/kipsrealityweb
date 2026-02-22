@@ -5,9 +5,8 @@ import Contact from "@/components/website/landing/ContactUs";
 import { fetchCompanyInfo } from "@/lib/company-info";
 import { fetchCTAs } from "@/lib/cta";
 
-// ✅ Better than force-dynamic for most marketing pages:
-// cached + fast, but refreshes regularly
-export const revalidate = 300; // 5 minutes
+// ✅ Cached + fast, refresh every 5 minutes
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Contact Us | Kips Reality",
@@ -32,10 +31,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-type CTA = { title?: string } & Record<string, any>;
+type CTA = {
+  title?: string | null;
+} & Record<string, unknown>;
 
-function pickContactCta(ctas: CTA[]) {
-  const normalized = (s?: string) => (s ?? "").trim().toLowerCase();
+type CompanyInfo = Awaited<ReturnType<typeof fetchCompanyInfo>>;
+
+function pickContactCta(ctas: CTA[]): CTA | null {
+  const normalized = (s?: string | null) => (s ?? "").trim().toLowerCase();
   const keywords = ["contact", "touch", "get in touch", "reach", "talk"];
 
   return (
@@ -46,16 +49,24 @@ function pickContactCta(ctas: CTA[]) {
 }
 
 export default async function Page() {
-  let companyInfo: any = null;
+  let companyInfo: CompanyInfo | null = null;
   let ctas: CTA[] = [];
 
-  try {
-    const result = await Promise.all([fetchCompanyInfo(), fetchCTAs("home")]);
-    companyInfo = result[0];
-    ctas = Array.isArray(result[1]) ? result[1] : [];
-  } catch (err) {
-    // Fail soft: render the page with whatever you can
-    console.error("Contact page data load failed:", err);
+  const [companyInfoResult, ctasResult] = await Promise.allSettled([
+    fetchCompanyInfo(),
+    fetchCTAs("home"),
+  ]);
+
+  if (companyInfoResult.status === "fulfilled") {
+    companyInfo = companyInfoResult.value;
+  } else {
+    console.error("Failed to fetch company info:", companyInfoResult.reason);
+  }
+
+  if (ctasResult.status === "fulfilled") {
+    ctas = Array.isArray(ctasResult.value) ? (ctasResult.value as CTA[]) : [];
+  } else {
+    console.error("Failed to fetch CTAs:", ctasResult.reason);
   }
 
   const contactCta = pickContactCta(ctas);
@@ -66,7 +77,21 @@ export default async function Page() {
 
       {/* Offset for sticky navbar */}
       <div className="pt-20">
-        <Contact companyInfo={companyInfo} cta={contactCta} />
+        {companyInfo ? (
+          <Contact companyInfo={companyInfo} cta={contactCta} />
+        ) : (
+          <section className="mx-auto max-w-5xl px-4 py-16">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Contact Us
+              </h1>
+              <p className="mt-2 text-gray-600">
+                We’re unable to load contact information right now. Please try
+                again shortly.
+              </p>
+            </div>
+          </section>
+        )}
       </div>
 
       <Footer />
