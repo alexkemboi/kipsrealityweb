@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, FileText, Link as LinkIcon, Search, X } from "lucide-react";
+import { Check, ChevronDown, FileText, Link as LinkIcon, Search, X } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const Markdown = dynamic(() => import("@uiw/react-markdown-preview"), { ssr: false });
@@ -41,12 +41,17 @@ function cn(...classes: Array<string | false | null | undefined>) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
   const [expandedSections, setExpandedSections] = useState<ExpandedMap>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [copiedSectionId, setCopiedSectionId] = useState<number | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   if (!policy) {
@@ -107,6 +112,26 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
     });
   }, [searchTerm, filteredSections]);
 
+  useEffect(() => {
+    const expandFromHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith("#section-")) return;
+      const id = Number(hash.replace("#section-", ""));
+      if (!Number.isFinite(id)) return;
+
+      setExpandedSections((prev) => ({ ...prev, [String(id)]: true }));
+
+      setTimeout(() => {
+        const el = document.getElementById(`section-${id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+    };
+
+    expandFromHash();
+    window.addEventListener("hashchange", expandFromHash);
+    return () => window.removeEventListener("hashchange", expandFromHash);
+  }, []);
+
   const expandAll = () => {
     const next: ExpandedMap = {};
     filteredSections.forEach((s) => (next[String(s.id)] = true));
@@ -124,6 +149,9 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
     const url = `${window.location.origin}${window.location.pathname}#section-${sectionId}`;
     try {
       await navigator.clipboard.writeText(url);
+      setCopiedSectionId(sectionId);
+      window.history.replaceState(null, "", `#section-${sectionId}`);
+      setTimeout(() => setCopiedSectionId((prev) => (prev === sectionId ? null : prev)), 1500);
     } catch (e) {
       console.error("Failed to copy link", e);
     }
@@ -133,7 +161,6 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Hero */}
       <section className="relative w-full overflow-hidden border-b bg-background">
         <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-950 to-background" />
         <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
@@ -141,7 +168,7 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-14 md:py-20">
           <div className="max-w-3xl">
-            <div className="flex flex-wrap items-center gap-2 mb-6">
+            <div className="mb-6 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-zinc-200 backdrop-blur">
                 Legal
               </span>
@@ -181,12 +208,9 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
         </div>
       </section>
 
-      {/* Content */}
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        {/* Search + TOC */}
-        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden mb-10">
-          <div className="p-6 md:p-8 space-y-8">
-            {/* Search */}
+      <div className="relative z-10 mx-auto -mt-8 max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="space-y-8 p-6 md:p-8">
             <div className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -242,17 +266,16 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
               </div>
             </div>
 
-            {/* TOC */}
             {tocSections.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Table of Contents
                   </p>
                   <div className="h-px flex-1 bg-border" />
                 </div>
 
-                <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                <nav className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {tocSections.map((section) => (
                     <a
                       key={section.id}
@@ -273,39 +296,39 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
           </div>
         </div>
 
-        {/* Sections */}
         <div className="space-y-4">
           {filteredSections.map((section) => {
             const key = String(section.id);
             const isExpanded = Boolean(expandedSections[key]);
+            const isCopied = copiedSectionId === section.id;
 
             return (
               <article
                 key={section.id}
                 id={`section-${section.id}`}
-                className="group rounded-2xl border bg-card shadow-sm transition hover:shadow-md scroll-mt-28 overflow-hidden"
+                className="group scroll-mt-28 overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:shadow-md"
               >
-                <div className="flex items-start gap-3 px-5 md:px-6 py-5">
+                <div className="flex items-start gap-3 px-5 py-5 md:px-6">
                   <button
                     type="button"
                     onClick={() => toggleSection(section.id)}
                     className="flex-1 text-left"
                   >
                     <div className="flex items-start gap-4">
-                      <span className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-background text-primary font-bold">
+                      <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-background font-bold text-primary sm:flex">
                         {section.originalIndex + 1}
                       </span>
 
                       <div className="min-w-0">
-                        <h3 className="text-lg md:text-xl font-semibold tracking-tight text-foreground">
-                          <span className="sm:hidden mr-2 text-primary font-bold">
+                        <h3 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                          <span className="mr-2 font-bold text-primary sm:hidden">
                             {section.originalIndex + 1}.
                           </span>
                           {replacePlaceholders(section.title)}
                         </h3>
 
                         {section.intro ? (
-                          <p className="mt-2 text-sm text-muted-foreground leading-relaxed max-w-3xl">
+                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
                             {replacePlaceholders(section.intro)}
                           </p>
                         ) : null}
@@ -317,11 +340,14 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
                     <button
                       type="button"
                       onClick={() => copySectionLink(section.id)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-background transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-background transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                        isCopied && "border-primary/40 bg-primary/5 text-primary"
+                      )}
                       aria-label="Copy section link"
-                      title="Copy section link"
+                      title={isCopied ? "Copied!" : "Copy section link"}
                     >
-                      <LinkIcon className="h-4 w-4" />
+                      {isCopied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
                     </button>
 
                     <button
@@ -347,7 +373,9 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
                 <div
                   className={cn(
                     "px-5 md:px-6 transition-all duration-300 ease-in-out",
-                    isExpanded ? "max-h-[8000px] opacity-100 pb-6" : "max-h-0 opacity-0 overflow-hidden"
+                    isExpanded
+                      ? "max-h-[8000px] opacity-100 pb-6"
+                      : "max-h-0 opacity-0 overflow-hidden"
                   )}
                 >
                   <div className="border-t pt-5">
@@ -364,9 +392,8 @@ export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
           })}
         </div>
 
-        {/* No results */}
         {filteredSections.length === 0 && (
-          <div className="rounded-2xl border bg-card p-10 text-center shadow-sm mt-10">
+          <div className="mt-10 rounded-2xl border bg-card p-10 text-center shadow-sm">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border bg-background text-muted-foreground">
               <Search className="h-6 w-6" />
             </div>
