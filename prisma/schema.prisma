@@ -803,45 +803,8 @@ model utility_reading {
   @@map("utility_reading")
 }
 
-model DssDocument {
-  id                   String                  @id @default(uuid())
-  organizationId       String                  @map("organization_id")
-  leaseId              String?                 @map("lease_id")
-  propertyId           String?                 @map("property_id")
-  unitId               String?                 @map("unit_id")
-  title                String
-  description          String?                 @db.Text
-  originalFileUrl      String?                 @map("original_file_url") @db.Text
-  originalFileKey      String?                 @map("original_file_key")
-  mimeType             String?                 @map("mime_type")
-  fileSizeBytes        Int?                    @map("file_size_bytes")
-  originalPdfSha256Hex String                  @map("original_pdf_sha256_hex")
-  finalPdfSha256Hex    String?                 @map("final_pdf_sha256_hex")
-  status               DssDocumentStatus       @default(DRAFT)
-  signingMode          DssSigningMode          @default(SEQUENTIAL)
-  currentStep          Int                     @default(1) @map("current_step")
-  sentAt               DateTime?               @map("sent_at")
-  completedAt          DateTime?               @map("completed_at")
-  voidedAt             DateTime?               @map("voided_at")
-  createdAt            DateTime                @default(now()) @map("created_at")
-  updatedAt            DateTime                @updatedAt @map("updated_at")
-  notaryRecord         BlockchainNotaryRecord?
-  lease                Lease?                  @relation(fields: [leaseId], references: [id])
-  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  property             Property?               @relation(fields: [propertyId], references: [id])
-  unit                 Unit?                   @relation(fields: [unitId], references: [id])
-  participants         DssParticipant[]
-  signatures           DssSignature[]
-
-  @@index([organizationId])
-  @@index([leaseId])
-  @@index([propertyId], map: "dss_documents_property_id_fkey")
-  @@index([unitId], map: "dss_documents_unit_id_fkey")
-  @@map("dss_documents")
-}
-
 /// ======================================================
-/// DSS ENUMS (ADD IF NOT ALREADY PRESENT)
+/// DSS ENUMS (ADD ONLY IF NOT ALREADY PRESENT ELSEWHERE)
 /// ======================================================
 
 enum DssAuditEventType {
@@ -922,6 +885,7 @@ model DssDocument {
   signatures           DssSignature[]
   auditEvents          DssAuditEvent[]
 
+  // Helpful for SQL-level tenant-safe composite FKs (optional in DB migration)
   @@unique([id, organizationId], map: "uq_dss_documents_id_org")
 
   @@index([organizationId], map: "dss_documents_org_idx")
@@ -964,14 +928,17 @@ model DssParticipant {
   createdAt            DateTime           @default(now()) @map("created_at")
   updatedAt            DateTime           @updatedAt @map("updated_at")
 
-  document             DssDocument        @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  document             DssDocument        @relation(fields: [documentId], references: [id], onDelete: Cascade)
   organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user                 User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   signatures           DssSignature[]
   auditEvents          DssAuditEvent[]
 
+  // Supports optional SQL-level composite FK from signatures (participant_id, document_id)
   @@unique([id, documentId], map: "uq_dss_participants_id_document")
+
+  // If you want only one participant email per document regardless of role, replace with [documentId, emailNormalized]
   @@unique([documentId, emailNormalized, role], map: "uq_dss_participant_doc_email_role")
 
   @@index([organizationId], map: "dss_participants_org_idx")
@@ -1001,7 +968,7 @@ model DssSignature {
   userAgent     String?        @map("user_agent") @db.Text
 
   document      DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  participant   DssParticipant @relation(fields: [participantId, documentId], references: [id, documentId], onDelete: Cascade)
+  participant   DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, participantId], map: "uq_dss_signature_doc_participant")
   @@index([participantId], map: "dss_signatures_participant_idx")
@@ -1030,7 +997,7 @@ model BlockchainNotaryRecord {
   confirmedAt     DateTime?              @map("confirmed_at")
   failureReason   String?                @map("failure_reason") @db.Text
 
-  document        DssDocument            @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  document        DssDocument            @relation(fields: [documentId], references: [id], onDelete: Cascade)
   organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   attempts        BlockchainNotaryAttempt[]
@@ -1049,18 +1016,18 @@ model BlockchainNotaryRecord {
 /// ======================================================
 
 model BlockchainNotaryAttempt {
-  id              String                       @id @default(uuid())
-  notaryRecordId  String                       @map("notary_record_id")
+  id              String                        @id @default(uuid())
+  notaryRecordId  String                        @map("notary_record_id")
   status          BlockchainNotaryAttemptStatus @default(PENDING)
-  txHash          String?                      @map("tx_hash")
-  blockNumber     Int?                         @map("block_number")
-  failureReason   String?                      @map("failure_reason") @db.Text
-  requestPayload  Json?                        @map("request_payload")
-  responsePayload Json?                        @map("response_payload")
-  createdAt       DateTime                     @default(now()) @map("created_at")
-  confirmedAt     DateTime?                    @map("confirmed_at")
+  txHash          String?                       @map("tx_hash")
+  blockNumber     Int?                          @map("block_number")
+  failureReason   String?                       @map("failure_reason") @db.Text
+  requestPayload  Json?                         @map("request_payload")
+  responsePayload Json?                         @map("response_payload")
+  createdAt       DateTime                      @default(now()) @map("created_at")
+  confirmedAt     DateTime?                     @map("confirmed_at")
 
-  notaryRecord    BlockchainNotaryRecord       @relation(fields: [notaryRecordId], references: [id], onDelete: Cascade)
+  notaryRecord    BlockchainNotaryRecord        @relation(fields: [notaryRecordId], references: [id], onDelete: Cascade)
 
   @@index([notaryRecordId, createdAt], map: "notary_attempts_record_created_idx")
   @@index([status, createdAt], map: "notary_attempts_status_created_idx")
@@ -1131,7 +1098,7 @@ model DssAuditEvent {
   userAgent       String?           @map("user_agent") @db.Text
   metadata        Json?             @map("metadata")
 
-  document        DssDocument       @relation(fields: [documentId, organizationId], references: [id, organizationId], onDelete: Cascade)
+  document        DssDocument       @relation(fields: [documentId], references: [id], onDelete: Cascade)
   organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   participant     DssParticipant?   @relation(fields: [participantId], references: [id], onDelete: SetNull)
   user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -1143,7 +1110,6 @@ model DssAuditEvent {
 
   @@map("dss_audit_events")
 }
-
 model Listing {
   id                 String              @id @default(uuid())
   organizationId     String
