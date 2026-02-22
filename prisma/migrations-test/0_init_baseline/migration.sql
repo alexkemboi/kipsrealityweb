@@ -1,414 +1,384 @@
--- RentFlow360 payment/region alignment patch (MySQL 8+) — 10/10 hardened (USA standard)
--- NOTE: DB patch only. Prisma P1012 duplicates must still be removed in schema.prisma.
+-- RentFlow360 payment/region alignment patch (MySQL 8+)
+-- Prisma migration-friendly (no stored procedures)
+-- Assumes base tables exist:
+--   invite, organization_users, sidebar_items, organizations, users, payment
+-- Creates/patches: tenant_payment_methods
 
-DELIMITER $$
+SET @prev_fk_checks := @@FOREIGN_KEY_CHECKS;
+SET FOREIGN_KEY_CHECKS = 0;
 
-DROP PROCEDURE IF EXISTS rf360_patch_payment_infra_usa_usd $$
-CREATE PROCEDURE rf360_patch_payment_infra_usa_usd()
-BEGIN
-  DECLARE v_exists BIGINT DEFAULT 0;
-  DECLARE v_type VARCHAR(64) DEFAULT NULL;
-  DECLARE v_dup_count BIGINT DEFAULT 0;
+-- =========================================================
+-- 0) Expand role enums to include AGENT
+-- =========================================================
+ALTER TABLE `invite`
+  MODIFY COLUMN `role`
+  ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
 
-  /* =========================================================
-     0) Expand role enums to include AGENT (correct table names)
-     Tables:
-       - invite (your Prisma @@map("invite"))
-       - organization_users (your Prisma @@map("organization_users"))
-       - sidebar_items (your Prisma @@map("sidebar_items"))
-     ========================================================= */
+ALTER TABLE `organization_users`
+  MODIFY COLUMN `role`
+  ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
 
-  -- invite.role
-  SELECT COUNT(*) INTO v_exists
+ALTER TABLE `sidebar_items`
+  MODIFY COLUMN `role`
+  ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
+
+-- =========================================================
+-- 1) organizations: region + payout fields
+-- =========================================================
+ALTER TABLE `organizations`
+  MODIFY COLUMN `region` ENUM('USA','KEN','AFRICA','GLOBAL') NULL DEFAULT 'USA';
+
+UPDATE `organizations`
+SET `region` = 'AFRICA'
+WHERE `region` = 'KEN';
+
+ALTER TABLE `organizations`
+  MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
+
+ALTER TABLE `organizations`
+  ADD COLUMN IF NOT EXISTS `paystack_subaccount_code` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `stripe_connect_id` VARCHAR(191) NULL;
+
+-- =========================================================
+-- 2) users: email_verified + payment profile + region
+-- =========================================================
+ALTER TABLE `users`
+  ADD COLUMN IF NOT EXISTS `email_verified_tmp` DATETIME(3) NULL;
+
+SET @ev_type := (
+  SELECT DATA_TYPE
   FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'invite'
-    AND COLUMN_NAME = 'role';
+    AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'email_verified'
+  LIMIT 1
+);
 
-  IF v_exists > 0 THEN
-    ALTER TABLE `invite`
-      MODIFY COLUMN `role`
-      ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
-  END IF;
+SET @ev_legacy := IF(@ev_type IN ('tinyint','bit','boolean'), 1, 0);
 
-  -- organization_users.role
-  SELECT COUNT(*) INTO v_exists
+SET @sql := IF(
+  @ev_legacy = 1,
+  'UPDATE `users`
+   SET `email_verified_tmp` = COALESCE(`email_verified_tmp`, COALESCE(`created_at`, NOW(3)))
+   WHERE (
+     CASE
+       WHEN (SELECT DATA_TYPE
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ''users''
+               AND COLUMN_NAME = ''email_verified''
+             LIMIT 1) = ''bit''
+       THEN CAST(`email_verified` AS UNSIGNED)
+       ELSE `email_verified`
+     END
+   ) = 1',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql := IF(
+  @ev_legacy = 1,
+  'ALTER TABLE `users` DROP COLUMN `email_verified`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @ev_exists := (
+  SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'organization_users'
-    AND COLUMN_NAME = 'role';
+    AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'email_verified'
+);
 
-  IF v_exists > 0 THEN
-    ALTER TABLE `organization_users`
-      MODIFY COLUMN `role`
-      ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
-  END IF;
-
-  -- sidebar_items.role
-  SELECT COUNT(*) INTO v_exists
+SET @ev_tmp_exists := (
+  SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'sidebar_items'
-    AND COLUMN_NAME = 'role';
+    AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'email_verified_tmp'
+);
 
-  IF v_exists > 0 THEN
-    ALTER TABLE `sidebar_items`
-      MODIFY COLUMN `role`
-      ENUM('SYSTEM_ADMIN','PROPERTY_MANAGER','TENANT','AGENT','VENDOR','ALL') NOT NULL;
-  END IF;
+SET @sql := IF(
+  @ev_exists = 0 AND @ev_tmp_exists = 1,
+  'ALTER TABLE `users` CHANGE COLUMN `email_verified_tmp` `email_verified` DATETIME(3) NULL',
+  IF(@ev_exists = 1 AND @ev_tmp_exists = 1,
+     'ALTER TABLE `users` DROP COLUMN `email_verified_tmp`',
+     'SELECT 1')
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-  /* =========================================================
-     1) organizations: payment settlement columns + region
-     Canonical region enum: USA / AFRICA / GLOBAL (default USA)
-     ========================================================= */
-
-  SELECT COUNT(*) INTO v_exists
-  FROM INFORMATION_SCHEMA.TABLES
+SET @ev_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'organizations';
+    AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'email_verified'
+);
 
-  IF v_exists > 0 THEN
-    -- region
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'organizations'
-      AND COLUMN_NAME = 'region';
+SET @sql := IF(
+  @ev_exists = 1,
+  'ALTER TABLE `users` MODIFY COLUMN `email_verified` DATETIME(3) NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-    IF v_exists = 0 THEN
-      ALTER TABLE `organizations`
-        ADD COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
-    ELSE
-      -- widen to allow legacy 'KEN' safely, normalize, then lock down
-      ALTER TABLE `organizations`
-        MODIFY COLUMN `region` ENUM('USA','KEN','AFRICA','GLOBAL') NULL DEFAULT 'USA';
+ALTER TABLE `users`
+  MODIFY COLUMN `kyc_status` ENUM('PENDING','VERIFIED','FAILED') NOT NULL DEFAULT 'PENDING';
 
-      UPDATE `organizations`
-      SET `region` = 'AFRICA'
-      WHERE `region` = 'KEN';
+ALTER TABLE `users`
+  ADD COLUMN IF NOT EXISTS `paystack_customer_code` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `plaid_access_token` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `stripe_customer_id` VARCHAR(191) NULL;
 
-      ALTER TABLE `organizations`
-        MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
-    END IF;
+ALTER TABLE `users`
+  MODIFY COLUMN `region` ENUM('USA','KEN','AFRICA','GLOBAL') NULL DEFAULT 'USA';
 
-    -- paystack_subaccount_code
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'organizations'
-      AND COLUMN_NAME = 'paystack_subaccount_code';
+UPDATE `users`
+SET `region` = 'AFRICA'
+WHERE `region` = 'KEN';
 
-    IF v_exists = 0 THEN
-      ALTER TABLE `organizations`
-        ADD COLUMN `paystack_subaccount_code` VARCHAR(191) NULL;
-    END IF;
+ALTER TABLE `users`
+  MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
 
-    -- stripe_connect_id
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'organizations'
-      AND COLUMN_NAME = 'stripe_connect_id';
+-- =========================================================
+-- 3) tenant_payment_methods: create + patch
+-- =========================================================
+CREATE TABLE IF NOT EXISTS `tenant_payment_methods` (
+  `id` VARCHAR(191) NOT NULL,
+  `user_id` VARCHAR(191) NOT NULL,
+  `type` VARCHAR(191) NOT NULL,
+  `plaid_access_token` VARCHAR(191) NULL,
+  `plaid_account_id` VARCHAR(191) NULL,
+  `stripe_payment_method_id` VARCHAR(191) NULL,
+  `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-    IF v_exists = 0 THEN
-      ALTER TABLE `organizations`
-        ADD COLUMN `stripe_connect_id` VARCHAR(191) NULL;
-    END IF;
-  END IF;
+ALTER TABLE `tenant_payment_methods`
+  ADD COLUMN IF NOT EXISTS `plaid_access_token` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `plaid_account_id` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `stripe_payment_method_id` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3);
 
-  /* =========================================================
-     2) users: email_verified conversion + payment profile fields
-     Canonical region enum: USA / AFRICA / GLOBAL (default USA)
-     ========================================================= */
+ALTER TABLE `tenant_payment_methods`
+  MODIFY COLUMN `stripe_payment_method_id` VARCHAR(191) NULL,
+  MODIFY COLUMN `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3);
 
-  SELECT COUNT(*) INTO v_exists
-  FROM INFORMATION_SCHEMA.TABLES
+SET @idx_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.STATISTICS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'users';
+    AND TABLE_NAME = 'tenant_payment_methods'
+    AND INDEX_NAME = 'tenant_payment_methods_user_id_idx'
+);
+SET @sql := IF(
+  @idx_exists = 0,
+  'ALTER TABLE `tenant_payment_methods` ADD INDEX `tenant_payment_methods_user_id_idx` (`user_id`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-  IF v_exists > 0 THEN
-    -- email_verified BOOLEAN/BIT -> DATETIME(3) NULL
-    SET v_type = NULL;
-    SELECT DATA_TYPE INTO v_type
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'email_verified'
-    LIMIT 1;
-
-    IF v_type IS NOT NULL THEN
-      IF v_type IN ('tinyint','bit','boolean') THEN
-        SELECT COUNT(*) INTO v_exists
-        FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'users'
-          AND COLUMN_NAME = 'email_verified_tmp';
-
-        IF v_exists = 0 THEN
-          ALTER TABLE `users`
-            ADD COLUMN `email_verified_tmp` DATETIME(3) NULL;
-        END IF;
-
-        UPDATE `users`
-        SET `email_verified_tmp` = COALESCE(`email_verified_tmp`, `created_at`)
-        WHERE `email_verified` = 1;
-
-        ALTER TABLE `users` DROP COLUMN `email_verified`;
-        ALTER TABLE `users`
-          CHANGE COLUMN `email_verified_tmp` `email_verified` DATETIME(3) NULL;
-
-      ELSEIF v_type IN ('datetime','timestamp') THEN
-        ALTER TABLE `users`
-          MODIFY COLUMN `email_verified` DATETIME(3) NULL;
-      END IF;
-    ELSE
-      ALTER TABLE `users`
-        ADD COLUMN `email_verified` DATETIME(3) NULL;
-    END IF;
-
-    -- kyc_status
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'kyc_status';
-
-    IF v_exists = 0 THEN
-      ALTER TABLE `users`
-        ADD COLUMN `kyc_status` ENUM('PENDING','VERIFIED','FAILED') NOT NULL DEFAULT 'PENDING';
-    ELSE
-      ALTER TABLE `users`
-        MODIFY COLUMN `kyc_status` ENUM('PENDING','VERIFIED','FAILED') NOT NULL DEFAULT 'PENDING';
-    END IF;
-
-    -- paystack_customer_code
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'paystack_customer_code';
-
-    IF v_exists = 0 THEN
-      ALTER TABLE `users`
-        ADD COLUMN `paystack_customer_code` VARCHAR(191) NULL;
-    END IF;
-
-    -- plaid_access_token
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'plaid_access_token';
-
-    IF v_exists = 0 THEN
-      ALTER TABLE `users`
-        ADD COLUMN `plaid_access_token` VARCHAR(191) NULL;
-    END IF;
-
-    -- region
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'region';
-
-    IF v_exists = 0 THEN
-      ALTER TABLE `users`
-        ADD COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
-    ELSE
-      ALTER TABLE `users`
-        MODIFY COLUMN `region` ENUM('USA','KEN','AFRICA','GLOBAL') NULL DEFAULT 'USA';
-
-      UPDATE `users`
-      SET `region` = 'AFRICA'
-      WHERE `region` = 'KEN';
-
-      ALTER TABLE `users`
-        MODIFY COLUMN `region` ENUM('USA','AFRICA','GLOBAL') NULL DEFAULT 'USA';
-    END IF;
-
-    -- stripe_customer_id
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-      AND COLUMN_NAME = 'stripe_customer_id';
-
-    IF v_exists = 0 THEN
-      ALTER TABLE `users`
-        ADD COLUMN `stripe_customer_id` VARCHAR(191) NULL;
-    END IF;
-  END IF;
-
-  /* =========================================================
-     3) tenant_payment_methods: create or patch
-     ========================================================= */
-
-  SELECT COUNT(*) INTO v_exists
-  FROM INFORMATION_SCHEMA.TABLES
-  WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'tenant_payment_methods';
-
-  IF v_exists = 0 THEN
-    CREATE TABLE `tenant_payment_methods` (
-      `id` VARCHAR(191) NOT NULL,
-      `user_id` VARCHAR(191) NOT NULL,
-      `type` VARCHAR(191) NOT NULL,
-      `plaid_access_token` VARCHAR(191) NULL,
-      `plaid_account_id` VARCHAR(191) NULL,
-      `stripe_payment_method_id` VARCHAR(191) NOT NULL,
-      `is_default` BOOLEAN NOT NULL DEFAULT FALSE,
-      `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-      `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-      PRIMARY KEY (`id`),
-      INDEX `tenant_payment_methods_user_id_idx` (`user_id`)
-    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-  END IF;
-
-  -- ensure updated_at ON UPDATE
-  SELECT COUNT(*) INTO v_exists
+SET @col_exists := (
+  SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'tenant_payment_methods'
-    AND COLUMN_NAME = 'updated_at';
+    AND COLUMN_NAME = 'default_key'
+);
+SET @sql := IF(
+  @col_exists = 0,
+  'ALTER TABLE `tenant_payment_methods` ADD COLUMN `default_key` VARCHAR(191) AS (IF(`is_default`, `user_id`, NULL)) STORED',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-  IF v_exists > 0 THEN
-    ALTER TABLE `tenant_payment_methods`
-      MODIFY COLUMN `updated_at` DATETIME(3) NOT NULL
-      DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3);
-  END IF;
+SET @idx_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'tenant_payment_methods'
+    AND INDEX_NAME = 'uniq_default_per_user'
+);
+SET @sql := IF(
+  @idx_exists = 0,
+  'ALTER TABLE `tenant_payment_methods` ADD UNIQUE INDEX `uniq_default_per_user` (`default_key`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-  -- ensure FK exists if data is clean
-  SELECT COUNT(*) INTO v_exists
+SET @orphans := (
+  SELECT COUNT(*)
+  FROM `tenant_payment_methods` t
+  LEFT JOIN `users` u ON u.`id` = t.`user_id`
+  WHERE u.`id` IS NULL
+);
+
+SET @fk_exists := (
+  SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
   WHERE CONSTRAINT_SCHEMA = DATABASE()
     AND TABLE_NAME = 'tenant_payment_methods'
-    AND CONSTRAINT_NAME = 'tenant_payment_methods_user_id_fkey';
+    AND CONSTRAINT_NAME = 'tenant_payment_methods_user_id_fkey'
+);
 
-  IF v_exists = 0 THEN
-    SELECT COUNT(*) INTO v_dup_count
-    FROM `tenant_payment_methods` t
-    LEFT JOIN `users` u ON u.`id` = t.`user_id`
-    WHERE u.`id` IS NULL;
+SET @sql := IF(
+  @fk_exists = 0 AND @orphans = 0,
+  'ALTER TABLE `tenant_payment_methods`
+     ADD CONSTRAINT `tenant_payment_methods_user_id_fkey`
+     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+     ON DELETE CASCADE ON UPDATE CASCADE',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-    IF v_dup_count = 0 THEN
-      ALTER TABLE `tenant_payment_methods`
-        ADD CONSTRAINT `tenant_payment_methods_user_id_fkey`
-        FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
-        ON DELETE CASCADE ON UPDATE CASCADE;
-    END IF;
-  END IF;
+-- =========================================================
+-- 4) payment table patch (backfill + normalize + tighten)
+-- =========================================================
+ALTER TABLE `payment`
+  ADD COLUMN IF NOT EXISTS `amount_subunits` BIGINT NULL,
+  ADD COLUMN IF NOT EXISTS `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+  ADD COLUMN IF NOT EXISTS `gateway` VARCHAR(32) NOT NULL DEFAULT 'MANUAL',
+  ADD COLUMN IF NOT EXISTS `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+  ADD COLUMN IF NOT EXISTS `type` VARCHAR(32) NOT NULL DEFAULT 'RENT',
+  ADD COLUMN IF NOT EXISTS `metadata` JSON NULL,
+  ADD COLUMN IF NOT EXISTS `gateway_reference` VARCHAR(191) NULL,
+  ADD COLUMN IF NOT EXISTS `risk_score` INT NULL;
 
-  /* =========================================================
-     4) payment table patch (only if exists)
-     ========================================================= */
+ALTER TABLE `payment`
+  MODIFY COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+  MODIFY COLUMN `gateway` VARCHAR(32) NOT NULL DEFAULT 'MANUAL',
+  MODIFY COLUMN `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+  MODIFY COLUMN `type` VARCHAR(32) NOT NULL DEFAULT 'RENT';
 
-  SELECT COUNT(*) INTO v_exists
-  FROM INFORMATION_SCHEMA.TABLES
+UPDATE `payment`
+SET `currency` = 'USD'
+WHERE `currency` IS NULL OR `currency` = '';
+
+SET @amount_col := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = DATABASE()
-    AND TABLE_NAME = 'payment';
+    AND TABLE_NAME = 'payment'
+    AND COLUMN_NAME = 'amount'
+);
+SET @sql := IF(
+  @amount_col > 0,
+  'UPDATE `payment`
+   SET `amount_subunits` = COALESCE(`amount_subunits`, ROUND(`amount` * 100))
+   WHERE `amount_subunits` IS NULL AND `amount` IS NOT NULL',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
-  IF v_exists > 0 THEN
-    -- amount_subunits
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'amount_subunits';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD COLUMN `amount_subunits` BIGINT NULL;
-    END IF;
+UPDATE `payment`
+SET `gateway` = 'STRIPE'
+WHERE UPPER(TRIM(`gateway`)) IN ('STRIPE','CARD','CREDIT_CARD');
 
-    -- currency default USD
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'currency';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD';
-    ELSE
-      ALTER TABLE `payment` MODIFY COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD';
-    END IF;
+UPDATE `payment`
+SET `gateway` = 'PLAID'
+WHERE UPPER(TRIM(`gateway`)) IN ('PLAID','ACH');
 
-    UPDATE `payment` SET `currency` = 'USD' WHERE `currency` IS NULL OR `currency` = '';
+UPDATE `payment`
+SET `gateway` = 'PAYSTACK'
+WHERE UPPER(TRIM(`gateway`)) = 'PAYSTACK';
 
-    -- gateway
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'gateway';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment`
-        ADD COLUMN `gateway` ENUM('STRIPE','PLAID','PAYSTACK','MPESA_DIRECT','MANUAL') NOT NULL DEFAULT 'MANUAL';
-    ELSE
-      ALTER TABLE `payment`
-        MODIFY COLUMN `gateway` ENUM('STRIPE','PLAID','PAYSTACK','MPESA_DIRECT','MANUAL') NOT NULL DEFAULT 'MANUAL';
-    END IF;
+UPDATE `payment`
+SET `gateway` = 'MPESA_DIRECT'
+WHERE UPPER(TRIM(`gateway`)) IN ('MPESA','M-PESA','MPESA_DIRECT');
 
-    -- status
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'status';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment`
-        ADD COLUMN `status` ENUM('PENDING','AUTHORIZED','SETTLED','FAILED','DISPUTED','REVERSED') NOT NULL DEFAULT 'PENDING';
-    ELSE
-      ALTER TABLE `payment`
-        MODIFY COLUMN `status` ENUM('PENDING','AUTHORIZED','SETTLED','FAILED','DISPUTED','REVERSED') NOT NULL DEFAULT 'PENDING';
-    END IF;
+UPDATE `payment`
+SET `gateway` = 'MANUAL'
+WHERE `gateway` IS NULL
+   OR TRIM(`gateway`) = ''
+   OR UPPER(TRIM(`gateway`)) IN ('MANUAL','CASH','BANK','CHECK','CHEQUE','OFFLINE')
+   OR UPPER(TRIM(`gateway`)) NOT IN ('STRIPE','PLAID','PAYSTACK','MPESA_DIRECT','MANUAL');
 
-    -- type
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'type';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment`
-        ADD COLUMN `type` ENUM('RENT','DEPOSIT','SAAS_FEE','MAINTENANCE') NOT NULL DEFAULT 'RENT';
-    ELSE
-      ALTER TABLE `payment`
-        MODIFY COLUMN `type` ENUM('RENT','DEPOSIT','SAAS_FEE','MAINTENANCE') NOT NULL DEFAULT 'RENT';
-    END IF;
+UPDATE `payment`
+SET `status` = 'SETTLED'
+WHERE UPPER(TRIM(`status`)) IN ('PAID','COMPLETED','SUCCESS','SUCCEEDED','SETTLED');
 
-    -- metadata
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'metadata';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD COLUMN `metadata` JSON NULL;
-    END IF;
+UPDATE `payment`
+SET `status` = 'AUTHORIZED'
+WHERE UPPER(TRIM(`status`)) IN ('AUTHORIZED','AUTHORISED','AUTH','HOLD');
 
-    -- gateway_reference
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'gateway_reference';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD COLUMN `gateway_reference` VARCHAR(191) NULL;
-    END IF;
+UPDATE `payment`
+SET `status` = 'FAILED'
+WHERE UPPER(TRIM(`status`)) IN ('FAILED','FAIL','ERROR','DECLINED','CANCELLED','CANCELED');
 
-    -- risk_score
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND COLUMN_NAME = 'risk_score';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD COLUMN `risk_score` INT NULL;
-    END IF;
+UPDATE `payment`
+SET `status` = 'DISPUTED'
+WHERE UPPER(TRIM(`status`)) IN ('DISPUTED','CHARGEBACK');
 
-    -- indexes
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND INDEX_NAME = 'payment_gateway_reference_idx';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD INDEX `payment_gateway_reference_idx` (`gateway_reference`);
-    END IF;
+UPDATE `payment`
+SET `status` = 'REVERSED'
+WHERE UPPER(TRIM(`status`)) IN ('REVERSED','REFUNDED','VOIDED','VOID');
 
-    SELECT COUNT(*) INTO v_exists
-    FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payment' AND INDEX_NAME = 'payment_status_idx';
-    IF v_exists = 0 THEN
-      ALTER TABLE `payment` ADD INDEX `payment_status_idx` (`status`);
-    END IF;
-  END IF;
+UPDATE `payment`
+SET `status` = 'PENDING'
+WHERE `status` IS NULL
+   OR TRIM(`status`) = ''
+   OR UPPER(TRIM(`status`)) IN ('PENDING','PROCESSING','INITIATED')
+   OR UPPER(TRIM(`status`)) NOT IN ('PENDING','AUTHORIZED','SETTLED','FAILED','DISPUTED','REVERSED');
 
-  SELECT 'rf360_patch_payment_infra_usa_usd completed' AS message;
-END $$
-DELIMITER ;
+UPDATE `payment`
+SET `type` = 'RENT'
+WHERE UPPER(TRIM(`type`)) IN ('RENT','MONTHLY_RENT');
 
-CALL rf360_patch_payment_infra_usa_usd();
-DROP PROCEDURE rf360_patch_payment_infra_usa_usd;
+UPDATE `payment`
+SET `type` = 'DEPOSIT'
+WHERE UPPER(TRIM(`type`)) IN ('DEPOSIT','SECURITY_DEPOSIT');
 
+UPDATE `payment`
+SET `type` = 'SAAS_FEE'
+WHERE UPPER(TRIM(`type`)) IN ('SAAS_FEE','SUBSCRIPTION','PLATFORM_FEE','SERVICE_FEE');
+
+UPDATE `payment`
+SET `type` = 'MAINTENANCE'
+WHERE UPPER(TRIM(`type`)) IN ('MAINTENANCE','REPAIR');
+
+UPDATE `payment`
+SET `type` = 'RENT'
+WHERE `type` IS NULL
+   OR TRIM(`type`) = ''
+   OR UPPER(TRIM(`type`)) NOT IN ('RENT','DEPOSIT','SAAS_FEE','MAINTENANCE');
+
+ALTER TABLE `payment`
+  MODIFY COLUMN `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+  MODIFY COLUMN `gateway` ENUM('STRIPE','PLAID','PAYSTACK','MPESA_DIRECT','MANUAL') NOT NULL DEFAULT 'MANUAL',
+  MODIFY COLUMN `status` ENUM('PENDING','AUTHORIZED','SETTLED','FAILED','DISPUTED','REVERSED') NOT NULL DEFAULT 'PENDING',
+  MODIFY COLUMN `type` ENUM('RENT','DEPOSIT','SAAS_FEE','MAINTENANCE') NOT NULL DEFAULT 'RENT';
+
+SET @idx_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'payment'
+    AND INDEX_NAME = 'payment_gateway_reference_idx'
+);
+SET @sql := IF(
+  @idx_exists = 0,
+  'ALTER TABLE `payment` ADD INDEX `payment_gateway_reference_idx` (`gateway_reference`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'payment'
+    AND INDEX_NAME = 'payment_status_idx'
+);
+SET @sql := IF(
+  @idx_exists = 0,
+  'ALTER TABLE `payment` ADD INDEX `payment_status_idx` (`status`)',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET FOREIGN_KEY_CHECKS = @prev_fk_checks;
