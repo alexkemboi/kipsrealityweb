@@ -22,10 +22,9 @@ model Organization {
 
   // Payment / settlement (canonical/default pointers)
   region                 Region?                 @default(USA)
-  paystackSubaccountCode String?                 @unique(map: "organizations_paystack_subaccount_code_key") @map("paystack_subaccount_code")
-  stripeConnectId        String?                 @unique(map: "organizations_stripe_connect_id_key") @map("stripe_connect_id")
+  paystackSubaccountCode String?                 @map("paystack_subaccount_code")
+  stripeConnectId        String?                 @map("stripe_connect_id")
 
-  // Core relations
   invites                Invite[]
   listings               Listing[]
   maintenanceRequests    MaintenanceRequest[]
@@ -37,15 +36,7 @@ model Organization {
   financialEntities      FinancialEntity[]
   users                  OrganizationUser[]
   vendors                Vendor[]
-
-  // Billing/plan
   plan                   Plan?                   @relation(fields: [planId], references: [id])
-
-  // Optional production payout layer (uncomment if these models exist)
-  // payoutAccounts      PayoutAccount[]
-  // payoutTransactions  PayoutTransaction[]
-  // settlements         Settlement[]
-  // webhookEvents       PaymentWebhookEvent[]
 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
@@ -1874,7 +1865,8 @@ enum payment_status {
 
 enum users_region {
   USA
-  KEN
+  AFRICA
+  GLOBAL
 }
 
 enum payment_type {
