@@ -1534,6 +1534,19 @@ enum payment_method {
   MANUAL
 }
 
+enum users_region {
+  USA
+  AFRICA
+  GLOBAL
+}
+
+enum payment_type {
+  RENT
+  DEPOSIT
+  SAAS_FEE
+  MAINTENANCE
+} 
+
 enum invoice_status {
   PENDING
   PAID
