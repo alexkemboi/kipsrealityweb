@@ -1851,10 +1851,11 @@ enum payment_type {
   MAINTENANCE
 }
 
-enum payment_method 
+enum payment_method {
   CASH
   BANK
   CREDIT_CARD
+}
 
 
 // -------PAYMENT INFRASTRUCTURE ENUMS--------
