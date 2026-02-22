@@ -733,12 +733,12 @@ model Payment {
   journalEntry      JournalEntry?     @relation(fields: [journalEntryId], references: [id])
   paymentReversals  PaymentReversal[]
   receipts          Receipt[]
-}
 
-@@index([gatewayReference])
-@@index([status])
-@@index([invoiceId])
-@@map("payment")
+  @@index([gateway_reference])
+  @@index([status])
+  @@index([invoiceId])
+  @@map("payment")
+}
 
 model PaymentReversal {
   id          String   @id @db.Char(36)
