@@ -81,17 +81,6 @@ model User {
   // Relation to OTPs
   otps Otp[]
 
-  // --- Payment Profile (Tenant) ---
-  region    Region?   @default(AFRICA) // Defaulting to AFRICA for our pilot
-  KycStatus KycStatus @default(PENDING) @map("kyc_status")
-
-  // USA Identifiers
-  stripeCustomerId          String? @map("stripe_customer_id")
-  plaidAccessTokenEncrypted String? @map("plaid_access_token") // App must encrypt/decrypt this
-
-  // Africa Identifiers
-  paystackCustomerCode String? @map("paystack_customer_code")
-
   // Payment methods
   paymentMethods TenantPaymentMethod[]
 
@@ -1862,11 +1851,11 @@ enum payment_type {
   MAINTENANCE
 }
 
-enum payment_method {
+enum payment_method 
   CASH
   BANK
   CREDIT_CARD
-}
+
 
 // -------PAYMENT INFRASTRUCTURE ENUMS--------
 
