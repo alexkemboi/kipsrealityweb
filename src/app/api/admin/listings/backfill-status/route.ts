@@ -8,12 +8,14 @@ async function ensureStatusId(status: ListingStatus): Promise<string> {
     where: { name: { equals: status } },
     select: { id: true },
   });
+
   if (existing?.id) return existing.id;
 
   const created = await prisma.listingStatus.create({
     data: { name: status },
     select: { id: true },
   });
+
   return created.id;
 }
 
@@ -36,19 +38,26 @@ export async function POST(req: Request) {
     ]);
 
     const now = new Date();
-    const orgFilter = user.organizationId ? { organizationId: user.organizationId } : {};
+    const orgFilter = user.organizationId
+      ? { organizationId: user.organizationId }
+      : {};
 
-    const baseWhere = {
-      ...orgFilter,
-      statusId: null,
-      OR: [{ unitId: { not: null } }, { propertyId: { not: null } }],
-    } as const;
+    // Base constraints for records eligible for backfill
+    const baseFilters = [
+      { statusId: null },
+      {
+        OR: [{ unitId: { not: null } }, { propertyId: { not: null } }],
+      },
+      orgFilter,
+    ];
 
     // availabilityDate in the future => COMING_SOON
     const comingSoonResult = await prisma.listing.updateMany({
       where: {
-        ...baseWhere,
-        availabilityDate: { gt: now },
+        AND: [
+          ...baseFilters,
+          { availabilityDate: { gt: now } },
+        ],
       },
       data: { statusId: comingSoonStatusId },
     });
@@ -56,8 +65,15 @@ export async function POST(req: Request) {
     // availabilityDate null or <= now => ACTIVE
     const activeResult = await prisma.listing.updateMany({
       where: {
-        ...baseWhere,
-        OR: [{ availabilityDate: null }, { availabilityDate: { lte: now } }],
+        AND: [
+          ...baseFilters,
+          {
+            OR: [
+              { availabilityDate: null },
+              { availabilityDate: { lte: now } },
+            ],
+          },
+        ],
       },
       data: { statusId: activeStatusId },
     });
