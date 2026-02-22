@@ -7,57 +7,96 @@ import { getCurrentUser } from "@/lib/Getcurrentuser";
 
 const INVITE_EXPIRY_HOURS = 1;
 
-export async function POST() {
+function getBaseUrl(request: Request) {
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL?.trim();
+  if (envBase) return envBase.replace(/\/$/, "");
+
+  // Fallback if env is missing
+  return new URL(request.url).origin;
+}
+
+export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
 
-    console.log("Current user attempting to create invite:", user);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!user || user.role !== "TENANT") {
+    // Tenant-only route
+    if (user.role !== "TENANT") {
       return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
+        { error: "Forbidden. Tenant access only." },
+        { status: 403 }
       );
     }
 
-    // Generate 16-character secure token
-    const rawToken = crypto.randomBytes(8).toString("hex");
+    // Generate raw token (sent in URL)
+    const rawToken = crypto.randomBytes(16).toString("hex"); // 32-char hex token
 
-    // Hash token before storing
+    // Hash token (stored in DB only)
     const tokenHash = crypto
       .createHash("sha256")
       .update(rawToken)
       .digest("hex");
 
-    // Expiry time
     const expiresAt = new Date(
       Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
-    console.log(`Creating invite for tenant (user) ID: ${user.id}`);
+    // Optional cleanup: remove expired invites for this tenant (keeps table tidy)
+    // Safe to ignore if none exist
+    await prisma.agentInvite.deleteMany({
+      where: {
+        tenantId: user.id,
+        expiresAt: { lt: new Date() },
+      },
+    });
 
-    // Store hashed token - connect to tenant relation
-    await prisma.agentInvite.create({
+    // Create invite (store hash only)
+    const createdInvite = await prisma.agentInvite.create({
       data: {
         inviteTokenHash: tokenHash,
         expiresAt,
         tenant: {
-          connect: { id: user.id }
-        }
+          connect: { id: user.id },
+        },
+      },
+      select: {
+        id: true,
+        expiresAt: true,
       },
     });
 
-    // Build invite URL
-    const inviteUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invite/agent-invitation?ref=${rawToken}`;
+    // Build invite URL safely
+    const baseUrl = getBaseUrl(request);
+    const inviteUrl = new URL("/invite/agent-invitation", baseUrl);
+    inviteUrl.searchParams.set("ref", rawToken);
 
-    return NextResponse.json({
-      inviteUrl,
-      expiresAt,
-    });
-  } catch (error) {
-    console.error("Invite generation error:", error);
     return NextResponse.json(
-      { error: "Failed to generate invite" },
+      {
+        success: true,
+        inviteId: createdInvite.id,
+        inviteUrl: inviteUrl.toString(),
+        expiresAt: createdInvite.expiresAt.toISOString(),
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  } catch (error: unknown) {
+    console.error("[AgentInvite.POST] Failed to generate invite:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to generate invite",
+        message:
+          error instanceof Error ? error.message : "Unknown server error",
+      },
       { status: 500 }
     );
   }
