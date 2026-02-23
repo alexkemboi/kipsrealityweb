@@ -10,16 +10,31 @@ import {
   // generateTwoFactorChallengeToken,
 } from '@/lib/auth';
 
+export const runtime = 'nodejs';
+
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 15; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const TWO_FA_CHALLENGE_TTL_SECONDS = 60 * 5; // 5 minutes
+const BCRYPT_MAX_PASSWORD_BYTES = 72;
 
 const DUMMY_BCRYPT_HASH =
   '$2a$10$7EqJtq98hPqEX7fNZaFWoO.H8Jm0G7K8G5x1L6K2f8M4QYwz7lB9K';
 
 const LoginSchema = z.object({
   email: z.string().trim().email().max(254),
-  password: z.string().min(1).max(1024),
+  password: z
+    .string()
+    .min(1)
+    .max(1024)
+    .superRefine((val, ctx) => {
+      // bcrypt compares only the first 72 bytes; reject longer inputs to avoid ambiguity
+      if (Buffer.byteLength(val, 'utf8') > BCRYPT_MAX_PASSWORD_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Password is too long',
+        });
+      }
+    }),
 });
 
 type OrgUserLite = {
@@ -32,6 +47,12 @@ type OrgUserLite = {
     slug: string;
   };
 };
+
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  const response = NextResponse.json(body, init);
+  response.headers.set('Cache-Control', 'no-store');
+  return response;
+}
 
 function getRequestContext(request: Request) {
   const url = new URL(request.url);
@@ -105,11 +126,10 @@ function clearAuthCookies(response: NextResponse, request: Request) {
 }
 
 function authFailureResponse(request: Request) {
-  const response = NextResponse.json(
+  const response = jsonNoStore(
     { error: 'Invalid email or password' },
     { status: 401 }
   );
-  // Optional but helpful to avoid stale-session weirdness
   clearAuthCookies(response, request);
   return response;
 }
@@ -147,7 +167,12 @@ export async function POST(request: Request) {
     const parsed = LoginSchema.safeParse(rawBody);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 });
+      const response = jsonNoStore(
+        { error: 'Invalid request payload' },
+        { status: 400 }
+      );
+      clearAuthCookies(response, request);
+      return response;
     }
 
     const email = parsed.data.email.trim().toLowerCase();
@@ -176,7 +201,7 @@ export async function POST(request: Request) {
     }
 
     if (user.status !== 'ACTIVE') {
-      const response = NextResponse.json(
+      const response = jsonNoStore(
         { error: 'Account is not active. Please contact support.' },
         { status: 403 }
       );
@@ -186,7 +211,7 @@ export async function POST(request: Request) {
 
     const isEmailVerified = user.emailVerified !== null;
     if (!isEmailVerified) {
-      const response = NextResponse.json(
+      const response = jsonNoStore(
         {
           error: 'Please verify your email address before logging in.',
           requiresVerification: true,
@@ -199,14 +224,14 @@ export async function POST(request: Request) {
 
     // 2FA branch
     if (user.twoFactorEnabled) {
-      // If your helper exists, uncomment import + usage below.
+      // If your helper exists, uncomment import + usage below and REQUIRE it in the verify-2FA endpoint.
       // const challengeToken = generateTwoFactorChallengeToken({
       //   userId: user.id,
       //   email: user.email,
       //   purpose: 'LOGIN_2FA',
       // });
 
-      const response = NextResponse.json(
+      const response = jsonNoStore(
         {
           require2FA: true, // keep frontend contract consistent
           challengeExpiresIn: TWO_FA_CHALLENGE_TTL_SECONDS,
@@ -246,6 +271,7 @@ export async function POST(request: Request) {
       userId: user.id,
       email: user.email,
       role,
+      // If your auth helper supports optional org IDs, prefer undefined/null instead of ''
       organizationId: primaryOrgUser?.organizationId ?? '',
       organizationUserId: primaryOrgUser?.id,
     });
@@ -256,10 +282,15 @@ export async function POST(request: Request) {
 
     const expiresAt = Date.now() + ACCESS_TOKEN_MAX_AGE_SECONDS * 1000;
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    // Best-effort audit update; do not fail login if this write fails
+    await prisma.user
+      .update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      })
+      .catch((err) => {
+        console.warn('Failed to update lastLoginAt:', err);
+      });
 
     const isPhoneVerified = user.phoneVerified !== null;
 
@@ -287,7 +318,7 @@ export async function POST(request: Request) {
         : null,
     };
 
-    const response = NextResponse.json(
+    const response = jsonNoStore(
       {
         user: userResponse,
         session: { expiresAt },
@@ -301,6 +332,6 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error('Login error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return jsonNoStore({ error: 'Internal server error' }, { status: 500 });
   }
 }
