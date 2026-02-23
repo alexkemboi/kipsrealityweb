@@ -1786,12 +1786,6 @@ enum organization_users_role {
   ALL
 }
 
-enum OtpType {
-  TWO_FACTOR
-  PHONE_VERIFICATION
-  PASSWORD_RESET
-}
-
 enum SidebarItem_role {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
