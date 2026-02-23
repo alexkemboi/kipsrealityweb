@@ -1,15 +1,9 @@
-"use client"
-import React from "react";
 import Dashboard from "@/components/Dashboard/agentDash/DashboardOverview";
 
-const DashboardPage = () => {
+export default function DashboardPage() {
   return (
-    <div className="bg-[#0f172a] h-full">
+    <main className="min-h-screen bg-slate-900">
       <Dashboard />
-    </div>
+    </main>
   );
-};
-
-export default DashboardPage;
-
-
+}
