@@ -1,71 +1,105 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma, UserStatus, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`)
+  }
+  return value
+}
+
 async function createAdmin() {
-  const email = process.env.ADMIN_EMAIL || 'admin@example.com'
-  const password = process.env.ADMIN_PASSWORD || 'AdminPassword123!'
+  // Require env vars in production (safer than defaults)
+  const email = requireEnv('ADMIN_EMAIL').toLowerCase()
+  const password = requireEnv('ADMIN_PASSWORD')
+
   const firstName = 'System'
   const lastName = 'Admin'
   const organizationName = 'Platform Administration'
+  const organizationSlug = 'platform-admin'
+
+  if (password.length < 12) {
+    throw new Error('ADMIN_PASSWORD must be at least 12 characters long.')
+  }
 
   try {
-    // Check if admin already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingUser) {
-      console.log(' Admin user already exists with this email')
-      return
-    }
-
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create admin in transaction
-    const result = await prisma.$transaction(async (tx: any) => {
-      // Create organization
-      const organization = await tx.organization.create({
-        data: {
+    const result = await prisma.$transaction(async (tx) => {
+      // Ensure organization exists (idempotent)
+      const organization = await tx.organization.upsert({
+        where: { slug: organizationSlug },
+        update: {
           name: organizationName,
-          slug: 'platform-admin',
           isActive: true,
-        }
+        },
+        create: {
+          name: organizationName,
+          slug: organizationSlug,
+          isActive: true,
+        },
       })
 
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          email: email.toLowerCase(),
+      // Ensure admin user exists (idempotent)
+      const user = await tx.user.upsert({
+        where: { email },
+        update: {
+          // Optional: keep these updated if rerun
+          firstName,
+          lastName,
+          emailVerified: true,
+          status: UserStatus.ACTIVE,
+          // Uncomment if you intentionally want reruns to reset password:
+          // passwordHash: hashedPassword,
+        },
+        create: {
+          email,
           passwordHash: hashedPassword,
           firstName,
           lastName,
           emailVerified: true,
-          status: 'ACTIVE',
-        }
+          status: UserStatus.ACTIVE,
+        },
       })
 
-      // Link user to organization as SYSTEM_ADMIN
-      await tx.organizationUser.create({
-        data: {
+      // Ensure membership exists (idempotent)
+      // Assumes unique constraint on (userId, organizationId)
+      await tx.organizationUser.upsert({
+        where: {
+          userId_organizationId: {
+            userId: user.id,
+            organizationId: organization.id,
+          },
+        },
+        update: {
+          role: UserRole.SYSTEM_ADMIN,
+        },
+        create: {
           userId: user.id,
           organizationId: organization.id,
-          role: 'SYSTEM_ADMIN'  // ← ADMIN ROLE
-        }
+          role: UserRole.SYSTEM_ADMIN,
+        },
       })
 
       return { user, organization }
     })
 
-    console.log(' System Admin created successfully!')
-    console.log(' Email:', result.user.email)
-    console.log(' Password:', password)
-    console.log(' Organization:', result.organization.name)
-    console.log('\n IMPORTANT: Change the password after first login!')
-
-  } catch (error) {
-    console.error(' Error creating admin:', error)
+    console.log('✅ System Admin is ready')
+    console.log(`Email: ${result.user.email}`)
+    console.log(`Organization: ${result.organization.name}`)
+    console.log('⚠️ Password was set from ADMIN_PASSWORD (not shown for security).')
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(`❌ Prisma error (${error.code}):`, error.message)
+    } else if (error instanceof Error) {
+      console.error('❌ Error creating admin:', error.message)
+    } else {
+      console.error('❌ Unknown error creating admin:', error)
+    }
+    process.exitCode = 1
   } finally {
     await prisma.$disconnect()
   }
