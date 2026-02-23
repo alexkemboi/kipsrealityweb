@@ -1,132 +1,267 @@
 import { NextResponse } from 'next/server';
-import { generateAccessToken, generateRefreshToken } from '@/lib/auth';
-import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+
+import { prisma } from '@/lib/db';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateTwoFactorChallengeToken, // add this helper in @/lib/auth
+} from '@/lib/auth';
+
+const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 15; // 15 min
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const TWO_FA_CHALLENGE_TTL_SECONDS = 60 * 5; // 5 min
+
+// Dummy hash for timing-safe-ish auth failures when user doesn't exist
+const DUMMY_BCRYPT_HASH =
+  '$2a$10$7EqJtq98hPqEX7fNZaFWoO.H8Jm0G7K8G5x1L6K2f8M4QYwz7lB9K';
+
+const LoginSchema = z.object({
+  email: z.string().trim().email().max(254),
+  password: z.string().min(1).max(1024),
+});
+
+function getRequestContext(request: Request) {
+  const url = new URL(request.url);
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const host = request.headers.get('host');
+
+  const isHttps =
+    forwardedProto ? forwardedProto === 'https' : url.protocol === 'https:';
+
+  const hostname = forwardedHost || host || url.hostname || '';
+  const isLocal =
+    hostname.includes('localhost') ||
+    hostname.startsWith('127.0.0.1') ||
+    hostname.startsWith('192.168.') ||
+    hostname.startsWith('10.') ||
+    hostname.endsWith('.local');
+
+  return { isHttps, isLocal };
+}
+
+function setAuthCookies(
+  response: NextResponse,
+  params: { accessToken: string; refreshToken: string; request: Request }
+) {
+  const { accessToken, refreshToken, request } = params;
+  const { isHttps, isLocal } = getRequestContext(request);
+
+  // Use secure cookies only on HTTPS and not local dev HTTP
+  const secure = isHttps && !isLocal;
+
+  response.cookies.set('token', accessToken, {
+    httpOnly: true,
+    secure,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
+  });
+
+  response.cookies.set('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
+  });
+}
+
+function clearAuthCookies(response: NextResponse, request: Request) {
+  const { isHttps, isLocal } = getRequestContext(request);
+  const secure = isHttps && !isLocal;
+
+  response.cookies.set('token', '', {
+    httpOnly: true,
+    secure,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+
+  response.cookies.set('refreshToken', '', {
+    httpOnly: true,
+    secure,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+}
+
+function authFailureResponse() {
+  // Generic error to avoid user enumeration
+  return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+}
+
+function selectPrimaryOrgUser(
+  organizationUsers: Array<{
+    id: string;
+    role: string;
+    organizationId: string;
+    organization: { id: string; name: string; slug: string };
+  }>
+) {
+  if (!organizationUsers?.length) return null;
+
+  // Prefer non-tenant role if present; otherwise first
+  const privileged = organizationUsers.find((ou) => ou.role !== 'TENANT');
+  return privileged ?? organizationUsers[0];
+}
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const rawBody = await request.json().catch(() => null);
+    const parsed = LoginSchema.safeParse(rawBody);
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 });
     }
+
+    const email = parsed.data.email.trim().toLowerCase();
+    const password = parsed.data.password;
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { organizationUsers: { include: { organization: true } } }
+      include: {
+        organizationUsers: {
+          include: { organization: true },
+        },
+      },
     });
 
-    if (!user) {
-      return NextResponse.json({ error: 'User does not exist. Please create an account to continue.' }, { status: 404 });
-    }
-
-    if (user.status !== 'ACTIVE') {
-      return NextResponse.json({ error: 'Account is suspended. Please contact support.' }, { status: 403 });
+    // Prevent user enumeration + handle missing hash safely
+    if (!user || !user.passwordHash) {
+      await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
+      return authFailureResponse();
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+      return authFailureResponse();
     }
 
-    // SECURITY CHECK: Is Email Verified?
-    if (!user.emailVerified) {
+    // Check account status after password validation (reduces enumeration signals)
+    if (user.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'Account is not active. Please contact support.' },
+        { status: 403 }
+      );
+    }
+
+    // In your schema, emailVerified is DateTime? (null = not verified)
+    const isEmailVerified = user.emailVerified !== null;
+
+    if (!isEmailVerified) {
       return NextResponse.json(
         {
           error: 'Please verify your email address before logging in.',
-          requiresVerification: true
+          requiresVerification: true,
         },
         { status: 403 }
       );
     }
 
-    // 2FA CHECK: Is Two-Factor Authentication Enabled?
+    // 2FA enabled -> return challenge token (safer than returning raw userId)
     if (user.twoFactorEnabled) {
-      // User has 2FA enabled - require OTP verification
+      const challengeToken = generateTwoFactorChallengeToken({
+        userId: user.id,
+        email: user.email,
+        purpose: 'LOGIN_2FA',
+      });
+
       return NextResponse.json(
         {
           require2FA: true,
-          userId: user.id,
-          message: 'Two-factor authentication required. Please enter the code sent to your phone.'
+          challengeToken,
+          challengeExpiresIn: TWO_FA_CHALLENGE_TTL_SECONDS,
+          message: 'Two-factor authentication required. Please enter your verification code.',
         },
         { status: 200 }
       );
     }
 
-    const primaryOrgUser = user.organizationUsers[0];
-    let role = primaryOrgUser?.role || 'TENANT';
+    const primaryOrgUser = selectPrimaryOrgUser(
+      user.organizationUsers.map((ou) => ({
+        id: ou.id,
+        role: ou.role,
+        organizationId: ou.organizationId,
+        organization: {
+          id: ou.organization.id,
+          name: ou.organization.name,
+          slug: ou.organization.slug,
+        },
+      }))
+    );
 
-    // Force system admin role for platform admin account
-    if (email === process.env.ADMIN_EMAIL) {
+    let role = primaryOrgUser?.role ?? 'TENANT';
+
+    // Normalize admin email comparison
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+    if (adminEmail && email === adminEmail) {
       role = 'SYSTEM_ADMIN';
     }
 
     const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
-      role: role,
+      role,
       organizationId: primaryOrgUser?.organizationId ?? '',
-      organizationUserId: primaryOrgUser?.id
+      organizationUserId: primaryOrgUser?.id,
     });
 
-    const refreshToken = generateRefreshToken({ userId: user.id });
-    const expiresAt = Date.now() + 60 * 60 * 1000;
+    const refreshToken = generateRefreshToken({
+      userId: user.id,
+      type: 'refresh',
+      // Recommended later: include sessionId for rotation tracking
+      // sessionId: createdRefreshSession.id
+    });
+
+    // Align with access token cookie lifetime (15 min)
+    const expiresAt = Date.now() + ACCESS_TOKEN_MAX_AGE_SECONDS * 1000;
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() }
+      data: { lastLoginAt: new Date() },
     });
 
-    // Updated user response to include phone, phoneVerified, and twoFactorEnabled
+    // In your schema, phoneVerified is DateTime? (convert to boolean for API response)
+    const isPhoneVerified = user.phoneVerified !== null;
+
     const userResponse = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
-      phoneVerified: user.phoneVerified,
+      phoneVerified: isPhoneVerified,
+      emailVerified: isEmailVerified,
       twoFactorEnabled: user.twoFactorEnabled,
       avatarUrl: user.avatarUrl,
-      role: role,
-      organizationUserId: primaryOrgUser?.id,
+      role,
+      organizationUserId: primaryOrgUser?.id ?? null,
       organization: primaryOrgUser
         ? {
-          id: primaryOrgUser.organization.id,
-          name: primaryOrgUser.organization.name,
-          slug: primaryOrgUser.organization.slug
-        }
-        : null
+            id: primaryOrgUser.organization.id,
+            name: primaryOrgUser.organization.name,
+            slug: primaryOrgUser.organization.slug,
+          }
+        : null,
     };
 
+    // Cookie-based auth: do not return raw tokens in JSON
     const response = NextResponse.json(
       {
         user: userResponse,
-        tokens: { accessToken, refreshToken, expiresAt }
+        session: { expiresAt },
       },
       { status: 200 }
     );
 
-    // Detect if we are in production BUT running on a local IP/HTTP
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isLocalNetwork = request.url.includes("192.168.") || request.url.includes("localhost");
-
-    response.cookies.set('token', accessToken, {
-      httpOnly: true,
-      // ONLY set Secure if in production AND NOT on local network
-      secure: isProduction && !isLocalNetwork,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 15
-    });
-
-    response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
-      // ONLY set Secure if in production AND NOT on local network
-      secure: isProduction && !isLocalNetwork,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7
-    });
+    // Optional: clear stale cookies before setting fresh ones
+    clearAuthCookies(response, request);
+    setAuthCookies(response, { accessToken, refreshToken, request });
 
     return response;
   } catch (error) {
