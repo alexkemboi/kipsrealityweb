@@ -3,21 +3,19 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/Getcurrentuser"; // ✅ verify file name casing in your project
+import { getCurrentUser } from "@/lib/Getcurrentuser"; // ⚠️ verify exact file casing/name
 
 export const runtime = "nodejs";
 
 const INVITE_EXPIRY_HOURS = 1;
 
 function getBaseUrl(request: Request) {
-  // Prefer server-only env first
   const serverBase = process.env.APP_BASE_URL?.trim();
   if (serverBase) return serverBase.replace(/\/$/, "");
 
   const publicBase = process.env.NEXT_PUBLIC_BASE_URL?.trim();
   if (publicBase) return publicBase.replace(/\/$/, "");
 
-  // Fallback if env is missing
   return new URL(request.url).origin;
 }
 
@@ -42,15 +40,12 @@ export async function POST(request: Request) {
       now.getTime() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
-    // Generate raw token (sent in URL)
-    const rawToken = crypto.randomBytes(32).toString("hex"); // 64-char hex token
-
-    // Hash token (stored in DB only)
+    // Raw token goes to URL, hash goes to DB
+    const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
 
-    // Cleanup + create in a transaction
     const createdInvite = await prisma.$transaction(async (tx) => {
-      // Remove expired invites for this tenant
+      // Cleanup expired invites for this tenant
       await tx.agentInvite.deleteMany({
         where: {
           tenantId: user.id,
@@ -58,8 +53,7 @@ export async function POST(request: Request) {
         },
       });
 
-      // OPTIONAL: enforce only one active invite per tenant
-      // Uncomment if this is your intended behavior:
+      // Optional: uncomment to enforce only one active invite per tenant
       // await tx.agentInvite.deleteMany({
       //   where: {
       //     tenantId: user.id,
@@ -82,7 +76,6 @@ export async function POST(request: Request) {
       });
     });
 
-    // Build invite URL safely
     const baseUrl = getBaseUrl(request);
     const inviteUrl = new URL("/invite/agent-invitation", baseUrl);
     inviteUrl.searchParams.set("ref", rawToken);
