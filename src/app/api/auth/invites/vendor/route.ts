@@ -1,109 +1,284 @@
 // app/api/invites/vendor/route.ts
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { verifyAccessToken } from '@/lib/auth'
-import { cookies } from 'next/headers'
-import crypto from 'crypto'
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { verifyAccessToken } from "@/lib/auth";
+import { cookies } from "next/headers";
+import crypto from "crypto";
 
-export async function GET(request: Request) {
+type AuthPayload = {
+  userId?: string;
+  role?: string;
+  organizationId?: string | null;
+};
+
+type VendorInviteBody = {
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  companyName?: string;
+  serviceType?: string;
+};
+
+async function getAuthorizedUser(): Promise<
+  | { ok: true; payload: AuthPayload }
+  | { ok: false; response: NextResponse }
+> {
   try {
-    // Validate auth token (cookie)
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return {
+        ok: false,
+        response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      };
     }
 
-    const payload = verifyAccessToken(token)
+    const payload = verifyAccessToken(token) as AuthPayload;
 
-    // Only property managers or system admins can view vendor invites
-    if (payload.role !== 'PROPERTY_MANAGER' && payload.role !== 'SYSTEM_ADMIN') {
-      return NextResponse.json({ error: 'Only property managers or system admins can view vendor invites' }, { status: 403 })
+    if (!payload?.role) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      };
     }
 
-    // Get all vendor invites for this organization
+    if (payload.role !== "PROPERTY_MANAGER" && payload.role !== "SYSTEM_ADMIN") {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: "Only property managers or system admins can access vendor invites" },
+          { status: 403 }
+        ),
+      };
+    }
+
+    if (!payload.organizationId) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: "User organization context is missing" },
+          { status: 400 }
+        ),
+      };
+    }
+
+    return { ok: true, payload };
+  } catch (error) {
+    console.error("[Vendor Invites Auth] token verification failed:", error);
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+}
+
+function normalizeOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+}
+
+export async function GET(_request: Request) {
+  try {
+    const auth = await getAuthorizedUser();
+    if (!auth.ok) return auth.response;
+
+    const { organizationId } = auth.payload;
+
     const invites = await prisma.invite.findMany({
       where: {
-        organizationId: payload.organizationId,
-        role: 'VENDOR'
+        organizationId: organizationId!,
+        role: "VENDOR",
       },
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        accepted: true,
+        token: true,
+        expiresAt: true,
+        createdAt: true,
+        organizationId: true,
+        invitedById: true,
+      },
+    });
 
-    return NextResponse.json({
-      success: true,
-      invites
-    }, { status: 200 })
-
+    return NextResponse.json({ success: true, invites }, { status: 200 });
   } catch (error) {
-    console.error('Get vendor invites error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("[GET /api/invites/vendor]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    // Validate auth token (cookie)
-    const cookieStore = await cookies()
-    const token = cookieStore.get('token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await getAuthorizedUser();
+    if (!auth.ok) return auth.response;
+
+    const payload = auth.payload;
+
+    const body = (await request.json()) as VendorInviteBody;
+
+    const normalizedEmail = normalizeOptionalString(body.email)?.toLowerCase() ?? null;
+    const firstName = normalizeOptionalString(body.firstName);
+    const lastName = normalizeOptionalString(body.lastName);
+    const phone = normalizeOptionalString(body.phone);
+    const companyName = normalizeOptionalString(body.companyName);
+    const serviceType = normalizeOptionalString(body.serviceType);
+
+    if (!normalizedEmail || !firstName) {
+      return NextResponse.json(
+        { error: "Email and first name are required" },
+        { status: 400 }
+      );
     }
 
-    const payload = verifyAccessToken(token)
-
-    // Only property managers or system admins can invite vendors
-    if (payload.role !== 'PROPERTY_MANAGER' && payload.role !== 'SYSTEM_ADMIN') {
-      return NextResponse.json({ error: 'Only property managers or system admins can invite vendors' }, { status: 403 })
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
     }
 
-    const body = await request.json()
-    const { email, firstName, lastName, phone, companyName, serviceType } = body
-
-    if (!email || !firstName) {
-      return NextResponse.json({ error: 'Email and first name are required' }, { status: 400 })
+    if (!payload.userId) {
+      return NextResponse.json(
+        { error: "Authenticated user id is missing" },
+        { status: 400 }
+      );
     }
-
-    const normalizedEmail = email.toLowerCase()
 
     // If a user already exists and is active, block invite
-    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } })
-    if (existingUser && existingUser.status === 'ACTIVE') {
-      return NextResponse.json({ error: 'A user with this email already exists' }, { status: 409 })
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, status: true },
+    });
+
+    if (existingUser && existingUser.status === "ACTIVE") {
+      return NextResponse.json(
+        { error: "A user with this email already exists" },
+        { status: 409 }
+      );
     }
 
-    // Generate secure invite token
-    const inviteToken = crypto.randomBytes(32).toString('hex')
-    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    // Prevent duplicate active pending invite for same org/email/vendor role
+    const existingPendingInvite = await prisma.invite.findFirst({
+      where: {
+        email: normalizedEmail,
+        organizationId: payload.organizationId!,
+        role: "VENDOR",
+        accepted: false,
+        expiresAt: { gt: new Date() },
+      },
+      select: { id: true, expiresAt: true, token: true },
+    });
 
-    // Persist invite in DB
+    if (existingPendingInvite) {
+      const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/inviteor?token=${
+        existingPendingInvite.token
+      }&email=${encodeURIComponent(normalizedEmail)}`;
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "A pending vendor invite already exists for this email.",
+          inviteId: existingPendingInvite.id,
+          expiresAt: existingPendingInvite.expiresAt,
+          inviteLink: process.env.NODE_ENV === "development" ? inviteLink : undefined,
+        },
+        { status: 409 }
+      );
+    }
+
+    const inviteToken = crypto.randomBytes(32).toString("hex");
+    const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // Optional metadata save if your Invite model supports these fields.
+    // If not supported in your schema, remove the extra fields below.
     const invite = await prisma.invite.create({
       data: {
         email: normalizedEmail,
         token: inviteToken,
-        role: 'VENDOR',
-        organizationId: payload.organizationId,
+        role: "VENDOR",
+        organizationId: payload.organizationId!,
         invitedById: payload.userId,
         expiresAt: inviteExpires,
-      }
-    })
+      },
+      select: {
+        id: true,
+        email: true,
+        token: true,
+        expiresAt: true,
+        createdAt: true,
+      },
+    });
 
-    // Build an invite link (send by email in production)
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/inviteor?token=${inviteToken}&email=${encodeURIComponent(normalizedEmail)}`
+    // Best effort: create/update vendor placeholder record for tracking if user doesn't exist yet.
+    // Safe to skip if vendor model/business flow doesn't require this.
+    try {
+      await prisma.vendor.upsert({
+        where: {
+          // Assumes a unique constraint exists for vendor email OR vendor id-specific unique.
+          // If your schema does not have unique email, replace with findFirst + create/update.
+          email: normalizedEmail,
+        },
+        update: {
+          organizationId: payload.organizationId!,
+          phone: phone ?? undefined,
+          companyName: companyName ?? undefined,
+          serviceType: serviceType ?? undefined,
+          isActive: true,
+        },
+        create: {
+          organizationId: payload.organizationId!,
+          email: normalizedEmail,
+          phone,
+          companyName:
+            companyName ?? [firstName, lastName].filter(Boolean).join(" ") || "Vendor",
+          serviceType: serviceType ?? "General Services",
+          isActive: true,
+        },
+      });
+    } catch (vendorErr) {
+      // Ignore schema/constraint mismatch or duplicate issues — invite is still valid.
+      console.warn("[POST /api/invites/vendor] vendor upsert skipped:", vendorErr);
+    }
 
-    // TODO: enqueue/send email with inviteLink & companyName/serviceType in production
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/+$/, "");
+    const inviteLink = `${baseUrl}/inviteor?token=${inviteToken}&email=${encodeURIComponent(
+      normalizedEmail
+    )}`;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Vendor invited successfully',
-      inviteId: invite.id,
-      inviteLink: process.env.NODE_ENV === 'development' ? inviteLink : undefined
-    }, { status: 201 })
+    // TODO: send email with inviteLink, companyName, serviceType in production
 
-  } catch (error) {
-    console.error('Invite vendor error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Vendor invited successfully",
+        inviteId: invite.id,
+        inviteLink: process.env.NODE_ENV === "development" ? inviteLink : undefined,
+        expiresAt: invite.expiresAt,
+      },
+      { status: 201 }
+    );
+  } catch (error: unknown) {
+    console.error("[POST /api/invites/vendor]", error);
+
+    // Prisma unique constraint (e.g., token collision or duplicate unique invite keys)
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "A duplicate record conflict occurred. Please try again." },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

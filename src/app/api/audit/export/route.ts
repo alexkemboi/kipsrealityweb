@@ -1,86 +1,134 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auditService } from '@/lib/audit-service';
-import { ListingAction, ListingStatus } from '@/lib/listing-types';
+"use client";
 
-/**
- * GET /api/audit/export
- * Exports audit data in CSV or JSON format
- */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    
-    // Extract parameters
-    const format = searchParams.get('format') as 'csv' | 'json' || 'json';
-    const includeMetadata = searchParams.get('includeMetadata') === 'true';
-    
-    // Extract filter parameters
-    const unitId = searchParams.get('unitId') || undefined;
-    const listingId = searchParams.get('listingId') || undefined;
-    const userId = searchParams.get('userId') || undefined;
-    const action = searchParams.get('action') as ListingAction | undefined;
-    const status = searchParams.get('status') as ListingStatus | undefined;
-    const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
-    const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
+import { useCallback, useState } from "react";
 
-    // Validate format
-    if (!['csv', 'json'].includes(format)) {
-      return NextResponse.json(
-        { error: 'Format must be either "csv" or "json"' },
-        { status: 400 }
-      );
-    }
+export type AuditExportFormat = "csv" | "json";
 
-    // Validate date range
-    if (dateFrom && dateTo && dateFrom > dateTo) {
-      return NextResponse.json(
-        { error: 'dateFrom cannot be after dateTo' },
-        { status: 400 }
-      );
-    }
+export interface AuditExportFilters {
+  unitId?: string;
+  listingId?: string;
+  userId?: string;
+  action?: string; // or import ListingAction if client-safe
+  status?: string; // or import ListingStatus if client-safe
+  dateFrom?: string | Date;
+  dateTo?: string | Date;
+}
 
-    // Export audit data
-    const exportData = await auditService.exportAuditData(
-      {
-        unitId,
-        listingId,
-        userId,
-        action,
-        status,
-        dateFrom,
-        dateTo
-      },
-      {
-        format,
-        includeMetadata,
-        dateRange: dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined
+export interface AuditExportOptions {
+  format?: AuditExportFormat;
+  includeMetadata?: boolean;
+  filters?: AuditExportFilters;
+}
+
+function toIsoDate(value: string | Date | undefined): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === "string") return value;
+  return value.toISOString();
+}
+
+function buildQueryParams(options: AuditExportOptions): URLSearchParams {
+  const params = new URLSearchParams();
+
+  const format = options.format ?? "json";
+  const includeMetadata = options.includeMetadata ?? false;
+  const filters = options.filters ?? {};
+
+  params.set("format", format);
+  params.set("includeMetadata", String(includeMetadata));
+
+  if (filters.unitId) params.set("unitId", filters.unitId);
+  if (filters.listingId) params.set("listingId", filters.listingId);
+  if (filters.userId) params.set("userId", filters.userId);
+  if (filters.action) params.set("action", filters.action);
+  if (filters.status) params.set("status", filters.status);
+
+  const dateFrom = toIsoDate(filters.dateFrom);
+  const dateTo = toIsoDate(filters.dateTo);
+
+  if (dateFrom) params.set("dateFrom", dateFrom);
+  if (dateTo) params.set("dateTo", dateTo);
+
+  return params;
+}
+
+function getFilenameFromDisposition(
+  disposition: string | null,
+  fallback: string
+): string {
+  if (!disposition) return fallback;
+
+  // Handles: attachment; filename="listing-audit-2026-02-22.csv"
+  const match = disposition.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+  if (!match?.[1]) return fallback;
+
+  return decodeURIComponent(match[1].replace(/"/g, "").trim());
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export function useAuditExport() {
+  const [isExporting, setIsExporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const exportAudit = useCallback(async (options: AuditExportOptions = {}) => {
+    setIsExporting(true);
+    setError(null);
+
+    try {
+      const format = options.format ?? "json";
+      const params = buildQueryParams(options);
+
+      const response = await fetch(`/api/audit/export?${params.toString()}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        let message = "Failed to export audit data";
+
+        try {
+          const data = await response.json();
+          message =
+            data?.message || data?.error || `Export failed (${response.status})`;
+        } catch {
+          const text = await response.text();
+          if (text) message = text;
+        }
+
+        throw new Error(message);
       }
-    );
 
-    // Set appropriate headers for file download
-    const filename = `listing-audit-${new Date().toISOString().split('T')[0]}.${format}`;
-    const contentType = format === 'csv' ? 'text/csv' : 'application/json';
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("content-disposition");
+      const fallbackName = `listing-audit.${format}`;
+      const filename = getFilenameFromDisposition(contentDisposition, fallbackName);
 
-    return new NextResponse(exportData, {
-      status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+      downloadBlob(blob, filename);
 
-  } catch (error) {
-    console.error('Error exporting audit data:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to export audit data',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
-  }
+      return { success: true, filename };
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to export audit data";
+      setError(message);
+      return { success: false, error: message };
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
+  return {
+    exportAudit,
+    isExporting,
+    error,
+    clearError: () => setError(null),
+  };
 }

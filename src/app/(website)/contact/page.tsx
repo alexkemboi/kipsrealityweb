@@ -7,20 +7,54 @@ import { fetchCTAs } from "@/lib/cta";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const [companyInfo, ctas] = await Promise.all([
+  let companyInfo: Awaited<ReturnType<typeof fetchCompanyInfo>> | null = null;
+  let ctaData: Awaited<ReturnType<typeof fetchCTAs>> | [] = [];
+
+  const [companyInfoResult, ctasResult] = await Promise.allSettled([
     fetchCompanyInfo(),
     fetchCTAs("home"),
   ]);
 
-  const contactCta = ctas.find(c => c.title.toLowerCase().includes("touch") || c.title.toLowerCase().includes("contact"));
+  if (companyInfoResult.status === "fulfilled") {
+    companyInfo = companyInfoResult.value;
+  } else {
+    console.error("Failed to fetch company info:", companyInfoResult.reason);
+  }
+
+  if (ctasResult.status === "fulfilled") {
+    ctaData = ctasResult.value;
+  } else {
+    console.error("Failed to fetch CTAs:", ctasResult.reason);
+  }
+
+  const safeCtas = Array.isArray(ctaData) ? ctaData : [];
+
+  const contactCta = safeCtas.find((c) => {
+    const title = typeof c?.title === "string" ? c.title.toLowerCase() : "";
+    return title.includes("touch") || title.includes("contact");
+  });
 
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Spacer for sticky navbar if needed, or just let it flow */}
+      {/* Spacer for sticky navbar */}
       <div className="pt-20">
-        <Contact companyInfo={companyInfo} cta={contactCta} />
+        {companyInfo ? (
+          <Contact companyInfo={companyInfo} cta={contactCta ?? null} />
+        ) : (
+          <section className="mx-auto max-w-5xl px-4 py-16">
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Contact Us
+              </h1>
+              <p className="mt-2 text-gray-600">
+                We’re unable to load contact information right now. Please try
+                again shortly.
+              </p>
+            </div>
+          </section>
+        )}
       </div>
 
       <Footer />
