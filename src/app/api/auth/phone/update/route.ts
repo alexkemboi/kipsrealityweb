@@ -37,7 +37,6 @@ function normalizeUsPhoneToE164(input: string): string | null {
 
 export async function POST(req: Request) {
   try {
-    // 1) Verify authenticated user (cookie-based)
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -53,12 +52,10 @@ export async function POST(req: Request) {
       return jsonNoStore({ error: "Invalid or expired token" }, { status: 401 });
     }
 
-    // Optional hardening if your JWT includes token type
     if (userPayload.type && userPayload.type !== "access") {
       return jsonNoStore({ error: "Invalid token type" }, { status: 401 });
     }
 
-    // 2) Validate request body
     const rawBody = await req.json().catch(() => null);
     const parsed = UpdatePhoneSchema.safeParse(rawBody);
 
@@ -70,9 +67,8 @@ export async function POST(req: Request) {
     }
 
     const rawPhone = parsed.data.phone.trim();
-
-    // 3) Normalize US phone to E.164 (+1XXXXXXXXXX)
     const phone = normalizeUsPhoneToE164(rawPhone);
+
     if (!phone) {
       return jsonNoStore(
         {
@@ -83,13 +79,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) Ensure current user exists + active
     const currentUser = await prisma.user.findUnique({
       where: { id: userPayload.userId },
       select: {
         id: true,
         status: true,
         phone: true,
+        phoneVerified: true,
       },
     });
 
@@ -101,7 +97,6 @@ export async function POST(req: Request) {
       return jsonNoStore({ error: "Account is not active" }, { status: 403 });
     }
 
-    // Idempotent success if same phone
     if (currentUser.phone === phone) {
       return jsonNoStore(
         {
@@ -109,32 +104,28 @@ export async function POST(req: Request) {
           message: "Phone number already up to date",
           data: {
             phone,
-            phoneVerified: false,
+            phoneVerified: currentUser.phoneVerified !== null,
           },
         },
         { status: 200 }
       );
     }
 
-    // 5) Check uniqueness against other users
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        phone,
-        id: { not: userPayload.userId },
-      },
+    // phone is @unique in your schema, so findUnique is ideal
+    const existingUser = await prisma.user.findUnique({
+      where: { phone },
       select: { id: true },
     });
 
-    if (existingUser) {
+    if (existingUser && existingUser.id !== userPayload.userId) {
       return jsonNoStore({ error: "Phone number is already in use" }, { status: 409 });
     }
 
-    // 6) Update phone + reset verification timestamp
     const updatedUser = await prisma.user.update({
       where: { id: userPayload.userId },
       data: {
         phone,
-        phoneVerified: null, // reset verification whenever phone changes
+        phoneVerified: null,
       },
       select: {
         id: true,
