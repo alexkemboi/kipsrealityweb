@@ -1,45 +1,90 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
-import { verifyAccessToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+"use client";
 
-export async function POST(req: Request) {
-  try {
-    // 1. Verify User
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
-    let userPayload;
-    try {
-        userPayload = verifyAccessToken(token);
-    } catch(e) {
-        return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
+import * as React from "react";
+import { useTwoFactorToggle } from "@/hooks/useTwoFactorToggle";
+
+interface TwoFactorToggleSwitchProps {
+  initialEnabled?: boolean;
+  endpoint?: string; // default matches your route
+  className?: string;
+  onChanged?: (enabled: boolean) => void;
+}
+
+export default function TwoFactorToggleSwitch({
+  initialEnabled = false,
+  endpoint = "/api/auth/2fa/toggle",
+  className = "",
+  onChanged,
+}: TwoFactorToggleSwitchProps) {
+  const { enabled, loading, error, toggle, clearError } = useTwoFactorToggle({
+    initialEnabled,
+    endpoint,
+  });
+
+  const handleChange = async () => {
+    if (loading) return;
+    clearError();
+
+    const next = !enabled;
+    const result = await toggle(next);
+
+    if (result.ok) {
+      onChanged?.(result.enabled);
     }
+  };
 
-    const { enable } = await req.json();
+  return (
+    <div className={`w-full max-w-md rounded-xl border bg-white p-4 shadow-sm ${className}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Two-Factor Authentication (2FA)
+          </h3>
+          <p className="mt-1 text-sm text-gray-600">
+            Add an extra layer of security to your account using your verified phone number.
+          </p>
+          <p className="mt-2 text-xs text-gray-500">
+            Status:{" "}
+            <span className={enabled ? "font-medium text-green-700" : "font-medium text-gray-700"}>
+              {enabled ? "Enabled" : "Disabled"}
+            </span>
+          </p>
+        </div>
 
-    // 2. Security Check (If Enabling)
-    if (enable) {
-        const user = await prisma.user.findUnique({ where: { id: userPayload.userId }});
-        if (!user?.phone) {
-            return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-        }
-        if (!user?.phoneVerified) {
-            return NextResponse.json({ error: "Phone number must be verified first" }, { status: 400 });
-        }
-    }
+        {/* Accessible custom switch */}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          aria-busy={loading}
+          aria-label={enabled ? "Disable two-factor authentication" : "Enable two-factor authentication"}
+          disabled={loading}
+          onClick={handleChange}
+          className={[
+            "relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200",
+            "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+            enabled ? "bg-blue-600" : "bg-gray-300",
+            loading ? "cursor-not-allowed opacity-70" : "cursor-pointer",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200",
+              enabled ? "translate-x-6" : "translate-x-1",
+            ].join(" ")}
+          />
+        </button>
+      </div>
 
-    // 3. Update DB
-    await prisma.user.update({
-        where: { id: userPayload.userId },
-        data: { twoFactorEnabled: enable }
-    });
+      {loading && (
+        <p className="mt-3 text-xs text-blue-600">Updating 2FA setting...</p>
+      )}
 
-    return NextResponse.json({ success: true, enabled: enable });
-
-  } catch (error) {
-    console.error('2FA toggle error:', error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
-  }
+      {error && (
+        <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2">
+          <p className="text-xs text-red-700">{error}</p>
+        </div>
+      )}
+    </div>
+  );
 }

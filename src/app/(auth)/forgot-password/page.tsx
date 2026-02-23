@@ -1,45 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation"; // 1. Import Router
-import Link from "next/link"; // For the back button
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter(); // 2. Initialize Router
+  const router = useRouter();
+  const redirectTimeoutRef = useRef<number | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
-      // Security Best Practice: We don't throw an error if the email doesn't exist.
-      // We essentially just "fake" success to prevent email enumeration.
+      // If your API intentionally returns 200 for both existing/non-existing emails,
+      // that's perfect for preventing email enumeration.
+      // But still treat real server errors as errors.
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
 
       toast.success("If an account exists, a reset link has been sent.");
       setEmail("");
 
-      // 3. Logic Update: Redirect to Login after 2 seconds
-      setTimeout(() => {
+      // Keep loading state while redirecting
+      redirectTimeoutRef.current = window.setTimeout(() => {
         router.push("/login");
       }, 2000);
-
     } catch (error) {
+      console.error("Forgot password request failed:", error);
       toast.error("Something went wrong. Please try again.");
-      setIsLoading(false); // Only stop loading on error (on success we redirect)
+      setIsLoading(false);
     }
-    // Note: We removed 'finally { setIsLoading(false) }' because we want the 
-    // button to stay disabled/loading while we redirect the user.
   };
 
   return (
@@ -51,7 +69,7 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-gray-700">
             Email Address <span className="text-red-500">*</span>
@@ -59,15 +77,22 @@ export default function ForgotPasswordPage() {
           <Input
             id="email"
             type="email"
+            inputMode="email"
+            autoComplete="email"
             placeholder="name@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full"
+            disabled={isLoading}
           />
         </div>
 
-        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+        <Button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700"
+          disabled={isLoading}
+        >
           {isLoading ? "Sending Link..." : "Send Reset Link"}
         </Button>
       </form>

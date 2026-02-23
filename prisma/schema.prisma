@@ -41,37 +41,38 @@ model Organization {
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
-
 model User {
-  id                     String                   @id @default(uuid())
-  email                  String                   @unique
-  passwordHash           String                   @map("password_hash")
-  firstName              String?                  @map("first_name")
-  lastName               String?                  @map("last_name")
-  phone                  String?                  @unique // E.164 format (e.g. +2547...)
+  id                     String               @id @default(uuid())
+  email                  String               @unique
+  passwordHash           String               @map("password_hash")
+  firstName              String?              @map("first_name")
+  lastName               String?              @map("last_name")
+  phone                  String?              @unique // E.164 format (e.g. +2547...)
   phoneVerified          DateTime? // Null = not verified
-  avatarUrl              String?                  @map("avatar_url")
-  status                 UserStatus               @default(ACTIVE)
-  lastLoginAt            DateTime?                @map("last_login_at")
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
-  emailVerified          DateTime?                @map("email_verified")
-  verificationToken      String?                  @unique
-  consentMarketing       Boolean                  @default(false) @map("consent_marketing")
-  consentNotifications   Boolean                  @default(true) @map("consent_notifications")
-  consentTransactional   Boolean                  @default(true) @map("consent_transactional")
-  kyc_status             users_kyc_status         @default(PENDING)
+  avatarUrl              String?              @map("avatar_url")
+  status                 UserStatus           @default(ACTIVE)
+  lastLoginAt            DateTime?            @map("last_login_at")
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  emailVerified          DateTime?            @map("email_verified")
+  verificationToken      String?              @unique
+  consentMarketing       Boolean              @default(false) @map("consent_marketing")
+  consentNotifications   Boolean              @default(true) @map("consent_notifications")
+  consentTransactional   Boolean              @default(true) @map("consent_transactional")
+  kyc_status             users_kyc_status     @default(PENDING)
   paystack_customer_code String?
   plaid_access_token     String?
-  region                 users_region?            @default(AFRICA)
+  region                 users_region?        @default(AFRICA)
   stripe_customer_id     String?
+
   AgentInvite            AgentInvite[]
-  sentInvites            Invite[]                 @relation("UserInvites")
+  sentInvites            Invite[]             @relation("UserInvites")
+  refreshSessions        RefreshSession[]     @relation("UserRefreshSessions")
   leases                 Lease[]
   listings               Listing[]
   passwordResetTokens    PasswordResetToken[]
   tenantApplications     Tenantapplication[]
-  twoFactorEnabled       Boolean                  @default(false)
+  twoFactorEnabled       Boolean              @default(false)
   dssParticipants        DssParticipant[]
   listingAuditEntries    ListingAuditEntry[]
   organizationUsers      OrganizationUser[]
@@ -80,8 +81,10 @@ model User {
   // Relation to OTPs
   otps Otp[]
   dssAuditEvents DssAuditEvent[] @relation("DssAuditEventUser")
+  otps                   Otp[]
+
   // Payment methods
-  paymentMethods TenantPaymentMethod[]
+  paymentMethods         TenantPaymentMethod[]
 
   @@map("users")
 }
@@ -103,6 +106,28 @@ model TenantPaymentMethod {
   @@map("tenant_payment_methods")
 }
 
+model RefreshSession {
+  id            String   @id @default(cuid())
+  userId        String
+  tokenHash     String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  rotatedAt     DateTime?
+  lastUsedAt    DateTime?
+  lastUsedByIp  String?
+  createdByIp   String?
+  userAgent     String?
+  revokedAt     DateTime?
+  revokeReason  String?
+
+  user          User     @relation("UserRefreshSessions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
 model OrganizationUser {
   id                String                  @id @default(uuid())
   userId            String                  @map("user_id")
@@ -122,19 +147,49 @@ model OrganizationUser {
   @@map("organization_users")
 }
 
-// New Table for 2FA Codes
+enum OtpType {
+  TWO_FACTOR
+  PASSWORD_RESET
+  PHONE_VERIFICATION
+  LOGIN_CHALLENGE
+}
+
 model Otp {
   id        String   @id @default(uuid())
-  code      String // The 6-digit code
-  phone     String // The destination
+  code      String   @db.VarChar(10)
+  phone     String   @db.VarChar(20) // E.164 US format: +12065551234
   userId    String
   expiresAt DateTime
   type      OtpType  @default(TWO_FACTOR)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([phone])
+  @@index([phone], map: "otp_phone_idx")
+  @@index([userId], map: "otp_user_id_idx")
+  @@index([expiresAt], map: "otp_expires_at_idx")
+  @@index([userId, type], map: "otp_user_type_idx")
+  @@map("otps")
+}
+
+model ChartAccount {
+  id String @id @default(uuid())
+
+  // your existing scalar fields...
+  // code
+  // name
+  // accountType
+  // etc.
+
+  // your existing relations...
+  // journalLines JournalLine[]
+  // ...
+
+  // NEW: invoice account relations
+  invoicesAsArAccount      Invoice[] @relation("InvoiceArAccount")
+  invoicesAsRevenueAccount Invoice[] @relation("InvoiceRevenueAccount")
+
+  @@map("chart_accounts") // keep your existing @@map / indexes below
 }
 
 model Vendor {
@@ -190,18 +245,21 @@ model PasswordResetToken {
 }
 
 model FinancialEntity {
-  id             String         @id @default(uuid())
-  organizationId String         @map("organization_id")
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
   name           String
-  taxIdEncrypted String?        @map("tax_id_encrypted")
-  organization   Organization   @relation(fields: [organizationId], references: [id])
+  taxIdEncrypted String?      @map("tax_id_encrypted")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
   accounts       Account[]
   journals       JournalEntry[]
+
+  // NEW: relation to invoices
+  invoices       Invoice[]
 
   @@index([organizationId], map: "financial_entities_organization_id_fkey")
   @@map("financial_entities")
 }
-
 model Account {
   id           String          @id @default(uuid())
   entityId     String          @map("entity_id")
@@ -655,30 +713,47 @@ model Lease {
 }
 
 model Invoice {
-  id                 String              @id @default(uuid())
-  leaseId            String              @map("lease_id")
+  id                 String               @id @default(uuid())
+  leaseId            String               @map("lease_id")
+  financialEntityId  String?              @map("financial_entity_id")
+  arAccountId        String?              @map("ar_account_id")
+  revenueAccountId   String?              @map("revenue_account_id")
+
   type               invoice_type
-  totalAmount        Float               @map("amount")
-  amountPaid         Float               @default(0) @map("amount_paid")
-  balance            Float               @default(0)
-  dueDate            DateTime            @db.DateTime(0)
-  status             invoice_status?     @default(PENDING)
-  postingStatus      PostingStatus       @default(PENDING) @map("posting_status")
-  journalEntryId     String?             @unique @map("journal_entry_id")
-  utilityBillId      String?             @map("utility_bill_id")
-  createdAt          DateTime?           @default(now()) @db.DateTime(0)
-  updatedAt          DateTime?           @default(now()) @db.DateTime(0)
+  totalAmount        Float                @map("amount")
+  amountPaid         Float                @default(0) @map("amount_paid")
+  balance            Float                @default(0)
+
+  dueDate            DateTime             @db.DateTime(0)
+  status             invoice_status?      @default(PENDING)
+  postingStatus      PostingStatus        @default(PENDING) @map("posting_status")
+  journalEntryId     String?              @unique @map("journal_entry_id")
+  utilityBillId      String?              @map("utility_bill_id")
+
+  createdAt          DateTime?            @default(now()) @db.DateTime(0)
+  updatedAt          DateTime?            @default(now()) @updatedAt @db.DateTime(0)
+
+  // Relations
   InvoiceItem        InvoiceItem[]
   maintenanceRequest MaintenanceRequest?
-  journalEntry       JournalEntry?       @relation(fields: [journalEntryId], references: [id])
-  Lease              Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  utilityBill        UtilityBill?        @relation(fields: [utilityBillId], references: [id])
+  journalEntry       JournalEntry?        @relation(fields: [journalEntryId], references: [id])
+  Lease              Lease                @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  utilityBill        UtilityBill?         @relation(fields: [utilityBillId], references: [id])
+
   payments           Payment[]
   receipts           Receipt[]
   utilityAllocation  UtilityAllocation?
 
+  // NEW accounting relations
+  financialEntity    FinancialEntity?     @relation(fields: [financialEntityId], references: [id])
+  arAccount          ChartAccount?        @relation("InvoiceArAccount", fields: [arAccountId], references: [id])
+  revenueAccount     ChartAccount?        @relation("InvoiceRevenueAccount", fields: [revenueAccountId], references: [id])
+
   @@index([leaseId], map: "invoice_lease_id_fkey")
   @@index([utilityBillId], map: "invoice_utility_bill_id_fkey")
+  @@index([financialEntityId], map: "invoice_financial_entity_id_fkey")
+  @@index([arAccountId], map: "invoice_ar_account_id_fkey")
+  @@index([revenueAccountId], map: "invoice_revenue_account_id_fkey")
   @@map("invoice")
 }
 
@@ -688,7 +763,8 @@ model InvoiceItem {
   description String    @db.VarChar(255)
   amount      Float
   createdAt   DateTime? @default(now()) @db.DateTime(0)
-  updatedAt   DateTime? @default(now()) @db.DateTime(0)
+  updatedAt   DateTime? @default(now()) @updatedAt @db.DateTime(0)
+
   invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "InvoiceItem_ibfk_1")
 
   @@index([invoiceId], map: "invoiceId")
@@ -1925,11 +2001,6 @@ enum organization_users_role {
   ALL
 }
 
-enum OtpType {
-  TWO_FACTOR
-  PHONE_VERIFICATION
-}
-
 enum SidebarItem_role {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -1959,6 +2030,7 @@ enum ListingAction_enum {
 enum organizations_region {
   USA
   KEN
+  GLOBAL
 }
 
 enum payment_gateway {
