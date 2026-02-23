@@ -11,18 +11,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: rentflow360_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+          MYSQL_ROOT_PASSWORD: rootpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
     env:
       CI: "true"
       NODE_ENV: "test"
-      #  CRITICAL: Pointing to Remote IP, but specifically the TEST database
-      DATABASE_URL: 'mysql://rentflow_dev:DevPassword123!@184.168.21.114:3306/rentflow360_test?connect_timeout=60'
+      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60"
 
-      # Using Localhost for the app execution within the CI runner
       NEXTAUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_API_URL: "http://localhost:3000"
       NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
 
-      # Secrets
       JWT_SECRET: "ci-jwt-secret-secure-enough"
       JWT_REFRESH_SECRET: "ci-refresh-secret-secure-enough"
       NEXTAUTH_SECRET: "ci-nextauth-secret-secure-enough"
@@ -42,125 +55,64 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ✅ NEW: Check connectivity to Remote VPS (184...) instead of localhost
-      - name: Check Remote Database Connectivity
+      - name: Wait for MySQL
         shell: bash
         run: |
-          for i in {1..10}; do
-            # nc -z checks if port is open
-            if nc -z 184.168.21.114 3306; then
-              echo "Remote MySQL is reachable."
+          for i in {1..30}; do
+            if nc -z 127.0.0.1 3306; then
+              echo "MySQL is reachable."
               exit 0
             fi
-            echo "Waiting for Remote MySQL... ($i/10)"
+            echo "Waiting for MySQL... ($i/30)"
             sleep 2
           done
-          echo "Could not connect to Remote MySQL."
+          echo "MySQL not reachable."
           exit 1
 
       - name: Create .env.test
         run: |
           cat > .env.test <<EOF
           NODE_ENV=test
-          DATABASE_URL="${DATABASE_URL}"
-          NEXTAUTH_URL="${NEXTAUTH_URL}"
-          NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}"
-          NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL}"
-          JWT_SECRET="${JWT_SECRET}"
-          NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
-          AUTH_SECRET="${AUTH_SECRET}"
-          NEXTAUTH_TRUST_HOST="true"
+          DATABASE_URL=${DATABASE_URL}
+          NEXTAUTH_URL=${NEXTAUTH_URL}
+          NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+          NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+          JWT_SECRET=${JWT_SECRET}
+          JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+          NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+          AUTH_SECRET=${AUTH_SECRET}
+          NEXTAUTH_TRUST_HOST=${NEXTAUTH_TRUST_HOST}
           EOF
-          # Copy to .env so standard commands pick it up if they forget to use dotenv
           cp .env.test .env
 
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      #  DANGER ZONE: This wipes the remote rentflow360_test DB
-      - name: Reset & Seed Remote Test DB
+      - name: Reset schema and seed E2E DB
         run: |
-          echo "Syncing Remote Test DB to current Schema..."
-          # ✅ Use db push. It ignores migration history and forces the DB 
-          # to match your current schema.prisma file exactly.
-          # ✅ FIX: Added --force-reset to drop existing tables before creation
+          echo "Syncing schema..."
           npx prisma db push --force-reset --accept-data-loss
-
-          echo "Seeding E2E Data..."
-          # Ensure you are running the specific E2E seed (corrected path)
+          echo "Seeding..."
           npx tsx prisma/seed.e2e.ts
-          
-          echo "Debug: Verifying seeded data..."
-          npx tsx -e "
-          import { PrismaClient } from '@prisma/client';
-          const prisma = new PrismaClient();
-
-          (async () => {
-            try {
-              console.log('=== CI DEBUG AFTER SEEDING ===');
-              console.log('Users:', await prisma.user.count());
-              console.log('Properties:', await prisma.property.count());
-              console.log('Leases:', await prisma.lease.count());
-
-              const leases = await prisma.lease.findMany({
-                include: {
-                  property: {
-                    include: { manager: { include: { user: true } } }
-                  },
-                  tenant: true,
-                  unit: true
-                }
-              });
-
-              leases.forEach((lease, i) => {
-                console.log(\`Lease \${i}: \${lease.id}\`);
-                console.log(\`  Property Manager User ID: \${lease.property?.manager?.user?.id}\`);
-                console.log(\`  Tenant: \${lease.tenant?.email}\`);
-                console.log(\`  Unit: \${lease.unit?.unitNumber}\`);
-              });
-
-              // Verify manager user is email verified
-              const manager = await prisma.user.findUnique({
-                where: { email: 'manager@test.com' }
-              });
-              console.log(\`Manager emailVerified: \${manager?.emailVerified}\`);
-              
-            } catch (err) {
-              console.error('Debug script error:', err);
-              process.exit(1);
-            } finally {
-              await prisma.\$disconnect();
-            }
-          })();
-          "
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Debug DB Content
-        shell: bash
-        run: |
-          echo "Checking if manager@test.com exists in DB..."
-          npx tsx -e "
-            import { PrismaClient } from '@prisma/client';
-            const prisma = new PrismaClient();
-            async function main() {
-              const count = await prisma.user.count();
-              const manager = await prisma.user.findUnique({ where: { email: 'manager@test.com' } });
-              console.log('Total Users:', count);
-              console.log('Manager User:', manager ? 'FOUND' : 'MISSING');
-              if (manager) console.log('Manager Verified:', manager.emailVerified);
-            }
-            main().finally(() => prisma.\$disconnect());
-          "
-
       - name: Run Playwright tests
         run: npx playwright test --project=chromium --reporter=line
 
-      - name: Upload Report
+      - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 7
+
+      - name: Upload traces/screenshots/videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
           retention-days: 7
