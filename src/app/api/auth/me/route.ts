@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { cookies } from 'next/headers';
 
 import { verifyAccessToken } from '@/lib/auth';
 import { prisma } from '@/lib/db';
@@ -17,21 +18,12 @@ function getBearerToken(request: Request): string | null {
   return authHeader.slice(7).trim() || null;
 }
 
-function getCookieToken(request: Request, cookieName = 'token'): string | null {
-  const cookieHeader = request.headers.get('cookie');
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(';').map((c) => c.trim());
-  const tokenCookie = cookies.find((c) => c.startsWith(`${cookieName}=`));
-  if (!tokenCookie) return null;
-
-  return decodeURIComponent(tokenCookie.slice(cookieName.length + 1));
-}
-
 // Support cookie-based auth first (your current login sets httpOnly cookies)
 // and Bearer token fallback for mobile/API clients.
-function getAccessTokenFromRequest(request: Request): string | null {
-  return getCookieToken(request, 'token') ?? getBearerToken(request);
+async function getAccessTokenFromRequest(request: Request): Promise<string | null> {
+  const cookieStore = await cookies();
+  const cookieToken = cookieStore.get('token')?.value ?? null;
+  return cookieToken ?? getBearerToken(request);
 }
 
 function selectPrimaryOrgUser(
@@ -59,7 +51,7 @@ function forbidden(message = 'Forbidden') {
 
 export async function GET(request: Request) {
   try {
-    const token = getAccessTokenFromRequest(request);
+    const token = await getAccessTokenFromRequest(request);
 
     if (!token) {
       return unauthorized('No access token provided');
@@ -116,16 +108,13 @@ export async function GET(request: Request) {
       }))
     );
 
-    // If your app requires organization membership for all authenticated users
     if (!primaryOrgUser) {
       return forbidden('No organization assigned');
     }
 
-    // Schema-aware booleans (DateTime? -> boolean)
     const isEmailVerified = user.emailVerified !== null;
     const isPhoneVerified = user.phoneVerified !== null;
 
-    // Admin override based on configured platform admin email
     let role = primaryOrgUser.role;
     const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     if (adminEmail && user.email.toLowerCase() === adminEmail) {
@@ -163,7 +152,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const token = getAccessTokenFromRequest(request);
+    const token = await getAccessTokenFromRequest(request);
 
     if (!token) {
       return unauthorized('No access token provided');
@@ -216,7 +205,6 @@ export async function PATCH(request: Request) {
       );
     }
 
-    // Optional: enforce active user before update
     const existingUser = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, status: true },
