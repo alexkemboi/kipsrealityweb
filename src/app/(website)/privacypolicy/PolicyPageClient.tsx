@@ -1,238 +1,423 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { ChevronDown, ChevronUp, FileText, Search } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, FileText, Link as LinkIcon, Search, X } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const Markdown = dynamic(() => import("@uiw/react-markdown-preview"), { ssr: false });
 
 export interface Section {
-    id: number;
-    title: string;
-    intro?: string;
-    content?: string;
+  id: number;
+  title: string;
+  intro?: string;
+  content?: string;
 }
 
 export interface Policy {
-    id: number;
-    title: string;
-    companyName: string;
-    contactEmail: string;
-    privacyEmail: string;
-    website?: string;
-    mailingAddress?: string;
-    responseTime?: string;
-    inactiveAccountThreshold?: string;
-    createdAt: string;
-    updatedAt: string;
-    sections: Section[];
+  id: number;
+  title: string;
+  companyName: string;
+  contactEmail: string;
+  privacyEmail: string;
+  website?: string;
+  mailingAddress?: string;
+  responseTime?: string;
+  inactiveAccountThreshold?: string;
+  createdAt: string;
+  updatedAt: string;
+  sections: Section[];
 }
 
 interface PolicyPageClientProps {
-    policy: Policy | null;
+  policy: Policy | null;
+}
+
+type ExpandedMap = Record<string, boolean>;
+
+function cn(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function PolicyPageClient({ policy }: PolicyPageClientProps) {
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-    const [searchTerm, setSearchTerm] = useState("");
+  const [expandedSections, setExpandedSections] = useState<ExpandedMap>({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [copiedSectionId, setCopiedSectionId] = useState<number | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
 
-    if (!policy) {
-        return (
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-12">
-                <div className="text-center py-16">
-                    <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No privacy policy found.</p>
-                </div>
+  if (!policy) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+          <div className="rounded-2xl border bg-card p-10 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border bg-background text-muted-foreground">
+              <FileText className="h-6 w-6" />
             </div>
-        );
-    }
+            <p className="text-muted-foreground">No privacy policy found.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    const toggleSection = (sectionId: number) => {
-        const key = `${sectionId}`;
-        setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  const replacePlaceholders = (text: string) =>
+    (text || "")
+      .replace(/{companyName}/g, policy.companyName)
+      .replace(/{contactEmail}/g, policy.contactEmail)
+      .replace(/{privacyEmail}/g, policy.privacyEmail)
+      .replace(/{responseTime}/g, policy.responseTime || "")
+      .replace(/{inactiveAccountThreshold}/g, policy.inactiveAccountThreshold || "");
+
+  const sectionsWithIndex = useMemo(
+    () => policy.sections.map((s, idx) => ({ ...s, originalIndex: idx })),
+    [policy.sections]
+  );
+
+  const filteredSections = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sectionsWithIndex;
+
+    return sectionsWithIndex.filter((s) => {
+      const haystack = [
+        replacePlaceholders(s.title),
+        replacePlaceholders(s.intro || ""),
+        replacePlaceholders(s.content || ""),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  }, [searchTerm, sectionsWithIndex]);
+
+  useEffect(() => {
+    const term = searchTerm.trim();
+    if (!term) return;
+
+    setExpandedSections((prev) => {
+      const next: ExpandedMap = { ...prev };
+      filteredSections.forEach((s) => {
+        next[String(s.id)] = true;
+      });
+      return next;
+    });
+  }, [searchTerm, filteredSections]);
+
+  useEffect(() => {
+    const expandFromHash = () => {
+      const hash = window.location.hash;
+      if (!hash.startsWith("#section-")) return;
+      const id = Number(hash.replace("#section-", ""));
+      if (!Number.isFinite(id)) return;
+
+      setExpandedSections((prev) => ({ ...prev, [String(id)]: true }));
+
+      setTimeout(() => {
+        const el = document.getElementById(`section-${id}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
     };
 
-    const replacePlaceholders = (text: string) =>
-        text
-            ?.replace(/{companyName}/g, policy.companyName)
-            .replace(/{contactEmail}/g, policy.contactEmail)
-            .replace(/{privacyEmail}/g, policy.privacyEmail)
-            .replace(/{responseTime}/g, policy.responseTime || "")
-            .replace(/{inactiveAccountThreshold}/g, policy.inactiveAccountThreshold || "") || "";
+    expandFromHash();
+    window.addEventListener("hashchange", expandFromHash);
+    return () => window.removeEventListener("hashchange", expandFromHash);
+  }, []);
 
-    const filteredSections = useMemo(() => {
-        const term = searchTerm.trim().toLowerCase();
-        // Map sections with their original index before filtering
-        const sectionsWithIndex = policy.sections.map((s, idx) => ({ ...s, originalIndex: idx }));
-        if (!term) return sectionsWithIndex;
-        // Filter by title only for more intuitive search results
-        return sectionsWithIndex.filter((s) => s.title.toLowerCase().includes(term));
-    }, [searchTerm, policy.sections]);
+  const expandAll = () => {
+    const next: ExpandedMap = {};
+    filteredSections.forEach((s) => (next[String(s.id)] = true));
+    setExpandedSections(next);
+  };
 
-    return (
-        <div className="min-h-screen bg-gray-50/50 pb-20">
-            {/* Hero Header */}
-            <div className="bg-white border-b border-gray-100">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-                    <div className="max-w-3xl">
-                        <div className="flex items-center gap-2 mb-6">
-                            <span className="px-3 py-1 rounded-full bg-blue-50 text-[#003b73] text-xs font-semibold tracking-wide uppercase">
-                                Legal
-                            </span>
-                            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold tracking-wide uppercase">
-                                Privacy
-                            </span>
-                        </div>
-                        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
-                            {policy.title}
-                        </h1>
+  const collapseAll = () => setExpandedSections({});
 
-                        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1.5 rounded-full bg-blue-50 text-[#003b73]">
-                                    <FileText className="w-4 h-4" />
-                                </div>
-                                <span>Last updated: <span className="font-semibold text-gray-900">
-                                    {new Date(policy.updatedAt).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </span></span>
-                            </div>
-                            <div className="w-1 h-1 rounded-full bg-gray-300 hidden sm:block" />
-                            <div className="flex items-center gap-2">
-                                <span>Contact: </span>
-                                <a href={`mailto:${policy.contactEmail}`} className="text-[#003b73] hover:text-[#002952] font-medium transition-colors">
-                                    {policy.contactEmail}
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  const toggleSection = (sectionId: number) => {
+    const key = String(sectionId);
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const copySectionLink = async (sectionId: number) => {
+    const url = `${window.location.origin}${window.location.pathname}#section-${sectionId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedSectionId(sectionId);
+      window.history.replaceState(null, "", `#section-${sectionId}`);
+      setTimeout(() => setCopiedSectionId((prev) => (prev === sectionId ? null : prev)), 1500);
+    } catch (e) {
+      console.error("Failed to copy link", e);
+    }
+  };
+
+  const tocSections = filteredSections.length ? filteredSections : sectionsWithIndex;
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <section className="relative w-full overflow-hidden border-b bg-background">
+        <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-950 to-background" />
+        <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:36px_36px]" />
+
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+          <div className="max-w-3xl">
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-zinc-200 backdrop-blur">
+                Legal
+              </span>
+              <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide uppercase text-zinc-200 backdrop-blur">
+                Privacy
+              </span>
             </div>
 
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-                {/* Search & TOC Container */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
-                    <div className="p-8">
-                        {/* Search Bar */}
-                        <div className="mb-10 relative max-w-2xl">
-                            <div className="relative group">
-                                <input
-                                    type="text"
-                                    placeholder="Search sections by title..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-6 pr-14 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#003b73]/20 focus:border-[#003b73] text-gray-900 transition-all placeholder:text-gray-400 font-medium"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const input = document.querySelector('input[placeholder="Search sections by title..."]') as HTMLInputElement;
-                                        input?.focus();
-                                    }}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg text-gray-400 group-focus-within:text-[#003b73] hover:bg-white hover:shadow-sm transition-all duration-200 cursor-pointer"
-                                    aria-label="Search"
-                                >
-                                    <Search className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+              {policy.title}
+            </h1>
 
-                        {/* Table of Contents */}
-                        {policy.sections.length > 0 && (
-                            <div>
-                                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                                    <span className="w-8 h-[1px] bg-gray-200"></span>
-                                    Table of Contents
-                                    <span className="flex-1 h-[1px] bg-gray-200"></span>
-                                </h2>
-                                <nav className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {policy.sections.map((section, index) => (
-                                        <a
-                                            key={section.id}
-                                            href={`#section-${section.id}`}
-                                            className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-all duration-200"
-                                        >
-                                            <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-[#003b73] text-xs font-bold mt-0.5 group-hover:bg-[#003b73] group-hover:text-white transition-colors">
-                                                {index + 1}
-                                            </span>
-                                            <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors leading-tight">
-                                                {section.title}
-                                            </span>
-                                        </a>
-                                    ))}
-                                </nav>
-                            </div>
-                        )}
-                    </div>
-                </div>
+            <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-zinc-300">
+              <div className="inline-flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5">
+                  <FileText className="h-4 w-4 text-zinc-200" />
+                </span>
+                <span>
+                  Last updated:{" "}
+                  <span className="font-semibold text-white">{formatDate(policy.updatedAt)}</span>
+                </span>
+              </div>
 
-                {/* Sections List */}
-                <div className="space-y-6">
-                    {filteredSections.map((section, index) => {
-                        const key = `${section.id}`;
-                        const isExpanded = expandedSections[key];
+              <span className="hidden sm:block h-1 w-1 rounded-full bg-zinc-500" />
 
-                        return (
-                            <div
-                                key={section.id}
-                                id={`section-${section.id}`}
-                                className="group bg-white rounded-xl border border-gray-200 hover:border-blue-100 hover:shadow-md transition-all duration-300 scroll-mt-32 overflow-hidden"
-                            >
-                                <button
-                                    onClick={() => toggleSection(section.id)}
-                                    className="w-full px-6 py-5 flex justify-between items-start text-left bg-white"
-                                >
-                                    <div className="flex-1 flex gap-5">
-                                        <span className="hidden sm:flex flex-shrink-0 items-center justify-center w-10 h-10 rounded-xl bg-gray-50 text-[#003b73] text-lg font-bold group-hover:bg-[#003b73] group-hover:text-white transition-all duration-300">
-                                            {section.originalIndex + 1}
-                                        </span>
-                                        <div>
-                                            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#003b73] transition-colors">
-                                                <span className="sm:hidden mr-2 text-[#003b73]">{section.originalIndex + 1}.</span>
-                                                {replacePlaceholders(section.title)}
-                                            </h3>
-                                            {section.intro && (
-                                                <p className="text-gray-500 text-sm leading-relaxed max-w-3xl">
-                                                    {replacePlaceholders(section.intro)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className={`flex-shrink-0 ml-4 p-2 rounded-full transition-all duration-300 ${isExpanded ? 'bg-blue-50 rotate-180' : 'bg-gray-50 group-hover:bg-blue-50'}`}>
-                                        <ChevronDown className={`w-5 h-5 ${isExpanded ? 'text-[#003b73]' : 'text-gray-400 group-hover:text-[#003b73]'}`} />
-                                    </div>
-                                </button>
-
-                                <div
-                                    className={`transition-all duration-300 ease-in-out px-6 ${isExpanded ? 'max-h-[5000px] opacity-100 pb-8' : 'max-h-0 opacity-0 overflow-hidden'
-                                        }`}
-                                >
-                                    <div className="pl-0 sm:pl-[60px] pt-4 border-t border-gray-100">
-                                        <div data-color-mode="light" className="prose prose-blue prose-lg max-w-none text-gray-600">
-                                            <Markdown source={replacePlaceholders(section.content || "")} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {filteredSections.length === 0 && (
-                    <div className="text-center py-24 bg-white rounded-2xl border border-gray-200 border-dashed">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 mb-4">
-                            <Search className="w-8 h-8 text-gray-300" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">No results found</h3>
-                        <p className="text-gray-500">
-                            We couldn't find any sections matching "{searchTerm}"
-                        </p>
-                    </div>
-                )}
+              <div className="inline-flex items-center gap-2">
+                <span>Contact:</span>
+                <a
+                  href={`mailto:${policy.contactEmail}`}
+                  className="font-medium text-white underline underline-offset-4 decoration-white/30 hover:decoration-white"
+                >
+                  {policy.contactEmail}
+                </a>
+              </div>
             </div>
+          </div>
         </div>
-    );
+      </section>
+
+      <div className="relative z-10 mx-auto -mt-8 max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-10 overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="space-y-8 p-6 md:p-8">
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold">Find a section</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Search titles and content ({filteredSections.length} result
+                    {filteredSections.length === 1 ? "" : "s"})
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={expandAll}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    Expand all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={collapseAll}
+                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    Collapse all
+                  </button>
+                </div>
+              </div>
+
+              <div className="group flex items-center rounded-xl border bg-background px-4 py-3 transition focus-within:ring-2 focus-within:ring-primary/40">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  ref={searchRef}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search sections..."
+                  className="ml-3 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  aria-label="Search policy sections"
+                />
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchTerm("");
+                      searchRef.current?.focus();
+                    }}
+                    className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-lg border transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    aria-label="Clear search"
+                    title="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            {tocSections.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Table of Contents
+                  </p>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+
+                <nav className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {tocSections.map((section) => (
+                    <a
+                      key={section.id}
+                      href={`#section-${section.id}`}
+                      className="group flex items-start gap-3 rounded-xl border bg-background/40 p-3 transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border bg-background text-xs font-bold text-primary">
+                        {section.originalIndex + 1}
+                      </span>
+                      <span className="text-sm font-medium leading-tight text-foreground/80 group-hover:text-foreground">
+                        {replacePlaceholders(section.title)}
+                      </span>
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {filteredSections.map((section) => {
+            const key = String(section.id);
+            const isExpanded = Boolean(expandedSections[key]);
+            const isCopied = copiedSectionId === section.id;
+
+            return (
+              <article
+                key={section.id}
+                id={`section-${section.id}`}
+                className="group scroll-mt-28 overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:shadow-md"
+              >
+                <div className="flex items-start gap-3 px-5 py-5 md:px-6">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    className="flex-1 text-left"
+                  >
+                    <div className="flex items-start gap-4">
+                      <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-background font-bold text-primary sm:flex">
+                        {section.originalIndex + 1}
+                      </span>
+
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-semibold tracking-tight text-foreground md:text-xl">
+                          <span className="mr-2 font-bold text-primary sm:hidden">
+                            {section.originalIndex + 1}.
+                          </span>
+                          {replacePlaceholders(section.title)}
+                        </h3>
+
+                        {section.intro ? (
+                          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+                            {replacePlaceholders(section.intro)}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => copySectionLink(section.id)}
+                      className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-background transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                        isCopied && "border-primary/40 bg-primary/5 text-primary"
+                      )}
+                      aria-label="Copy section link"
+                      title={isCopied ? "Copied!" : "Copy section link"}
+                    >
+                      {isCopied ? <Check className="h-4 w-4" /> : <LinkIcon className="h-4 w-4" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.id)}
+                      className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-lg border bg-background transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                        isExpanded && "bg-accent"
+                      )}
+                      aria-label={isExpanded ? "Collapse section" : "Expand section"}
+                      title={isExpanded ? "Collapse" : "Expand"}
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-200",
+                          isExpanded && "rotate-180"
+                        )}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className={cn(
+                    "px-5 md:px-6 transition-all duration-300 ease-in-out",
+                    isExpanded
+                      ? "max-h-[8000px] opacity-100 pb-6"
+                      : "max-h-0 opacity-0 overflow-hidden"
+                  )}
+                >
+                  <div className="border-t pt-5">
+                    <div
+                      data-color-mode="light"
+                      className="prose prose-zinc max-w-none dark:prose-invert"
+                    >
+                      <Markdown source={replacePlaceholders(section.content || "")} />
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {filteredSections.length === 0 && (
+          <div className="mt-10 rounded-2xl border bg-card p-10 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border bg-background text-muted-foreground">
+              <Search className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold">No results found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We couldn’t find any sections matching “{searchTerm}”.
+            </p>
+            <div className="mt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchTerm("");
+                  searchRef.current?.focus();
+                }}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              >
+                Clear search
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="h-10" />
+      </div>
+    </div>
+  );
 }
