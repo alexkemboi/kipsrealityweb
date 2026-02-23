@@ -41,7 +41,6 @@ model Organization {
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
-
 model User {
   id                     String                   @id @default(uuid())
   email                  String                   @unique
@@ -147,6 +146,26 @@ model Otp {
   @@map("otps")
 }
 
+model ChartAccount {
+  id String @id @default(uuid())
+
+  // your existing scalar fields...
+  // code
+  // name
+  // accountType
+  // etc.
+
+  // your existing relations...
+  // journalLines JournalLine[]
+  // ...
+
+  // NEW: invoice account relations
+  invoicesAsArAccount      Invoice[] @relation("InvoiceArAccount")
+  invoicesAsRevenueAccount Invoice[] @relation("InvoiceRevenueAccount")
+
+  @@map("chart_accounts") // keep your existing @@map / indexes below
+}
+
 model Vendor {
   id                 String               @id @default(uuid())
   organizationId     String               @map("organization_id")
@@ -200,18 +219,21 @@ model PasswordResetToken {
 }
 
 model FinancialEntity {
-  id             String         @id @default(uuid())
-  organizationId String         @map("organization_id")
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
   name           String
-  taxIdEncrypted String?        @map("tax_id_encrypted")
-  organization   Organization   @relation(fields: [organizationId], references: [id])
+  taxIdEncrypted String?      @map("tax_id_encrypted")
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
   accounts       Account[]
   journals       JournalEntry[]
+
+  // NEW: relation to invoices
+  invoices       Invoice[]
 
   @@index([organizationId], map: "financial_entities_organization_id_fkey")
   @@map("financial_entities")
 }
-
 model Account {
   id           String          @id @default(uuid())
   entityId     String          @map("entity_id")
@@ -665,30 +687,47 @@ model Lease {
 }
 
 model Invoice {
-  id                 String              @id @default(uuid())
-  leaseId            String              @map("lease_id")
+  id                 String               @id @default(uuid())
+  leaseId            String               @map("lease_id")
+  financialEntityId  String?              @map("financial_entity_id")
+  arAccountId        String?              @map("ar_account_id")
+  revenueAccountId   String?              @map("revenue_account_id")
+
   type               invoice_type
-  totalAmount        Float               @map("amount")
-  amountPaid         Float               @default(0) @map("amount_paid")
-  balance            Float               @default(0)
-  dueDate            DateTime            @db.DateTime(0)
-  status             invoice_status?     @default(PENDING)
-  postingStatus      PostingStatus       @default(PENDING) @map("posting_status")
-  journalEntryId     String?             @unique @map("journal_entry_id")
-  utilityBillId      String?             @map("utility_bill_id")
-  createdAt          DateTime?           @default(now()) @db.DateTime(0)
-  updatedAt          DateTime?           @default(now()) @db.DateTime(0)
+  totalAmount        Float                @map("amount")
+  amountPaid         Float                @default(0) @map("amount_paid")
+  balance            Float                @default(0)
+
+  dueDate            DateTime             @db.DateTime(0)
+  status             invoice_status?      @default(PENDING)
+  postingStatus      PostingStatus        @default(PENDING) @map("posting_status")
+  journalEntryId     String?              @unique @map("journal_entry_id")
+  utilityBillId      String?              @map("utility_bill_id")
+
+  createdAt          DateTime?            @default(now()) @db.DateTime(0)
+  updatedAt          DateTime?            @default(now()) @updatedAt @db.DateTime(0)
+
+  // Relations
   InvoiceItem        InvoiceItem[]
   maintenanceRequest MaintenanceRequest?
-  journalEntry       JournalEntry?       @relation(fields: [journalEntryId], references: [id])
-  Lease              Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  utilityBill        UtilityBill?        @relation(fields: [utilityBillId], references: [id])
+  journalEntry       JournalEntry?        @relation(fields: [journalEntryId], references: [id])
+  Lease              Lease                @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  utilityBill        UtilityBill?         @relation(fields: [utilityBillId], references: [id])
+
   payments           Payment[]
   receipts           Receipt[]
   utilityAllocation  UtilityAllocation?
 
+  // NEW accounting relations
+  financialEntity    FinancialEntity?     @relation(fields: [financialEntityId], references: [id])
+  arAccount          ChartAccount?        @relation("InvoiceArAccount", fields: [arAccountId], references: [id])
+  revenueAccount     ChartAccount?        @relation("InvoiceRevenueAccount", fields: [revenueAccountId], references: [id])
+
   @@index([leaseId], map: "invoice_lease_id_fkey")
   @@index([utilityBillId], map: "invoice_utility_bill_id_fkey")
+  @@index([financialEntityId], map: "invoice_financial_entity_id_fkey")
+  @@index([arAccountId], map: "invoice_ar_account_id_fkey")
+  @@index([revenueAccountId], map: "invoice_revenue_account_id_fkey")
   @@map("invoice")
 }
 
@@ -698,7 +737,8 @@ model InvoiceItem {
   description String    @db.VarChar(255)
   amount      Float
   createdAt   DateTime? @default(now()) @db.DateTime(0)
-  updatedAt   DateTime? @default(now()) @db.DateTime(0)
+  updatedAt   DateTime? @default(now()) @updatedAt @db.DateTime(0)
+
   invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "InvoiceItem_ibfk_1")
 
   @@index([invoiceId], map: "invoiceId")
@@ -1815,6 +1855,7 @@ enum ListingAction_enum {
 enum organizations_region {
   USA
   KEN
+  GLOBAL
 }
 
 enum payment_gateway {
