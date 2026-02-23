@@ -104,9 +104,9 @@ model TenantPaymentMethod {
 }
 
 model RefreshSession {
-  id            String   @id @default(cuid())       // sessionId used in refresh token
+  id            String   @id @default(cuid())
   userId        String
-  tokenHash     String                                // hash of CURRENT valid refresh token
+  tokenHash     String
   expiresAt     DateTime
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -118,7 +118,7 @@ model RefreshSession {
   revokedAt     DateTime?
   revokeReason  String?
 
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation("UserRefreshSessions", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
