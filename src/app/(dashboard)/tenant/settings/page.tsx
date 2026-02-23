@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,8 +17,23 @@ import { showCustomToast, ToastContainer } from "@/components/ui/custom-toast";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2, Shield, ShieldCheck, Phone, Lock } from "lucide-react";
 
+const OTP_LENGTH = 6;
+const E164_REGEX = /^\+[1-9]\d{7,14}$/;
+
+type ApiErrorPayload = { error?: string; message?: string };
+
+async function parseApiError(response: Response, fallback: string) {
+  try {
+    const data = (await response.json()) as ApiErrorPayload;
+    return data.error || data.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -22,83 +43,142 @@ export default function SettingsPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
+  // Track which exact number is verified (prevents “verified” staying true after edits)
+  const [verifiedPhoneNumber, setVerifiedPhoneNumber] = useState<string | null>(null);
+
   // OTP Verification State
   const [showVerificationUI, setShowVerificationUI] = useState(false);
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+
+  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
-    if (user) {
-      setPhoneNumber(user.phone || "");
-      setIs2FAEnabled(user.twoFactorEnabled || false);
-      setIsPhoneVerified(!!user.phoneVerified);
-    }
+    if (!user) return;
+
+    const serverPhone = user.phone || "";
+    const phoneVerified = Boolean(user.phoneVerified);
+
+    setPhoneNumber(serverPhone);
+    setIs2FAEnabled(Boolean(user.twoFactorEnabled));
+    setIsPhoneVerified(phoneVerified);
+    setVerifiedPhoneNumber(phoneVerified && serverPhone ? serverPhone : null);
   }, [user]);
 
-  // Handle OTP digit change
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
-    if (!/^\d*$/.test(value)) return;
+  const trimmedPhone = useMemo(() => phoneNumber.trim(), [phoneNumber]);
 
+  const resetOtpState = () => {
+    setOtpDigits(Array(OTP_LENGTH).fill(""));
+  };
+
+  const focusOtpInput = (index: number) => {
+    otpRefs.current[index]?.focus();
+  };
+
+  // Handle OTP digit change
+  const handleOtpChange = (index: number, rawValue: string) => {
+    const value = rawValue.replace(/\D/g, "").slice(-1); // keep last numeric char only
     const newDigits = [...otpDigits];
     newDigits[index] = value;
     setOtpDigits(newDigits);
 
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
+    if (value && index < OTP_LENGTH - 1) {
+      focusOtpInput(index + 1);
     }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, OTP_LENGTH);
+    if (!pasted) return;
+
+    e.preventDefault();
+
+    const nextDigits = Array(OTP_LENGTH).fill("");
+    pasted.split("").forEach((char, idx) => {
+      nextDigits[idx] = char;
+    });
+
+    setOtpDigits(nextDigits);
+
+    const nextFocusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+    focusOtpInput(nextFocusIndex);
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
+      focusOtpInput(index - 1);
+    }
+    if (e.key === "ArrowLeft" && index > 0) {
+      focusOtpInput(index - 1);
+    }
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      focusOtpInput(index + 1);
+    }
+  };
+
+  const handlePhoneInputChange = (value: string) => {
+    setPhoneNumber(value);
+
+    // If user edits away from verified number, mark as unverified
+    const normalized = value.trim();
+    if (!verifiedPhoneNumber || normalized !== verifiedPhoneNumber) {
+      setIsPhoneVerified(false);
+    } else {
+      setIsPhoneVerified(true);
     }
   };
 
   // Handle sending OTP for phone verification
   const handleSendVerificationOtp = async () => {
-    if (!phoneNumber) {
+    if (!trimmedPhone) {
       showCustomToast("Please enter a phone number first", "error");
       return;
     }
 
-    if (!phoneNumber.startsWith("+")) {
-      showCustomToast("Phone number must be in E.164 format (e.g., +254712345678)", "error");
+    if (!E164_REGEX.test(trimmedPhone)) {
+      showCustomToast(
+        "Phone number must be in valid E.164 format (e.g., +254712345678)",
+        "error"
+      );
       return;
     }
 
     setIsSendingOtp(true);
     try {
-      const updateResponse = await fetch('/api/auth/phone/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber })
+      // Save / update phone first
+      const updateResponse = await fetch("/api/auth/phone/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmedPhone }),
       });
 
       if (!updateResponse.ok) {
-        const error = await updateResponse.json();
-        showCustomToast(error.error || "Failed to update phone number", "error");
-        setIsSendingOtp(false);
+        const message = await parseApiError(updateResponse, "Failed to update phone number");
+        showCustomToast(message, "error");
         return;
       }
 
-      const sendResponse = await fetch('/api/auth/phone/send-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber })
+      // Send verification OTP
+      const sendResponse = await fetch("/api/auth/phone/send-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmedPhone }),
       });
 
-      if (sendResponse.ok) {
-        showCustomToast("Verification code sent to your phone", "success");
-        setShowVerificationUI(true);
-      } else {
-        const error = await sendResponse.json();
-        showCustomToast(error.error || "Failed to send verification code", "error");
+      if (!sendResponse.ok) {
+        const message = await parseApiError(sendResponse, "Failed to send verification code");
+        showCustomToast(message, "error");
+        return;
       }
+
+      resetOtpState();
+      setShowVerificationUI(true);
+      showCustomToast("Verification code sent to your phone", "success");
+
+      // focus first OTP after UI shows
+      setTimeout(() => focusOtpInput(0), 50);
     } catch (error) {
-      showCustomToast("An error occurred", "error");
+      console.error("Send OTP error:", error);
+      showCustomToast("An error occurred while sending verification code", "error");
     } finally {
       setIsSendingOtp(false);
     }
@@ -107,30 +187,38 @@ export default function SettingsPage() {
   // Handle OTP verification
   const handleVerifyOtp = async () => {
     const fullCode = otpDigits.join("");
-    if (fullCode.length !== 6) {
+    if (fullCode.length !== OTP_LENGTH) {
       showCustomToast("Please enter a valid 6-digit code", "error");
+      return;
+    }
+
+    if (!trimmedPhone) {
+      showCustomToast("Phone number is missing", "error");
       return;
     }
 
     setIsVerifying(true);
     try {
-      const response = await fetch('/api/auth/phone/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber, code: fullCode })
+      const response = await fetch("/api/auth/phone/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmedPhone, code: fullCode }),
       });
 
-      if (response.ok) {
-        showCustomToast("Phone Number Verified Successfully", "success");
-        setIsPhoneVerified(true);
-        setShowVerificationUI(false);
-        setOtpDigits(["", "", "", "", "", ""]);
-        await refreshUser();
-      } else {
-        const error = await response.json();
-        showCustomToast(error.error || "Invalid or expired code", "error");
+      if (!response.ok) {
+        const message = await parseApiError(response, "Invalid or expired code");
+        showCustomToast(message, "error");
+        return;
       }
+
+      showCustomToast("Phone number verified successfully", "success");
+      setIsPhoneVerified(true);
+      setVerifiedPhoneNumber(trimmedPhone);
+      setShowVerificationUI(false);
+      resetOtpState();
+      await refreshUser();
     } catch (error) {
+      console.error("Verify OTP error:", error);
       showCustomToast("An error occurred during verification", "error");
     } finally {
       setIsVerifying(false);
@@ -139,7 +227,7 @@ export default function SettingsPage() {
 
   // Handle enabling 2FA
   const handleEnable2FA = async () => {
-    if (!phoneNumber) {
+    if (!trimmedPhone) {
       showCustomToast("Please add a phone number first", "error");
       return;
     }
@@ -151,21 +239,23 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/2fa/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enable: true })
+      const response = await fetch("/api/auth/2fa/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable: true }),
       });
 
-      if (response.ok) {
-        showCustomToast("2FA enabled successfully!", "success");
-        setIs2FAEnabled(true);
-        await refreshUser();
-      } else {
-        const error = await response.json();
-        showCustomToast(error.error || "Failed to enable 2FA", "error");
+      if (!response.ok) {
+        const message = await parseApiError(response, "Failed to enable 2FA");
+        showCustomToast(message, "error");
+        return;
       }
+
+      showCustomToast("2FA enabled successfully!", "success");
+      setIs2FAEnabled(true);
+      await refreshUser();
     } catch (error) {
+      console.error("Enable 2FA error:", error);
       showCustomToast("An error occurred", "error");
     } finally {
       setIsLoading(false);
@@ -176,21 +266,23 @@ export default function SettingsPage() {
   const handleDisable2FA = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/2fa/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enable: false })
+      const response = await fetch("/api/auth/2fa/toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enable: false }),
       });
 
-      if (response.ok) {
-        showCustomToast("2FA disabled successfully!", "success");
-        setIs2FAEnabled(false);
-        await refreshUser();
-      } else {
-        const error = await response.json();
-        showCustomToast(error.error || "Failed to disable 2FA", "error");
+      if (!response.ok) {
+        const message = await parseApiError(response, "Failed to disable 2FA");
+        showCustomToast(message, "error");
+        return;
       }
+
+      showCustomToast("2FA disabled successfully!", "success");
+      setIs2FAEnabled(false);
+      await refreshUser();
     } catch (error) {
+      console.error("Disable 2FA error:", error);
       showCustomToast("An error occurred", "error");
     } finally {
       setIsLoading(false);
@@ -200,7 +292,7 @@ export default function SettingsPage() {
   // Handle toggle change
   const handleToggle2FA = async (checked: boolean) => {
     if (checked) {
-      if (!phoneNumber || !isPhoneVerified) {
+      if (!trimmedPhone || !isPhoneVerified) {
         showCustomToast("Please add and verify a phone number first", "error");
         return;
       }
@@ -210,9 +302,11 @@ export default function SettingsPage() {
     }
   };
 
+  const isOtpComplete = otpDigits.every((d) => d !== "");
+
   return (
-    <div className="container mx-auto py-10 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+    <div className="container mx-auto max-w-4xl py-10">
+      <h1 className="mb-6 text-3xl font-bold">Account Settings</h1>
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-4">
@@ -236,16 +330,16 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>First Name</Label>
-                  <Input defaultValue={user?.firstName} disabled />
+                  <Input value={user?.firstName ?? ""} disabled readOnly />
                 </div>
                 <div className="space-y-2">
                   <Label>Last Name</Label>
-                  <Input defaultValue={user?.lastName} disabled />
+                  <Input value={user?.lastName ?? ""} disabled readOnly />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input defaultValue={user?.email} disabled />
+                <Input value={user?.email ?? ""} disabled readOnly />
               </div>
               <div className="flex justify-end">
                 <Button disabled>Save Changes</Button>
@@ -265,8 +359,8 @@ export default function SettingsPage() {
                 Secure your account with SMS verification.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
 
+            <CardContent className="space-y-6">
               {!showVerificationUI ? (
                 <>
                   {/* Phone Number Section */}
@@ -275,42 +369,59 @@ export default function SettingsPage() {
                       <Phone className="h-4 w-4" />
                       Phone Number (for OTP)
                     </Label>
+
                     <div className="flex gap-2">
                       <Input
                         value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        onChange={(e) => handlePhoneInputChange(e.target.value)}
                         placeholder="+254712345678"
-                        disabled={is2FAEnabled}
+                        disabled={is2FAEnabled || isSendingOtp || isVerifying || isLoading}
                       />
+
                       {!is2FAEnabled && (
                         <Button
                           variant="outline"
                           onClick={handleSendVerificationOtp}
-                          disabled={isSendingOtp}
+                          disabled={isSendingOtp || isLoading}
+                          type="button"
                         >
-                          {isSendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+                          {isSendingOtp ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            "Verify"
+                          )}
                         </Button>
                       )}
                     </div>
+
                     <div className="flex items-center gap-2 text-sm">
                       {isPhoneVerified ? (
-                        <span className="text-green-600 flex items-center gap-1">✓ Verified</span>
+                        <span className="flex items-center gap-1 text-green-600">
+                          ✓ Verified
+                        </span>
                       ) : (
-                        <span className="text-yellow-600 flex items-center gap-1">⚠ Not verified</span>
+                        <span className="flex items-center gap-1 text-yellow-600">
+                          ⚠ Not verified
+                        </span>
                       )}
-                      <span className="text-gray-500 text-xs">Format: +254712345678</span>
+                      <span className="text-xs text-gray-500">
+                        Format: +254712345678
+                      </span>
                     </div>
                   </div>
 
-                  <div className="border-t my-4" />
+                  <div className="my-4 border-t" />
 
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Enable 2FA</Label>
                       <p className="text-sm text-gray-500">
-                        {is2FAEnabled ? "Your account is protected with 2FA" : "Secure your account with 2FA"}
+                        {is2FAEnabled
+                          ? "Your account is protected with 2FA"
+                          : "Secure your account with 2FA"}
                       </p>
                     </div>
+
                     <Switch
                       checked={is2FAEnabled}
                       onCheckedChange={handleToggle2FA}
@@ -319,37 +430,46 @@ export default function SettingsPage() {
                   </div>
                 </>
               ) : (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="animate-in fade-in slide-in-from-bottom-2 space-y-8 duration-300">
                   <div className="space-y-2">
                     <h3 className="text-xl font-bold">Verify Phone Number</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">
-                      We've sent a 6-digit verification code to <span className="font-semibold text-gray-700">{phoneNumber}</span>. Enter it below to secure your account.
+                    <p className="leading-relaxed text-sm text-gray-500">
+                      We&apos;ve sent a 6-digit verification code to{" "}
+                      <span className="font-semibold text-gray-700">{trimmedPhone}</span>.
+                      Enter it below to secure your account.
                     </p>
                   </div>
 
-                  <div className="flex justify-between gap-3 max-w-sm mx-auto">
+                  <div className="mx-auto flex max-w-sm justify-between gap-3">
                     {otpDigits.map((digit, index) => (
                       <Input
                         key={index}
+                        ref={(el) => {
+                          otpRefs.current[index] = el;
+                        }}
                         id={`otp-${index}`}
                         type="text"
                         inputMode="numeric"
+                        autoComplete={index === 0 ? "one-time-code" : "off"}
                         maxLength={1}
                         value={digit}
                         onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onPaste={handleOtpPaste}
                         onKeyDown={(e) => handleKeyDown(index, e)}
-                        className="w-12 h-14 text-center text-2xl font-bold border-2 focus:border-primary focus:ring-0 rounded-xl"
+                        className="h-14 w-12 rounded-xl border-2 text-center text-2xl font-bold focus:border-primary focus:ring-0"
+                        disabled={isVerifying}
                       />
                     ))}
                   </div>
 
                   <div className="text-center">
                     <p className="text-sm text-gray-500">
-                      Didn't receive the code?{" "}
+                      Didn&apos;t receive the code?{" "}
                       <button
+                        type="button"
                         onClick={handleSendVerificationOtp}
-                        className="text-primary font-semibold hover:underline decoration-2 underline-offset-4"
-                        disabled={isSendingOtp}
+                        className="font-semibold text-primary underline decoration-2 underline-offset-4 hover:underline"
+                        disabled={isSendingOtp || isVerifying}
                       >
                         {isSendingOtp ? "Sending..." : "Resend Code"}
                       </button>
@@ -358,16 +478,26 @@ export default function SettingsPage() {
 
                   <div className="space-y-3">
                     <Button
-                      className="w-full bg-primary hover:bg-blue-600 text-white font-semibold py-6 rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
+                      type="button"
+                      className="w-full rounded-2xl bg-primary py-6 font-semibold text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] hover:bg-blue-600"
                       onClick={handleVerifyOtp}
-                      disabled={isVerifying || otpDigits.some(d => !d)}
+                      disabled={isVerifying || !isOtpComplete}
                     >
-                      {isVerifying ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : "Verify & Continue"}
+                      {isVerifying ? (
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        "Verify & Continue"
+                      )}
                     </Button>
+
                     <Button
+                      type="button"
                       variant="ghost"
                       className="w-full text-gray-500"
-                      onClick={() => setShowVerificationUI(false)}
+                      onClick={() => {
+                        setShowVerificationUI(false);
+                        resetOtpState();
+                      }}
                       disabled={isVerifying}
                     >
                       Cancel
@@ -375,7 +505,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="pt-4 text-center">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-widest font-medium">
+                    <span className="text-[10px] font-medium uppercase tracking-widest text-gray-400">
                       Standard Carrier Rates Apply
                     </span>
                   </div>
