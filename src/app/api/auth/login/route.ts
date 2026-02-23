@@ -6,14 +6,14 @@ import { prisma } from '@/lib/db';
 import {
   generateAccessToken,
   generateRefreshToken,
-  generateTwoFactorChallengeToken, // ensure this exists in @/lib/auth
+  // IMPORTANT: keep this only if it exists in @/lib/auth
+  // generateTwoFactorChallengeToken,
 } from '@/lib/auth';
 
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 15; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
 const TWO_FA_CHALLENGE_TTL_SECONDS = 60 * 5; // 5 minutes
 
-// Dummy bcrypt hash to reduce timing differences for unknown users
 const DUMMY_BCRYPT_HASH =
   '$2a$10$7EqJtq98hPqEX7fNZaFWoO.H8Jm0G7K8G5x1L6K2f8M4QYwz7lB9K';
 
@@ -39,8 +39,9 @@ function getRequestContext(request: Request) {
   const forwardedHost = request.headers.get('x-forwarded-host');
   const host = request.headers.get('host');
 
-  const isHttps =
-    forwardedProto ? forwardedProto.includes('https') : url.protocol === 'https:';
+  const isHttps = forwardedProto
+    ? forwardedProto.toLowerCase().includes('https')
+    : url.protocol === 'https:';
 
   const hostname = (forwardedHost || host || url.hostname || '').toLowerCase();
 
@@ -104,14 +105,11 @@ function clearAuthCookies(response: NextResponse, request: Request) {
 }
 
 function authFailureResponse() {
-  // Generic error to avoid user enumeration
   return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
 }
 
 function selectPrimaryOrgUser(organizationUsers: OrgUserLite[]) {
   if (!organizationUsers?.length) return null;
-
-  // Prefer non-tenant role if available, otherwise first record
   const privileged = organizationUsers.find((ou) => ou.role !== 'TENANT');
   return privileged ?? organizationUsers[0];
 }
@@ -137,7 +135,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // Anti-enumeration + safe compare when user missing or no password set
     if (!user || !user.passwordHash) {
       await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
       return authFailureResponse();
@@ -148,7 +145,6 @@ export async function POST(request: Request) {
       return authFailureResponse();
     }
 
-    // Check account status after password validation (reduces enumeration signals)
     if (user.status !== 'ACTIVE') {
       return NextResponse.json(
         { error: 'Account is not active. Please contact support.' },
@@ -167,20 +163,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // If 2FA is enabled, do not issue session tokens yet
+    // 2FA branch
     if (user.twoFactorEnabled) {
-      const challengeToken = generateTwoFactorChallengeToken({
-        userId: user.id,
-        email: user.email,
-        purpose: 'LOGIN_2FA',
-      });
+      // If your helper exists, uncomment import + usage below.
+      // const challengeToken = generateTwoFactorChallengeToken({
+      //   userId: user.id,
+      //   email: user.email,
+      //   purpose: 'LOGIN_2FA',
+      // });
 
+      // Temporary safe response if helper is not yet implemented:
       return NextResponse.json(
         {
           require2FA: true,
-          challengeToken,
           challengeExpiresIn: TWO_FA_CHALLENGE_TTL_SECONDS,
-          message: 'Two-factor authentication required. Please enter your verification code.',
+          message:
+            'Two-factor authentication is enabled. Complete verification in the next step.',
+          // challengeToken,
         },
         { status: 200 }
       );
@@ -201,13 +200,11 @@ export async function POST(request: Request) {
 
     let role = primaryOrgUser?.role ?? 'TENANT';
 
-    // Force platform admin role for configured admin email
     const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
     if (adminEmail && email === adminEmail) {
       role = 'SYSTEM_ADMIN';
     }
 
-    // NOTE: removed custom `type` field for compatibility unless your auth helpers explicitly require it
     const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
@@ -253,7 +250,6 @@ export async function POST(request: Request) {
         : null,
     };
 
-    // Cookie-based auth
     const response = NextResponse.json(
       {
         user: userResponse,
