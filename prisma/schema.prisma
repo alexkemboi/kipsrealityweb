@@ -132,7 +132,7 @@ enum OtpType {
 model Otp {
   id        String   @id @default(uuid())
   code      String   @db.VarChar(10)
-  phone     String   @db.VarChar(20) // US stored as E.164: +12065551234
+  phone     String   @db.VarChar(20) // E.164 US format: +12065551234
   userId    String
   expiresAt DateTime
   type      OtpType  @default(TWO_FACTOR)
