@@ -1789,6 +1789,7 @@ enum organization_users_role {
 enum OtpType {
   TWO_FACTOR
   PHONE_VERIFICATION
+  PASSWORD_RESET
 }
 
 enum SidebarItem_role {
