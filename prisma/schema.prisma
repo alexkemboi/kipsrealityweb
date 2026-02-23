@@ -122,19 +122,29 @@ model OrganizationUser {
   @@map("organization_users")
 }
 
-// New Table for 2FA Codes
+enum OtpType {
+  TWO_FACTOR
+  PASSWORD_RESET
+  PHONE_VERIFICATION
+  LOGIN_CHALLENGE
+}
+
 model Otp {
   id        String   @id @default(uuid())
-  code      String // The 6-digit code
-  phone     String // The destination
+  code      String   @db.VarChar(10)
+  phone     String   @db.VarChar(20) // E.164 US format: +12065551234
   userId    String
   expiresAt DateTime
   type      OtpType  @default(TWO_FACTOR)
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([phone])
+  @@index([phone], map: "otp_phone_idx")
+  @@index([userId], map: "otp_user_id_idx")
+  @@index([expiresAt], map: "otp_expires_at_idx")
+  @@index([userId, type], map: "otp_user_type_idx")
+  @@map("otps")
 }
 
 model Vendor {
@@ -1774,11 +1784,6 @@ enum organization_users_role {
   AGENT
   VENDOR
   ALL
-}
-
-enum OtpType {
-  TWO_FACTOR
-  PHONE_VERIFICATION
 }
 
 enum SidebarItem_role {
