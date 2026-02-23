@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,10 +15,6 @@ type DashboardLayoutProps = {
   children: React.ReactNode;
 };
 
-/**
- * Keep this union in sync with your backend/prisma user roles if needed.
- * If your `user.role` is already strongly typed from AuthContext, you can replace this.
- */
 type AppUserRole =
   | "SYSTEM_ADMIN"
   | "PROPERTY_MANAGER"
@@ -26,17 +22,37 @@ type AppUserRole =
   | "VENDOR"
   | "AGENT";
 
-const ROLE_HOME_PATH: Record<AppUserRole, string> = {
-  SYSTEM_ADMIN: "/admin",
-  PROPERTY_MANAGER: "/property-manager",
-  TENANT: "/tenant",
-  VENDOR: "/vendor",
-  AGENT: "/agent",
+type RoleAccessConfig = {
+  home: string;
+  allowedPrefixes: readonly string[];
 };
 
+const ROLE_ACCESS: Record<AppUserRole, RoleAccessConfig> = {
+  SYSTEM_ADMIN: {
+    home: "/admin",
+    allowedPrefixes: ["/admin", "/reports", "/analytics"],
+  },
+  PROPERTY_MANAGER: {
+    home: "/property-manager",
+    allowedPrefixes: ["/property-manager", "/reports"],
+  },
+  TENANT: {
+    home: "/tenant",
+    allowedPrefixes: ["/tenant"],
+  },
+  VENDOR: {
+    home: "/vendor",
+    allowedPrefixes: ["/vendor"],
+  },
+  AGENT: {
+    home: "/agent",
+    allowedPrefixes: ["/agent"],
+  },
+} as const;
+
 /**
- * Routes accessible regardless of role section.
- * Add more shared pages here as your app grows.
+ * Shared routes accessible across roles
+ * (outside role-specific dashboard sections)
  */
 const SHARED_ROUTE_PREFIXES = [
   "/account",
@@ -47,21 +63,57 @@ const SHARED_ROUTE_PREFIXES = [
 ] as const;
 
 /**
- * Optional auth routes you may want to ignore for redirection if this layout
- * ever wraps them accidentally.
+ * Public/auth routes never role-redirected (defensive)
  */
-const NEVER_REDIRECT_PREFIXES = ["/login", "/register", "/forgot-password"] as const;
+const NEVER_REDIRECT_PREFIXES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+] as const;
 
-function startsWithAny(pathname: string, prefixes: readonly string[]) {
-  return prefixes.some((prefix) => pathname.startsWith(prefix));
+/**
+ * Optional exact-only routes (if you need strict matching in future)
+ */
+const SHARED_EXACT_ROUTES = ["/"] as const;
+
+function isAppUserRole(role: unknown): role is AppUserRole {
+  return typeof role === "string" && role in ROLE_ACCESS;
 }
 
-function getRoleHomePath(role: unknown): string | null {
-  if (typeof role !== "string") return null;
-  if (role in ROLE_HOME_PATH) {
-    return ROLE_HOME_PATH[role as AppUserRole];
-  }
-  return null;
+/**
+ * Safe prefix matching:
+ * - "/admin" matches "/admin" and "/admin/..."
+ * - "/admin" does NOT match "/administrator"
+ */
+function matchesRoutePrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function matchesAnyPrefix(pathname: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((prefix) => matchesRoutePrefix(pathname, prefix));
+}
+
+function matchesAnyExact(pathname: string, exactRoutes: readonly string[]): boolean {
+  return exactRoutes.includes(pathname);
+}
+
+function shouldSkipRoleRedirect(pathname: string): boolean {
+  return (
+    matchesAnyExact(pathname, SHARED_EXACT_ROUTES) ||
+    matchesAnyPrefix(pathname, SHARED_ROUTE_PREFIXES) ||
+    matchesAnyPrefix(pathname, NEVER_REDIRECT_PREFIXES)
+  );
+}
+
+function getRoleAccess(role: unknown): RoleAccessConfig | null {
+  if (!isAppUserRole(role)) return null;
+  return ROLE_ACCESS[role];
+}
+
+function isPathAllowedForRole(pathname: string, roleAccess: RoleAccessConfig): boolean {
+  return matchesAnyPrefix(pathname, roleAccess.allowedPrefixes);
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -83,50 +135,47 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const router = useRouter();
 
   const [isMounted, setIsMounted] = useState(false);
-
-  // Prevent repeated replace() calls for the same path in edge hydration states
   const lastRedirectRef = useRef<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const roleHomePath = useMemo(() => getRoleHomePath(user?.role), [user?.role]);
-
-  const shouldSkipRedirect = useMemo(() => {
-    if (!pathname) return true;
-    return (
-      startsWithAny(pathname, SHARED_ROUTE_PREFIXES) ||
-      startsWithAny(pathname, NEVER_REDIRECT_PREFIXES)
-    );
-  }, [pathname]);
-
   useEffect(() => {
     if (!isMounted) return;
     if (isLoading) return;
     if (!user) return;
     if (!pathname) return;
-    if (!roleHomePath) return; // Unknown/new role -> don't force redirect blindly
-    if (shouldSkipRedirect) return;
 
-    const alreadyInRoleSection = pathname.startsWith(roleHomePath);
-    if (alreadyInRoleSection) return;
+    const roleAccess = getRoleAccess(user.role);
 
-    if (lastRedirectRef.current === roleHomePath) return;
-    lastRedirectRef.current = roleHomePath;
+    // Fail-safe: unknown role => don't force redirect blindly
+    if (!roleAccess) return;
 
-    router.replace(roleHomePath);
-  }, [isMounted, isLoading, user, pathname, roleHomePath, shouldSkipRedirect, router]);
+    if (shouldSkipRoleRedirect(pathname)) return;
 
-  // Reset redirect guard when pathname changes successfully
+    const pathAllowed = isPathAllowedForRole(pathname, roleAccess);
+
+    if (pathAllowed) return;
+
+    const redirectTarget = roleAccess.home;
+
+    // Prevent duplicate replace calls during hydration/transitions
+    if (lastRedirectRef.current === redirectTarget) return;
+    lastRedirectRef.current = redirectTarget;
+
+    router.replace(redirectTarget);
+  }, [isMounted, isLoading, pathname, router, user]);
+
+  // Reset redirect guard once pathname updates
   useEffect(() => {
     lastRedirectRef.current = null;
   }, [pathname]);
 
-  // Prevent hydration mismatch flashes
+  // Hydration guard
   if (!isMounted) return null;
 
-  // Loading / auth pending state
+  // Auth/loading fallback
   if (isLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -158,7 +207,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
         {/* Animated page content */}
         <motion.main
-          key={pathname} // re-run animation on route change
+          key={pathname}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
