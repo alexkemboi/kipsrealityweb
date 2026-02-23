@@ -37,11 +37,13 @@ async function getBaseUrl(request: Request) {
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
   try {
     // --- 1) Verify auth token ---
     const cookieStore = await cookies();
+    // --- 1) Verify token ---
+    const cookieStore = cookies();
     const token = cookieStore.get("token")?.value;
 
     if (!token) {
@@ -72,6 +74,9 @@ export async function POST(
     }
 
     // --- 3) Find invite (FIX: use findFirst, not findUnique with extra filters) ---
+    const inviteId = context.params.id;
+
+    // --- 2) Find the invite (use findFirst unless composite unique exists) ---
     const invite = await prisma.invite.findFirst({
       where: {
         id: inviteId,
@@ -86,6 +91,7 @@ export async function POST(
                 property: true,
               },
             },
+            unit: { include: { property: true } },
             tenant: true,
           },
         },
@@ -98,7 +104,10 @@ export async function POST(
     }
 
     if (invite.accepted) {
-      return NextResponse.json({ error: "Invite already accepted" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invite already accepted" },
+        { status: 400 }
+      );
     }
 
     // --- 4) Rotate token + refresh expiry on resend (better UX/security) ---
@@ -161,6 +170,39 @@ export async function POST(
       await sendTenantInviteEmail(
         updatedInvite.email,
         tenantFirstName,
+    // Expired
+    if (invite.expiresAt <= new Date()) {
+      return NextResponse.json({ error: "Invite has expired" }, { status: 400 });
+    }
+
+    // --- 3) Send email (do NOT require tenant user to exist) ---
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const inviteLink = `${baseUrl}/invite/tenant/accept?token=${invite.token}&email=${encodeURIComponent(
+      invite.email
+    )}&leaseId=${invite.leaseId}`;
+
+    const propertyName =
+      invite.lease?.unit?.property?.name || "Unknown Property";
+    const unitNumber = invite.lease?.unit?.unitNumber || "N/A";
+
+    let landlordName = "Property Manager";
+    if (invite.invitedBy) {
+      landlordName =
+        `${invite.invitedBy.firstName || ""} ${invite.invitedBy.lastName || ""}`.trim() ||
+        "Property Manager";
+    }
+
+    const hasLandlordSigned = !!invite.lease?.landlordSignedAt;
+
+    const recipientFirstName =
+      invite.lease?.tenant?.firstName ||
+      invite.email.split("@")[0] ||
+      "there";
+
+    try {
+      await sendTenantInviteEmail(
+        invite.email,
+        recipientFirstName,
         propertyName,
         unitNumber,
         landlordName,
@@ -179,6 +221,9 @@ export async function POST(
     }
 
     // --- 8) Success response ---
+    // Optional: update resent timestamp if you add a column (invite.lastSentAt)
+    // await prisma.invite.update({ where: { id: invite.id }, data: { lastSentAt: new Date() } });
+
     return NextResponse.json({
       success: true,
       message: "Invite resent successfully",
@@ -188,6 +233,10 @@ export async function POST(
         leaseId: updatedInvite.leaseId,
         resentAt: new Date().toISOString(),
         expiresAt: updatedInvite.expiresAt.toISOString(),
+        id: invite.id,
+        email: invite.email,
+        leaseId: invite.leaseId,
+        resentAt: new Date().toISOString(),
       },
     });
   } catch (error) {
