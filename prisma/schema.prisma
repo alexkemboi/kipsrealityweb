@@ -43,45 +43,50 @@ model Organization {
 }
 
 model User {
-  id                     String                   @id @default(uuid())
-  email                  String                   @unique
-  passwordHash           String                   @map("password_hash")
-  firstName              String?                  @map("first_name")
-  lastName               String?                  @map("last_name")
-  phone                  String?                  @unique // E.164 format (e.g. +2547...)
-  phoneVerified          DateTime? // Null = not verified
-  avatarUrl              String?                  @map("avatar_url")
-  status                 UserStatus               @default(ACTIVE)
-  lastLoginAt            DateTime?                @map("last_login_at")
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
-  emailVerified          DateTime?                @map("email_verified")
-  verificationToken      String?                  @unique
-  consentMarketing       Boolean                  @default(false) @map("consent_marketing")
-  consentNotifications   Boolean                  @default(true) @map("consent_notifications")
-  consentTransactional   Boolean                  @default(true) @map("consent_transactional")
-  kyc_status             users_kyc_status         @default(PENDING)
-  paystack_customer_code String?
-  plaid_access_token     String?
-  region                 users_region?            @default(AFRICA)
-  stripe_customer_id     String?
-  AgentInvite            AgentInvite[]
-  sentInvites            Invite[]                 @relation("UserInvites")
-  leases                 Lease[]
-  listings               Listing[]
-  passwordResetTokens    PasswordResetToken[]
-  tenantApplications     Tenantapplication[]
-  twoFactorEnabled       Boolean                  @default(false)
-  dssParticipants        DssParticipant[]
-  listingAuditEntries    ListingAuditEntry[]
-  organizationUsers      OrganizationUser[]
-  vendors                Vendor[]
+  id                          String                   @id @default(uuid())
+  email                       String                   @unique
+  passwordHash                String                   @map("password_hash")
+  firstName                   String?                  @map("first_name")
+  lastName                    String?                  @map("last_name")
+  phone                       String?                  @unique // E.164 format (e.g. +12535551234)
+  phoneVerified               DateTime? // Null = not verified
+  avatarUrl                   String?                  @map("avatar_url")
+  status                      UserStatus               @default(ACTIVE)
+  lastLoginAt                 DateTime?                @map("last_login_at")
+  createdAt                   DateTime                 @default(now()) @map("created_at")
+  updatedAt                   DateTime                 @updatedAt @map("updated_at")
+
+  emailVerified               DateTime?                @map("email_verified")
+
+  // Email verification (secure hashed token approach)
+  verificationTokenHash       String?                  @unique @map("verification_token_hash")
+  verificationTokenExpiresAt  DateTime?                @map("verification_token_expires_at")
+
+  consentMarketing            Boolean                  @default(false) @map("consent_marketing")
+  consentNotifications        Boolean                  @default(true) @map("consent_notifications")
+  consentTransactional        Boolean                  @default(true) @map("consent_transactional")
+  kyc_status                  users_kyc_status         @default(PENDING)
+  paystack_customer_code      String?
+  plaid_access_token          String?
+  region                      users_region?            @default(AFRICA)
+  stripe_customer_id          String?
+  AgentInvite                 AgentInvite[]
+  sentInvites                 Invite[]                 @relation("UserInvites")
+  leases                      Lease[]
+  listings                    Listing[]
+  passwordResetTokens         PasswordResetToken[]
+  tenantApplications          Tenantapplication[]
+  twoFactorEnabled            Boolean                  @default(false)
+  dssParticipants             DssParticipant[]
+  listingAuditEntries         ListingAuditEntry[]
+  organizationUsers           OrganizationUser[]
+  vendors                     Vendor[]
 
   // Relation to OTPs
-  otps Otp[]
+  otps                        Otp[]
 
   // Payment methods
-  paymentMethods TenantPaymentMethod[]
+  paymentMethods              TenantPaymentMethod[]
 
   @@map("users")
 }
