@@ -25,6 +25,7 @@ model Organization {
   paystackSubaccountCode String?                 @map("paystack_subaccount_code")
   stripeConnectId        String?                 @map("stripe_connect_id")
 
+  // Relations
   invites                Invite[]
   listings               Listing[]
   maintenanceRequests    MaintenanceRequest[]
@@ -42,6 +43,50 @@ model Organization {
   @@map("organizations")
 }
 model User {
+  id                          String                   @id @default(uuid())
+  email                       String                   @unique
+  passwordHash                String                   @map("password_hash")
+  firstName                   String?                  @map("first_name")
+  lastName                    String?                  @map("last_name")
+  phone                       String?                  @unique // E.164 format (e.g. +12535551234)
+  phoneVerified               DateTime? // Null = not verified
+  avatarUrl                   String?                  @map("avatar_url")
+  status                      UserStatus               @default(ACTIVE)
+  lastLoginAt                 DateTime?                @map("last_login_at")
+  createdAt                   DateTime                 @default(now()) @map("created_at")
+  updatedAt                   DateTime                 @updatedAt @map("updated_at")
+
+  emailVerified               DateTime?                @map("email_verified")
+
+  // Email verification (secure hashed token approach)
+  verificationTokenHash       String?                  @unique @map("verification_token_hash")
+  verificationTokenExpiresAt  DateTime?                @map("verification_token_expires_at")
+
+  consentMarketing            Boolean                  @default(false) @map("consent_marketing")
+  consentNotifications        Boolean                  @default(true) @map("consent_notifications")
+  consentTransactional        Boolean                  @default(true) @map("consent_transactional")
+  kyc_status                  users_kyc_status         @default(PENDING)
+  paystack_customer_code      String?
+  plaid_access_token          String?
+  region                      users_region?            @default(AFRICA)
+  stripe_customer_id          String?
+  AgentInvite                 AgentInvite[]
+  sentInvites                 Invite[]                 @relation("UserInvites")
+  leases                      Lease[]
+  listings                    Listing[]
+  passwordResetTokens         PasswordResetToken[]
+  tenantApplications          Tenantapplication[]
+  twoFactorEnabled            Boolean                  @default(false)
+  dssParticipants             DssParticipant[]
+  listingAuditEntries         ListingAuditEntry[]
+  organizationUsers           OrganizationUser[]
+  vendors                     Vendor[]
+
+  // Relation to OTPs
+  otps                        Otp[]
+
+  // Payment methods
+  paymentMethods              TenantPaymentMethod[]
   id                     String               @id @default(uuid())
   email                  String               @unique
   passwordHash           String               @map("password_hash")
@@ -134,11 +179,13 @@ model OrganizationUser {
   organizationId    String                  @map("organization_id")
   role              organization_users_role
   createdAt         DateTime                @default(now()) @map("created_at")
+
   adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]           @relation("AdminActionsTarget")
   createdRequests   MaintenanceRequest[]    @relation("RequestCreator")
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
+
   organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -146,6 +193,7 @@ model OrganizationUser {
   @@index([organizationId], map: "organization_users_organization_id_fkey")
   @@map("organization_users")
 }
+// New Table for 2FA Codes
 
 enum OtpType {
   TWO_FACTOR
