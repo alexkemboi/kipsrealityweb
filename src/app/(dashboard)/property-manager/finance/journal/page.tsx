@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import JournalTable from "@/components/Dashboard/propertymanagerdash/finance/JournalTable";
@@ -29,6 +30,13 @@ type JournalEntry = {
 type Pagination = {
   total: number;
   pages: number;
+};
+
+type JournalApiResponse = {
+  success: boolean;
+  data?: JournalEntry[];
+  pagination?: Pagination;
+  message?: string;
 };
 
 type JournalResponse = {
@@ -61,6 +69,7 @@ export default function JournalPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(search.trim());
+      setPage(1);
       setPage(1); // reset to first page when search changes
     }, 350);
 
@@ -68,6 +77,7 @@ export default function JournalPage() {
   }, [search]);
 
   const fetchJournal = useCallback(
+    async (p = 1, q = "", signal?: AbortSignal) => {
     async (p = 1, query = "", signal?: AbortSignal) => {
 const JournalPage = () => {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -111,6 +121,37 @@ const JournalPage = () => {
       try {
         const params = new URLSearchParams({
           page: String(p),
+          limit: "10",
+        });
+
+        if (q) params.set("search", q);
+
+        const res = await fetch(`/api/finance/journal?${params.toString()}`, {
+          cache: "no-store",
+          signal,
+        });
+
+        if (!res.ok) {
+          throw new Error(`Request failed (${res.status})`);
+        }
+
+        const result = (await res.json()) as JournalApiResponse;
+
+        if (!result.success) {
+          throw new Error(result.message || "Failed to fetch journal entries");
+        }
+
+        setEntries(Array.isArray(result.data) ? result.data : []);
+        setPagination(result.pagination ?? { total: 0, pages: 1 });
+      } catch (err: unknown) {
+        if ((err as { name?: string })?.name === "AbortError") return;
+
+        const message =
+          err instanceof Error ? err.message : "Failed to fetch journal entries";
+
+        console.error("Failed to fetch journal:", err);
+        setError(message);
+        toast.error(message);
           limit: String(PAGE_SIZE),
         });
 
@@ -186,6 +227,15 @@ const JournalPage = () => {
     return () => controller.abort();
   }, [page, debouncedSearch, fetchJournal]);
 
+  const canGoPrev = !loading && page > 1;
+  const canGoNext = !loading && page < pagination.pages;
+
+  return (
+    <main className="p-8 max-w-7xl mx-auto space-y-8" aria-busy={loading}>
+      <div className="flex flex-col lg:flex-row justify-between lg:items-end gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-600" aria-hidden="true" />
   const canGoPrev = page > 1 && !loading;
   const canGoNext = page < pagination.pages && !loading;
 
@@ -224,6 +274,12 @@ const JournalPage = () => {
           <p className="text-gray-600 font-medium">
             Audit trail of all financial postings and transactions.
           </p>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -306,6 +362,10 @@ const JournalPage = () => {
             />
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by description or ref..."
+              className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-64"
               placeholder="Search by description or ref..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -319,6 +379,13 @@ const JournalPage = () => {
             onClick={() => fetchJournal(page, debouncedSearch)}
             disabled={loading}
             aria-label="Refresh journal entries"
+            title="Refresh"
+            className="p-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
             className="rounded-lg border border-gray-200 p-2.5 text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             title="Refresh"
           >
@@ -332,6 +399,7 @@ const JournalPage = () => {
           className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
           role="alert"
         >
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <div>
             <p className="font-medium">Unable to load journal entries</p>
@@ -342,12 +410,16 @@ const JournalPage = () => {
 
       <JournalTable data={entries} loading={loading} />
 
+      {/* Pagination */}
       {!loading && pagination.pages > 1 && (
         <nav
           className="flex items-center justify-between border-t border-gray-200 pt-6"
           aria-label="Journal pagination"
         >
           <p className="text-sm text-gray-500">
+            Showing page{" "}
+            <span className="font-bold text-gray-900">{page}</span> of{" "}
+            <span className="font-bold text-gray-900">{pagination.pages}</span>
             {pageSummary}
           </p>
 
@@ -356,6 +428,10 @@ const JournalPage = () => {
               type="button"
               disabled={!canGoPrev}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              aria-label="Previous page"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Previous page"
             >
@@ -366,6 +442,10 @@ const JournalPage = () => {
               type="button"
               disabled={!canGoNext}
               onClick={() => setPage((prev) => Math.min(pagination.pages, prev + 1))}
+              aria-label="Next page"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" aria-hidden="true" />
               className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Next page"
             >
