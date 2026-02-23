@@ -25,6 +25,7 @@ model Organization {
   paystackSubaccountCode String?                 @map("paystack_subaccount_code")
   stripeConnectId        String?                 @map("stripe_connect_id")
 
+  // Relations
   invites                Invite[]
   listings               Listing[]
   maintenanceRequests    MaintenanceRequest[]
@@ -41,7 +42,6 @@ model Organization {
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
-
 model User {
   id                          String                   @id @default(uuid())
   email                       String                   @unique
@@ -114,11 +114,13 @@ model OrganizationUser {
   organizationId    String                  @map("organization_id")
   role              organization_users_role
   createdAt         DateTime                @default(now()) @map("created_at")
+
   adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]           @relation("AdminActionsTarget")
   createdRequests   MaintenanceRequest[]    @relation("RequestCreator")
   managedProperties Property[]
   postedServices    ServiceMarketplace[]
+
   organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -126,7 +128,6 @@ model OrganizationUser {
   @@index([organizationId], map: "organization_users_organization_id_fkey")
   @@map("organization_users")
 }
-
 // New Table for 2FA Codes
 model Otp {
   id        String   @id @default(uuid())
