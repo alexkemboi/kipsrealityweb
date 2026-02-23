@@ -1,12 +1,56 @@
+import type { Metadata } from "next";
 import Navbar from "@/components/website/Navbar";
 import Footer from "@/components/website/Footer";
 import Contact from "@/components/website/landing/ContactUs";
 import { fetchCompanyInfo } from "@/lib/company-info";
 import { fetchCTAs } from "@/lib/cta";
 
-export const dynamic = "force-dynamic";
+// ✅ Cached + fast, refresh every 5 minutes
+export const revalidate = 300;
+
+export const metadata: Metadata = {
+  title: "Contact Us | Kips Reality",
+  description:
+    "Get in touch with Kips Reality. Ask a question, request a demo, or learn more about our property and real estate solutions.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact Us | Kips Reality",
+    description:
+      "Get in touch with Kips Reality. Ask a question, request a demo, or learn more about our real estate solutions.",
+    url: "/contact",
+    siteName: "Kips Reality",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Contact Us | Kips Reality",
+    description:
+      "Get in touch with Kips Reality. Ask a question, request a demo, or learn more about our real estate solutions.",
+  },
+  robots: { index: true, follow: true },
+};
+
+type CTA = {
+  title?: string | null;
+} & Record<string, unknown>;
+
+type CompanyInfo = Awaited<ReturnType<typeof fetchCompanyInfo>>;
+
+function pickContactCta(ctas: CTA[]): CTA | null {
+  const normalized = (s?: string | null) => (s ?? "").trim().toLowerCase();
+  const keywords = ["contact", "touch", "get in touch", "reach", "talk"];
+
+  return (
+    ctas.find((c) => keywords.some((k) => normalized(c.title).includes(k))) ??
+    ctas[0] ??
+    null
+  );
+}
 
 export default async function Page() {
+  let companyInfo: CompanyInfo | null = null;
+  let ctas: CTA[] = [];
   let companyInfo: Awaited<ReturnType<typeof fetchCompanyInfo>> | null = null;
   let ctaData: Awaited<ReturnType<typeof fetchCTAs>> | [] = [];
 
@@ -22,11 +66,13 @@ export default async function Page() {
   }
 
   if (ctasResult.status === "fulfilled") {
+    ctas = Array.isArray(ctasResult.value) ? (ctasResult.value as CTA[]) : [];
     ctaData = ctasResult.value;
   } else {
     console.error("Failed to fetch CTAs:", ctasResult.reason);
   }
 
+  const contactCta = pickContactCta(ctas);
   const safeCtas = Array.isArray(ctaData) ? ctaData : [];
 
   const contactCta = safeCtas.find((c) => {
@@ -38,6 +84,10 @@ export default async function Page() {
     <main className="min-h-screen bg-white">
       <Navbar />
 
+      {/* Offset for sticky navbar */}
+      <div className="pt-20">
+        {companyInfo ? (
+          <Contact companyInfo={companyInfo} cta={contactCta} />
       {/* Spacer for sticky navbar */}
       <div className="pt-20">
         {companyInfo ? (
