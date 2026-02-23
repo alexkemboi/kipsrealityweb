@@ -4,20 +4,35 @@ import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
+// Accept common US formats, then normalize to +1XXXXXXXXXX
 const UpdatePhoneSchema = z.object({
-  phone: z
-    .string()
-    .trim()
-    .min(8)
-    .max(20)
-    // E.164 format: + followed by 7-15 digits, first digit after + cannot be 0
-    .regex(/^\+[1-9]\d{6,14}$/, "Phone number must be in E.164 format (e.g., +254712345678)"),
+  phone: z.string().trim().min(7).max(25),
 });
 
 function jsonNoStore(body: unknown, init?: ResponseInit) {
   const res = NextResponse.json(body, init);
   res.headers.set("Cache-Control", "no-store");
   return res;
+}
+
+function normalizeUsPhoneToE164(input: string): string | null {
+  const digits = input.replace(/\D/g, "");
+
+  // 10-digit US number -> +1XXXXXXXXXX
+  if (digits.length === 10) {
+    // NANP basic validation: area code + central office code cannot start with 0/1
+    if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(digits)) return null;
+    return `+1${digits}`;
+  }
+
+  // 11-digit US number starting with 1 -> +1XXXXXXXXXX
+  if (digits.length === 11 && digits.startsWith("1")) {
+    const national = digits.slice(1);
+    if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(national)) return null;
+    return `+1${national}`;
+  }
+
+  return null;
 }
 
 export async function POST(req: Request) {
@@ -54,9 +69,21 @@ export async function POST(req: Request) {
       );
     }
 
-    const phone = parsed.data.phone.trim();
+    const rawPhone = parsed.data.phone.trim();
 
-    // 3) Ensure current user exists + active
+    // 3) Normalize US phone to E.164 (+1XXXXXXXXXX)
+    const phone = normalizeUsPhoneToE164(rawPhone);
+    if (!phone) {
+      return jsonNoStore(
+        {
+          error:
+            "Enter a valid US phone number (e.g., (206) 555-1234, 206-555-1234, or +1 206 555 1234)",
+        },
+        { status: 400 }
+      );
+    }
+
+    // 4) Ensure current user exists + active
     const currentUser = await prisma.user.findUnique({
       where: { id: userPayload.userId },
       select: {
@@ -74,20 +101,22 @@ export async function POST(req: Request) {
       return jsonNoStore({ error: "Account is not active" }, { status: 403 });
     }
 
-    // If same phone already saved, treat as success (idempotent)
+    // Idempotent success if same phone
     if (currentUser.phone === phone) {
       return jsonNoStore(
         {
           success: true,
           message: "Phone number already up to date",
-          phone,
-          phoneVerified: false, // API-friendly boolean shape
+          data: {
+            phone,
+            phoneVerified: false,
+          },
         },
         { status: 200 }
       );
     }
 
-    // 4) Check uniqueness against other users
+    // 5) Check uniqueness against other users
     const existingUser = await prisma.user.findFirst({
       where: {
         phone,
@@ -100,7 +129,7 @@ export async function POST(req: Request) {
       return jsonNoStore({ error: "Phone number is already in use" }, { status: 409 });
     }
 
-    // 5) Update phone + reset verification timestamp
+    // 6) Update phone + reset verification timestamp
     const updatedUser = await prisma.user.update({
       where: { id: userPayload.userId },
       data: {
@@ -121,7 +150,7 @@ export async function POST(req: Request) {
         message: "Phone number updated",
         data: {
           id: updatedUser.id,
-          phone: updatedUser.phone,
+          phone: updatedUser.phone, // stored as +1XXXXXXXXXX
           phoneVerified: updatedUser.phoneVerified !== null,
           updatedAt: updatedUser.updatedAt,
         },
