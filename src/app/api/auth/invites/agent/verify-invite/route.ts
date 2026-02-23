@@ -3,29 +3,45 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
 
+type VerifyInviteBody = {
+  token?: string;
+};
+
 export async function POST(request: Request) {
   try {
-    const { token } = await request.json();
+    let body: VerifyInviteBody;
 
-    if (!token) {
+    try {
+      body = (await request.json()) as VerifyInviteBody;
+    } catch {
       return NextResponse.json(
-        { error: "Token is required" },
-        { status: 400 }
+        { success: false, isValid: false, error: "Invalid JSON body" },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Hash the provided token to match against stored hash
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(token)
-      .digest("hex");
+    const token = typeof body.token === "string" ? body.token.trim() : "";
 
-    // Find the invite with the tenant (user) information
+    if (!token) {
+      return NextResponse.json(
+        { success: false, isValid: false, error: "Token is required" },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    // Hash incoming raw token to compare with stored hash
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    // Find invite + tenant info
     const invite = await prisma.agentInvite.findUnique({
       where: {
         inviteTokenHash: tokenHash,
       },
-      include: {
+      select: {
+        id: true,
+        isUsed: true,
+        expiresAt: true,
+        tenantId: true,
         tenant: {
           select: {
             id: true,
@@ -37,46 +53,70 @@ export async function POST(request: Request) {
       },
     });
 
-    // Validate invite exists
     if (!invite) {
       return NextResponse.json(
-        { error: "Invalid invite token", isValid: false },
-        { status: 404 }
+        { success: false, isValid: false, error: "Invalid invite token" },
+        { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Check if already used
+    if (!invite.tenant) {
+      return NextResponse.json(
+        { success: false, isValid: false, error: "Invite tenant not found" },
+        { status: 404, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     if (invite.isUsed) {
       return NextResponse.json(
-        { error: "Invite has already been used", isValid: false },
-        { status: 400 }
+        { success: false, isValid: false, error: "Invite has already been used" },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Check if expired
-    if (new Date() > invite.expiresAt) {
+    const now = new Date();
+    if (invite.expiresAt <= now) {
       return NextResponse.json(
-        { error: "Invite has expired", isValid: false },
-        { status: 400 }
+        { success: false, isValid: false, error: "Invite has expired" },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    // Return invite data
-    return NextResponse.json({
-      isValid: true,
-      token,
-      organizationName: "", 
-      invitedBy: `${invite.tenant.firstName || ""} ${invite.tenant.lastName || ""}`.trim() || invite.tenant.email,
-      role: "Agent",
-      email: invite.tenant.email,
-      expiresAt: invite.expiresAt.toISOString(),
-      tenantId: invite.tenant.id,
-    });
-  } catch (error) {
-    console.error("Invite verification error:", error);
+    const invitedBy =
+      `${invite.tenant.firstName ?? ""} ${invite.tenant.lastName ?? ""}`.trim() ||
+      invite.tenant.email;
+
     return NextResponse.json(
-      { error: "Failed to verify invite", isValid: false },
-      { status: 500 }
+      {
+        success: true,
+        isValid: true,
+        invite: {
+          id: invite.id,
+          role: "AGENT",
+          roleLabel: "Agent",
+          invitedBy,
+          email: invite.tenant.email, // tenant email (used for display)
+          tenantId: invite.tenant.id,
+          expiresAt: invite.expiresAt.toISOString(),
+          organizationName: "", // placeholder until agentInvite stores org context
+        },
+      },
+      {
+        status: 200,
+        headers: { "Cache-Control": "no-store" },
+      }
+    );
+  } catch (error: unknown) {
+    console.error("[AgentVerifyInvite.POST] Invite verification error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        isValid: false,
+        error: "Failed to verify invite",
+        message: error instanceof Error ? error.message : "Unknown server error",
+      },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
