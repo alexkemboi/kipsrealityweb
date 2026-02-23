@@ -90,8 +90,18 @@ export async function loginAsManager(
       page.waitForResponse((res) => res.url().includes("/api/auth/me"), { timeout: 30000 }),
     ]);
 
+    // STRICT-MODE SAFE login UI error check (avoids matching Next route announcer)
+    const errorLocator = page.locator("div.bg-red-50 p, .toast-error").first();
+    if (await errorLocator.isVisible({ timeout: 5000 }).catch(() => false)) {
+      const errorMsg = (await errorLocator.textContent())?.trim();
+      console.error("DEBUG: Login Error found in UI:", errorMsg);
+    }
+
     const twoFaPrompt = page.getByText(/two-factor|verification code|enter your code/i);
-    if ((await twoFaPrompt.count()) > 0 && (await twoFaPrompt.first().isVisible().catch(() => false))) {
+    if (
+      (await twoFaPrompt.count()) > 0 &&
+      (await twoFaPrompt.first().isVisible().catch(() => false))
+    ) {
       throw new Error(
         `Login requires 2FA for this test user. Disable 2FA for E2E seed user or extend test to handle 2FA.\n` +
           `Login API status: ${loginApiStatus ?? "unknown"}\n` +
