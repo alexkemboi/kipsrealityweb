@@ -103,6 +103,28 @@ model TenantPaymentMethod {
   @@map("tenant_payment_methods")
 }
 
+model RefreshSession {
+  id            String   @id @default(cuid())       // sessionId used in refresh token
+  userId        String
+  tokenHash     String                                // hash of CURRENT valid refresh token
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  rotatedAt     DateTime?
+  lastUsedAt    DateTime?
+  lastUsedByIp  String?
+  createdByIp   String?
+  userAgent     String?
+  revokedAt     DateTime?
+  revokeReason  String?
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+}
+
 model OrganizationUser {
   id                String                  @id @default(uuid())
   userId            String                  @map("user_id")
