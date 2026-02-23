@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
   Card,
@@ -21,16 +21,33 @@ type Preferences = {
 
 type PreferenceKey = keyof Preferences;
 
+type TokenStore = {
+  accessToken?: string;
+};
+
 function getAccessToken(): string | null {
   try {
-    const raw = localStorage.getItem("rentflow_tokens");
+    if (typeof window === "undefined") return null;
+
+    const raw = window.localStorage.getItem("rentflow_tokens");
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as { accessToken?: string };
-    return parsed?.accessToken ?? null;
+    const parsed = JSON.parse(raw) as TokenStore;
+    return parsed.accessToken ?? null;
   } catch (error) {
     console.error("Failed to parse rentflow_tokens from localStorage", error);
     return null;
+  }
+}
+
+function getFriendlyPreferenceName(key: PreferenceKey): string {
+  switch (key) {
+    case "consentNotifications":
+      return "General notifications";
+    case "consentMarketing":
+      return "Marketing emails";
+    default:
+      return "Preferences";
   }
 }
 
@@ -44,13 +61,21 @@ export default function EmailPreferencesPage() {
     consentMarketing: false,
   });
 
+  const isSaving = savingKey !== null;
+
+  const saveStatusMessage = useMemo(() => {
+    if (!savingKey) return null;
+    return `Saving ${getFriendlyPreferenceName(savingKey).toLowerCase()}...`;
+  }, [savingKey]);
+
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
     const fetchPreferences = async () => {
-      setLoading(true);
-
       try {
+        setLoading(true);
+
         const token = getAccessToken();
 
         if (!token) {
@@ -61,10 +86,12 @@ export default function EmailPreferencesPage() {
         }
 
         const res = await fetch("/api/auth/me", {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
           cache: "no-store",
+          signal: controller.signal,
         });
 
         if (!res.ok) {
@@ -73,13 +100,15 @@ export default function EmailPreferencesPage() {
 
         const data = (await res.json()) as Partial<Preferences>;
 
-        if (isMounted) {
-          setPreferences({
-            consentNotifications: data.consentNotifications ?? true,
-            consentMarketing: data.consentMarketing ?? false,
-          });
-        }
+        if (!isMounted) return;
+
+        setPreferences({
+          consentNotifications: data.consentNotifications ?? true,
+          consentMarketing: data.consentMarketing ?? false,
+        });
       } catch (error) {
+        if (controller.signal.aborted) return;
+
         console.error("Failed to fetch preferences", error);
         if (isMounted) {
           toast.error("Failed to load email preferences.");
@@ -91,22 +120,25 @@ export default function EmailPreferencesPage() {
       }
     };
 
-    // Prevent spinner from hanging forever when user is absent / auth not ready.
+    // If auth is not ready / no user, stop spinner and show sign-in prompt.
     if (!user) {
       setLoading(false);
-      return;
+      return () => {
+        isMounted = false;
+        controller.abort();
+      };
     }
 
-    fetchPreferences();
+    void fetchPreferences();
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [user]);
 
   const handleToggle = async (key: PreferenceKey, value: boolean) => {
-    // Prevent overlapping requests for cleaner UX/state consistency
-    if (savingKey) return;
+    if (isSaving) return;
 
     const previousValue = preferences[key];
 
@@ -117,7 +149,7 @@ export default function EmailPreferencesPage() {
     try {
       const token = getAccessToken();
       if (!token) {
-        throw new Error("Missing auth token");
+        throw new Error("Please sign in again to continue.");
       }
 
       const res = await fetch("/api/auth/me", {
@@ -130,26 +162,29 @@ export default function EmailPreferencesPage() {
       });
 
       if (!res.ok) {
-        let message = "Failed to update preferences";
+        let message = "Failed to update preferences.";
 
         try {
           const err = (await res.json()) as { message?: string };
-          if (err?.message) message = err.message;
+          if (err.message) {
+            message = err.message;
+          }
         } catch {
-          // Non-JSON error response; use generic message
+          // Ignore JSON parse errors for non-JSON responses
         }
 
         throw new Error(message);
       }
 
-      toast.success("Preferences updated.");
+      toast.success(`${getFriendlyPreferenceName(key)} updated.`);
     } catch (error) {
       console.error("Failed to save preferences", error);
+
       toast.error(
         error instanceof Error ? error.message : "Failed to save changes."
       );
 
-      // Revert on error
+      // Revert optimistic update on error
       setPreferences((prev) => ({ ...prev, [key]: previousValue }));
     } finally {
       setSavingKey(null);
@@ -162,16 +197,22 @@ export default function EmailPreferencesPage() {
         className="flex h-full items-center justify-center gap-2"
         role="status"
         aria-live="polite"
+        aria-busy="true"
       >
-        <Loader2 className="h-6 w-6 animate-spin text-blue-600" aria-hidden="true" />
-        <span className="text-sm text-gray-600">Loading email preferences...</span>
+        <Loader2
+          className="h-6 w-6 animate-spin text-blue-600"
+          aria-hidden="true"
+        />
+        <span className="text-sm text-gray-600">
+          Loading email preferences...
+        </span>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="mx-auto max-w-2xl p-6">
         <Card>
           <CardHeader>
             <CardTitle>Email Preferences</CardTitle>
@@ -185,7 +226,7 @@ export default function EmailPreferencesPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-6" aria-busy={savingKey !== null}>
+    <div className="mx-auto max-w-2xl space-y-6 p-6" aria-busy={isSaving}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Email Preferences</h1>
         <p className="text-gray-500">Manage what emails you receive from us.</p>
@@ -203,8 +244,12 @@ export default function EmailPreferencesPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label htmlFor="notifications">General Notifications</Label>
-              <p className="text-sm text-gray-500">
-                Receive updates about your account, billing, and maintenance requests.
+              <p
+                id="notifications-description"
+                className="text-sm text-gray-500"
+              >
+                Receive updates about your account, billing, and maintenance
+                requests.
               </p>
             </div>
 
@@ -212,10 +257,11 @@ export default function EmailPreferencesPage() {
               id="notifications"
               checked={preferences.consentNotifications}
               onCheckedChange={(checked) =>
-                handleToggle("consentNotifications", checked)
+                void handleToggle("consentNotifications", checked)
               }
-              disabled={savingKey !== null}
+              disabled={isSaving}
               aria-label="Toggle general notifications"
+              aria-describedby="notifications-description"
               className="shrink-0"
             />
           </div>
@@ -223,7 +269,7 @@ export default function EmailPreferencesPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label htmlFor="marketing">Marketing & Updates</Label>
-              <p className="text-sm text-gray-500">
+              <p id="marketing-description" className="text-sm text-gray-500">
                 Receive news, feature updates, and promotional content.
               </p>
             </div>
@@ -232,30 +278,32 @@ export default function EmailPreferencesPage() {
               id="marketing"
               checked={preferences.consentMarketing}
               onCheckedChange={(checked) =>
-                handleToggle("consentMarketing", checked)
+                void handleToggle("consentMarketing", checked)
               }
-              disabled={savingKey !== null}
+              disabled={isSaving}
               aria-label="Toggle marketing and updates emails"
+              aria-describedby="marketing-description"
               className="shrink-0"
             />
           </div>
 
-          {savingKey && (
+          {saveStatusMessage && (
             <div
               className="flex items-center gap-2 text-sm text-gray-500"
               role="status"
               aria-live="polite"
             >
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              Saving changes...
+              {saveStatusMessage}
             </div>
           )}
         </CardContent>
       </Card>
 
       <div className="rounded-md border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
-        <strong>Note:</strong> Transactional emails (like password resets and email
-        verification) cannot be disabled because they are required for account security.
+        <strong>Note:</strong> Transactional emails (like password resets and
+        email verification) cannot be disabled because they are required for
+        account security.
       </div>
     </div>
   );
