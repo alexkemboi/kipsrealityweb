@@ -12,24 +12,27 @@ function requireEnv(name: string): string {
 }
 
 async function createAdmin() {
-  // Require env vars in production (safer than defaults)
   const email = requireEnv('ADMIN_EMAIL').toLowerCase()
   const password = requireEnv('ADMIN_PASSWORD')
 
-  const firstName = 'System'
-  const lastName = 'Admin'
-  const organizationName = 'Platform Administration'
-  const organizationSlug = 'platform-admin'
+  if (!email.includes('@')) {
+    throw new Error('ADMIN_EMAIL must be a valid email address.')
+  }
 
   if (password.length < 12) {
     throw new Error('ADMIN_PASSWORD must be at least 12 characters long.')
   }
 
+  const firstName = 'System'
+  const lastName = 'Admin'
+  const organizationName = 'Platform Administration'
+  const organizationSlug = 'platform-admin'
+  const now = new Date()
+
   try {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     const result = await prisma.$transaction(async (tx) => {
-      // Ensure organization exists (idempotent)
       const organization = await tx.organization.upsert({
         where: { slug: organizationSlug },
         update: {
@@ -43,30 +46,25 @@ async function createAdmin() {
         },
       })
 
-      // Ensure admin user exists (idempotent)
       const user = await tx.user.upsert({
         where: { email },
         update: {
-          // Optional: keep these updated if rerun
           firstName,
           lastName,
-          emailVerified: true,
+          emailVerified: now, // DateTime? in schema
           status: UserStatus.ACTIVE,
-          // Uncomment if you intentionally want reruns to reset password:
-          // passwordHash: hashedPassword,
+          // passwordHash: hashedPassword, // enable only if you want reruns to reset password
         },
         create: {
           email,
           passwordHash: hashedPassword,
           firstName,
           lastName,
-          emailVerified: true,
+          emailVerified: now, // DateTime? in schema
           status: UserStatus.ACTIVE,
         },
       })
 
-      // Ensure membership exists (idempotent)
-      // Assumes unique constraint on (userId, organizationId)
       await tx.organizationUser.upsert({
         where: {
           userId_organizationId: {
