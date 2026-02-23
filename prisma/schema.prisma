@@ -156,6 +156,8 @@ enum OtpType {
 
 model Otp {
   id        String   @id @default(uuid())
+  code      String   // The 6-digit code
+  phone     String   // The destination
   code      String   @db.VarChar(10)
   phone     String   @db.VarChar(20) // E.164 US format: +12065551234
   userId    String
@@ -165,6 +167,8 @@ model Otp {
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([phone])
+  @@index([userId])
   @@index([phone], map: "otp_phone_idx")
   @@index([userId], map: "otp_user_id_idx")
   @@index([expiresAt], map: "otp_expires_at_idx")
