@@ -104,14 +104,41 @@ function clearAuthCookies(response: NextResponse, request: Request) {
   });
 }
 
-function authFailureResponse() {
-  return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+function authFailureResponse(request: Request) {
+  const response = NextResponse.json(
+    { error: 'Invalid email or password' },
+    { status: 401 }
+  );
+  // Optional but helpful to avoid stale-session weirdness
+  clearAuthCookies(response, request);
+  return response;
 }
+
+const ROLE_PRIORITY = [
+  'SYSTEM_ADMIN',
+  'PROPERTY_MANAGER',
+  'AGENT',
+  'VENDOR',
+  'TENANT',
+] as const;
 
 function selectPrimaryOrgUser(organizationUsers: OrgUserLite[]) {
   if (!organizationUsers?.length) return null;
-  const privileged = organizationUsers.find((ou) => ou.role !== 'TENANT');
-  return privileged ?? organizationUsers[0];
+
+  const sorted = [...organizationUsers].sort((a, b) => {
+    const aRank = ROLE_PRIORITY.indexOf(a.role as (typeof ROLE_PRIORITY)[number]);
+    const bRank = ROLE_PRIORITY.indexOf(b.role as (typeof ROLE_PRIORITY)[number]);
+
+    const safeARank = aRank === -1 ? Number.MAX_SAFE_INTEGER : aRank;
+    const safeBRank = bRank === -1 ? Number.MAX_SAFE_INTEGER : bRank;
+
+    if (safeARank !== safeBRank) return safeARank - safeBRank;
+
+    // deterministic fallback
+    return a.id.localeCompare(b.id);
+  });
+
+  return sorted[0] ?? null;
 }
 
 export async function POST(request: Request) {
@@ -130,37 +157,44 @@ export async function POST(request: Request) {
       where: { email },
       include: {
         organizationUsers: {
+          // If your schema supports createdAt on organizationUsers, uncomment for stronger determinism:
+          // orderBy: { createdAt: 'asc' },
           include: { organization: true },
         },
       },
     });
 
+    // Timing-safe-ish fallback path
     if (!user || !user.passwordHash) {
       await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
-      return authFailureResponse();
+      return authFailureResponse(request);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-      return authFailureResponse();
+      return authFailureResponse(request);
     }
 
     if (user.status !== 'ACTIVE') {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: 'Account is not active. Please contact support.' },
         { status: 403 }
       );
+      clearAuthCookies(response, request);
+      return response;
     }
 
     const isEmailVerified = user.emailVerified !== null;
     if (!isEmailVerified) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
           error: 'Please verify your email address before logging in.',
           requiresVerification: true,
         },
         { status: 403 }
       );
+      clearAuthCookies(response, request);
+      return response;
     }
 
     // 2FA branch
@@ -172,10 +206,9 @@ export async function POST(request: Request) {
       //   purpose: 'LOGIN_2FA',
       // });
 
-      // Temporary safe response if helper is not yet implemented:
-      return NextResponse.json(
+      const response = NextResponse.json(
         {
-          require2FA: true,
+          require2FA: true, // keep frontend contract consistent
           challengeExpiresIn: TWO_FA_CHALLENGE_TTL_SECONDS,
           message:
             'Two-factor authentication is enabled. Complete verification in the next step.',
@@ -183,6 +216,10 @@ export async function POST(request: Request) {
         },
         { status: 200 }
       );
+
+      // Optional: clear any old auth cookies before starting 2FA challenge flow
+      clearAuthCookies(response, request);
+      return response;
     }
 
     const primaryOrgUser = selectPrimaryOrgUser(
@@ -258,7 +295,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
 
-    clearAuthCookies(response, request);
+    // IMPORTANT: do NOT clear then set in same response (duplicate Set-Cookie headers can be flaky)
     setAuthCookies(response, request, accessToken, refreshToken);
 
     return response;
