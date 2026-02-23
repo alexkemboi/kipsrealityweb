@@ -3,13 +3,19 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/Getcurrentuser";
+import { getCurrentUser } from "@/lib/Getcurrentuser"; // ✅ verify file name casing in your project
+
+export const runtime = "nodejs";
 
 const INVITE_EXPIRY_HOURS = 1;
 
 function getBaseUrl(request: Request) {
-  const envBase = process.env.NEXT_PUBLIC_BASE_URL?.trim();
-  if (envBase) return envBase.replace(/\/$/, "");
+  // Prefer server-only env first
+  const serverBase = process.env.APP_BASE_URL?.trim();
+  if (serverBase) return serverBase.replace(/\/$/, "");
+
+  const publicBase = process.env.NEXT_PUBLIC_BASE_URL?.trim();
+  if (publicBase) return publicBase.replace(/\/$/, "");
 
   // Fallback if env is missing
   return new URL(request.url).origin;
@@ -31,41 +37,49 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate raw token (sent in URL)
-    const rawToken = crypto.randomBytes(16).toString("hex"); // 32-char hex token
-
-    // Hash token (stored in DB only)
-    const tokenHash = crypto
-      .createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
-
+    const now = new Date();
     const expiresAt = new Date(
-      Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
+      now.getTime() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
     );
 
-    // Optional cleanup: remove expired invites for this tenant (keeps table tidy)
-    // Safe to ignore if none exist
-    await prisma.agentInvite.deleteMany({
-      where: {
-        tenantId: user.id,
-        expiresAt: { lt: new Date() },
-      },
-    });
+    // Generate raw token (sent in URL)
+    const rawToken = crypto.randomBytes(32).toString("hex"); // 64-char hex token
 
-    // Create invite (store hash only)
-    const createdInvite = await prisma.agentInvite.create({
-      data: {
-        inviteTokenHash: tokenHash,
-        expiresAt,
-        tenant: {
-          connect: { id: user.id },
+    // Hash token (stored in DB only)
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    // Cleanup + create in a transaction
+    const createdInvite = await prisma.$transaction(async (tx) => {
+      // Remove expired invites for this tenant
+      await tx.agentInvite.deleteMany({
+        where: {
+          tenantId: user.id,
+          expiresAt: { lt: now },
         },
-      },
-      select: {
-        id: true,
-        expiresAt: true,
-      },
+      });
+
+      // OPTIONAL: enforce only one active invite per tenant
+      // Uncomment if this is your intended behavior:
+      // await tx.agentInvite.deleteMany({
+      //   where: {
+      //     tenantId: user.id,
+      //     expiresAt: { gte: now },
+      //   },
+      // });
+
+      return tx.agentInvite.create({
+        data: {
+          inviteTokenHash: tokenHash,
+          expiresAt,
+          tenant: {
+            connect: { id: user.id },
+          },
+        },
+        select: {
+          id: true,
+          expiresAt: true,
+        },
+      });
     });
 
     // Build invite URL safely
@@ -83,7 +97,8 @@ export async function POST(request: Request) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          Pragma: "no-cache",
         },
       }
     );
@@ -94,8 +109,6 @@ export async function POST(request: Request) {
       {
         success: false,
         error: "Failed to generate invite",
-        message:
-          error instanceof Error ? error.message : "Unknown server error",
       },
       { status: 500 }
     );
