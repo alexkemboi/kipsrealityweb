@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 import {
   generateAccessToken,
   generateRefreshToken,
-  generateTwoFactorChallengeToken, // make sure this exists in @/lib/auth
+  generateTwoFactorChallengeToken, // ensure this exists in @/lib/auth
 } from '@/lib/auth';
 
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 15; // 15 minutes
@@ -40,7 +40,7 @@ function getRequestContext(request: Request) {
   const host = request.headers.get('host');
 
   const isHttps =
-    forwardedProto ? forwardedProto === 'https' : url.protocol === 'https:';
+    forwardedProto ? forwardedProto.includes('https') : url.protocol === 'https:';
 
   const hostname = (forwardedHost || host || url.hostname || '').toLowerCase();
 
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
     const primaryOrgUser = selectPrimaryOrgUser(
       user.organizationUsers.map((ou) => ({
         id: ou.id,
-        role: ou.role,
+        role: String(ou.role),
         organizationId: ou.organizationId,
         organization: {
           id: ou.organization.id,
@@ -207,39 +207,25 @@ export async function POST(request: Request) {
       role = 'SYSTEM_ADMIN';
     }
 
+    // NOTE: removed custom `type` field for compatibility unless your auth helpers explicitly require it
     const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
       role,
       organizationId: primaryOrgUser?.organizationId ?? '',
       organizationUserId: primaryOrgUser?.id,
-      type: 'access',
     });
 
     const refreshToken = generateRefreshToken({
       userId: user.id,
-      type: 'refresh',
     });
 
-    // Access token expiry aligned to cookie maxAge
     const expiresAt = Date.now() + ACCESS_TOKEN_MAX_AGE_SECONDS * 1000;
 
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
-
-    // If you persist refresh sessions for rotation/revocation, create it here.
-    // Uncomment/adapt only if your RefreshSession schema fields match.
-    /*
-    await prisma.refreshSession.create({
-      data: {
-        userId: user.id,
-        tokenHash: crypto.createHash('sha256').update(refreshToken).digest('hex'),
-        expiresAt: new Date(Date.now() + REFRESH_TOKEN_MAX_AGE_SECONDS * 1000),
-      },
-    });
-    */
 
     const isPhoneVerified = user.phoneVerified !== null;
 
@@ -267,7 +253,7 @@ export async function POST(request: Request) {
         : null,
     };
 
-    // Cookie-based auth: do not return raw tokens in JSON
+    // Cookie-based auth
     const response = NextResponse.json(
       {
         user: userResponse,
