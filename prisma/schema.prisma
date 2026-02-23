@@ -33,8 +33,7 @@ model Organization {
   dssDocuments           DssDocument[]
   dssParticipants        DssParticipant[]
   dssWorkflowTemplates   DssWorkflowTemplate[]
-  financialEntities FinancialEntity[]
-  journalEntries    JournalEntry[]
+  financialEntities      FinancialEntity[]
   users                  OrganizationUser[]
   vendors                Vendor[]
   plan                   Plan?                   @relation(fields: [planId], references: [id])
@@ -42,7 +41,6 @@ model Organization {
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
-
 model User {
   id                     String                   @id @default(uuid())
   email                  String                   @unique
