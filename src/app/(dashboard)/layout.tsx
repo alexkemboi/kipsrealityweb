@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -75,6 +75,8 @@ const NEVER_REDIRECT_PREFIXES = [
 
 /**
  * Optional exact-only routes (if you need strict matching in future)
+ * NOTE: If you want "/" to always redirect users to their role home,
+ * remove "/" from this list.
  */
 const SHARED_EXACT_ROUTES = ["/"] as const;
 
@@ -128,8 +130,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
 function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const { user, isLoading } = useAuth();
-  const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } =
-    useDashboard();
+  const { isSidebarCollapsed, toggleSidebar, setMobileDrawerOpen } = useDashboard();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -141,22 +142,22 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     setIsMounted(true);
   }, []);
 
+  const roleAccess = useMemo(() => getRoleAccess(user?.role), [user?.role]);
+
+  const shouldRedirect = useMemo(() => {
+    if (!isMounted) return false;
+    if (isLoading) return false;
+    if (!user) return false;
+    if (!pathname) return false;
+    if (!roleAccess) return false;
+
+    if (shouldSkipRoleRedirect(pathname)) return false;
+
+    return !isPathAllowedForRole(pathname, roleAccess);
+  }, [isMounted, isLoading, user, pathname, roleAccess]);
+
   useEffect(() => {
-    if (!isMounted) return;
-    if (isLoading) return;
-    if (!user) return;
-    if (!pathname) return;
-
-    const roleAccess = getRoleAccess(user.role);
-
-    // Fail-safe: unknown role => don't force redirect blindly
-    if (!roleAccess) return;
-
-    if (shouldSkipRoleRedirect(pathname)) return;
-
-    const pathAllowed = isPathAllowedForRole(pathname, roleAccess);
-
-    if (pathAllowed) return;
+    if (!shouldRedirect || !roleAccess) return;
 
     const redirectTarget = roleAccess.home;
 
@@ -165,7 +166,7 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
     lastRedirectRef.current = redirectTarget;
 
     router.replace(redirectTarget);
-  }, [isMounted, isLoading, pathname, router, user]);
+  }, [shouldRedirect, roleAccess, router]);
 
   // Reset redirect guard once pathname updates
   useEffect(() => {
@@ -182,6 +183,18 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
           <p className="text-sm font-medium text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirecting fallback (prevents unauthorized page flash)
+  if (shouldRedirect) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm font-medium text-gray-600">Redirecting...</p>
         </div>
       </div>
     );
