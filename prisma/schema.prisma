@@ -49,12 +49,12 @@ model User {
   firstName                   String?                  @map("first_name")
   lastName                    String?                  @map("last_name")
   phone                       String?                  @unique // E.164 format (e.g. +12535551234)
-  phoneVerified               DateTime? // Null = not verified
+  phoneVerified               DateTime?                @map("phone_verified") // Null = not verified
   avatarUrl                   String?                  @map("avatar_url")
   status                      UserStatus               @default(ACTIVE)
   lastLoginAt                 DateTime?                @map("last_login_at")
   createdAt                   DateTime                 @default(now()) @map("created_at")
-  updatedAt                   DateTime                 @updatedAt @map("updated_at")
+  updatedAt                   DateTime                 @default(now()) @updatedAt @map("updated_at")
 
   emailVerified               DateTime?                @map("email_verified")
 
@@ -93,17 +93,16 @@ model User {
 
   @@map("users")
 }
-
 model TenantPaymentMethod {
   id                    String   @id @default(uuid())
   userId                String   @map("user_id")
-  type                  String // 'ACH', 'CARD'
+  type                  String   // 'ACH', 'CARD'
   plaidAccessToken      String?  @map("plaid_access_token") // Encrypted
   plaidAccountId        String?  @map("plaid_account_id")
   stripePaymentMethodId String   @map("stripe_payment_method_id")
   isDefault             Boolean  @default(false) @map("is_default")
   createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -417,6 +416,7 @@ model UtilityPayment {
   reconciliationStatus UtilityReconciliationStatus @default(PENDING) @map("reconciliation_status")
   blockchainHash       String?                     @map("blockchain_hash")
   createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @default(now()) @updatedAt
   allocation           UtilityAllocation           @relation(fields: [allocationId], references: [id])
 
   @@index([allocationId])
@@ -788,7 +788,7 @@ model Payment {
   postingStatus     PostingStatus     @default(PENDING) @map("posting_status")
   journalEntryId    String?           @unique @map("journal_entry_id")
   createdAt         DateTime?         @default(now()) @db.DateTime(0)
-  updatedAt         DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt         DateTime?         @default(now()) @updatedAt @db.DateTime(0)
   isReversed        Boolean           @default(false) @map("is_reversed")
   reversedAt        DateTime?         @map("reversed_at") @db.DateTime(0)
   reversalReason    String?           @map("reversal_reason") @db.VarChar(255)
@@ -834,7 +834,7 @@ model Receipt {
   receiptNo String    @unique(map: "receiptNo") @db.VarChar(100)
   issuedOn  DateTime? @default(now()) @db.DateTime(0)
   createdAt DateTime? @default(now()) @db.DateTime(0)
-  updatedAt DateTime? @default(now()) @db.DateTime(0)
+  updatedAt DateTime? @default(now()) @updatedAt @db.DateTime(0)
   invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "receipt_ibfk_1")
   payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "receipt_ibfk_2")
 
@@ -863,7 +863,7 @@ model lease_utility {
   utility_id            String            @db.Char(36)
   is_tenant_responsible Boolean?          @default(true)
   createdAt             DateTime?         @default(now()) @db.DateTime(0)
-  updatedAt             DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt             DateTime?         @default(now()) @updatedAt @db.DateTime(0)
   Lease                 Lease             @relation(fields: [lease_id], references: [id], onDelete: Cascade)
   utility               utility           @relation(fields: [utility_id], references: [id], onDelete: Cascade)
   utility_reading       utility_reading[]
@@ -880,7 +880,7 @@ model utility_reading {
   readingDate      DateTime?     @default(now()) @db.DateTime(0)
   amount           Float?        @db.Float
   createdAt        DateTime?     @default(now()) @db.DateTime(0)
-  updatedAt        DateTime?     @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?     @default(now()) @updatedAt @db.DateTime(0)
   lease_utility    lease_utility @relation(fields: [lease_utility_id], references: [id], onDelete: Cascade)
 
   @@index([lease_utility_id])
