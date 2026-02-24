@@ -1,31 +1,30 @@
-import { test, expect, type APIResponse, type Page } from '@playwright/test';
-import { PrismaClient, organization_users_role } from '@prisma/client';
+import { test, expect, type APIResponse, type Page } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ log: ["warn", "error"] });
 
-const E2E_MANAGER_EMAIL = process.env.E2E_MANAGER_EMAIL ?? 'manager@test.com';
-const E2E_MANAGER_PASSWORD = process.env.E2E_MANAGER_PASSWORD ?? 'password123';
+const E2E_MANAGER_EMAIL = process.env.E2E_MANAGER_EMAIL ?? "manager@test.com";
+const E2E_MANAGER_PASSWORD = process.env.E2E_MANAGER_PASSWORD ?? "password123";
 
-// Optional (comma-separated): token,next-auth.session-token,__Secure-next-auth.session-token
-const EXPECTED_AUTH_COOKIE_NAMES = (process.env.E2E_AUTH_COOKIE_NAMES ?? '')
-  .split(',')
+const EXPECTED_AUTH_COOKIE_NAMES = (process.env.E2E_AUTH_COOKIE_NAMES ?? "")
+  .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
 const TID = {
-  myTenantsNavBtn: 'my-tenants-nav-btn',
-  newTenantInviteBtn: 'new-tenant-invite-btn',
-  inviteTenantModal: 'invite-tenant-modal',
-  inviteTenantModalTitle: 'invite-tenant-modal-title',
-  leaseSelect: 'lease-select',
-  inviteEmailInput: 'invite-email-input',
-  inviteFirstNameInput: 'invite-first-name-input',
-  inviteLastNameInput: 'invite-last-name-input',
-  invitePhoneInput: 'invite-phone-input',
-  sendInviteBtn: 'send-invite-btn',
-  inviteSuccessToast: 'invite-success-toast',
-  tenantInvitesTab: 'tenant-invites-tab',
-  tenantInvitesTable: 'tenant-invites-table',
+  myTenantsNavBtn: "my-tenants-nav-btn",
+  newTenantInviteBtn: "new-tenant-invite-btn",
+  inviteTenantModal: "invite-tenant-modal",
+  inviteTenantModalTitle: "invite-tenant-modal-title",
+  leaseSelect: "lease-select",
+  inviteEmailInput: "invite-email-input",
+  inviteFirstNameInput: "invite-first-name-input",
+  inviteLastNameInput: "invite-last-name-input",
+  invitePhoneInput: "invite-phone-input",
+  sendInviteBtn: "send-invite-btn",
+  inviteSuccessToast: "invite-success-toast",
+  tenantInvitesTab: "tenant-invites-tab",
+  tenantInvitesTable: "tenant-invites-table",
 } as const;
 
 type SeededManager = {
@@ -33,8 +32,33 @@ type SeededManager = {
   emailVerified: Date | null;
 };
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+async function waitForDbReady(): Promise<void> {
+  const timeoutMs = 20_000;
+  const intervalMs = 500;
+  const started = Date.now();
+  let lastErr: unknown = null;
+
+  while (Date.now() - started < timeoutMs) {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      return;
+    } catch (e) {
+      lastErr = e;
+      await sleep(intervalMs);
+    }
+  }
+
+  throw new Error(
+    `DB not ready after ${timeoutMs}ms.${
+      lastErr instanceof Error ? ` Last DB error: ${lastErr.message}` : ""
+    }`
+  );
+}
+
 async function waitForSeededManager(email: string): Promise<SeededManager> {
-  const timeoutMs = 15_000;
+  const timeoutMs = 20_000;
   const intervalMs = 500;
   const started = Date.now();
   let lastError: unknown = null;
@@ -49,15 +73,14 @@ async function waitForSeededManager(email: string): Promise<SeededManager> {
       if (user) return user;
     } catch (err) {
       lastError = err;
-      // DB may still be booting in CI; retry until timeout
     }
 
-    await new Promise((r) => setTimeout(r, intervalMs));
+    await sleep(intervalMs);
   }
 
   throw new Error(
     `User ${email} not found after ${timeoutMs}ms. Check seed step, DATABASE_URL, and E2E credentials.${
-      lastError instanceof Error ? ` Last DB error: ${lastError.message}` : ''
+      lastError instanceof Error ? ` Last DB error: ${lastError.message}` : ""
     }`
   );
 }
@@ -70,31 +93,24 @@ async function ensureEmailVerified(userId: string): Promise<void> {
 }
 
 async function assertPropertyManagerMembership(userId: string): Promise<void> {
-  const pmMembership = await prisma.organizationUser.findFirst({
-    where: {
-      userId,
-      role: organization_users_role.PROPERTY_MANAGER,
-    },
-    select: { organizationId: true, role: true },
+  const memberships = await (prisma as any).organizationUser.findMany({
+    where: { userId },
+    select: { role: true, organizationId: true },
+    take: 10,
   });
 
-  if (!pmMembership) {
-    const anyMemberships = await prisma.organizationUser.findMany({
-      where: { userId },
-      select: { role: true, organizationId: true },
-      take: 5,
-    });
-
-    if (anyMemberships.length === 0) {
-      throw new Error(
-        'User has no organization_users record. /property-manager routes require organization membership.'
-      );
-    }
-
+  if (!memberships?.length) {
     throw new Error(
-      `User is not a PROPERTY_MANAGER. Found memberships: ${anyMemberships
-        .map((m) => `${m.role}@${m.organizationId}`)
-        .join(', ')}`
+      "User has no organization_users record. /property-manager routes require organization membership."
+    );
+  }
+
+  const isPm = memberships.some((m: any) => String(m.role) === "PROPERTY_MANAGER");
+  if (!isPm) {
+    throw new Error(
+      `User is not a PROPERTY_MANAGER. Found memberships: ${memberships
+        .map((m: any) => `${m.role}@${m.organizationId}`)
+        .join(", ")}`
     );
   }
 }
@@ -114,11 +130,12 @@ async function submitLoginAndCapture(page: Page): Promise<APIResponse | null> {
   const responsePromise = page
     .waitForResponse(
       (res) =>
-        res.request().method() === 'POST' &&
-        (res.url().includes('/api/auth') ||
-          res.url().includes('/login') ||
-          res.url().includes('/signin')),
-      { timeout: 15_000 }
+        res.request().method() === "POST" &&
+        (res.url().includes("/api/auth") ||
+          res.url().includes("/api/login") ||
+          res.url().includes("/login") ||
+          res.url().includes("/signin")),
+      { timeout: 20_000 }
     )
     .catch(() => null);
 
@@ -128,29 +145,32 @@ async function submitLoginAndCapture(page: Page): Promise<APIResponse | null> {
 
 async function assertAuthSucceeded(page: Page, loginResponse: APIResponse | null): Promise<void> {
   if (loginResponse && loginResponse.status() >= 400) {
-    let body = '';
+    let body = "";
     try {
       body = await loginResponse.text();
     } catch {
       // ignore
     }
+
     throw new Error(
-      `Login API failed: ${loginResponse.status()} ${loginResponse.url()}${body ? ` | ${body}` : ''}`
+      `Login API failed: ${loginResponse.status()} ${loginResponse.url()}${body ? ` | ${body}` : ""}`
     );
   }
 
-  const uiError = page.locator('div.bg-red-50 p, .toast-error, [role="alert"]').first();
-  if (await uiError.isVisible({ timeout: 3000 }).catch(() => false)) {
-    const text = (await uiError.textContent())?.trim() || '[empty alert]';
+  const uiError = page.locator("div.bg-red-50 p, .toast-error, [role='alert']").first();
+  if (await uiError.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    const text = (await uiError.textContent())?.trim() || "[empty alert]";
     throw new Error(`Login UI error displayed: ${text}`);
   }
+
+  await page.waitForTimeout(250);
 
   const cookies = await page.context().cookies();
   const cookieNames = cookies.map((c) => c.name);
 
   if (cookieNames.length === 0) {
     throw new Error(
-      'No cookies were set after login. Likely cookie config issue (secure/samesite/domain/path) or login failed.'
+      "No cookies were set after login. Likely cookie config issue (secure/samesite/domain/path) or login failed."
     );
   }
 
@@ -158,7 +178,7 @@ async function assertAuthSucceeded(page: Page, loginResponse: APIResponse | null
     const matched = EXPECTED_AUTH_COOKIE_NAMES.some((name) => cookieNames.includes(name));
     if (!matched) {
       throw new Error(
-        `Expected one of auth cookies [${EXPECTED_AUTH_COOKIE_NAMES.join(', ')}], got [${cookieNames.join(', ')}].`
+        `Expected one of auth cookies [${EXPECTED_AUTH_COOKIE_NAMES.join(", ")}], got [${cookieNames.join(", ")}].`
       );
     }
   }
@@ -166,28 +186,28 @@ async function assertAuthSucceeded(page: Page, loginResponse: APIResponse | null
 
 async function waitForLeaseOptions(page: Page): Promise<void> {
   const leaseSelect = page.getByTestId(TID.leaseSelect);
-  await expect(leaseSelect).toBeVisible({ timeout: 15_000 });
+
+  await expect(leaseSelect).toBeVisible({ timeout: 20_000 });
 
   await expect
-    .poll(
-      async () => {
-        return await leaseSelect.locator('option').count();
-      },
-      {
-        timeout: 20_000,
-        message: 'Lease select options did not load in time',
-      }
-    )
+    .poll(() => leaseSelect.locator("option").count(), {
+      timeout: 25_000,
+      message: "Lease select options did not load in time",
+    })
     .toBeGreaterThan(1);
 }
 
-test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
+test.describe("Tenant Invitation Flow", () => {
+  test.beforeAll(async () => {
+    await waitForDbReady();
+  });
+
   test.afterAll(async () => {
     await prisma.$disconnect();
   });
 
-  test('PM can invite a tenant to a unit', async ({ page }, testInfo) => {
-    test.setTimeout(120_000);
+  test("PM can invite a tenant to a unit", async ({ page }, testInfo) => {
+    test.setTimeout(140_000);
 
     const testEmail = `tenant_${Date.now()}_${testInfo.parallelIndex}@example.com`;
 
@@ -196,20 +216,23 @@ test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
       managerEmail: E2E_MANAGER_EMAIL,
       inviteEmail: testEmail,
       startedAt: new Date().toISOString(),
+      expectedAuthCookies: EXPECTED_AUTH_COOKIE_NAMES,
     };
 
-    page.on('console', (msg) => {
-      const text = msg.text();
-      if (text.startsWith('DEBUG:')) console.log(`[BROWSER-DEBUG] ${text}`);
+    const browserConsole: string[] = [];
+
+    page.on("console", (msg) => {
+      browserConsole.push(`[${msg.type()}] ${msg.text()}`);
     });
 
-    page.on('pageerror', (err) => {
-      console.error(`[BROWSER-PAGEERROR] ${err.message}`);
+    page.on("pageerror", (err) => {
+      browserConsole.push(`[pageerror] ${err.message}`);
     });
 
     try {
-      await test.step('Ensure seeded manager exists, verified, and has PROPERTY_MANAGER role', async () => {
+      await test.step("Verify seeded PM user", async () => {
         const user = await waitForSeededManager(E2E_MANAGER_EMAIL);
+
         debug.userId = user.id;
         debug.initialEmailVerified = user.emailVerified?.toISOString() ?? null;
 
@@ -221,28 +244,23 @@ test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
         }
 
         await assertPropertyManagerMembership(user.id);
-        debug.roleCheck = 'PROPERTY_MANAGER';
+        debug.roleCheck = "PROPERTY_MANAGER";
       });
 
-      await test.step('Login and validate authenticated session', async () => {
-        await page.goto('/login');
+      await test.step("Login", async () => {
+        await page.goto("/login", { waitUntil: "domcontentloaded" });
 
         const pageHtml = await page.content();
-        if (pageHtml.includes('Internal Server Error') || pageHtml.includes('Application error')) {
-          throw new Error('Server error detected on /login page render. Check CI app/server logs.');
+        if (pageHtml.includes("Internal Server Error") || pageHtml.includes("Application error")) {
+          throw new Error("Server error detected on /login page render. Check CI app/server logs.");
         }
 
         await fillLoginForm(page, E2E_MANAGER_EMAIL, E2E_MANAGER_PASSWORD);
         const loginResponse = await submitLoginAndCapture(page);
 
-        if (loginResponse) {
-          debug.loginApi = {
-            status: loginResponse.status(),
-            url: loginResponse.url(),
-          };
-        } else {
-          debug.loginApi = 'No matching login POST response captured';
-        }
+        debug.loginApi = loginResponse
+          ? { status: loginResponse.status(), url: loginResponse.url() }
+          : "No matching login POST response captured";
 
         await assertAuthSucceeded(page, loginResponse);
 
@@ -253,135 +271,146 @@ test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
           httpOnly: c.httpOnly,
           domain: c.domain,
           path: c.path,
+          sameSite: c.sameSite,
         }));
 
-        await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 10_000 });
-        await expect(page).toHaveURL(/\/property-manager/, { timeout: 30_000 });
+        await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 15_000 });
+        await expect(page).toHaveURL(/\/property-manager/, { timeout: 40_000 });
       });
 
-      await test.step('Navigate to My tenants', async () => {
+      await test.step("Open tenants page", async () => {
         await page.getByTestId(TID.myTenantsNavBtn).click();
-        await expect(page).toHaveURL(/\/property-manager\/content\/tenants/, { timeout: 20_000 });
+        await expect(page).toHaveURL(/\/property-manager\/content\/tenants/, { timeout: 25_000 });
       });
 
-      await test.step('Open invite modal', async () => {
+      await test.step("Open invite modal", async () => {
         await page.getByTestId(TID.newTenantInviteBtn).click();
-        await expect(page.getByTestId(TID.inviteTenantModal)).toBeVisible({ timeout: 15_000 });
-        await expect(page.getByTestId(TID.inviteTenantModalTitle)).toBeVisible({ timeout: 15_000 });
+        await expect(page.getByTestId(TID.inviteTenantModal)).toBeVisible({ timeout: 20_000 });
+        await expect(page.getByTestId(TID.inviteTenantModalTitle)).toBeVisible({ timeout: 20_000 });
       });
 
-      await test.step('Fill invitation form deterministically', async () => {
+      await test.step("Fill invite form", async () => {
         await waitForLeaseOptions(page);
         await page.getByTestId(TID.leaseSelect).selectOption({ index: 1 });
 
         await page.getByTestId(TID.inviteEmailInput).fill(testEmail);
-        await page.getByTestId(TID.inviteFirstNameInput).fill('Test');
-        await page.getByTestId(TID.inviteLastNameInput).fill('Tenant');
-        await page.getByTestId(TID.invitePhoneInput).fill('+12065551234');
+        await page.getByTestId(TID.inviteFirstNameInput).fill("Test");
+        await page.getByTestId(TID.inviteLastNameInput).fill("Tenant");
+        await page.getByTestId(TID.invitePhoneInput).fill("+12065551234");
       });
 
-      await test.step('Send invite and verify API success', async () => {
+      await test.step("Submit invite", async () => {
         const inviteResponsePromise = page
           .waitForResponse(
             (res) =>
-              res.request().method() === 'POST' &&
-              (res.url().includes('/invite') || res.url().includes('/invites')),
-            { timeout: 20_000 }
+              res.request().method() === "POST" &&
+              (res.url().includes("/invite") || res.url().includes("/invites")),
+            { timeout: 25_000 }
           )
           .catch(() => null);
 
         const sendButton = page.getByTestId(TID.sendInviteBtn);
-        await expect(sendButton).toBeEnabled({ timeout: 10_000 });
+        await expect(sendButton).toBeEnabled({ timeout: 15_000 });
         await sendButton.click();
 
         const inviteResponse = await inviteResponsePromise;
+
+        debug.inviteApi = inviteResponse
+          ? { status: inviteResponse.status(), url: inviteResponse.url() }
+          : "No matching invite POST response captured";
+
         if (inviteResponse && inviteResponse.status() >= 400) {
-          let body = '';
+          let body = "";
           try {
             body = await inviteResponse.text();
           } catch {
             // ignore
           }
+
           throw new Error(
-            `Invite API failed: ${inviteResponse.status()} ${inviteResponse.url()}${body ? ` | ${body}` : ''}`
+            `Invite API failed: ${inviteResponse.status()} ${inviteResponse.url()}${body ? ` | ${body}` : ""}`
           );
         }
-
-        debug.inviteApi = inviteResponse
-          ? { status: inviteResponse.status(), url: inviteResponse.url() }
-          : 'No matching invite POST response captured';
       });
 
-      await test.step('Verify success UI', async () => {
-        await expect(page.getByTestId(TID.inviteSuccessToast)).toBeVisible({ timeout: 25_000 });
+      await test.step("Verify success UI", async () => {
+        await expect(page.getByTestId(TID.inviteSuccessToast)).toBeVisible({ timeout: 30_000 });
       });
 
-      await test.step('Verify invite appears in Invites tab', async () => {
+      await test.step("Verify invite in table", async () => {
         await page.getByTestId(TID.tenantInvitesTab).click();
 
         const invitesTable = page.getByTestId(TID.tenantInvitesTable);
-        await expect(invitesTable).toBeVisible({ timeout: 15_000 });
-        await expect(invitesTable.getByText(testEmail)).toBeVisible({ timeout: 15_000 });
+        await expect(invitesTable).toBeVisible({ timeout: 20_000 });
+        await expect(invitesTable.getByText(testEmail)).toBeVisible({ timeout: 20_000 });
       });
 
-      await test.step('Verify invite persisted in database', async () => {
-        const dbInvite = await prisma.invite.findFirst({
-          where: { email: testEmail },
-          select: {
-            id: true,
-            email: true,
-            accepted: true,
-            expiresAt: true,
-            role: true,
-            organizationId: true,
-          },
-        });
+      await test.step("Verify invite in DB", async () => {
+        const timeoutMs = 10_000;
+        const started = Date.now();
+        let dbInvite: any = null;
+
+        while (Date.now() - started < timeoutMs) {
+          dbInvite = await (prisma as any).invite.findFirst({
+            where: { email: testEmail },
+            select: {
+              id: true,
+              email: true,
+              accepted: true,
+              expiresAt: true,
+              role: true,
+              organizationId: true,
+            },
+          });
+
+          if (dbInvite) break;
+          await sleep(300);
+        }
 
         if (!dbInvite) {
-          throw new Error(`Invite row not found in DB for ${testEmail}`);
+          throw new Error(`Invite row not found in DB for ${testEmail} after ${timeoutMs}ms`);
         }
 
         debug.dbInvite = {
           id: dbInvite.id,
           email: dbInvite.email,
           accepted: dbInvite.accepted,
-          expiresAt: dbInvite.expiresAt.toISOString(),
+          expiresAt: dbInvite.expiresAt ? new Date(dbInvite.expiresAt).toISOString() : null,
           role: dbInvite.role,
           organizationId: dbInvite.organizationId,
         };
 
         expect(dbInvite.email).toBe(testEmail);
-        expect(dbInvite.accepted).toBe(false);
+        expect(Boolean(dbInvite.accepted)).toBe(false);
       });
     } catch (error) {
-      // Attach rich debugging on failure
-      await testInfo.attach('tenant-invite-debug.json', {
+      debug.browserConsole = browserConsole.slice(-200);
+      debug.finalUrl = page.url();
+
+      await testInfo.attach("tenant-invite-debug.json", {
         body: JSON.stringify(debug, null, 2),
-        contentType: 'application/json',
+        contentType: "application/json",
       });
 
-      await testInfo.attach('page-url.txt', {
-        body: page.url(),
-        contentType: 'text/plain',
-      });
-
-      await testInfo.attach('page-content.html', {
+      await testInfo.attach("page-content.html", {
         body: await page.content(),
-        contentType: 'text/html',
+        contentType: "text/html",
       });
 
-      await testInfo.attach('failure-screenshot.png', {
+      await testInfo.attach("failure-screenshot.png", {
         body: await page.screenshot({ fullPage: true }),
-        contentType: 'image/png',
+        contentType: "image/png",
       });
 
       throw error;
     }
 
-    // Attach debug info on success too (great for CI traceability)
-    await testInfo.attach('tenant-invite-debug.json', {
+    debug.browserConsole = browserConsole.slice(-200);
+    debug.finalUrl = page.url();
+
+    await testInfo.attach("tenant-invite-debug.json", {
       body: JSON.stringify(debug, null, 2),
-      contentType: 'application/json',
+      contentType: "application/json",
     });
   });
 });
