@@ -25,7 +25,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: isCI ? 'npm run start:next' : 'npm run dev',
+    command: isCI ? 'npx next start' : 'npm run dev',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !isCI,
     timeout: 120_000,
