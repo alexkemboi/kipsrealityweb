@@ -6,8 +6,17 @@ on:
   pull_request:
     branches: [main, master]
 
+# Prevent duplicate runs on the same branch/PR
+concurrency:
+  group: playwright-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
+    name: E2E (Playwright + MySQL)
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -25,7 +34,7 @@ jobs:
           --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent"
           --health-interval=10s
           --health-timeout=5s
-          --health-retries=20
+          --health-retries=30
 
     env:
       CI: "true"
@@ -42,34 +51,48 @@ jobs:
       AUTH_SECRET: "ci-auth-secret-secure-enough"
       NEXTAUTH_TRUST_HOST: "true"
 
+      # Pin public npm registry to avoid private mirror/proxy drift (e.g., 403 on tarballs)
+      NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
+
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+          registry-url: "https://registry.npmjs.org/"
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Wait for MySQL
-        shell: bash
+      - name: Show Node and npm versions
         run: |
-          for i in {1..30}; do
-            if nc -z 127.0.0.1 3306; then
+          node -v
+          npm -v
+          npm config get registry
+
+      # Skip lifecycle scripts here (postinstall runs prisma generate and can fail too early)
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Wait for MySQL (service health + TCP)
+        run: |
+          for i in {1..45}; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent >/dev/null 2>&1; then
               echo "MySQL is reachable."
               exit 0
             fi
-            echo "Waiting for MySQL... ($i/30)"
+            echo "Waiting for MySQL... ($i/45)"
             sleep 2
           done
-          echo "MySQL not reachable."
+          echo "MySQL not reachable in time."
           exit 1
 
-      - name: Create .env.test
+      - name: Create .env.test and .env
         run: |
           cat > .env.test <<EOF
           NODE_ENV=test
@@ -83,7 +106,14 @@ jobs:
           AUTH_SECRET=${AUTH_SECRET}
           NEXTAUTH_TRUST_HOST=${NEXTAUTH_TRUST_HOST}
           EOF
+
           cp .env.test .env
+
+          echo ".env.test created"
+
+      # Fail fast with a clear Prisma error if schema is broken (e.g., duplicate fields/enums)
+      - name: Validate Prisma schema
+        run: npx prisma validate
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -94,6 +124,8 @@ jobs:
           npx prisma db push --force-reset --accept-data-loss
           echo "Seeding..."
           npx tsx prisma/seed.e2e.ts
+          # If you prefer package scripts, use:
+          # npm run db:reset:test && npm run db:seed:test
 
       - name: Build app (required for next start in Playwright webServer)
         run: npm run build
@@ -111,6 +143,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload traces/screenshots/videos
         if: always()
@@ -119,3 +152,4 @@ jobs:
           name: playwright-test-results
           path: test-results/
           retention-days: 7
+          if-no-files-found: warn
