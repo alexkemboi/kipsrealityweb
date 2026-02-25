@@ -90,12 +90,11 @@ jobs:
 
       - name: Reset schema and seed E2E DB
         run: |
-          echo "Syncing schema..."
           npx prisma db push --force-reset --accept-data-loss
-          echo "Seeding..."
           npx tsx prisma/seed.e2e.ts
 
-      - name: Build app (required for next start in Playwright webServer)
+      # ✅ REQUIRED: build before Playwright starts `next start`
+      - name: Build app
         run: npm run build
 
       - name: Install Playwright browsers
