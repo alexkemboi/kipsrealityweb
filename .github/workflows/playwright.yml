@@ -95,6 +95,9 @@ jobs:
           echo "Seeding..."
           npx tsx prisma/seed.e2e.ts
 
+      - name: Build app (required for next start in Playwright webServer)
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
