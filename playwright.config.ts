@@ -25,8 +25,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    // Temporary CI-safe setup while production build is still failing
-    command: "npm run dev",
+    // CI runs a production server, so your workflow MUST run `npm run build` first
+    command: isCI ? "npm start" : "npm run dev",
     url: "http://127.0.0.1:3000",
     reuseExistingServer: !isCI,
     timeout: 120_000,
