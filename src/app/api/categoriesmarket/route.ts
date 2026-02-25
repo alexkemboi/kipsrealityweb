@@ -13,6 +13,16 @@ export async function GET() {
     console.error("[GET /api/marketplace/categories]", err);
     return NextResponse.json(
       { error: "Failed to load categories" },
+    const categories = await prisma.categoryMarketplace.findMany({
+      orderBy: { id: "asc" },
+    });
+
+    return NextResponse.json(categories, { status: 200 });
+  } catch (error) {
+    console.error("[GET /api/appliances]", error);
+
+    return NextResponse.json(
+      { error: "Failed to load appliance categories" },
       { status: 500 }
     );
   }
