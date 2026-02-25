@@ -135,7 +135,7 @@
     "cross-env": "^10.1.0",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
-    "eslint-config-next": "^15.5.3",
+    "eslint-config-next": "^16.1.6",
     "postcss": "^8.5.6",
     "prisma": "^6.19.2",
     "rimraf": "^6.1.2",
