@@ -4,10 +4,13 @@ const isCI = !!process.env.CI;
 
 export default defineConfig({
   testDir: './tests/e2e',
+
   fullyParallel: false,
   workers: 1,
+
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
+
   reporter: isCI ? [['html', { open: 'never' }]] : [['html']],
 
   use: {
