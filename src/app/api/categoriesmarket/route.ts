@@ -1,19 +1,18 @@
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    const categories = await prisma.categoryMarketplace.findMany({
-      orderBy: { id: "asc" },
+    const categories = await prisma.category.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     });
 
     return NextResponse.json(categories, { status: 200 });
-  } catch (error) {
-    console.error("[GET /api/marketplace/categories]", error);
+  } catch (err) {
+    console.error("[GET /api/marketplace/categories]", err);
     return NextResponse.json(
-      { error: "Failed to load marketplace categories" },
+      { error: "Failed to load categories" },
       { status: 500 }
     );
   }
