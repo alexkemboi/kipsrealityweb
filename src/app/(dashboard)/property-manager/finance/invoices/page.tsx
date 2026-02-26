@@ -14,6 +14,7 @@ export default function InvoicesPage() {
   const searchParams = useSearchParams();
 
   // Read initial filters from URL (first render)
+  // URL -> initial state
   const initialStatus = searchParams.get("status") ?? "";
   const initialType = searchParams.get("type") ?? "";
   const initialPastDue = searchParams.get("pastDue") ?? "";
@@ -35,6 +36,19 @@ export default function InvoicesPage() {
     router.replace(`/property-manager/finance/invoices${q ? `?${q}` : ""}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, type, pastDue]);
+  const queryString = useMemo(() => {
+    const qs = new URLSearchParams();
+    if (status) qs.set("status", status);
+    if (type) qs.set("type", type);
+    if (pastDue === "1") qs.set("pastDue", "1");
+    return qs.toString();
+  }, [status, type, pastDue]);
+
+  // Keep URL synced with filters
+  useEffect(() => {
+    router.replace(`/property-manager/finance/invoices${queryString ? `?${queryString}` : ""}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryString]);
 
   const loadInvoices = async () => {
     try {
@@ -55,7 +69,6 @@ export default function InvoicesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, type, pastDue]);
 
-  // --- PDF Download function ---
   const downloadPDF = () => {
     if (invoiceGroups.length === 0) {
       toast.error("No invoices to download");
@@ -121,6 +134,7 @@ export default function InvoicesPage() {
           </select>
 
           {/* Past due toggle (supports pastDue=1) */}
+          {/* ✅ pastDue filter */}
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
