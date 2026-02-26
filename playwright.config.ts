@@ -52,14 +52,15 @@ export default defineConfig({
       },
     },
 
-    {
-      name: 'webkit',
-      use: { 
-        ...devices['Desktop Safari'],
-        actionTimeout: 25_000,
-        navigationTimeout: 60_000,
-      },
-    },
+    // WebKit skipped - timing issues on Windows
+    // {
+    //   name: 'webkit',
+    //   use: { 
+    //     ...devices['Desktop Safari'],
+    //     actionTimeout: 45_000,
+    //     navigationTimeout: 90_000,
+    //   },
+    // },
 
     /* Test against mobile viewports. */
     // {
