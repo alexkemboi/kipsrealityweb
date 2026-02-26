@@ -1,101 +1,104 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const protectedRoutes = ['/admin', '/property-manager', '/tenant', '/vendor', '/dashboard'];
-const publicRoutes = ['/login', '/signup', '/', '/services', '/plans', '/blog', '/marketplace', '/unauthorized'];
-
-const roleDashboards = {
-  SYSTEM_ADMIN: '/admin',
-  PROPERTY_MANAGER: '/property-manager',
-  TENANT: '/tenant',
-  VENDOR: '/vendor',
+const ROLE_ROUTES: Record<string, string[]> = {
+  SYSTEM_ADMIN: ["/admin"],
+  PROPERTY_MANAGER: ["/property-manager"],
+  TENANT: ["/tenant"],
+  VENDOR: ["/vendor"],
+  AGENT: ["/agent"],
 };
 
-const routePermissions = {
-  '/admin': ['SYSTEM_ADMIN'],
-  '/property-manager': ['PROPERTY_MANAGER'],
-  '/tenant': ['TENANT'],
-  '/vendor': ['VENDOR'],
-};
+const PUBLIC_ROUTES = [
+  "/",
+  "/login",
+  "/signup",
+  "/services",
+  "/plans",
+  "/blog",
+  "/marketplace",
+  "/unauthorized",
+];
 
-// Decode JWT safely
+function matchesPrefix(path: string, prefix: string) {
+  return path === prefix || path.startsWith(prefix + "/");
+}
+
 const decodeJWT = (token: string): { role?: string } => {
   try {
-    const payload = token.split('.')[1];
-    return JSON.parse(Buffer.from(payload, 'base64').toString());
-  } catch (error) {
-    console.log('JWT decode error:', error);
+    const parts = token.split(".");
+    const payload = parts[1];
+    if (!payload) return {};
+    const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(decoded);
+  } catch {
     return {};
   }
 };
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get("token")?.value;
 
-  // Skip non-page requests (static files, favicon, _next, etc.)
+  // Skip public routes
+  if (PUBLIC_ROUTES.some((route) => pathname === route)) {
+    if (token && pathname === "/") {
+      const { role } = decodeJWT(token);
+      const roleHome = role && ROLE_ROUTES[role]?.[0];
+      if (roleHome) {
+        return NextResponse.redirect(
+          new URL(roleHome, request.url)
+        );
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // Skip static & API
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname === '/favicon.ico' ||
-    /\.(svg|png|jpg|jpeg|gif|webp|css|js)$/.test(pathname)
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
   }
 
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(route + '/')
-  );
-
-  // 1️⃣ Redirect to login if accessing protected route without token
-  if (isProtectedRoute && !token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
+  // No token → login
+  if (!token) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2️⃣ Role-based access for protected routes
-  if (token && isProtectedRoute) {
-    const decoded = decodeJWT(token);
-    const userRole = decoded?.role;
+  const { role } = decodeJWT(token);
 
-    if (!userRole) {
-      // Token exists but no role: force login to refresh
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    const applicableRoute = Object.keys(routePermissions).find(
-      (route) => pathname === route || pathname.startsWith(route + '/')
-    );
-
-    if (applicableRoute) {
-      const allowedRoles = routePermissions[applicableRoute as keyof typeof routePermissions];
-      const hasAccess = allowedRoles.includes(userRole);
-
-      if (!hasAccess) {
-        const userDashboard = roleDashboards[userRole as keyof typeof roleDashboards];
-        if (pathname !== userDashboard) {
-          return NextResponse.redirect(new URL(userDashboard, request.url));
-        }
-      }
-    }
+  if (!role || !ROLE_ROUTES[role]) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 3️⃣ Redirect logged-in users from homepage to their dashboard
-  if (token && pathname === '/') {
-    const decoded = decodeJWT(token);
-    const userRole = decoded?.role;
-    if (userRole && roleDashboards[userRole as keyof typeof roleDashboards]) {
-      const dashboard = roleDashboards[userRole as keyof typeof roleDashboards];
-      return NextResponse.redirect(new URL(dashboard, request.url));
+  const allowedPrefixes = ROLE_ROUTES[role];
+
+  if (!allowedPrefixes) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const hasAccess = allowedPrefixes.some((prefix) =>
+    matchesPrefix(pathname, prefix)
+  );
+
+  if (!hasAccess) {
+    const redirectTarget = allowedPrefixes[0];
+    if (redirectTarget) {
+      return NextResponse.redirect(
+        new URL(redirectTarget, request.url)
+      );
     }
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js)$).*)',
-  ],
+  matcher: ["/((?!_next|favicon.ico).*)"],
 };
