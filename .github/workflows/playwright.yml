@@ -118,6 +118,12 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate
 
+          echo ".env.test created"
+
+      # Fail fast with a clear Prisma error if schema is broken (e.g., duplicate fields/enums)
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
       - name: Generate Prisma Client
         run: npx prisma generate
 
