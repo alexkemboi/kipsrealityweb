@@ -7,23 +7,39 @@ import { cn } from "@/lib/utils";
 import { useDashboard } from "@/context/DashboardContext";
 
 interface DashboardSidebarProps {
-  user: {
+  user?: {
     id: string;
     firstName: string;
     role: string;
     email: string;
     avatar?: string;
-  };
-  isCollapsed: boolean;
-  toggleSidebar: () => void;
+  } | null;
+  isCollapsed?: boolean;
+  toggleSidebar?: () => void;
 }
 
 export function DashboardSidebar({
-  user,
-  isCollapsed,
-  toggleSidebar,
+  user: userProp,
+  isCollapsed: isCollapsedProp,
+  toggleSidebar: toggleSidebarProp,
 }: DashboardSidebarProps) {
-  const { mobileDrawerOpen, setMobileDrawerOpen } = useDashboard();
+  const { mobileDrawerOpen, setMobileDrawerOpen, isSidebarCollapsed, toggleSidebar } = useDashboard();
+  
+  // Proper null handling - show loading state if user is not available
+  if (!userProp) {
+    return (
+      <div className="hidden md:flex flex-col bg-[#003b73] border-r border-[#002b59] w-64 h-screen sticky top-0 items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="w-12 h-12 bg-white/10 rounded-full"></div>
+          <div className="w-24 h-4 bg-white/10 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  const user = userProp;
+  const isCollapsed = isCollapsedProp ?? isSidebarCollapsed;
+  const toggleSidebarFn = toggleSidebarProp ?? toggleSidebar;
   const open = !isCollapsed;
 
   // Desktop Sidebar
@@ -47,7 +63,7 @@ export function DashboardSidebar({
           </div>
         )}
         <button
-          onClick={toggleSidebar}
+          onClick={toggleSidebarFn}
           className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800"
         >
           <ChevronLeft
