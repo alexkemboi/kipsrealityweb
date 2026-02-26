@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { fetchInvoices } from "@/lib/Invoice";
 import { GroupedInvoice } from "@/app/data/FinanceData";
 import { toast } from "sonner";
@@ -10,31 +10,65 @@ import autoTable from "jspdf-autotable";
 import CreateInvoiceModal from "@/components/Dashboard/propertymanagerdash/CreateInvoiceModal";
 
 export default function InvoicesPage() {
-  const [invoiceGroups, setInvoiceGroups] = useState<GroupedInvoice[]>([]);
-  const [status, setStatus] = useState<string>("");
-  const [type, setType] = useState<string>("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Read initial filters from URL (first render)
+  // URL -> initial state
+  const initialStatus = searchParams.get("status") ?? "";
+  const initialType = searchParams.get("type") ?? "";
+  const initialPastDue = searchParams.get("pastDue") ?? "";
+
+  const [invoiceGroups, setInvoiceGroups] = useState<GroupedInvoice[]>([]);
+  const [status, setStatus] = useState<string>(initialStatus);
+  const [type, setType] = useState<string>(initialType);
+  const [pastDue, setPastDue] = useState<string>(initialPastDue); // "1" or ""
+
+  // Keep URL in sync with UI filters
+  useEffect(() => {
+    const qs = new URLSearchParams();
+
+    if (status) qs.set("status", status);
+    if (type) qs.set("type", type);
+    if (pastDue === "1") qs.set("pastDue", "1");
+
+    const q = qs.toString();
+    router.replace(`/property-manager/finance/invoices${q ? `?${q}` : ""}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, type, pastDue]);
+  const queryString = useMemo(() => {
+    const qs = new URLSearchParams();
+    if (status) qs.set("status", status);
+    if (type) qs.set("type", type);
+    if (pastDue === "1") qs.set("pastDue", "1");
+    return qs.toString();
+  }, [status, type, pastDue]);
+
+  // Keep URL synced with filters
+  useEffect(() => {
+    router.replace(`/property-manager/finance/invoices${queryString ? `?${queryString}` : ""}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryString]);
 
   const loadInvoices = async () => {
     try {
       const filters: any = {};
       if (status) filters.status = status;
       if (type) filters.type = type;
+      if (pastDue === "1") filters.pastDue = "1";
 
       const data = await fetchInvoices(filters);
-
-      // data is now GroupedInvoice[]
       setInvoiceGroups(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load invoices");
     }
   };
 
   useEffect(() => {
     loadInvoices();
-  }, [status, type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, type, pastDue]);
 
-  // --- PDF Download function ---
   const downloadPDF = () => {
     if (invoiceGroups.length === 0) {
       toast.error("No invoices to download");
@@ -95,7 +129,20 @@ export default function InvoicesPage() {
             <option value="">All Types</option>
             <option value="RENT">Rent</option>
             <option value="UTILITY">Utility</option>
+            <option value="MAINTENANCE">Maintenance</option>
+            <option value="DAMAGE">Damage</option>
           </select>
+
+          {/* Past due toggle (supports pastDue=1) */}
+          {/* ✅ pastDue filter */}
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={pastDue === "1"}
+              onChange={(e) => setPastDue(e.target.checked ? "1" : "")}
+            />
+            Past due only
+          </label>
 
           <button
             onClick={loadInvoices}

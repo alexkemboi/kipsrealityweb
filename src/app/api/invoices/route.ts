@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { toNumber } from "@/lib/decimal-utils";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const user = await getCurrentUser();
@@ -12,14 +14,17 @@ export async function GET(req: Request) {
     }
 
     const url = new URL(req.url);
-    const rawStatus = url.searchParams.get("status"); // "PENDING,OVERDUE"
-    const type = url.searchParams.get("type");
 
-    console.log("Filters received:", { rawStatus, type });
+    // Filters
+    const rawStatus = url.searchParams.get("status"); // supports "PENDING,OVERDUE"
+    const type = url.searchParams.get("type"); // RENT | UTILITY | MAINTENANCE | DAMAGE
+    const leaseId = url.searchParams.get("lease_id");
+    const pastDue = url.searchParams.get("pastDue"); // "1" => dueDate < now
 
-    // Build the where clause with user-based filtering
+    const now = new Date();
+
+    // Tenant-safe scope (property manager scope)
     const where: any = {
-      // Only show invoices for properties managed by the current user
       Lease: {
         property: {
           manager: {
@@ -29,20 +34,38 @@ export async function GET(req: Request) {
       },
     };
 
-    // ✅ FIX: Support multiple statuses
+    // Filter by statuses (supports comma-separated list)
     if (rawStatus) {
-      const statuses = rawStatus.split(",").map(s => s.trim());
-      where.status = { in: statuses };
+      const statuses = rawStatus
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (statuses.length > 0) {
+        where.status = { in: statuses };
+      }
     }
 
+    // Filter by invoice type
     if (type) {
       where.type = type;
+    }
+
+    // Filter by lease id (used by group/[id] page)
+    if (leaseId) {
+      where.leaseId = leaseId;
+    }
+
+    // ✅ NEW: pastDue=1 means dueDate < now
+    // Keep this independent of status so it catches "PENDING but late" too.
+    if (pastDue === "1") {
+      where.dueDate = { lt: now };
     }
 
     const invoices = await prisma.invoice.findMany({
       where,
       include: {
-        payments: true, // ✅ ADD THIS - Include payment data for balance calculation
+        payments: true,
         Lease: {
           include: {
             tenant: {
@@ -54,31 +77,28 @@ export async function GET(req: Request) {
                 name: true,
                 address: true,
                 city: true,
-                apartmentComplexDetail: {
-                  select: { buildingName: true }
-                },
-                houseDetail: {
-                  select: { houseName: true }
-                }
+                apartmentComplexDetail: { select: { buildingName: true } },
+                houseDetail: { select: { houseName: true } },
               },
             },
             unit: {
-              select: { id: true, unitNumber: true, unitName: true }, // Added unitName
-            }
+              select: { id: true, unitNumber: true, unitName: true },
+            },
           },
         },
       },
       orderBy: { createdAt: "desc" },
+      take: 1000, // safety cap; add pagination later
     });
 
-    console.log("Fetched invoices:", JSON.stringify(invoices, null, 2));
-
-    // Add financial calculations and building name
+    // Add financial calculations + buildingName
     const invoicesWithFinancials = invoices.map((invoice) => {
-      const totalPaid = invoice.payments?.reduce((sum, payment) => sum + toNumber(payment.amount), 0) || 0;
-      const balance = toNumber(invoice.totalAmount) - totalPaid;
+      const totalPaid =
+        invoice.payments?.reduce((sum, p) => sum + toNumber(p.amount), 0) || 0;
 
-      // Get building name from property details
+      const totalAmount = toNumber(invoice.totalAmount);
+      const balance = totalAmount - totalPaid;
+
       const buildingName =
         invoice.Lease?.property?.apartmentComplexDetail?.buildingName ||
         invoice.Lease?.property?.houseDetail?.houseName ||
@@ -92,27 +112,32 @@ export async function GET(req: Request) {
           totalPaid,
           balance,
           isPaid: balance <= 0,
-          isOverdue: balance > 0 && new Date() > invoice.dueDate
-        }
+          isOverdue: balance > 0 && now > invoice.dueDate,
+        },
       };
     });
 
+    // Group by (leaseId + dueDate)
     const grouped = Object.values(
-      invoicesWithFinancials.reduce((acc: any, inv) => {
-        const dateKey = inv.dueDate.toISOString().split("T")[0];
-        const leaseKey = inv.Lease?.id || "unknown";
+      invoicesWithFinancials.reduce((acc: any, inv: any) => {
+        const dateKey =
+          inv.dueDate instanceof Date
+            ? inv.dueDate.toISOString().split("T")[0]
+            : new Date(inv.dueDate).toISOString().split("T")[0];
+
+        const leaseKey = inv.Lease?.id || inv.leaseId || "unknown";
         const groupKey = `${leaseKey}-${dateKey}`;
 
         if (!acc[groupKey]) {
           acc[groupKey] = {
             leaseId: leaseKey,
-            dueDate: inv.dueDate,
+            date: inv.dueDate, // keep your existing group page compatibility
             totalAmount: 0,
             invoices: [],
           };
         }
 
-        acc[groupKey].totalAmount += inv.totalAmount;
+        acc[groupKey].totalAmount += toNumber(inv.totalAmount);
         acc[groupKey].invoices.push(inv);
 
         return acc;
