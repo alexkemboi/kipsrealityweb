@@ -38,16 +38,15 @@ export const routeConfig: Record<string, RouteGroups> = {
   PROPERTY_MANAGER: {
     main: [
       { label: 'Dashboard', href: '/property-manager', icon: LayoutDashboard },
-      // ✅ approvals queue (pending leases)
+      // Approvals queue (pending leases)
       { label: 'Inbox', href: filterLinks.approvals, icon: Inbox },
     ],
 
     operate: [
-      // ✅ optional: keep base pages if they exist in your PM section
       { label: 'Properties', href: '/property-manager/view-property', icon: Building2 },
       { label: 'Tenants', href: '/property-manager/tenants', icon: Users },
 
-      // ✅ filtered views
+      // Filtered views
       { label: 'Vacant Units', href: filterLinks.vacantUnits, icon: Building2 },
       { label: 'Expiring Leases', href: filterLinks.expiringLeases, icon: FileText },
       { label: 'Maintenance Requests', href: filterLinks.openMaintenance, icon: Wrench },
