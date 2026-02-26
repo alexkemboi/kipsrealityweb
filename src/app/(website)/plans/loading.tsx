@@ -4,7 +4,7 @@ function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`motion-safe:animate-pulse rounded-md bg-muted ${className}`}
+      className={`rounded-md bg-muted motion-safe:animate-pulse ${className}`}
     />
   );
 }
@@ -13,8 +13,9 @@ export default function Loading() {
   return (
     <div
       className="min-h-screen bg-background"
-      aria-busy="true"
+      role="status"
       aria-live="polite"
+      aria-busy="true"
     >
       <span className="sr-only">Loading pricing page content...</span>
 
@@ -22,7 +23,7 @@ export default function Loading() {
       <section className="relative w-full overflow-hidden border-b bg-background">
         <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-950 to-background" />
         <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute top-16 right-12 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
+        <div className="absolute right-12 top-16 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
         <div className="absolute bottom-8 left-10 h-24 w-24 rounded-full bg-violet-500/10 blur-2xl" />
         <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:36px_36px]" />
 
@@ -35,19 +36,6 @@ export default function Loading() {
               <Skeleton className="h-11 w-44 rounded-xl bg-white/10" />
               <Skeleton className="h-11 w-44 rounded-xl bg-white/10" />
             </div>
-      className="min-h-screen bg-white"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-    >
-      <span className="sr-only">Loading page content...</span>
-
-      {/* Hero Section Loading */}
-      <div className="w-full bg-gray-100 py-32">
-        <div className="container mx-auto px-6">
-          <div className="animate-pulse space-y-6 text-center">
-            <div className="mx-auto h-12 w-3/4 rounded-lg bg-gray-200" />
-            <div className="mx-auto h-6 w-2/3 rounded-lg bg-gray-200" />
           </div>
         </div>
       </section>
@@ -79,42 +67,11 @@ export default function Loading() {
                       <div key={j} className="flex items-center gap-3">
                         <Skeleton className="h-5 w-5 rounded-full" />
                         <Skeleton className="h-4 flex-1" />
-      <div className="bg-white py-24">
-        <div className="container mx-auto px-6">
-          <div className="mb-16 animate-pulse space-y-4 text-center">
-            <div className="mx-auto h-8 w-64 rounded-lg bg-gray-200" />
-            <div className="mx-auto h-6 w-96 max-w-full rounded-lg bg-gray-200" />
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-2xl border border-gray-200 p-8"
-              >
-                <div className="space-y-6">
-                  {/* Plan Name */}
-                  <div className="h-8 w-1/2 rounded-lg bg-gray-200" />
-
-                  {/* Price */}
-                  <div className="space-y-2">
-                    <div className="h-12 w-3/4 rounded-lg bg-gray-200" />
-                    <div className="h-4 w-1/2 rounded-lg bg-gray-200" />
-                  </div>
-
-                  {/* Features List */}
-                  <div className="space-y-3">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <div key={j} className="flex items-center gap-3">
-                        <div className="h-5 w-5 rounded-full bg-gray-200" />
-                        <div className="h-4 flex-1 rounded-lg bg-gray-200" />
                       </div>
                     ))}
                   </div>
 
                   <Skeleton className="mt-2 h-11 w-full rounded-xl" />
-                  {/* CTA Button */}
-                  <div className="mt-8 h-12 w-full rounded-lg bg-gray-200" />
                 </div>
               </div>
             ))}
@@ -138,21 +95,6 @@ export default function Loading() {
                 <div className="flex items-center justify-between gap-4">
                   <Skeleton className="h-5 w-2/3" />
                   <Skeleton className="h-6 w-6 rounded-full" />
-      <div className="bg-gray-50 py-24">
-        <div className="container mx-auto px-6">
-          <div className="mb-16 animate-pulse text-center">
-            <div className="mx-auto h-8 w-64 rounded-lg bg-gray-200" />
-          </div>
-
-          <div className="mx-auto max-w-3xl space-y-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-xl bg-white p-6 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="h-6 w-2/3 rounded-lg bg-gray-200" />
-                  <div className="h-6 w-6 rounded-full bg-gray-200" />
                 </div>
               </div>
             ))}
@@ -162,14 +104,9 @@ export default function Loading() {
 
       {/* Floating Loading Indicator */}
       <div className="pointer-events-none fixed bottom-8 right-8 z-50 rounded-full border border-border bg-card p-4 shadow-lg">
-        <div role="status" aria-label="Loading">
+        <div aria-label="Loading">
           <Loader2 className="h-6 w-6 text-primary motion-safe:animate-spin" />
         </div>
-      <div className="pointer-events-none fixed bottom-8 right-8 rounded-full bg-white p-4 shadow-lg">
-        <Loader2
-          className="h-6 w-6 animate-spin text-blue-500"
-          aria-hidden="true"
-        />
       </div>
     </div>
   );
