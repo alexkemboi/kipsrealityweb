@@ -13,6 +13,7 @@ export default function InvoicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Read initial filters from URL (first render)
   // URL -> initial state
   const initialStatus = searchParams.get("status") ?? "";
   const initialType = searchParams.get("type") ?? "";
@@ -23,6 +24,18 @@ export default function InvoicesPage() {
   const [type, setType] = useState<string>(initialType);
   const [pastDue, setPastDue] = useState<string>(initialPastDue); // "1" or ""
 
+  // Keep URL in sync with UI filters
+  useEffect(() => {
+    const qs = new URLSearchParams();
+
+    if (status) qs.set("status", status);
+    if (type) qs.set("type", type);
+    if (pastDue === "1") qs.set("pastDue", "1");
+
+    const q = qs.toString();
+    router.replace(`/property-manager/finance/invoices${q ? `?${q}` : ""}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, type, pastDue]);
   const queryString = useMemo(() => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
@@ -120,6 +133,7 @@ export default function InvoicesPage() {
             <option value="DAMAGE">Damage</option>
           </select>
 
+          {/* Past due toggle (supports pastDue=1) */}
           {/* ✅ pastDue filter */}
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
