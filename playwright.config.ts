@@ -1,38 +1,36 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
 
 export default defineConfig({
-  testDir: './tests/e2e',
-
+  testDir: "./tests/e2e",
   fullyParallel: false,
   workers: 1,
-
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-
-  reporter: isCI ? [['html', { open: 'never' }]] : [['html']],
+  reporter: isCI ? [["html", { open: "never" }]] : [["html"]],
 
   use: {
-    baseURL: 'http://127.0.0.1:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    baseURL: "http://127.0.0.1:3000",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 
   webServer: {
-    command: isCI ? 'npx next start' : 'npm run dev',
-    url: 'http://127.0.0.1:3000',
+    // CI runs a production server, so your workflow MUST run `npm run build` first
+    command: isCI ? "npm start" : "npm run dev",
+    url: "http://127.0.0.1:3000",
     reuseExistingServer: !isCI,
     timeout: 120_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
+    stdout: "pipe",
+    stderr: "pipe",
   },
 });
