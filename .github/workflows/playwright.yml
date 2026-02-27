@@ -28,7 +28,7 @@ jobs:
           MYSQL_PASSWORD: testpass
           MYSQL_ROOT_PASSWORD: rootpass
         ports:
-          - 3306/tcp
+          - 3306:3306
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent"
           --health-interval=10s
@@ -40,8 +40,8 @@ jobs:
       NODE_ENV: "test"
 
       DB_HOST: "127.0.0.1"
-      DB_PORT: ${{ job.services.mysql.ports[3306] }}
-      DATABASE_URL: mysql://testuser:testpass@127.0.0.1:${{ job.services.mysql.ports[3306] }}/rentflow360_test?connect_timeout=60
+      DB_PORT: "3306"
+      DATABASE_URL: mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60
 
       NEXTAUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_API_URL: "http://localhost:3000"
@@ -102,7 +102,7 @@ jobs:
 
       - name: DB smoke test (auth + database exists)
         run: |
-          mysql -h "${DB_HOST}" -P "${DB_PORT}" -u testuser -ptestpass -e "SELECT 1;" "${MYSQL_DATABASE:-rentflow360_test}"
+          mysql -h "${DB_HOST}" -P "${DB_PORT}" -u testuser -ptestpass -e "SELECT 1;" rentflow360_test
           echo "DB smoke test passed."
 
       - name: Create .env.test and .env
