@@ -8,68 +8,57 @@ export default defineConfig({
   workers: 1,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  reporter: isCI ? [["html", { open: "never" }]] : [["html"]],
+  reporter: isCI ? [["html", { open: "never" }], ["github"]] : [["html"]],
 
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },
 
-  projects: [
-    {
-      name: 'chromium',
-      use: { 
-        ...devices['Desktop Chrome'],
-        actionTimeout: 15_000,
-        navigationTimeout: 30_000,
-      },
-    },
-
-    {
-      name: 'firefox',
-      use: { 
-        ...devices['Desktop Firefox'],
-        actionTimeout: 20_000,
-        navigationTimeout: 45_000,
-      },
-    },
-
-    {
-      name: 'webkit',
-      use: { 
-        ...devices['Desktop Safari'],
-        actionTimeout: 25_000,
-        navigationTimeout: 60_000,
-      },
-    },
-
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
-  ],
+  projects: isCI
+    ? [
+        {
+          name: "chromium",
+          use: {
+            ...devices["Desktop Chrome"],
+            actionTimeout: 15_000,
+            navigationTimeout: 30_000,
+          },
+        },
+      ]
+    : [
+        {
+          name: "chromium",
+          use: {
+            ...devices["Desktop Chrome"],
+            actionTimeout: 15_000,
+            navigationTimeout: 30_000,
+          },
+        },
+        {
+          name: "firefox",
+          use: {
+            ...devices["Desktop Firefox"],
+            actionTimeout: 20_000,
+            navigationTimeout: 45_000,
+          },
+        },
+        {
+          name: "webkit",
+          use: {
+            ...devices["Desktop Safari"],
+            actionTimeout: 25_000,
+            navigationTimeout: 60_000,
+          },
+        },
+      ],
 
   webServer: {
-    // CI runs a production server, so your workflow MUST run `npm run build` first
-    command: isCI ? "npm start" : "npm run dev",
-    url: "http://127.0.0.1:3000",
+    // CI runs production server -> workflow MUST run `npm run build` first
+    command: isCI ? "npm run start:next" : "npm run dev",
+    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
     reuseExistingServer: !isCI,
     timeout: 120_000,
     stdout: "pipe",
