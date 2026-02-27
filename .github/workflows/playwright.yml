@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main, master]
 
-# Prevent duplicate runs on the same branch/PR
 concurrency:
   group: playwright-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -39,7 +38,10 @@ jobs:
     env:
       CI: "true"
       NODE_ENV: "test"
-      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60"
+
+      DB_HOST: "127.0.0.1"
+      DB_PORT: "3306"
+      DATABASE_URL: mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60
 
       NEXTAUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_API_URL: "http://localhost:3000"
@@ -51,11 +53,9 @@ jobs:
       AUTH_SECRET: "ci-auth-secret-secure-enough"
       NEXTAUTH_TRUST_HOST: "true"
 
-      # Pin public npm registry to avoid private mirror/proxy drift (e.g., 403 on tarballs)
       NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
 
-      # TEMPORARY: skip build + Playwright while fixing syntax/import errors
-      # Set to "true" when ready to run full E2E again.
+      # Set to "true" when you want the full E2E suite to run
       RUN_E2E: "false"
 
     defaults:
@@ -73,20 +73,24 @@ jobs:
           cache: npm
           registry-url: "https://registry.npmjs.org/"
 
-      - name: Show Node and npm versions
+      - name: Show Node/npm + key tool versions
         run: |
           node -v
           npm -v
           npm config get registry
+          npx prisma -v || true
 
-      # Skip lifecycle scripts here (postinstall runs prisma generate and can fail too early)
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Install MySQL client (for mysqladmin/mysql)
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
+
       - name: Wait for MySQL (service health + TCP)
         run: |
+          echo "Using MySQL on ${DB_HOST}:${DB_PORT}"
           for i in {1..45}; do
-            if mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent >/dev/null 2>&1; then
+            if mysqladmin ping -h "${DB_HOST}" -P "${DB_PORT}" -uroot -prootpass --silent >/dev/null 2>&1; then
               echo "MySQL is reachable."
               exit 0
             fi
@@ -95,6 +99,11 @@ jobs:
           done
           echo "MySQL not reachable in time."
           exit 1
+
+      - name: DB smoke test (auth + database exists)
+        run: |
+          mysql -h "${DB_HOST}" -P "${DB_PORT}" -u testuser -ptestpass -e "SELECT 1;" rentflow360_test
+          echo "DB smoke test passed."
 
       - name: Create .env.test and .env
         run: |
@@ -114,13 +123,6 @@ jobs:
           cp .env.test .env
           echo ".env.test created"
 
-      # Fail fast with a clear Prisma error if schema is broken (e.g., duplicate fields/enums)
-      - name: Validate Prisma schema
-        run: npx prisma validate
-
-          echo ".env.test created"
-
-      # Fail fast with a clear Prisma error if schema is broken (e.g., duplicate fields/enums)
       - name: Validate Prisma schema
         run: npx prisma validate
 
@@ -132,11 +134,17 @@ jobs:
           echo "Syncing schema..."
           npx prisma db push --force-reset --accept-data-loss
           echo "Seeding..."
-          npx tsx prisma/seed.e2e.ts
-          # If you prefer package scripts, use:
-          # npm run db:reset:test && npm run db:seed:test
+          npx --yes tsx prisma/seed.e2e.ts
 
-      - name: Build app (required for next start in Playwright webServer)
+      - name: Cache Playwright browsers
+        if: env.RUN_E2E == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Build app
         if: env.RUN_E2E == 'true'
         run: npm run build
 
