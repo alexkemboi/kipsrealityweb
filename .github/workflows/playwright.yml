@@ -41,7 +41,7 @@ jobs:
 
       DB_HOST: "127.0.0.1"
       DB_PORT: "3306"
-      DATABASE_URL: mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60
+      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60"
 
       NEXTAUTH_URL: "http://localhost:3000"
       NEXT_PUBLIC_API_URL: "http://localhost:3000"
@@ -54,8 +54,6 @@ jobs:
       NEXTAUTH_TRUST_HOST: "true"
 
       NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
-
-      # Set to "true" when you want the full E2E suite to run
       RUN_E2E: "false"
 
     defaults:
@@ -78,13 +76,13 @@ jobs:
           node -v
           npm -v
           npm config get registry
-          npx prisma -v || true
-
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+          npm exec prisma -v || true
 
       - name: Install MySQL client (for mysqladmin/mysql)
         run: sudo apt-get update && sudo apt-get install -y mysql-client
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
 
       - name: Wait for MySQL (service health + TCP)
         run: |
@@ -124,24 +122,23 @@ jobs:
           echo ".env.test created"
 
       - name: Validate Prisma schema
-        run: npx prisma validate
+        run: npm exec prisma validate
 
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: npm exec prisma generate
 
       - name: Reset schema and seed E2E DB
         run: |
           echo "Syncing schema..."
-          npx prisma db push --force-reset --accept-data-loss
+          npm exec prisma db push -- --force-reset --accept-data-loss
           echo "Seeding..."
-          npx --yes tsx prisma/seed.e2e.ts
+          npm exec tsx prisma/seed.e2e.ts
 
       - name: Cache Playwright browsers
         if: env.RUN_E2E == 'true'
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cache/ms-playwright
+          path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
 
       - name: Build app
@@ -150,11 +147,11 @@ jobs:
 
       - name: Install Playwright browsers
         if: env.RUN_E2E == 'true'
-        run: npx playwright install --with-deps
+        run: npm exec playwright install -- --with-deps
 
       - name: Run Playwright tests
         if: env.RUN_E2E == 'true'
-        run: npx playwright test --project=chromium --reporter=line
+        run: npm exec playwright test -- --project=chromium --reporter=line
 
       - name: Upload Playwright report
         if: always() && env.RUN_E2E == 'true'
