@@ -48,7 +48,7 @@ jobs:
       NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
 
       JWT_SECRET: "ci-jwt-secret-secure-enough"
-      JWT_REFRESH_SECRET: "ci-jwt-secret-secure-enough"
+      JWT_REFRESH_SECRET: "ci-refresh-secret-secure-enough"
       NEXTAUTH_SECRET: "ci-nextauth-secret-secure-enough"
       AUTH_SECRET: "ci-auth-secret-secure-enough"
       NEXTAUTH_TRUST_HOST: "true"
@@ -76,12 +76,11 @@ jobs:
           node -v
           npm -v
           npm config get registry
-          npx prisma -v || true
+          npm exec prisma -v || true
 
       - name: Install MySQL client (for mysqladmin/mysql)
         run: sudo apt-get update && sudo apt-get install -y mysql-client
 
-      # NOTE: This will only pass after you commit a synced package-lock.json
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
@@ -123,17 +122,17 @@ jobs:
           echo ".env.test created"
 
       - name: Validate Prisma schema
-        run: npx prisma validate
+        run: npm exec prisma validate
 
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: npm exec prisma generate
 
       - name: Reset schema and seed E2E DB
         run: |
           echo "Syncing schema..."
-          npx prisma db push --force-reset --accept-data-loss
+          npm exec prisma db push -- --force-reset --accept-data-loss
           echo "Seeding..."
-          npx --yes tsx prisma/seed.e2e.ts
+          npm exec tsx prisma/seed.e2e.ts
 
       - name: Cache Playwright browsers
         if: env.RUN_E2E == 'true'
@@ -148,11 +147,11 @@ jobs:
 
       - name: Install Playwright browsers
         if: env.RUN_E2E == 'true'
-        run: npx playwright install --with-deps
+        run: npm exec playwright install -- --with-deps
 
       - name: Run Playwright tests
         if: env.RUN_E2E == 'true'
-        run: npx playwright test --project=chromium --reporter=line
+        run: npm exec playwright test -- --project=chromium --reporter=line
 
       - name: Upload Playwright report
         if: always() && env.RUN_E2E == 'true'
