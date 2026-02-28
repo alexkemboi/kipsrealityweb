@@ -11,8 +11,8 @@ CREATE TABLE `organizations` (
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
     `planId` INTEGER NULL,
-    `region` ENUM('USA', 'AFRICA', 'GLOBAL') NULL DEFAULT 'AFRICA',
     `paystack_subaccount_code` VARCHAR(191) NULL,
+    `region` ENUM('USA', 'AFRICA', 'GLOBAL', 'KEN', 'NG', 'SA', 'RW', 'UG', 'TZ') NULL DEFAULT 'AFRICA',
     `stripe_connect_id` VARCHAR(191) NULL,
 
     UNIQUE INDEX `organizations_slug_key`(`slug`),
@@ -28,28 +28,27 @@ CREATE TABLE `users` (
     `first_name` VARCHAR(191) NULL,
     `last_name` VARCHAR(191) NULL,
     `phone` VARCHAR(191) NULL,
-    `phone_verified` DATETIME(3) NULL,
     `avatar_url` VARCHAR(191) NULL,
     `status` ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
     `last_login_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
     `email_verified` DATETIME(3) NULL,
-    `verification_token_hash` VARCHAR(191) NULL,
-    `verification_token_expires_at` DATETIME(3) NULL,
+    `verificationToken` VARCHAR(191) NULL,
     `consent_marketing` BOOLEAN NOT NULL DEFAULT false,
     `consent_notifications` BOOLEAN NOT NULL DEFAULT true,
     `consent_transactional` BOOLEAN NOT NULL DEFAULT true,
-    `kyc_status` ENUM('PENDING', 'VERIFIED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+    `kyc_status` ENUM('PENDING', 'VERIFIED', 'FAILED', 'REJECTED', 'MANUAL_REVIEW') NOT NULL DEFAULT 'PENDING',
     `paystack_customer_code` VARCHAR(191) NULL,
     `plaid_access_token` VARCHAR(191) NULL,
-    `region` ENUM('USA', 'AFRICA', 'GLOBAL') NULL DEFAULT 'AFRICA',
-    `stripe_customer_id` VARCHAR(191) NULL,
+    `region` ENUM('USA', 'AFRICA', 'GLOBAL', 'KEN', 'NG', 'SA', 'RW', 'UG', 'TZ') NULL DEFAULT 'AFRICA',
+    `stripeCustomerId` VARCHAR(191) NULL,
+    `phoneVerified` DATETIME(3) NULL,
     `twoFactorEnabled` BOOLEAN NOT NULL DEFAULT false,
 
     UNIQUE INDEX `users_email_key`(`email`),
     UNIQUE INDEX `users_phone_key`(`phone`),
-    UNIQUE INDEX `users_verification_token_hash_key`(`verification_token_hash`),
+    UNIQUE INDEX `users_verificationToken_key`(`verificationToken`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -63,31 +62,9 @@ CREATE TABLE `tenant_payment_methods` (
     `stripe_payment_method_id` VARCHAR(191) NOT NULL,
     `is_default` BOOLEAN NOT NULL DEFAULT false,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
     INDEX `tenant_payment_methods_user_id_idx`(`user_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `RefreshSession` (
-    `id` VARCHAR(191) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `tokenHash` VARCHAR(191) NOT NULL,
-    `expiresAt` DATETIME(3) NOT NULL,
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL,
-    `rotatedAt` DATETIME(3) NULL,
-    `lastUsedAt` DATETIME(3) NULL,
-    `lastUsedByIp` VARCHAR(191) NULL,
-    `createdByIp` VARCHAR(191) NULL,
-    `userAgent` VARCHAR(191) NULL,
-    `revokedAt` DATETIME(3) NULL,
-    `revokeReason` VARCHAR(191) NULL,
-
-    INDEX `RefreshSession_userId_idx`(`userId`),
-    INDEX `RefreshSession_expiresAt_idx`(`expiresAt`),
-    INDEX `RefreshSession_revokedAt_idx`(`revokedAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -96,35 +73,11 @@ CREATE TABLE `organization_users` (
     `id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NOT NULL,
     `organization_id` VARCHAR(191) NOT NULL,
-    `role` ENUM('SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'TENANT', 'AGENT', 'VENDOR', 'ALL') NOT NULL,
+    `role` ENUM('SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'TENANT', 'VENDOR', 'ALL') NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `organization_users_organization_id_fkey`(`organization_id`),
     UNIQUE INDEX `organization_users_user_id_organization_id_key`(`user_id`, `organization_id`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `otps` (
-    `id` VARCHAR(191) NOT NULL,
-    `code` VARCHAR(10) NOT NULL,
-    `phone` VARCHAR(20) NOT NULL,
-    `userId` VARCHAR(191) NOT NULL,
-    `expiresAt` DATETIME(3) NOT NULL,
-    `type` ENUM('TWO_FACTOR', 'PASSWORD_RESET', 'PHONE_VERIFICATION', 'LOGIN_CHALLENGE') NOT NULL DEFAULT 'TWO_FACTOR',
-    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-
-    INDEX `otp_phone_idx`(`phone`),
-    INDEX `otp_user_id_idx`(`userId`),
-    INDEX `otp_expires_at_idx`(`expiresAt`),
-    INDEX `otp_user_type_idx`(`userId`, `type`),
-    PRIMARY KEY (`id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
--- CreateTable
-CREATE TABLE `chart_accounts` (
-    `id` VARCHAR(191) NOT NULL,
-
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -151,7 +104,7 @@ CREATE TABLE `Invite` (
     `id` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `token` VARCHAR(191) NOT NULL,
-    `role` ENUM('SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'TENANT', 'AGENT', 'VENDOR', 'ALL') NOT NULL,
+    `role` ENUM('SYSTEM_ADMIN', 'PROPERTY_MANAGER', 'TENANT', 'VENDOR', 'ALL') NOT NULL,
     `organizationId` VARCHAR(191) NOT NULL,
     `invitedById` VARCHAR(191) NULL,
     `expiresAt` DATETIME(3) NOT NULL,
@@ -213,9 +166,11 @@ CREATE TABLE `gl_journal_entries` (
     `description` VARCHAR(191) NOT NULL,
     `reference` VARCHAR(191) NULL,
     `isLocked` BOOLEAN NOT NULL DEFAULT false,
+    `maintenanceRequestId` VARCHAR(191) NULL,
 
     INDEX `gl_journal_entries_transaction_date_idx`(`transaction_date`),
     INDEX `gl_journal_entries_entity_id_fkey`(`entity_id`),
+    INDEX `gl_journal_entries_maintenanceRequestId_fkey`(`maintenanceRequestId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -265,14 +220,14 @@ CREATE TABLE `utility_bills` (
     `totalAmount` DECIMAL(10, 2) NOT NULL,
     `bill_date` DATETIME(3) NOT NULL,
     `due_date` DATETIME(3) NOT NULL,
-    `import_method` ENUM('CSV', 'API', 'PDF_OCR', 'MANUAL_ENTRY', 'IMAGE_SCAN') NOT NULL DEFAULT 'MANUAL_ENTRY',
+    `import_method` ENUM('MANUAL_ENTRY', 'CSV_UPLOAD', 'API_SYNC', 'PDF_OCR', 'IMAGE_SCAN') NOT NULL DEFAULT 'MANUAL_ENTRY',
     `ocr_confidence` DECIMAL(5, 2) NULL,
     `status` ENUM('DRAFT', 'PROCESSING', 'REVIEW_REQUIRED', 'APPROVED', 'POSTED', 'REJECTED') NOT NULL DEFAULT 'DRAFT',
     `journal_entry_id` VARCHAR(191) NULL,
     `blockchain_hash` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `file_url` VARCHAR(191) NULL,
-    `split_method` ENUM('EQUAL', 'OCCUPANCY_BASED', 'SQ_FOOTAGE', 'SUB_METERED', 'CUSTOM_RATIO', 'AI_OPTIMIZED') NOT NULL DEFAULT 'EQUAL',
+    `split_method` ENUM('EQUAL', 'OCCUPANCY_BASED', 'SQ_FOOTAGE', 'SUB_METERED', 'CUSTOM_RATIO', 'AI_OPTIMIZED', 'FIXED') NOT NULL DEFAULT 'EQUAL',
     `updated_at` DATETIME(3) NOT NULL,
     `consumption` FLOAT NULL,
     `period_end` DATETIME(3) NULL,
@@ -325,7 +280,6 @@ CREATE TABLE `utility_payments` (
     `reconciliation_status` ENUM('PENDING', 'MATCHED', 'FAILED', 'MANUAL_REVIEW') NOT NULL DEFAULT 'PENDING',
     `blockchain_hash` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
     INDEX `utility_payments_allocation_id_idx`(`allocation_id`),
     PRIMARY KEY (`id`)
@@ -611,10 +565,7 @@ CREATE TABLE `Lease` (
 CREATE TABLE `invoice` (
     `id` VARCHAR(191) NOT NULL,
     `lease_id` VARCHAR(191) NOT NULL,
-    `financial_entity_id` VARCHAR(191) NULL,
-    `ar_account_id` VARCHAR(191) NULL,
-    `revenue_account_id` VARCHAR(191) NULL,
-    `type` ENUM('RENT', 'UTILITY', 'MAINTENANCE', 'DAMAGE') NOT NULL,
+    `type` ENUM('RENT', 'UTILITY', 'MAINTENANCE', 'DAMAGE', 'LATE_FEE', 'DEPOSIT') NOT NULL,
     `amount` DOUBLE NOT NULL,
     `amount_paid` DOUBLE NOT NULL DEFAULT 0,
     `balance` DOUBLE NOT NULL DEFAULT 0,
@@ -629,9 +580,6 @@ CREATE TABLE `invoice` (
     UNIQUE INDEX `invoice_journal_entry_id_key`(`journal_entry_id`),
     INDEX `invoice_lease_id_fkey`(`lease_id`),
     INDEX `invoice_utility_bill_id_fkey`(`utility_bill_id`),
-    INDEX `invoice_financial_entity_id_fkey`(`financial_entity_id`),
-    INDEX `invoice_ar_account_id_fkey`(`ar_account_id`),
-    INDEX `invoice_revenue_account_id_fkey`(`revenue_account_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -653,61 +601,69 @@ CREATE TABLE `payment` (
     `id` VARCHAR(191) NOT NULL,
     `invoice_id` VARCHAR(191) NOT NULL,
     `amount` DECIMAL(10, 2) NOT NULL,
-    `method` ENUM('CASH', 'BANK', 'CREDIT_CARD', 'MPESA', 'PAYPAL', 'STRIPE', 'PAYSTACK', 'MANUAL') NOT NULL,
+    `method` ENUM('CASH', 'CHECK', 'BANK_TRANSFER_MANUAL', 'BANK_TRANSFER_ACH', 'CREDIT_CARD', 'DEBIT_CARD', 'MOBILE_MONEY_MPESA', 'MOBILE_MONEY_AIRTEL', 'MOBILE_MONEY_OTHER', 'USSD', 'DIGITAL_WALLET_APPLE', 'DIGITAL_WALLET_GOOGLE', 'P2P_ZELLE', 'P2P_VENMO', 'CRYPTO', 'PAYPAL', 'STRIPE', 'PAYSTACK', 'MANUAL', 'OTHER') NOT NULL,
     `reference` VARCHAR(100) NULL,
-    `paidOn` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
     `posting_status` ENUM('DRAFT', 'PENDING', 'POSTED', 'FAILED', 'REVERSED') NOT NULL DEFAULT 'PENDING',
     `journal_entry_id` VARCHAR(191) NULL,
-    `createdAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `updatedAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `is_reversed` BOOLEAN NOT NULL DEFAULT false,
-    `reversed_at` DATETIME(0) NULL,
-    `reversal_reason` VARCHAR(255) NULL,
-    `reversed_by` VARCHAR(100) NULL,
     `amount_subunits` BIGINT NULL,
-    `currency` VARCHAR(3) NOT NULL DEFAULT 'KES',
-    `gateway` ENUM('STRIPE', 'PLAID', 'PAYSTACK', 'MPESA_DIRECT', 'MANUAL') NOT NULL DEFAULT 'MANUAL',
-    `gateway_reference` VARCHAR(191) NULL,
-    `risk_score` INTEGER NULL,
-    `status` ENUM('PENDING', 'AUTHORIZED', 'SETTLED', 'FAILED', 'DISPUTED', 'REVERSED') NOT NULL DEFAULT 'PENDING',
-    `type` ENUM('RENT', 'DEPOSIT', 'SAAS_FEE', 'MAINTENANCE') NOT NULL DEFAULT 'RENT',
+    `currency` VARCHAR(3) NOT NULL DEFAULT 'USD',
+    `status` ENUM('PENDING', 'COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
+    `type` ENUM('RENT', 'UTILITY', 'MAINTENANCE', 'DEPOSIT', 'OTHER') NOT NULL DEFAULT 'RENT',
     `metadata` JSON NULL,
+    `bank_name` VARCHAR(191) NULL,
+    `countryCode` CHAR(2) NULL,
+    `created_at` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `exchange_rate` DECIMAL(10, 6) NULL,
+    `failure_reason` VARCHAR(191) NULL,
+    `ip_address` VARCHAR(191) NULL,
+    `last_4` VARCHAR(191) NULL,
+    `next_retry_at` DATETIME(3) NULL,
+    `paid_on` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `payment_method_id` VARCHAR(191) NULL,
+    `processor` ENUM('MANUAL', 'STRIPE', 'PAYPAL', 'PAYSTACK', 'MPESA', 'PESAPAL', 'FLUTTERWAVE', 'PLAID', 'OTHER') NULL DEFAULT 'MANUAL',
+    `processor_id` VARCHAR(191) NULL,
+    `processor_status` VARCHAR(191) NULL,
+    `retry_count` INTEGER NOT NULL DEFAULT 0,
+    `routing_number` VARCHAR(191) NULL,
+    `updated_at` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
 
     UNIQUE INDEX `payment_journal_entry_id_key`(`journal_entry_id`),
-    INDEX `payment_gateway_reference_idx`(`gateway_reference`),
+    UNIQUE INDEX `payment_processor_id_key`(`processor_id`),
     INDEX `payment_status_idx`(`status`),
     INDEX `payment_invoice_id_idx`(`invoice_id`),
+    INDEX `payment_method_idx`(`method`),
+    INDEX `payment_processor_id_idx`(`processor_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `payment_reversal` (
-    `id` CHAR(36) NOT NULL,
-    `payment_id` CHAR(36) NOT NULL,
-    `invoice_id` CHAR(36) NOT NULL,
-    `amount` FLOAT NOT NULL,
+    `id` VARCHAR(191) NOT NULL,
+    `payment_id` VARCHAR(191) NOT NULL,
+    `invoice_id` VARCHAR(191) NOT NULL,
+    `amount` DECIMAL(10, 2) NOT NULL,
     `reason` VARCHAR(255) NULL,
-    `created_at` DATETIME(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `reversed_by` VARCHAR(100) NULL,
     `metadata` JSON NULL,
 
-    INDEX `idx_payment_id`(`payment_id`),
+    INDEX `payment_reversal_payment_id_idx`(`payment_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `receipt` (
-    `id` CHAR(36) NOT NULL DEFAULT (uuid()),
-    `invoice_id` CHAR(36) NOT NULL,
-    `payment_id` CHAR(36) NOT NULL,
+    `id` VARCHAR(191) NOT NULL,
+    `invoice_id` VARCHAR(191) NOT NULL,
+    `payment_id` VARCHAR(191) NOT NULL,
     `receiptNo` VARCHAR(100) NOT NULL,
-    `issuedOn` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `createdAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
-    `updatedAt` DATETIME(0) NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `created_at` DATETIME(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `issued_on` DATETIME(3) NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NULL,
 
     UNIQUE INDEX `receiptNo`(`receiptNo`),
-    INDEX `invoice_id`(`invoice_id`),
-    INDEX `payment_id`(`payment_id`),
+    INDEX `receipt_invoice_id_idx`(`invoice_id`),
+    INDEX `receipt_payment_id_idx`(`payment_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -774,20 +730,14 @@ CREATE TABLE `dss_documents` (
     `sent_at` DATETIME(3) NULL,
     `completed_at` DATETIME(3) NULL,
     `voided_at` DATETIME(3) NULL,
-    `void_reason` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
-    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `dss_documents_org_idx`(`organization_id`),
-    INDEX `dss_documents_lease_idx`(`lease_id`),
-    INDEX `dss_documents_property_idx`(`property_id`),
-    INDEX `dss_documents_unit_idx`(`unit_id`),
-    INDEX `dss_documents_org_status_created_idx`(`organization_id`, `status`, `created_at`),
-    INDEX `dss_documents_org_sent_idx`(`organization_id`, `sent_at`),
-    INDEX `dss_documents_org_completed_idx`(`organization_id`, `completed_at`),
-    INDEX `dss_documents_org_deleted_idx`(`organization_id`, `deleted_at`),
-    UNIQUE INDEX `uq_dss_documents_id_org`(`id`, `organization_id`),
+    INDEX `dss_documents_lease_id_idx`(`lease_id`),
+    INDEX `dss_documents_organization_id_idx`(`organization_id`),
+    INDEX `dss_documents_property_id_fkey`(`property_id`),
+    INDEX `dss_documents_unit_id_fkey`(`unit_id`),
+    UNIQUE INDEX `dss_documents_id_organization_id_key`(`id`, `organization_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -798,7 +748,6 @@ CREATE TABLE `dss_participants` (
     `organization_id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NULL,
     `email` VARCHAR(255) NOT NULL,
-    `email_normalized` VARCHAR(255) NOT NULL,
     `full_name` VARCHAR(191) NULL,
     `role` ENUM('LANDLORD', 'TENANT', 'PROPERTY_MANAGER', 'AGENT', 'VENDOR', 'WITNESS', 'NOTARY', 'CUSTODIAN', 'OTHER') NOT NULL,
     `step_order` INTEGER NOT NULL DEFAULT 1,
@@ -806,17 +755,10 @@ CREATE TABLE `dss_participants` (
     `signed_at` DATETIME(3) NULL,
     `viewed_at` DATETIME(3) NULL,
     `access_token_hash` VARCHAR(191) NULL,
-    `access_token_expires_at` DATETIME(3) NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
 
-    INDEX `dss_participants_org_idx`(`organization_id`),
-    INDEX `dss_participants_user_idx`(`user_id`),
-    INDEX `dss_participants_doc_step_idx`(`document_id`, `step_order`),
-    INDEX `dss_participants_doc_signed_idx`(`document_id`, `has_signed`),
-    INDEX `dss_participants_token_hash_idx`(`access_token_hash`),
-    UNIQUE INDEX `uq_dss_participants_id_document`(`id`, `document_id`),
-    UNIQUE INDEX `uq_dss_participant_doc_email_role`(`document_id`, `email_normalized`, `role`),
+    INDEX `dss_participants_organization_id_fkey`(`organization_id`),
+    INDEX `dss_participants_user_id_fkey`(`user_id`),
+    UNIQUE INDEX `uq_dss_participant_doc_email_role`(`document_id`, `email`, `role`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -827,13 +769,8 @@ CREATE TABLE `dss_signatures` (
     `participant_id` VARCHAR(191) NOT NULL,
     `signature_hash` VARCHAR(191) NOT NULL,
     `signed_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `is_proxy` BOOLEAN NOT NULL DEFAULT false,
-    `on_behalf_of` VARCHAR(191) NULL,
-    `ip_address` VARCHAR(64) NULL,
-    `user_agent` TEXT NULL,
 
-    INDEX `dss_signatures_participant_idx`(`participant_id`),
-    INDEX `dss_signatures_doc_signed_at_idx`(`document_id`, `signed_at`),
+    INDEX `dss_signatures_participant_id_fkey`(`participant_id`),
     UNIQUE INDEX `uq_dss_signature_doc_participant`(`document_id`, `participant_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -851,13 +788,10 @@ CREATE TABLE `blockchain_notary_records` (
     `status` ENUM('PENDING', 'SUBMITTED', 'CONFIRMED', 'FAILED') NOT NULL DEFAULT 'PENDING',
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `confirmed_at` DATETIME(3) NULL,
-    `failure_reason` TEXT NULL,
 
-    INDEX `blockchain_notary_notarized_hash_idx`(`notarized_hash`),
-    INDEX `blockchain_notary_org_idx`(`organization_id`),
-    INDEX `blockchain_notary_status_created_idx`(`status`, `created_at`),
-    INDEX `blockchain_notary_tx_hash_idx`(`tx_hash`),
     UNIQUE INDEX `uq_notary_document`(`document_id`),
+    INDEX `blockchain_notary_records_notarized_hash_idx`(`notarized_hash`),
+    INDEX `blockchain_notary_records_organization_id_fkey`(`organization_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -889,11 +823,9 @@ CREATE TABLE `dss_workflow_templates` (
     `property_id` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
-    `deleted_at` DATETIME(3) NULL,
 
-    INDEX `dss_workflow_templates_org_idx`(`organization_id`),
-    INDEX `dss_workflow_templates_property_idx`(`property_id`),
-    INDEX `dss_workflow_templates_org_deleted_idx`(`organization_id`, `deleted_at`),
+    INDEX `dss_workflow_templates_organization_id_fkey`(`organization_id`),
+    INDEX `dss_workflow_templates_property_id_fkey`(`property_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -906,8 +838,7 @@ CREATE TABLE `dss_workflow_steps` (
     `label` VARCHAR(191) NULL,
     `is_optional` BOOLEAN NOT NULL DEFAULT false,
 
-    INDEX `dss_workflow_steps_template_idx`(`template_id`),
-    UNIQUE INDEX `uq_dss_workflow_steps_template_step`(`template_id`, `step_order`),
+    UNIQUE INDEX `dss_workflow_steps_template_id_step_order_key`(`template_id`, `step_order`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -946,8 +877,6 @@ CREATE TABLE `Listing` (
     `updatedAt` DATETIME(3) NOT NULL,
     `propertyId` VARCHAR(191) NULL,
     `unitId` VARCHAR(191) NULL,
-    `availability_date` DATETIME(3) NULL,
-    `expiration_date` DATETIME(3) NULL,
 
     INDEX `Listing_createdBy_idx`(`createdBy`),
     INDEX `Listing_locationId_idx`(`locationId`),
@@ -991,7 +920,6 @@ CREATE TABLE `MaintenanceRequest` (
     `cost` DECIMAL(10, 2) NULL,
     `assigned_at` DATETIME(0) NULL,
     `invoice_id` VARCHAR(191) NULL,
-    `is_tenant_chargeable` BOOLEAN NOT NULL DEFAULT false,
     `journal_entry_id` VARCHAR(191) NULL,
 
     UNIQUE INDEX `MaintenanceRequest_invoice_id_key`(`invoice_id`),
@@ -1454,6 +1382,7 @@ CREATE TABLE `RentEscalation` (
     `appliedBy` VARCHAR(191) NOT NULL,
 
     INDEX `RentEscalation_leaseId_idx`(`leaseId`),
+    INDEX `RentEscalation_effectiveDate_idx`(`effectiveDate`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -1486,24 +1415,33 @@ CREATE TABLE `AgentInvite` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `listing_audit_entries` (
+CREATE TABLE `ListingAuditEntry` (
     `id` VARCHAR(191) NOT NULL,
-    `unit_id` VARCHAR(191) NOT NULL,
-    `listing_id` VARCHAR(191) NULL,
-    `action` ENUM('CREATE', 'REMOVE', 'SUSPEND', 'ACTIVATE', 'UPDATE', 'EXPIRE') NOT NULL,
-    `previous_status` ENUM('PRIVATE', 'ACTIVE', 'SUSPENDED', 'PENDING', 'EXPIRED') NULL,
-    `new_status` ENUM('PRIVATE', 'ACTIVE', 'SUSPENDED', 'PENDING', 'EXPIRED') NOT NULL,
-    `user_id` VARCHAR(191) NOT NULL,
-    `timestamp` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `reason` VARCHAR(191) NULL,
-    `metadata` JSON NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `listingId` VARCHAR(191) NOT NULL,
+    `action` VARCHAR(191) NOT NULL,
+    `changes` JSON NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `unitId` VARCHAR(191) NULL,
 
-    INDEX `listing_audit_entries_unit_id_idx`(`unit_id`),
-    INDEX `listing_audit_entries_listing_id_idx`(`listing_id`),
-    INDEX `listing_audit_entries_user_id_idx`(`user_id`),
-    INDEX `listing_audit_entries_timestamp_idx`(`timestamp`),
-    INDEX `listing_audit_entries_action_idx`(`action`),
+    INDEX `ListingAuditEntry_listingId_idx`(`listingId`),
+    INDEX `ListingAuditEntry_unitId_fkey`(`unitId`),
+    INDEX `ListingAuditEntry_userId_idx`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Otp` (
+    `id` VARCHAR(191) NOT NULL,
+    `code` VARCHAR(191) NOT NULL,
+    `phone` VARCHAR(191) NOT NULL,
+    `userId` VARCHAR(191) NOT NULL,
+    `expiresAt` DATETIME(3) NOT NULL,
+    `type` ENUM('TWO_FACTOR', 'VERIFICATION', 'PASSWORD_RESET', 'PHONE_VERIFICATION') NOT NULL DEFAULT 'TWO_FACTOR',
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `Otp_phone_idx`(`phone`),
+    INDEX `Otp_userId_fkey`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -1541,16 +1479,10 @@ ALTER TABLE `organizations` ADD CONSTRAINT `organizations_planId_fkey` FOREIGN K
 ALTER TABLE `tenant_payment_methods` ADD CONSTRAINT `tenant_payment_methods_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `RefreshSession` ADD CONSTRAINT `RefreshSession_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `organization_users` ADD CONSTRAINT `organization_users_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `organization_users` ADD CONSTRAINT `organization_users_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `otps` ADD CONSTRAINT `otps_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `vendors` ADD CONSTRAINT `vendors_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1578,6 +1510,9 @@ ALTER TABLE `gl_accounts` ADD CONSTRAINT `gl_accounts_entity_id_fkey` FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE `gl_journal_entries` ADD CONSTRAINT `gl_journal_entries_entity_id_fkey` FOREIGN KEY (`entity_id`) REFERENCES `financial_entities`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `gl_journal_entries` ADD CONSTRAINT `gl_journal_entries_maintenanceRequestId_fkey` FOREIGN KEY (`maintenanceRequestId`) REFERENCES `MaintenanceRequest`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `gl_journal_lines` ADD CONSTRAINT `gl_journal_lines_account_id_fkey` FOREIGN KEY (`account_id`) REFERENCES `gl_accounts`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1691,15 +1626,6 @@ ALTER TABLE `invoice` ADD CONSTRAINT `invoice_lease_id_fkey` FOREIGN KEY (`lease
 ALTER TABLE `invoice` ADD CONSTRAINT `invoice_utility_bill_id_fkey` FOREIGN KEY (`utility_bill_id`) REFERENCES `utility_bills`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `invoice` ADD CONSTRAINT `invoice_financial_entity_id_fkey` FOREIGN KEY (`financial_entity_id`) REFERENCES `financial_entities`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `invoice` ADD CONSTRAINT `invoice_ar_account_id_fkey` FOREIGN KEY (`ar_account_id`) REFERENCES `chart_accounts`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `invoice` ADD CONSTRAINT `invoice_revenue_account_id_fkey` FOREIGN KEY (`revenue_account_id`) REFERENCES `chart_accounts`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `InvoiceItem` ADD CONSTRAINT `InvoiceItem_ibfk_1` FOREIGN KEY (`invoiceId`) REFERENCES `invoice`(`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- AddForeignKey
@@ -1709,13 +1635,13 @@ ALTER TABLE `payment` ADD CONSTRAINT `payment_invoice_id_fkey` FOREIGN KEY (`inv
 ALTER TABLE `payment` ADD CONSTRAINT `payment_journal_entry_id_fkey` FOREIGN KEY (`journal_entry_id`) REFERENCES `gl_journal_entries`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `payment_reversal` ADD CONSTRAINT `fk_reversal_payment` FOREIGN KEY (`payment_id`) REFERENCES `payment`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `payment_reversal` ADD CONSTRAINT `fk_reversal_payment` FOREIGN KEY (`payment_id`) REFERENCES `payment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `receipt` ADD CONSTRAINT `receipt_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoice`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `receipt` ADD CONSTRAINT `receipt_ibfk_1` FOREIGN KEY (`invoice_id`) REFERENCES `invoice`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `receipt` ADD CONSTRAINT `receipt_ibfk_2` FOREIGN KEY (`payment_id`) REFERENCES `payment`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE `receipt` ADD CONSTRAINT `receipt_ibfk_2` FOREIGN KEY (`payment_id`) REFERENCES `payment`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `lease_utility` ADD CONSTRAINT `lease_utility_lease_id_fkey` FOREIGN KEY (`lease_id`) REFERENCES `Lease`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1742,7 +1668,7 @@ ALTER TABLE `dss_documents` ADD CONSTRAINT `dss_documents_unit_id_fkey` FOREIGN 
 ALTER TABLE `dss_participants` ADD CONSTRAINT `dss_participants_document_id_fkey` FOREIGN KEY (`document_id`) REFERENCES `dss_documents`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `dss_participants` ADD CONSTRAINT `dss_participants_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `dss_participants` ADD CONSTRAINT `dss_participants_organization_id_fkey` FOREIGN KEY (`organization_id`) REFERENCES `organizations`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `dss_participants` ADD CONSTRAINT `dss_participants_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1803,12 +1729,6 @@ ALTER TABLE `ServiceMarketplace` ADD CONSTRAINT `ServiceMarketplace_serviceTypeI
 
 -- AddForeignKey
 ALTER TABLE `ServiceMarketplace` ADD CONSTRAINT `ServiceMarketplace_vendorId_fkey` FOREIGN KEY (`vendorId`) REFERENCES `organization_users`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `MaintenanceRequest` ADD CONSTRAINT `MaintenanceRequest_invoice_id_fkey` FOREIGN KEY (`invoice_id`) REFERENCES `invoice`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `MaintenanceRequest` ADD CONSTRAINT `MaintenanceRequest_journal_entry_id_fkey` FOREIGN KEY (`journal_entry_id`) REFERENCES `gl_journal_entries`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `MaintenanceRequest` ADD CONSTRAINT `MaintenanceRequest_organizationId_fkey` FOREIGN KEY (`organizationId`) REFERENCES `organizations`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1883,13 +1803,13 @@ ALTER TABLE `RentEscalation` ADD CONSTRAINT `RentEscalation_leaseId_fkey` FOREIG
 ALTER TABLE `AgentInvite` ADD CONSTRAINT `AgentInvite_tenantId_fkey` FOREIGN KEY (`tenantId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `listing_audit_entries` ADD CONSTRAINT `listing_audit_entries_listing_id_fkey` FOREIGN KEY (`listing_id`) REFERENCES `Listing`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `ListingAuditEntry` ADD CONSTRAINT `ListingAuditEntry_unitId_fkey` FOREIGN KEY (`unitId`) REFERENCES `Unit`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `listing_audit_entries` ADD CONSTRAINT `listing_audit_entries_unit_id_fkey` FOREIGN KEY (`unit_id`) REFERENCES `Unit`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `ListingAuditEntry` ADD CONSTRAINT `ListingAuditEntry_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `listing_audit_entries` ADD CONSTRAINT `listing_audit_entries_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Otp` ADD CONSTRAINT `Otp_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `_UnitAppliances` ADD CONSTRAINT `_UnitAppliances_A_fkey` FOREIGN KEY (`A`) REFERENCES `Appliance`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
