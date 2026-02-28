@@ -5,7 +5,7 @@ import Contact from "@/components/website/landing/ContactUs";
 import { fetchCompanyInfo } from "@/lib/company-info";
 import { fetchCTAs } from "@/lib/cta";
 
-// ✅ Cached + fast, refresh every 5 minutes
+// Cached + fast, refresh every 5 minutes
 export const revalidate = 300;
 
 export const metadata: Metadata = {
@@ -51,8 +51,6 @@ function pickContactCta(ctas: CTA[]): CTA | null {
 export default async function Page() {
   let companyInfo: CompanyInfo | null = null;
   let ctas: CTA[] = [];
-  let companyInfo: Awaited<ReturnType<typeof fetchCompanyInfo>> | null = null;
-  let ctaData: Awaited<ReturnType<typeof fetchCTAs>> | [] = [];
 
   const [companyInfoResult, ctasResult] = await Promise.allSettled([
     fetchCompanyInfo(),
@@ -67,28 +65,17 @@ export default async function Page() {
 
   if (ctasResult.status === "fulfilled") {
     ctas = Array.isArray(ctasResult.value) ? (ctasResult.value as CTA[]) : [];
-    ctaData = ctasResult.value;
   } else {
     console.error("Failed to fetch CTAs:", ctasResult.reason);
   }
 
   const contactCta = pickContactCta(ctas);
-  const safeCtas = Array.isArray(ctaData) ? ctaData : [];
-
-  const contactCta = safeCtas.find((c) => {
-    const title = typeof c?.title === "string" ? c.title.toLowerCase() : "";
-    return title.includes("touch") || title.includes("contact");
-  });
 
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
 
       {/* Offset for sticky navbar */}
-      <div className="pt-20">
-        {companyInfo ? (
-          <Contact companyInfo={companyInfo} cta={contactCta} />
-      {/* Spacer for sticky navbar */}
       <div className="pt-20">
         {companyInfo ? (
           <Contact companyInfo={companyInfo} cta={contactCta ?? null} />
