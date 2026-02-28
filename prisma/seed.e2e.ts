@@ -37,6 +37,7 @@ async function main() {
     await tx.organizationUser.deleteMany();
     await tx.user.deleteMany();
     await tx.organization.deleteMany();
+    await tx.financialEntity.deleteMany();
 
     // 2) ORGANIZATION
     const org = await tx.organization.create({
@@ -46,6 +47,17 @@ async function main() {
         isActive: true,
       },
     });
+
+    // CRITICAL ADDITION: Create Financial Entity for the organization
+    const financialEntity = await tx.financialEntity.create({
+      data: {
+        organizationId: org.id,
+        name: `${org.name} - Main Financial Entity`,
+        taxIdEncrypted: '12-3456789',
+      },
+    });
+    console.log(`   ✅ Financial Entity created: ${financialEntity.id}`);
+
 
     // 3) MANAGER USER (verified)
     const manager = await tx.user.create({
@@ -154,6 +166,7 @@ async function main() {
     console.log(`   Property: ${property.name}`);
     console.log(`   Unit: ${unit.unitNumber}`);
     console.log(`   Lease ID: ${lease.id}`);
+    console.log(`   Financial Entity ID: ${financialEntity.id}`);
   });
 
   console.log('🎉 E2E test data seeded successfully.');
