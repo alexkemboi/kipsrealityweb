@@ -20,6 +20,9 @@ const PUBLIC_ROUTES = [
   "/unauthorized",
 ];
 
+// Helper to remove trailing slas
+const normalizePath = (path: string) => path.replace(/\/$/, "");
+
 function matchesPrefix(path: string, prefix: string) {
   return path === prefix || path.startsWith(prefix + "/");
 }
@@ -37,41 +40,47 @@ const decodeJWT = (token: string): { role?: string } => {
 };
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const rawPath = request.nextUrl.pathname;
+  const pathname = normalizePath(rawPath);
   const token = request.cookies.get("token")?.value;
 
-  // Skip public routes
-  if (PUBLIC_ROUTES.some((route) => pathname === route)) {
+  // Skip static assets eg images and favicons early
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
+  }
+
+  // check public routes and allow their corresponding subroutes too
+  // for example signup/landloard
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    matchesPrefix(pathname, normalizePath(route))
+  );
+
+  if (isPublicRoute) {
+    console.log("Public route allowed:", pathname);
+
     if (token && pathname === "/") {
       const { role } = decodeJWT(token);
       const roleHome = role && ROLE_ROUTES[role]?.[0];
       if (roleHome) {
-        return NextResponse.redirect(
-          new URL(roleHome, request.url)
-        );
+        return NextResponse.redirect(new URL(roleHome, request.url));
       }
     }
     return NextResponse.next();
   }
 
-  // Skip static & API
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname === "/favicon.ico"
-  ) {
-    return NextResponse.next();
-  }
-
-  // No token → login
+  // If No token redirect to login
   if (!token) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    // preserve original URL
+    loginUrl.searchParams.set("redirect", rawPath);
     return NextResponse.redirect(loginUrl);
   }
 
   const { role } = decodeJWT(token);
-
   if (!role || !ROLE_ROUTES[role]) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -100,5 +109,15 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (handled internally)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     * - all images/files in public (using regex)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|json)$).*)',
+  ],
 };
