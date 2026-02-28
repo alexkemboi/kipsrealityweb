@@ -5,6 +5,12 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      run_e2e:
+        description: "Run Playwright E2E (true/false)"
+        required: true
+        default: "false"
 
 concurrency:
   group: playwright-${{ github.workflow }}-${{ github.ref }}
@@ -38,16 +44,14 @@ jobs:
     env:
       CI: "true"
       NODE_ENV: "test"
+
       DB_HOST: "127.0.0.1"
       DB_PORT: "3306"
+      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test?connect_timeout=60"
 
-      # IMPORTANT: use test DB
-      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test"
-
-      # Next/Auth (adjust to your app)
-      NEXTAUTH_URL: "http://127.0.0.1:3000"
-      NEXT_PUBLIC_BASE_URL: "http://127.0.0.1:3000"
-      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXT_PUBLIC_API_URL: "http://localhost:3000"
+      NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
 
       # Secrets for CI only
       JWT_SECRET: "ci-jwt-secret-secure-enough"
@@ -56,43 +60,99 @@ jobs:
       AUTH_SECRET: "ci-auth-secret-secure-enough"
       NEXTAUTH_TRUST_HOST: "true"
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      NPM_CONFIG_REGISTRY: "https://registry.npmjs.org/"
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      # Manual run respects input; push/PR runs E2E by default
+      RUN_E2E: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_e2e || 'true' }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
           node-version: lts/*
           cache: npm
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Versions
+        run: |
+          node -v
+          npm -v
+          npm config get registry
+          npm exec prisma -v || true
+
+      - name: Install MySQL client
+        run: sudo apt-get update && sudo apt-get install -y mysql-client
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Prisma generate
-        run: npx prisma generate
+      - name: Wait for MySQL
+        run: |
+          for i in {1..45}; do
+            if mysqladmin ping -h "${DB_HOST}" -P "${DB_PORT}" -uroot -prootpass --silent >/dev/null 2>&1; then
+              echo "MySQL is reachable."
+              exit 0
+            fi
+            echo "Waiting for MySQL... ($i/45)"
+            sleep 2
+          done
+          echo "MySQL not reachable in time."
+          exit 1
 
-      # Choose ONE of these (migration recommended if you use prisma migrate)
-      - name: Apply migrations (recommended)
-        run: npx prisma migrate deploy
+      - name: DB smoke test
+        run: mysql -h "${DB_HOST}" -P "${DB_PORT}" -u testuser -ptestpass -e "SELECT 1;" rentflow360_test
 
-      # OR if you don’t use migrations in CI:
-      # - name: Push schema (dev-style)
-      #   run: npx prisma db push --force-reset
+      - name: Create .env.test and .env
+        run: |
+          cat > .env.test <<EOF
+NODE_ENV=test
+DATABASE_URL=${DATABASE_URL}
+NEXTAUTH_URL=${NEXTAUTH_URL}
+NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL}
+JWT_SECRET=${JWT_SECRET}
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+AUTH_SECRET=${AUTH_SECRET}
+NEXTAUTH_TRUST_HOST=${NEXTAUTH_TRUST_HOST}
+EOF
+          cp .env.test .env
 
-      # If you have a seed script (highly recommended)
-      - name: Seed E2E database
-        run: node --loader ts-node/esm scripts/seed-e2e.ts
-        # If your seed runs via package.json:
-        # run: npm run seed:e2e
+      - name: Prisma validate + generate
+        run: |
+          npm exec prisma validate
+          npm exec prisma generate
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Reset schema and seed E2E DB
+        run: |
+          npm exec prisma db push -- --force-reset --accept-data-loss
+          npm exec tsx prisma/seed.e2e.ts
+
+      - name: Cache Playwright browsers
+        if: env.RUN_E2E == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Build app
+        if: env.RUN_E2E == 'true'
+        run: npm run build
+
+      - name: Install Playwright browsers
+        if: env.RUN_E2E == 'true'
+        run: npm exec playwright install -- --with-deps
 
       # If your playwright config starts webServer, you can run tests directly.
       # Otherwise, start Next and run tests.
       - name: Run Playwright tests
-        run: npx playwright test --reporter=html
+        if: env.RUN_E2E == 'true'
+        run: npm exec playwright test -- --project=chromium --reporter=line
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -100,4 +160,18 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload test results
+        if: always() && env.RUN_E2E == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: MySQL logs (failure)
+        if: failure()
+        run: docker logs --details "${{ job.services.mysql.id }}"
