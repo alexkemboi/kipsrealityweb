@@ -50,6 +50,7 @@ jobs:
       NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
 
       # Secrets for CI only
+      # Secrets for CI only
       JWT_SECRET: "ci-jwt-secret-secure-enough"
       JWT_REFRESH_SECRET: "ci-refresh-secret-secure-enough"
       NEXTAUTH_SECRET: "ci-nextauth-secret-secure-enough"
@@ -91,11 +92,14 @@ jobs:
 
       # If your playwright config starts webServer, you can run tests directly.
       # Otherwise, start Next and run tests.
+      # If your playwright config starts webServer, you can run tests directly.
+      # Otherwise, start Next and run tests.
       - name: Run Playwright tests
         run: npx playwright test --reporter=html
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
