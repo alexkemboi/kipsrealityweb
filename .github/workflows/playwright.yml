@@ -2,9 +2,9 @@ name: Playwright Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, reset-main-branch]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, reset-main-branch]
 
 jobs:
   test:
@@ -96,7 +96,7 @@ jobs:
           npx tsx prisma/seed.e2e.ts
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium # Only install Chromium to speed up CI
 
       - name: Run Playwright tests
         run: npx playwright test --project=chromium --reporter=line
