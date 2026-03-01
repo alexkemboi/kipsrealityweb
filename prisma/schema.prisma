@@ -19,9 +19,6 @@ model Organization {
   createdAt                DateTime                 @default(now()) @map("created_at")
   updatedAt                DateTime                 @updatedAt @map("updated_at")
   planId                   Int?
-  paystack_subaccount_code String?
-  region                   organizations_region?    @default(KEN)
-  stripe_connect_id        String?
   invites                  Invite[]
   listings                 Listing[]
   maintenanceRequests      MaintenanceRequest[]
@@ -66,12 +63,6 @@ model User {
   consentMarketing       Boolean                  @default(false) @map("consent_marketing")
   consentNotifications   Boolean                  @default(true) @map("consent_notifications")
   consentTransactional   Boolean                  @default(true) @map("consent_transactional")
-  kyc_status             users_kyc_status         @default(PENDING)
-  paystack_customer_code String?
-  plaid_access_token     String?
-  region                 users_region?            @default(KEN)
-  stripe_customer_id     String?
-  AgentInvite            AgentInvite[]
   sentInvites            Invite[]                 @relation("UserInvites")
   leases                 Lease[]
   listings               Listing[]
@@ -81,7 +72,8 @@ model User {
   dssParticipants        DssParticipant[]
   listingAuditEntries    ListingAuditEntry[]
   organizationUsers      OrganizationUser[]
-  tenant_payment_methods tenant_payment_methods[]
+  sentAgentInvites       AgentInvite[]            @relation("AgentInviteToTenant")
+  receivedAgentInvite    AgentInvite?             @relation("AgentInviteToUser")
   vendors                Vendor[]
 
   // Relation to OTPs
@@ -727,14 +719,6 @@ model Payment {
   reversedAt        DateTime?         @map("reversed_at") @db.DateTime(0)
   reversalReason    String?           @map("reversal_reason") @db.VarChar(255)
   reversedBy        String?           @map("reversed_by") @db.VarChar(100)
-  amount_subunits   BigInt?
-  currency          String            @default("KES") @db.VarChar(3)
-  gateway           payment_gateway   @default(MANUAL)
-  gateway_reference String?
-  risk_score        Int?
-  status            payment_status    @default(PENDING)
-  type              payment_type      @default(RENT)
-  metadata          Json?
   invoice           Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   journalEntry      JournalEntry?     @relation(fields: [journalEntryId], references: [id])
   paymentReversals  PaymentReversal[]
@@ -755,8 +739,6 @@ model Payment {
   @@index([gatewayReference])
   @@index([status])
   @@index([invoiceId])
-  @@index([gateway_reference])
-  @@index([status])
   @@map("payment")
 }
 
@@ -1468,12 +1450,15 @@ model AgentInvite {
   usedAt          DateTime?
   isUsed          Boolean   @default(false)
   tenantId        String
+  invitedAgentId  String?   @unique @map("invited_agent_id")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  tenant          User      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          User      @relation("AgentInviteToTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedAgent    User?     @relation("AgentInviteToUser", fields: [invitedAgentId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
   @@index([tenantId])
+  @@index([invitedAgentId])
 }
 
 model ListingAuditEntry {
@@ -1500,20 +1485,6 @@ model ListingAuditEntry {
   @@map("listing_audit_entries")
 }
 
-model tenant_payment_methods {
-  id                       String   @id
-  user_id                  String
-  type                     String
-  plaid_access_token       String?
-  plaid_account_id         String?
-  stripe_payment_method_id String
-  is_default               Boolean  @default(false)
-  created_at               DateTime @default(now())
-  updated_at               DateTime
-  users                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id])
-}
 
 enum Priority {
   LOW
@@ -1841,56 +1812,6 @@ enum ListingAction_enum {
   EXPIRE
 }
 
-enum organizations_region {
-  USA
-  KEN
-}
-
-enum payment_gateway {
-  STRIPE
-  PLAID
-  PAYSTACK
-  MPESA_DIRECT
-  MANUAL
-}
-
-enum users_kyc_status {
-  PENDING
-  VERIFIED
-  FAILED
-}
-
-enum payment_status {
-  PENDING
-  AUTHORIZED
-  SETTLED
-  FAILED
-  DISPUTED
-  REVERSED
-}
-
-enum users_region {
-  USA
-  KEN
-}
-
-enum payment_type {
-  RENT
-  DEPOSIT
-  SAAS_FEE
-  MAINTENANCE
-}
-
-enum payment_method {
-  CASH
-  BANK
-  CREDIT_CARD
-  MPESA
-  PAYPAL
-  STRIPE
-  PAYSTACK
-  MANUAL
-}
 
 // -------PAYMENT INFRASTRUCTURE ENUMS--------
 

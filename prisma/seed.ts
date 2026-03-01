@@ -76,7 +76,7 @@ const FIELD_TRANSLATIONS: Record<string, Record<string, string>> = {
 };
 
 const toCamelCase = (str: string) => {
-    return str.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 };
 
 async function seedNavbarItemsIfMissing() {
@@ -183,86 +183,86 @@ async function main() {
                 const rawModelName = file.replace('.json', '');
                 let clientKey = rawModelName;
 
-            // Map common plural/casing issues
-            if (clientKey === 'vendors') clientKey = 'vendor';
-            if (clientKey === 'services') clientKey = 'service';
-            if (clientKey === 'categories') clientKey = 'category';
-            if (clientKey === 'invoice') clientKey = 'invoice';
-            if (clientKey === 'payment') clientKey = 'payment';
-            if (clientKey === 'receipt') clientKey = 'receipt';
-            if (clientKey === 'utility') clientKey = 'utility';
-            if (clientKey === 'lease_utility') clientKey = 'leaseUtility';
-            if (clientKey === 'utility_reading') clientKey = 'utilityReading';
-            if (clientKey === 'payment_reversal') clientKey = 'paymentReversal';
-            if (clientKey === 'Tenantapplication') clientKey = 'tenantapplication';
-            if (clientKey === 'PropertyImage') clientKey = 'propertyImage';
+                // Map common plural/casing issues
+                if (clientKey === 'vendors') clientKey = 'vendor';
+                if (clientKey === 'services') clientKey = 'service';
+                if (clientKey === 'categories') clientKey = 'category';
+                if (clientKey === 'invoice') clientKey = 'invoice';
+                if (clientKey === 'payment') clientKey = 'payment';
+                if (clientKey === 'receipt') clientKey = 'receipt';
+                if (clientKey === 'utility') clientKey = 'utility';
+                if (clientKey === 'lease_utility') clientKey = 'leaseUtility';
+                if (clientKey === 'utility_reading') clientKey = 'utilityReading';
+                if (clientKey === 'payment_reversal') clientKey = 'paymentReversal';
+                if (clientKey === 'Tenantapplication') clientKey = 'tenantapplication';
+                if (clientKey === 'PropertyImage') clientKey = 'propertyImage';
 
-            clientKey = clientKey.charAt(0).toLowerCase() + clientKey.slice(1);
+                clientKey = clientKey.charAt(0).toLowerCase() + clientKey.slice(1);
 
-            if (processedModels.has(clientKey)) continue;
-            processedModels.add(clientKey);
+                if (processedModels.has(clientKey)) continue;
+                processedModels.add(clientKey);
 
-            // @ts-ignore
-            if (!prisma[clientKey]) {
-                const pascalKey = rawModelName.charAt(0).toUpperCase() + rawModelName.slice(1);
                 // @ts-ignore
-                if (prisma[pascalKey]) clientKey = pascalKey;
-                else {
-                    continue;
+                if (!prisma[clientKey]) {
+                    const pascalKey = rawModelName.charAt(0).toUpperCase() + rawModelName.slice(1);
+                    // @ts-ignore
+                    if (prisma[pascalKey]) clientKey = pascalKey;
+                    else {
+                        continue;
+                    }
                 }
-            }
 
-            const filePath = path.join(backupDir, file);
-            const rawData = JSON.parse(fs.readFileSync(filePath, 'utf-8'), (key, value) => {
-                if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value);
-                return value;
-            });
-
-            if (!Array.isArray(rawData) || rawData.length === 0) continue;
-
-            const normalizedData = rawData.map(item => {
-                const newItem: any = {};
-                for (const key in item) {
-                    let value = item[key];
-                    let newKey = key;
-
-                    // 1. Apply Manual Translation (Backup Key -> Client Key)
-                    if (FIELD_TRANSLATIONS[rawModelName] && FIELD_TRANSLATIONS[rawModelName][key]) {
-                        newKey = FIELD_TRANSLATIONS[rawModelName][key];
-                    }
-                    // 2. Auto-convert snake_case -> camelCase
-                    else if (key.includes('_')) {
-                        newKey = toCamelCase(key);
-                    }
-
-                    // 3. Boolean Conversion
-                    // Check against the *original* key or the *new* key
-                    if ((BOOLEAN_FIELDS.has(key) || BOOLEAN_FIELDS.has(newKey)) && (value === 0 || value === 1)) {
-                        value = value === 1;
-                    }
-
-                    newItem[newKey] = value;
-                }
-                return newItem;
-            });
-
-            // 4. Safety Filter: Remove rows with null required FKs
-            const cleanData = normalizedData.filter(item => {
-                if (clientKey === 'property' && !item.organizationId) return false;
-                if (clientKey === 'user' && !item.email) return false;
-                return true;
-            });
-
-
-            try {
-                // @ts-ignore
-                await prisma[clientKey].createMany({
-                    data: cleanData,
-                    skipDuplicates: true
+                const filePath = path.join(backupDir, file);
+                const rawData = JSON.parse(fs.readFileSync(filePath, 'utf-8'), (key, value) => {
+                    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value);
+                    return value;
                 });
-            } catch (err: any) {
+
+                if (!Array.isArray(rawData) || rawData.length === 0) continue;
+
+                const normalizedData = rawData.map(item => {
+                    const newItem: any = {};
+                    for (const key in item) {
+                        let value = item[key];
+                        let newKey = key;
+
+                        // 1. Apply Manual Translation (Backup Key -> Client Key)
+                        if (FIELD_TRANSLATIONS[rawModelName] && FIELD_TRANSLATIONS[rawModelName][key]) {
+                            newKey = FIELD_TRANSLATIONS[rawModelName][key];
+                        }
+                        // 2. Auto-convert snake_case -> camelCase
+                        else if (key.includes('_')) {
+                            newKey = toCamelCase(key);
+                        }
+
+                        // 3. Boolean Conversion
+                        // Check against the *original* key or the *new* key
+                        if ((BOOLEAN_FIELDS.has(key) || BOOLEAN_FIELDS.has(newKey)) && (value === 0 || value === 1)) {
+                            value = value === 1;
+                        }
+
+                        newItem[newKey] = value;
+                    }
+                    return newItem;
+                });
+
+                // 4. Safety Filter: Remove rows with null required FKs
+                const cleanData = normalizedData.filter(item => {
+                    if (clientKey === 'property' && !item.organizationId) return false;
+                    if (clientKey === 'user' && !item.email) return false;
+                    return true;
+                });
+
+
+                try {
+                    // @ts-ignore
+                    await prisma[clientKey].createMany({
+                        data: cleanData,
+                        skipDuplicates: true
+                    });
+                } catch (err: any) {
+                }
             }
-        }
         }
 
         // Always ensure navbar items exist for the website top nav
