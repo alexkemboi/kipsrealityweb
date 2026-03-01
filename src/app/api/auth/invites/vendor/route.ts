@@ -176,9 +176,9 @@ export async function POST(request: Request) {
     });
 
     if (existingPendingInvite) {
-      const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/inviteor?token=${
-        existingPendingInvite.token
-      }&email=${encodeURIComponent(normalizedEmail)}`;
+      const baseUrl = process.env["NEXT_PUBLIC_APP_URL"] ?? "";
+      const inviteLink = `${baseUrl}/inviteor?token=${existingPendingInvite.token
+        }&email=${encodeURIComponent(normalizedEmail)}`;
 
       return NextResponse.json(
         {
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
           error: "A pending vendor invite already exists for this email.",
           inviteId: existingPendingInvite.id,
           expiresAt: existingPendingInvite.expiresAt,
-          inviteLink: process.env.NODE_ENV === "development" ? inviteLink : undefined,
+          inviteLink: process.env["NODE_ENV"] === "development" ? inviteLink : undefined,
         },
         { status: 409 }
       );
@@ -235,8 +235,7 @@ export async function POST(request: Request) {
           organizationId: payload.organizationId!,
           email: normalizedEmail,
           phone,
-          companyName:
-            companyName ?? [firstName, lastName].filter(Boolean).join(" ") || "Vendor",
+          companyName: companyName ?? ([firstName, lastName].filter(Boolean).join(" ") || "Vendor"),
           serviceType: serviceType ?? "General Services",
           isActive: true,
         },
