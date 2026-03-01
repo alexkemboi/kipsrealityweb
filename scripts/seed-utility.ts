@@ -3,7 +3,7 @@
  * Fixed for Prisma Client (CamelCase Field Names)
  */
 
-import { PrismaClient, utility_type, UtilityBillStatus, UtilitySplitMethod } from '@prisma/client';
+import { PrismaClient, utility_type, UtilityBillStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
@@ -188,7 +188,7 @@ async function main() {
             billDate: billDate,
             dueDate: dueDate,
             status: 'APPROVED' as UtilityBillStatus,
-            splitMethod: 'EQUAL' as UtilitySplitMethod,
+            splitMethod: 'EQUAL',
             // ✅ FIX: Use 'updatedAt' (CamelCase)
             updatedAt: new Date(), 
         },
@@ -212,7 +212,7 @@ async function main() {
             billDate: billDate,
             dueDate: dueDate,
             status: 'APPROVED' as UtilityBillStatus,
-            splitMethod: 'EQUAL' as UtilitySplitMethod,
+            splitMethod: 'EQUAL',
             updatedAt: new Date(),
         },
     });
@@ -223,6 +223,11 @@ async function main() {
 
     const primaryUnit = primaryProperty.units[0];
 
+    if (!primaryUnit) {
+        console.error("Unexpected error: Primary unit is undefined.");
+        return;
+    }
+
     await prisma.utilityAllocation.upsert({
         where: { id: IDS.allocations.elec },
         update: {},
@@ -231,9 +236,7 @@ async function main() {
             utilityBillId: elecBill.id,
             unitId: primaryUnit.id,
             amount: new Decimal('63.00'),
-            // Removed percentage as it wasn't in your previous schema snippet
-            // If you added it back, uncomment:
-            // percentage: new Decimal('100.00'), 
+            percentage: new Decimal('100.00'), 
         },
     });
 

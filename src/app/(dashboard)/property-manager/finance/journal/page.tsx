@@ -54,6 +54,7 @@ export default function JournalPage() {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm.trim());
       setPage(1);
+      setPage(1);
     }, 350);
 
     return () => clearTimeout(timer);
@@ -79,8 +80,9 @@ export default function JournalPage() {
 
       try {
         const res = await fetch(`/api/finance/journal?${queryString}`, {
+        const res = await fetch(`/api/finance/journal?${queryString}`, {
           cache: "no-store",
-          signal,
+          ...(signal ? { signal } : {})
         });
 
         if (!res.ok) {
@@ -88,9 +90,10 @@ export default function JournalPage() {
         }
 
         const result: JournalApiResponse = await res.json();
+        const result: JournalApiResponse = await res.json();
 
         if (!result.success) {
-          throw new Error(result.message || "Failed to fetch journal entries");
+          throw new Error(result.message || "Failed to load journal entries.");
         }
 
         setEntries(Array.isArray(result.data) ? result.data : []);
@@ -120,6 +123,7 @@ export default function JournalPage() {
     const controller = new AbortController();
     fetchJournal(controller.signal);
     return () => controller.abort();
+  }, [fetchJournal]);
   }, [fetchJournal]);
 
   const canGoPrev = page > 1 && !loading;
@@ -172,7 +176,7 @@ export default function JournalPage() {
         </div>
       )}
 
-      <JournalTable data={entries} loading={loading} />
+      <JournalTable data={entries as any} loading={loading} />
 
       {!loading && pagination.pages > 1 && (
         <nav className="flex items-center justify-between border-t border-gray-200 pt-6">

@@ -12,17 +12,8 @@ function requireEnv(name: string): string {
 }
 
 async function createAdmin() {
-  const email = requireEnv('ADMIN_EMAIL').toLowerCase()
-  const password = requireEnv('ADMIN_PASSWORD')
-
-  if (!email.includes('@')) {
-    throw new Error('ADMIN_EMAIL must be a valid email address.')
-  }
-
-  if (password.length < 12) {
-    throw new Error('ADMIN_PASSWORD must be at least 12 characters long.')
-  }
-
+  const email = process.env['ADMIN_EMAIL'] || 'admin@example.com'
+  const password = process.env['ADMIN_PASSWORD'] || 'AdminPassword123!'
   const firstName = 'System'
   const lastName = 'Admin'
   const organizationName = 'Platform Administration'

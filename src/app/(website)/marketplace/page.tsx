@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Navbar from "@/components/website/Navbar";
 import Footer from "@/components/website/Footer";
 import { prisma } from "@/lib/db";
-import Navbar from "@/components/website/Navbar";
-import Footer from "@/components/website/Footer";
 import { MarketplaceClientPage } from "@/components/website/marketplace/ListingClientPage";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +41,8 @@ const FALLBACK_IMAGE =
 
 function safeText(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
 function toSafeNumber(value: unknown): number {
   const n = Number(value ?? 0);
   return Number.isFinite(n) ? n : 0;
@@ -65,7 +65,6 @@ export default async function MarketplacePage() {
           },
           {
             OR: [
-              // ✅ safer Prisma relation filter syntax for optional relation
               { status: { is: { name: { in: ["ACTIVE", "COMING_SOON"] } } } },
               { statusId: null },
             ],
@@ -95,10 +94,12 @@ export default async function MarketplacePage() {
       orderBy: { createdAt: "desc" },
     });
 
-    const mappedListings = listingsData
+    listings = listingsData
       .map((listing): MarketplaceItem | null => {
         const isUnitListing = Boolean(listing.unitId);
 
+        // Unit listing -> use unit.property
+        // Property listing -> use property directly
         const sourceProperty = isUnitListing
           ? listing.unit?.property ?? null
           : listing.property ?? null;
@@ -106,15 +107,20 @@ export default async function MarketplacePage() {
         if (!sourceProperty) return null;
 
         const image =
-          listing.images?.find((img) => safeText(img.imageUrl))?.imageUrl ||
+          listing.images?.find((img) => safeText(img.imageUrl))?.imageUrl ??
           FALLBACK_IMAGE;
 
         const propertyName = safeText(sourceProperty.name);
         const propertyTypeName = safeText(sourceProperty.propertyType?.name);
+
+        // Support different location shapes safely
+        const locationObj = sourceProperty.location as
+          | { name?: string | null; city?: string | null }
+          | null
+          | undefined;
+
         const locationName =
-          safeText((sourceProperty.location as { name?: string } | null)?.name) ||
-          safeText((sourceProperty.location as { city?: string } | null)?.city) ||
-          "Unknown Location";
+          safeText(locationObj?.name) || safeText(locationObj?.city) || "Unknown Location";
 
         const description =
           safeText(listing.description) ||
@@ -123,14 +129,14 @@ export default async function MarketplacePage() {
 
         const unitId = isUnitListing ? listing.unitId ?? undefined : undefined;
         const unitNumber = isUnitListing
-          ? safeText(listing.unit?.unitNumber, undefined as unknown as string)
-          : undefined;
+          ? safeText(listing.unit?.unitNumber, "")
+          : "";
 
         return {
           id: listing.id,
           title: safeText(listing.title, "Untitled Listing"),
           description,
-          price: Number(listing.price ?? 0),
+          price: toSafeNumber(listing.price),
           image,
           category: propertyTypeName || (isUnitListing ? "Unit" : "Property"),
           location: locationName,
@@ -143,54 +149,6 @@ export default async function MarketplacePage() {
                 property: {
                   id: sourceProperty.id,
                   name: propertyName || undefined,
-        // Unit listing -> use unit.property
-        // Property listing -> use property directly
-        const property = isUnitListing ? listing.unit?.property : listing.property;
-
-        if (!property) return null;
-
-        const unitId = isUnitListing ? listing.unitId ?? undefined : undefined;
-        const unitNumber = isUnitListing ? listing.unit?.unitNumber ?? undefined : undefined;
-
-        const title =
-          typeof listing.title === "string" && listing.title.trim()
-            ? listing.title
-            : "Untitled Listing";
-
-        const description =
-          typeof listing.description === "string" && listing.description.trim()
-            ? listing.description
-            : property.amenities || "No description available";
-
-        const location =
-          property.city ||
-          property.location?.name ||
-          "Unknown Location";
-
-        const image =
-          listing.images?.[0]?.imageUrl || FALLBACK_IMAGE;
-
-        const category =
-          property.propertyType?.name ||
-          (isUnitListing ? "Unit" : "Property");
-
-        return {
-          id: listing.id,
-          title,
-          description,
-          price: toSafeNumber(listing.price),
-          image,
-          category,
-          location,
-          unitId,
-          propertyId: property.id,
-          unit: unitId
-            ? {
-                id: unitId,
-                unitNumber,
-                property: {
-                  id: property.id,
-                  name: property.name ?? undefined,
                 },
               }
             : undefined,
@@ -200,15 +158,7 @@ export default async function MarketplacePage() {
           },
         };
       })
-      .filter((item): item is MarketplaceItem => item !== null);
-            id: property.id,
-            name: property.name ?? undefined,
-          },
-        };
-      })
       .filter(isMarketplaceItem);
-
-    listings = mappedListings;
   } catch (error) {
     hasError = true;
     console.error("Error fetching marketplace listings:", error);
@@ -219,7 +169,6 @@ export default async function MarketplacePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="w-full bg-[#18181a] py-32 text-center text-white">
       <section className="flex w-full flex-col items-center justify-center bg-[#18181a] py-32 text-center text-white">
         <div className="mx-auto max-w-3xl px-6">
           <h1 className="mb-6 text-5xl font-bold md:text-6xl">
@@ -227,14 +176,7 @@ export default async function MarketplacePage() {
           </h1>
 
           <p className="mx-auto mb-8 max-w-2xl text-lg text-white/80">
-            Explore property listings, assets, and services on RentFlow360
-            Marketplace.
-          </p>
-
-          {listings.length === 0 && (
-            <div className="mx-auto max-w-2xl rounded-xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-2 text-2xl font-semibold">No listings found</h2>
-            Explore Property Listings, Assets, and Services on Rentflow 360 Marketplace.
+            Explore property listings, assets, and services on RentFlow360 Marketplace.
           </p>
 
           {hasError ? (
@@ -243,16 +185,12 @@ export default async function MarketplacePage() {
                 Unable to load listings
               </h2>
               <p className="text-white/80">
-                Please check back later, or contact support if the issue
-                persists.
+                Please check back later, or contact support if the issue persists.
               </p>
             </div>
-          )}
           ) : listings.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-2 text-2xl font-bold text-white">
-                No listings found
-              </h2>
+              <h2 className="mb-2 text-2xl font-bold text-white">No listings found</h2>
               <p className="text-white/80">
                 Check back soon for new marketplace listings.
               </p>
@@ -264,6 +202,5 @@ export default async function MarketplacePage() {
       <MarketplaceClientPage listings={listings} />
       <Footer />
     </div>
-    </>
   );
 }

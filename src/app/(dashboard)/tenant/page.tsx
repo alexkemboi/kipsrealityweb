@@ -174,14 +174,11 @@ const DashboardPage = () => {
 
   // Calculate lease duration in days
   const leaseDurationDays = activeLease
-    ? Math.max(
-        1,
-        Math.ceil(
-          (new Date(activeLease.endDate).getTime() -
-            new Date(activeLease.startDate).getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
-      )
+    ? Math.ceil(
+      (new Date(activeLease.endDate).getTime() -
+        new Date(activeLease.startDate).getTime()) /
+      (1000 * 60 * 60 * 24)
+    )
     : 365;
 
   const leasePercentComplete = Math.min(
@@ -465,22 +462,20 @@ const DashboardPage = () => {
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className={`p-2 rounded-lg ${
-                    paymentInfo.paymentStatus === "overdue"
+                  className={`p-2 rounded-lg ${paymentInfo.paymentStatus === "overdue"
                       ? "bg-red-100"
                       : paymentInfo.paymentStatus === "paid"
-                      ? "bg-green-100"
-                      : "bg-blue-100"
-                  }`}
+                        ? "bg-green-100"
+                        : "bg-blue-100"
+                    }`}
                 >
                   <CreditCard
-                    className={`w-6 h-6 ${
-                      paymentInfo.paymentStatus === "overdue"
+                    className={`w-6 h-6 ${paymentInfo.paymentStatus === "overdue"
                         ? "text-red-600"
                         : paymentInfo.paymentStatus === "paid"
-                        ? "text-green-600"
-                        : "text-blue-600"
-                    }`}
+                          ? "text-green-600"
+                          : "text-blue-600"
+                      }`}
                   />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900">Rent Payment</h2>
@@ -509,23 +504,14 @@ const DashboardPage = () => {
                       })}
                     </p>
 
-                    {paymentInfo.paymentStatus === "upcoming" &&
-                      paymentInfo.daysUntilPayment > 0 && (
-                        <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
-                          <Clock className="w-4 h-4" />
-                          <span>{paymentInfo.daysUntilPayment} days remaining</span>
-                        </div>
-                      )}
+                    {paymentInfo.paymentStatus === 'upcoming' && paymentInfo.daysUntilPayment > 0 && (
+                      <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
+                        <Clock className="w-4 h-4" />
+                        <span>{paymentInfo.daysUntilPayment} days remaining</span>
+                      </div>
+                    )}
 
-                    {paymentInfo.paymentStatus === "upcoming" &&
-                      paymentInfo.daysUntilPayment === 0 && (
-                        <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
-                          <Clock className="w-4 h-4" />
-                          <span>Due today</span>
-                        </div>
-                      )}
-
-                    {paymentInfo.paymentStatus === "overdue" && (
+                    {paymentInfo.paymentStatus === 'overdue' && (
                       <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
                         <AlertCircle className="w-4 h-4" />
                         <span>{Math.abs(paymentInfo.daysUntilPayment)} days overdue</span>
@@ -551,15 +537,8 @@ const DashboardPage = () => {
                 )}
 
                 <button
-                  onClick={() => {
-                    if (!nextRentInvoice) {
-                      alert("No unpaid rent invoice available right now.");
-                      return;
-                    }
-                    setShowPaymentModal(true);
-                  }}
-                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  disabled={!nextRentInvoice}
+                  onClick={() => setShowPaymentModal(true)}
+                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   <DollarSign className="w-5 h-5" />
                   {nextRentInvoice ? "Pay Rent Now" : "No Payment Due"}
@@ -608,63 +587,24 @@ const DashboardPage = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {maintenanceRequests.map((request: any) => {
-                    const requestStatus = normalizeStatus(request.status);
-                    const isCompleted = requestStatus === "COMPLETED";
-                    const isInProgress = requestStatus === "IN_PROGRESS";
-
-                    return (
-                      <div
-                        key={request.id}
-                        className={`p-4 rounded-lg border ${getRequestStatusColor(
-                          request.status
-                        )}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-2 flex-wrap">
-                              <h3 className="font-semibold text-gray-900 truncate">
-                                {request.title}
-                              </h3>
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${getPriorityBadgeClass(
-                                  request.priority
-                                )}`}
-                              >
-                                {normalizePriority(request.priority)}
-                              </span>
-                            </div>
-
-                            <div className="text-sm text-gray-600 mb-2">
-                              {request.description}
-                            </div>
-
-                            <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-                              <span className="whitespace-nowrap">
-                                ID: {String(request.id).slice(0, 8)}
-                              </span>
-                              <span className="whitespace-nowrap">
-                                Submitted:{" "}
-                                {new Date(request.createdAt).toLocaleDateString()}
-                              </span>
-                              {request.completedDate && (
-                                <span className="whitespace-nowrap">
-                                  Completed:{" "}
-                                  {new Date(request.completedDate).toLocaleDateString()}
-                                </span>
-                              )}
-                              {request.property && (
-                                <span className="whitespace-nowrap">
-                                  Property: {request.property.name}
-                                </span>
-                              )}
-                            </div>
+                  {maintenanceRequests.map((request: any) => (
+                    <div key={request.id} className={`p-4 rounded-lg border ${getRequestStatusColor(request.status)}`}>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2 flex-wrap">
+                            <h3 className="font-semibold text-gray-900 truncate">{request.title}</h3>
+                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${request.priority === 'high' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                              request.priority === 'medium' || request.priority === 'NORMAL' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>
+                              {request.priority}
+                            </span>
                           </div>
 
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {isCompleted ? (
+                            {normalizeStatus(request.status) === 'COMPLETED' ? (
                               <CheckCircle className="w-5 h-5 text-green-600" />
-                            ) : isInProgress ? (
+                            ) : normalizeStatus(request.status) === 'IN_PROGRESS' ? (
                               <Clock className="w-5 h-5 text-blue-600" />
                             ) : (
                               <AlertCircle className="w-5 h-5 text-yellow-600" />
@@ -675,8 +615,8 @@ const DashboardPage = () => {
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -686,7 +626,7 @@ const DashboardPage = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button
-                  onClick={() => router.push("/tenant/content/invoices")}
+                  onClick={() => router.push('/tenant/content/invoices')}
                   className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
                 >
                   <CreditCard className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
@@ -697,18 +637,14 @@ const DashboardPage = () => {
                     View all transactions
                   </p>
                 </button>
-
                 <button
-                  onClick={() => router.push("/tenant/content/lease")}
+                  onClick={() => router.push('/tenant/content/lease')}
                   className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
                 >
                   <Home className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    Lease Documents
-                  </h3>
+                  <h3 className="font-semibold text-gray-900 truncate">Lease Documents</h3>
                   <p className="text-sm text-gray-600 truncate">Access your lease</p>
                 </button>
-
                 <button
                   onClick={() => setShowNewRequestModal(true)}
                   className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
@@ -800,18 +736,16 @@ const DashboardPage = () => {
                         key={priority}
                         type="button"
                         onClick={() => setNewRequestPriority(priority)}
-                        disabled={isSubmittingRequest}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          newRequestPriority === priority
-                            ? priority === "URGENT"
-                              ? "bg-red-600 text-white"
-                              : priority === "HIGH"
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${newRequestPriority === priority
+                          ? priority === "URGENT"
+                            ? "bg-red-600 text-white"
+                            : priority === "HIGH"
                               ? "bg-orange-600 text-white"
                               : priority === "NORMAL"
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-600 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
                       >
                         {priority}
                       </button>

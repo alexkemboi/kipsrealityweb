@@ -43,7 +43,7 @@ export default function LeaseInvoiceGroupPage() {
     const loadInvoices = async () => {
       try {
         setLoading(true);
-        const data = await fetchInvoices({ lease_id: leaseId });
+        const data = await fetchInvoices({ lease_id: leaseId ?? '' });
         
         // data is GroupedInvoice[]
         setGroupedInvoices(data);
@@ -395,7 +395,7 @@ export default function LeaseInvoiceGroupPage() {
                             onClick={() => {
                               // Show invoice details for this group
                               const invoiceIds = group.invoices.map(inv => inv.id);
-                              if (invoiceIds.length === 1) {
+                              if (invoiceIds.length === 1 && invoiceIds[0]) {
                                 viewInvoiceDetails(invoiceIds[0]);
                               } else {
                                 // For multiple invoices, we could show a modal or expand the row

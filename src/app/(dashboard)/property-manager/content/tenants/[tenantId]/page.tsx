@@ -446,7 +446,10 @@ export default function TenantInvoicesPage() {
   }, [filteredGroups]);
 
   const handleGenerateUtilityInvoice = async () => {
-    if (!lease) return toast.error("Tenant lease not found");
+    if (!lease) {
+      toast.error("Tenant lease not found");
+      return;
+    }
 
     try {
       toast.loading("Generating Utility Invoice...");
@@ -461,7 +464,10 @@ export default function TenantInvoicesPage() {
   };
 
   const handleCreateManualInvoice = async () => {
-    if (!lease) return toast.error("Tenant lease not found");
+    if (!lease) {
+      toast.error("Tenant lease not found");
+      return;
+    }
 
     try {
       setLoadingManual(true);
@@ -603,10 +609,13 @@ export default function TenantInvoicesPage() {
         <div className="mb-6">
           <Button
             onClick={async () => {
-              if (!lease) return toast.error("Tenant lease not found");
+              if (!lease) {
+                toast.error("Tenant lease not found");
+                return;
+              }
               try {
                 toast.loading("Generating Full Invoice...");
-                await generateFullInvoice({ leaseId: lease.id, type: "RENT" });
+                await generateFullInvoice(lease.id);
                 toast.dismiss();
                 toast.success("Full Invoice Created!");
                 setGroupedInvoices(await fetchInvoicesForTenant(tenantId));

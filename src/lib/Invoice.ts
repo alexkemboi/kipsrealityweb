@@ -1,262 +1,170 @@
-// src/lib/finance.ts
-import { FullInvoiceInput, ManualInvoiceInput, ManualInvoiceItem,ManualUtilityItem, Invoice, GroupedInvoice } from "@/app/data/FinanceData";
+import type { FullInvoiceInput, Invoice } from "@/app/data/FinanceData";
 
+// ============================================================================
+// TYPES & HELPERS
+// ============================================================================
 
-
-
-export async function generateFullInvoice(data: FullInvoiceInput): Promise<Invoice> {
-  try {
-    
-    const res = await fetch(
-      `/api/invoices/full`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (!res.ok) {
-      let errMsg = "Failed to generate full invoice";
-      try {
-        const errData = await res.json();
-        errMsg = errData?.error || errMsg;
-      } catch {
-        // ignore JSON parse errors
-      }
-      throw new Error(errMsg);
-    }
-
-    const invoice: Invoice = await res.json();
-    return invoice;
-  } catch (error: any) {
-    console.error("generateFullInvoice error:", error);
-    throw new Error(error?.message || "Unexpected error generating full invoice");
-  }
-}
-
-export async function createManualInvoice(data: ManualInvoiceInput): Promise<Invoice> {
-  try {
-    const res = await fetch(
-      `/api/invoices/manual`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }
-    );
-
-    if (!res.ok) {
-      let errMsg = "Failed to create manual invoice";
-      try {
-        const errData = await res.json();
-        errMsg = errData?.error || errMsg;
-      } catch {
-        // ignore JSON parse errors
-      }
-      throw new Error(errMsg);
-    }
-
-    const invoice: Invoice = await res.json();
-    return invoice;
-  } catch (error: any) {
-    console.error("createManualInvoice error:", error);
-    throw new Error(error?.message || "Unexpected error creating manual invoice");
-  }
-}
-
-// src/lib/finance/fetchInvoices.ts
-interface InvoiceFilters {
+export interface InvoiceFilters {
   status?: "PENDING" | "PAID" | "OVERDUE";
-  lease_id?: string;
-  type?: "RENT" | "UTILITY";
+  leaseId?: string; // Using camelCase to match new Prisma schema
+  type?: "RENT" | "UTILITY" | "MAINTENANCE" | "DAMAGE" | "LATE_FEE" | "DEPOSIT";
+  pastDue?: "1";
 }
 
-export async function fetchInvoices(filters?: InvoiceFilters): Promise<GroupedInvoice[]> {
+type ApiErrorResponse = {
+  error?: string;
+};
+
+// Robust error message extractor from your original file
+function getErrorMessage(data: unknown, fallback: string): string {
+  if (
+    typeof data === "object" &&
+    data !== null &&
+    "error" in data &&
+    typeof (data as ApiErrorResponse).error === "string"
+  ) {
+    return (data as ApiErrorResponse).error as string;
+  }
+  return fallback;
+}
+
+// ============================================================================
+// EXPORTED API FUNCTIONS
+// ============================================================================
+
+// --- 1. FETCH ALL INVOICES ---
+export async function fetchInvoices(filters?: InvoiceFilters) {
   try {
     const params = new URLSearchParams();
 
-    if (filters?.status) params.append("status", filters.status);
-    if (filters?.lease_id) params.append("lease_id", filters.lease_id);
-    if (filters?.type) params.append("type", filters.type);
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.leaseId) params.set("leaseId", filters.leaseId);
+    if (filters?.type) params.set("type", filters.type);
+    if (filters?.pastDue === "1") params.set("pastDue", "1");
 
     const query = params.toString();
     const url = `/api/invoices${query ? `?${query}` : ""}`;
 
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, {
+      cache: "no-store",
+      credentials: "include",
+    });
 
-    if (!res.ok) {
-      let errMsg = `Failed to fetch invoices: ${res.statusText}`;
-      try {
-        const errData = await res.json();
-        errMsg = errData?.error || errMsg;
-      } catch {}
-      throw new Error(errMsg);
-    }
-
+    if (!res.ok) throw new Error(`Failed to fetch invoices: ${res.statusText}`);
     return await res.json();
   } catch (error: any) {
     console.error("fetchInvoices error:", error);
-    throw new Error(error?.message || "Unexpected error fetching invoices");
+    throw error; 
   }
 }
 
-
+// --- 2. FETCH SINGLE INVOICE ---
 export async function fetchInvoiceById(id: string) {
+  const res = await fetch(`/api/invoices/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch invoice");
+  return res.json();
+}
+
+// --- 3. FETCH INVOICES FOR TENANT ---
+export async function fetchInvoicesForTenant(tenantId?: string) {
+  const url = tenantId 
+    ? `/api/invoices?tenantId=${tenantId}` 
+    : `/api/invoices/tenant`; 
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch tenant invoices");
+  return res.json();
+}
+
+// --- 4. MANUAL INVOICE CREATION ---
+export async function createManualInvoice(data: any) {
+  const res = await fetch("/api/invoices/manual", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  let resData: unknown;
   try {
-    const url = `/api/invoices/${id}`;
-    const res = await fetch(url, { cache: "no-store" });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData?.error || "Failed to fetch invoice");
-    }
-
-    return await res.json();
-  } catch (error: any) {
-    console.error("fetchInvoiceById error:", error);
-    throw new Error(error?.message || "Unexpected error fetching invoice");
+    resData = await res.json();
+  } catch {
+    throw new Error("Invalid server response");
   }
-}
-
-
-// lib/Invoice.ts
-export async function generateUtilityInvoice(leaseId: string) {
-  try {
-    const url = `/api/invoices/utilities/${leaseId}`;
-    const res = await fetch(url, { method: "POST" });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      // Throw an error so the button can catch it
-      throw new Error(data.error || "Failed to generate utility invoice");
-    }
-
-    return data.data;
-  } catch (error: any) {
-    console.error("generateUtilityInvoice error:", error);
-    throw new Error(error?.message || "Unexpected error generating utility invoice");
-  }
-}
-
-
-
-export async function createManualUtilityInvoice(
-  leaseId: string,
-  items: ManualInvoiceItem[]
-) {
-  try {
-
-      const res = await fetch(
-      `/api/invoices/manual/utility`,{
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leaseId, items }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || "Failed to create manual utility invoice");
-    }
-
-    return data.data;
-  } catch (error: any) {
-    console.error("createManualUtilityInvoice error:", error);
-    throw new Error(error?.message || "Unexpected error creating manual utility invoice");
-  }
-}
-
-
-export async function generateManualUtilityInvoiceData(leaseId: string) {
-  try {
-    const res = await fetch(
-      `/api/invoices/manual/utility/data?leaseId=${leaseId}`
-    );
-
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || "Failed to fetch manual utility data");
-    }
-
-    // data.data should be an array of utilities
-    return data.data as ManualUtilityItem[];
-  } catch (error: any) {
-    console.error("generateManualUtilityInvoiceData error:", error);
-    throw new Error(
-      error?.message || "Unexpected error fetching manual utility data"
-    );
-  }
-}
-
- // src/lib/tenant.ts
-export async function fetchTenantsWithFinancials() {
-  const res = await fetch("/api/tenants", { cache: "no-store" });
-  const json = await res.json();
-  if (!res.ok || !json.success) {
-    throw new Error(json?.error || "Failed to fetch tenants");
-  }
-  return json.data;
-}
-
-export async function fetchInvoicesForTenant(tenantId: string): Promise<GroupedInvoice[]> {
-  try {
-    const res = await fetch(
-      `/api/tenants/${tenantId}/invoices`,
-      { cache: "no-store" }
-    );
-
-    const json = await res.json();
-
-    if (!res.ok || !json.success) {
-      throw new Error(json?.error || "Failed to fetch tenant invoices");
-    }
-
-    // JSON now contains grouped invoices
-    return json.data as GroupedInvoice[];
-  } catch (error: any) {
-    console.error("fetchInvoicesForTenant ERROR:", error);
-    throw new Error(error?.message || "Unexpected error fetching invoices");
-  }
-}
-
-// src/lib/Invoice.ts
-export async function downloadInvoicePDF(invoiceId: string) {
-  try {
-    const res = await fetch(`/api/invoices/${invoiceId}/download`);
-
-    if (!res.ok) {
-      throw new Error("Failed to download invoice");
-    }
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice-${invoiceId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Error downloading invoice PDF:", error);
-    throw error;
-  }
-}
-
-
-// src/lib/lease.ts
-export async function fetchLeaseForTenant(tenantId: string) {
-  const res = await fetch(`/api/lease?tenantId=${tenantId}`);
 
   if (!res.ok) {
-    throw new Error("Failed to fetch lease for tenant");
+    throw new Error(getErrorMessage(resData, "Failed to create manual invoice"));
+  }
+  return resData;
+}
+
+// --- 5. FULL RENT INVOICE GENERATION  ---
+/**
+ * Calls the backend API route to generate a full invoice.
+ * Backend route expected at: /api/invoices/full
+ */
+export async function generateFullInvoice(
+  payload: FullInvoiceInput
+): Promise<Invoice> {
+  const res = await fetch("/api/invoices/full", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+    body: JSON.stringify(payload),
+  });
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("Invalid server response");
   }
 
-  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(getErrorMessage(data, "Failed to generate invoice"));
+  }
 
-  // Assume one lease per tenant — use data[0]
-  return data[0] || null;
+  return data as Invoice;
+}
+
+// --- 6. UTILITY INVOICE GENERATION ---
+export async function generateUtilityInvoice(leaseId: string) {
+  const res = await fetch(`/api/invoices/utilities/${leaseId}`, {
+    method: "POST",
+  });
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("Invalid server response");
+  }
+
+  if (!res.ok) {
+    throw new Error(getErrorMessage(data, "Failed to generate utility invoice"));
+  }
+  return data;
+}
+
+// --- 7. FETCH TENANTS WITH FINANCIALS ---
+export async function fetchTenantsWithFinancials() {
+  const res = await fetch("/api/tenants"); 
+  if (!res.ok) throw new Error("Failed to fetch tenants");
+  return res.json();
+}
+
+// --- 8. DOWNLOAD PDF ---
+export async function downloadInvoicePDF(invoiceId: string) {
+  const res = await fetch(`/api/invoices/${invoiceId}/download`);
+  if (!res.ok) throw new Error("Failed to download PDF");
+  
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoice-${invoiceId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
