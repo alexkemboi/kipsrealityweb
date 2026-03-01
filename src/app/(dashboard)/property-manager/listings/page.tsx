@@ -133,11 +133,11 @@ export default function ListingsManagementPage() {
       id: unit.id,
       unitNumber: unit.unitNumber,
       propertyId: unit.propertyId,
-      rentAmount: unit.rentAmount,
-      bedrooms: unit.bedrooms,
-      bathrooms: unit.bathrooms,
-      squareFootage: unit.squareFootage,
-      listing: unit.listing
+      rentAmount: unit.rentAmount ?? 0,
+      bedrooms: unit.bedrooms ?? 0,
+      bathrooms: unit.bathrooms ?? 0,
+      squareFootage: unit.squareFootage ?? 0,
+      listing: unit.listing 
         ? {
             id: unit.listing.id,
             status: normalizeStatus(unit.listing.status, true),

@@ -129,13 +129,23 @@ export default function NewMeterReadingPage() {
   }, [selectedUtility, consumption]);
 
   const handleSubmit = async () => {
-    if (!selectedLU) return toast.error("Please select a lease utility");
+    if (!selectedLU) {
+      toast.error("Please select a lease utility");
+      return;
+    }
     const value = parseFloat(readingValue);
-    if (!readingValue || isNaN(value) || value <= 0)
-      return toast.error("Please enter a valid reading value greater than 0");
-    if (previousReading !== null && value < previousReading)
-      return toast.error("Current reading cannot be less than the previous reading");
-    if (amount === null) return toast.error("Unable to calculate amount");
+    if (!readingValue || isNaN(value) || value <= 0) {
+      toast.error("Please enter a valid reading value greater than 0");
+      return;
+    }
+    if (previousReading !== null && value < previousReading) {
+      toast.error("Current reading cannot be less than the previous reading");
+      return;
+    }
+    if (amount === null) {
+      toast.error("Unable to calculate amount");
+      return;
+    } 
 
     setIsSubmitting(true);
     try {

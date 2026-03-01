@@ -249,25 +249,37 @@ export default function PaymentsPage() {
   }
 
   async function recordPayment() {
-    if (!selectedInvoice) return toast.error("Please select an invoice");
+    if (!selectedInvoice)
+      {
+        toast.error("Please select an invoice");
+        return;
+      }
 
     const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return toast.error("Please enter a valid amount");
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
 
     const invoice = filteredInvoices.find(inv => inv.id === selectedInvoice) ||
       pendingInvoices.find(inv => inv.id === selectedInvoice);
-    if (!invoice) return toast.error("Invoice not found");
+    if (!invoice) {
+      toast.error("Invoice not found");
+      return;
+    }
 
     const validPayments = invoice.payment?.filter(p => !p.isReversed) || [];
     const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
     const remaining = invoice.amount - paidAmount;
 
     if (paymentMethod === "CREDIT_CARD" && Math.abs(amount - remaining) > 0.01) {
-      return toast.error(`Credit card payments must be for the full remaining balance of USD ${remaining.toFixed(2)}`);
+      toast.error(`Credit card payments must be for the full remaining balance of USD ${remaining.toFixed(2)}`);
+      return;
     }
 
     if (paymentMethod === "CASH" && amount > remaining) {
-      return toast.error(`Payment amount cannot exceed remaining balance of USD ${remaining.toFixed(2)}`);
+      toast.error(`Payment amount cannot exceed remaining balance of USD ${remaining.toFixed(2)}`);
+      return;
     }
 
     try {
@@ -383,7 +395,7 @@ export default function PaymentsPage() {
     window.print();
   }
 
-  async function downloadReceipt() {
+  async function downloadReceipt(): Promise<void> {
     if (!viewingReceipt) return;
 
     try {
@@ -391,7 +403,10 @@ export default function PaymentsPage() {
       const { jsPDF } = await import('jspdf');
 
       const element = document.getElementById('receipt-content');
-      if (!element) return toast.error('Receipt content not found');
+      if (!element) {
+        toast.error('Receipt content not found');
+        return;
+      }
 
       const container = document.createElement('div');
       container.style.position = 'absolute';
@@ -438,6 +453,7 @@ export default function PaymentsPage() {
       toast.success('Receipt downloaded successfully!');
 
       document.body.removeChild(container);
+      return;
     } catch (error) {
       console.error('PDF generation error:', error);
       toast.dismiss();
