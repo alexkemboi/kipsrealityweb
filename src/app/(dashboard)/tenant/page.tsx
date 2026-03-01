@@ -26,6 +26,7 @@ const DashboardPage = () => {
   const router = useRouter();
 
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
@@ -87,7 +88,7 @@ const DashboardPage = () => {
 
   const copyInviteLink = async () => {
     if (!inviteLink) return;
-    
+
     try {
       await navigator.clipboard.writeText(inviteLink);
       // To replace alert with a toast notification
@@ -164,10 +165,10 @@ const DashboardPage = () => {
   // Calculate lease duration in days
   const leaseDurationDays = activeLease
     ? Math.ceil(
-        (new Date(activeLease.endDate).getTime() -
-          new Date(activeLease.startDate).getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+      (new Date(activeLease.endDate).getTime() -
+        new Date(activeLease.startDate).getTime()) /
+      (1000 * 60 * 60 * 24)
+    )
     : 365;
 
   const leasePercentComplete =
@@ -220,7 +221,7 @@ const DashboardPage = () => {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Data</h2>
           <p className="text-gray-600 mb-4">{leasesError || invoiceError}</p>
-          <button 
+          <button
             onClick={refetchAll}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
           >
@@ -328,7 +329,7 @@ const DashboardPage = () => {
                 <p className="text-xs text-gray-500">
                   This link will expire in <strong>1 hour</strong> if not used.
                 </p>
-                
+
                 <button
                   onClick={() => {
                     setInviteLink(null);
@@ -373,7 +374,7 @@ const DashboardPage = () => {
                     <span className="font-bold text-2xl text-blue-600">{daysRemaining}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div 
+                    <div
                       className="bg-blue-600 h-3 rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(Math.max(leasePercentComplete, 0), 100)}%` }}
                     ></div>
@@ -413,14 +414,14 @@ const DashboardPage = () => {
                     <p className="font-semibold text-gray-900">
                       {new Date(paymentInfo.nextPaymentDue).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
-                    
+
                     {paymentInfo.paymentStatus === 'upcoming' && paymentInfo.daysUntilPayment > 0 && (
                       <div className="flex items-center gap-2 mt-2 text-sm text-blue-600">
                         <Clock className="w-4 h-4" />
                         <span>{paymentInfo.daysUntilPayment} days remaining</span>
                       </div>
                     )}
-                    
+
                     {paymentInfo.paymentStatus === 'overdue' && (
                       <div className="flex items-center gap-2 mt-2 text-sm text-red-600">
                         <AlertCircle className="w-4 h-4" />
@@ -443,7 +444,7 @@ const DashboardPage = () => {
                   </div>
                 )}
 
-                <button 
+                <button
                   onClick={() => setShowPaymentModal(true)}
                   className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
                 >
@@ -462,7 +463,7 @@ const DashboardPage = () => {
                   </div>
                   <h2 className="text-xl font-semibold text-gray-900 truncate">Maintenance Requests</h2>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowNewRequestModal(true)}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2"
                 >
@@ -496,11 +497,10 @@ const DashboardPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h3 className="font-semibold text-gray-900 truncate">{request.title}</h3>
-                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${
-                              request.priority === 'high' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                              request.priority === 'medium' || request.priority === 'NORMAL' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
+                            <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${request.priority === 'high' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                request.priority === 'medium' || request.priority === 'NORMAL' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-gray-100 text-gray-700'
+                              }`}>
                               {request.priority}
                             </span>
                           </div>
@@ -539,7 +539,7 @@ const DashboardPage = () => {
             <div className="lg:col-span-3 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button 
+                <button
                   onClick={() => router.push('/tenant/content/invoices')}
                   className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
                 >
@@ -547,15 +547,15 @@ const DashboardPage = () => {
                   <h3 className="font-semibold text-gray-900 truncate">Payment History</h3>
                   <p className="text-sm text-gray-600 truncate">View all transactions</p>
                 </button>
-                  <button 
-                    onClick={() => router.push('/tenant/content/lease')}
-                    className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
-                  >
-                    <Home className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
-                    <h3 className="font-semibold text-gray-900 truncate">Lease Documents</h3>
-                    <p className="text-sm text-gray-600 truncate">Access your lease</p>
-                  </button>
-                <button 
+                <button
+                  onClick={() => router.push('/tenant/content/lease')}
+                  className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
+                >
+                  <Home className="w-8 h-8 text-gray-600 group-hover:text-blue-600 mb-2 flex-shrink-0" />
+                  <h3 className="font-semibold text-gray-900 truncate">Lease Documents</h3>
+                  <p className="text-sm text-gray-600 truncate">Access your lease</p>
+                </button>
+                <button
                   onClick={() => setShowNewRequestModal(true)}
                   className="p-4 border-2 border-gray-200 hover:border-blue-400 rounded-lg text-left transition-colors group min-w-0"
                 >
@@ -635,17 +635,16 @@ const DashboardPage = () => {
                         key={priority}
                         type="button"
                         onClick={() => setNewRequestPriority(priority)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          newRequestPriority === priority
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${newRequestPriority === priority
                             ? priority === "URGENT"
                               ? "bg-red-600 text-white"
                               : priority === "HIGH"
-                              ? "bg-orange-600 text-white"
-                              : priority === "NORMAL"
-                              ? "bg-blue-600 text-white"
-                              : "bg-gray-600 text-white"
+                                ? "bg-orange-600 text-white"
+                                : priority === "NORMAL"
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                          }`}
                       >
                         {priority}
                       </button>
