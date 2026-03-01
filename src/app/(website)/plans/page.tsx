@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import PlansClient from "./PlansClient";
 
 type PlansPageProps = {
   searchParams?: {
@@ -121,24 +122,19 @@ export async function generateMetadata(
       url: canonical,
       siteName: "RentFlow360",
       type: "website",
-      // images: [
-      //   {
-      //     url: "/og/plans.png",
-      //     width: 1200,
-      //     height: 630,
-      //     alt: "RentFlow360 Plans and Pricing",
-      //   },
-      // ],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description,
-      // images: ["/og/plans.png"],
     },
     robots: {
       index: true,
       follow: true,
     },
   };
+}
+
+export default function PlansPage() {
+  return <PlansClient />;
 }
