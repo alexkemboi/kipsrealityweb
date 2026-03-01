@@ -3,16 +3,17 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    const categories = await prisma.categoryMarketplace.findMany({
-      orderBy: { id: "asc" },
+    const appliances = await prisma.appliance.findMany({
+      orderBy: {
+        name: 'asc'
+      }
     });
 
-    return NextResponse.json(categories, { status: 200 });
+    return NextResponse.json(appliances);
   } catch (error) {
-    console.error("[GET /api/appliances]", error);
-
+    console.error("Error fetching appliances:", error);
     return NextResponse.json(
-      { error: "Failed to load appliance categories" },
+      { error: "Failed to fetch appliances" },
       { status: 500 }
     );
   }

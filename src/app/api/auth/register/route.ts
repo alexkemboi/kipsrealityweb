@@ -78,20 +78,15 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Raw token (emailed to user)
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
 
     // Hashed token (stored in DB)
-    const verificationTokenHash = crypto
-      .createHash('sha256')
-      .update(verificationToken)
-      .digest('hex');
-
-    const verificationTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const verificationToken = crypto.createHash('sha256').update(emailVerificationToken).digest('hex');
 
     // 5. ATOMIC TRANSACTION with timeout config
     const result = await prisma.$transaction(
       async (tx) => {
-        // A. Create the User (Common for everyone)
+        // Create the User (Common for everyone)
         const user = await tx.user.create({
           data: {
             email: normalizedEmail,
@@ -99,8 +94,7 @@ export async function POST(request: Request) {
             firstName: normalizedFirstName,
             lastName: normalizedLastName,
             emailVerified: null,
-            verificationTokenHash,
-            verificationTokenExpiresAt,
+            verificationToken,
           },
         });
 
@@ -157,7 +151,7 @@ export async function POST(request: Request) {
     );
 
     // 6. Send Verification Email (send raw token; DB stores hash only)
-    await sendVerificationEmail(result.email, verificationToken);
+    await sendVerificationEmail(result.email, emailVerificationToken);
 
     return NextResponse.json(
       {

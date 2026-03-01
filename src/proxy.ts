@@ -20,28 +20,50 @@ const PUBLIC_ROUTES = [
   "/unauthorized",
 ];
 
-// Helper to remove trailing slas
+// Helper to remove trailing slashes
 const normalizePath = (path: string) => path.replace(/\/$/, "");
 
 function matchesPrefix(path: string, prefix: string) {
   return path === prefix || path.startsWith(prefix + "/");
 }
 
-const decodeJWT = (token: string): { role?: string } => {
+const decodeJWT = (token: string): { role?: string; userId?: string; organizationId?: string } => {
   try {
     const parts = token.split(".");
+    if (parts.length !== 3) return {};
+    
     const payload = parts[1];
     if (!payload) return {};
+    
+    // Properly handle base64url decoding
     const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-    return JSON.parse(decoded);
-  } catch {
+    const parsed = JSON.parse(decoded);
+    
+    // Debug logging (can be removed in production)
+    if (!parsed.role) {
+      console.warn("[Middleware] Token decoded but missing role field. Token payload:", Object.keys(parsed));
+    }
+    
+    return parsed;
+  } catch (error) {
+    console.error("[Middleware] JWT decode error:", error);
     return {};
   }
 };
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export function middleware(request: NextRequest) {
+  const rawPath = request.nextUrl.pathname;
+  const pathname = normalizePath(rawPath);
   const token = request.cookies.get("token")?.value;
+
+  // Debug: Log token presence (remove in production)
+  const isProtectedRoute = !PUBLIC_ROUTES.some((route) =>
+    matchesPrefix(pathname, normalizePath(route))
+  );
+  
+  if (isProtectedRoute && !token) {
+    console.warn(`[Middleware] Protected route ${pathname} accessed without token. Cookies present: ${request.cookies.getAll().map(c => c.name).join(', ')}`);
+  }
 
   // Skip static assets eg images and favicons early
   if (
@@ -51,16 +73,11 @@ export function proxy(request: NextRequest) {
   ) {
     return NextResponse.next();
   }
-
-  // check public routes and allow their corresponding subroutes too
-  // for example signup/landloard
+  // Skip public routes
   const isPublicRoute = PUBLIC_ROUTES.some((route) =>
     matchesPrefix(pathname, normalizePath(route))
   );
-
   if (isPublicRoute) {
-    console.log("Public route allowed:", pathname);
-
     if (token && pathname === "/") {
       const { role } = decodeJWT(token);
       const roleHome = role && ROLE_ROUTES[role]?.[0];
@@ -71,7 +88,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // If No token redirect to login
+  // No token → login
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     // preserve original URL
@@ -81,12 +98,14 @@ export function proxy(request: NextRequest) {
 
   const { role } = decodeJWT(token);
   if (!role || !ROLE_ROUTES[role]) {
+    console.warn("[Middleware] Invalid role or role not in ROLE_ROUTES", { role, hasRoute: role ? !!ROLE_ROUTES[role] : false, requestedPath: pathname });
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   const allowedPrefixes = ROLE_ROUTES[role];
 
   if (!allowedPrefixes) {
+    console.warn("[Middleware] No allowed prefixes for role", { role, pathname });
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -95,6 +114,7 @@ export function proxy(request: NextRequest) {
   );
 
   if (!hasAccess) {
+    console.warn("[Middleware] User does not have access to path", { role, pathname, allowedPrefixes });
     const redirectTarget = allowedPrefixes[0];
     if (redirectTarget) {
       return NextResponse.redirect(

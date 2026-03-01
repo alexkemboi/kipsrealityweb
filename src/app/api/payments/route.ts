@@ -51,7 +51,7 @@ export async function GET(req: Request) {
           },
         },
       },
-      orderBy: { paidOn: "desc" },
+      orderBy: { paid_on: "desc" },
     });
 
     return NextResponse.json(payments);

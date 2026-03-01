@@ -161,7 +161,7 @@ export async function GET(req: Request) {
                 _sum: { amount: true },
                 where: {
                     invoice: { Lease: { property: relationFilter } },
-                    paidOn: { gte: firstDayOfMonth }
+                    paid_on: { gte: firstDayOfMonth }
                 }
             }),
 
@@ -228,9 +228,9 @@ export async function GET(req: Request) {
             prisma.payment.findMany({
                 where: {
                     invoice: { Lease: { property: relationFilter } },
-                    paidOn: { gte: chartStartDate }
+                    paid_on: { gte: chartStartDate }
                 },
-                select: { amount: true, paidOn: true }
+                select: { amount: true, paid_on: true }
             }),
 
             // 13. Historical Data for Chart (Expenses)
@@ -381,7 +381,7 @@ export async function GET(req: Request) {
             // Current validation: we are aggregating TOTALS here.
 
             const monthlyRevenue = historicalPayments
-                .filter(p => p.paidOn && new Date(p.paidOn).getMonth() === d.getMonth() && new Date(p.paidOn).getFullYear() === d.getFullYear())
+                .filter(p => p.paid_on && new Date(p.paid_on).getMonth() === d.getMonth() && new Date(p.paid_on).getFullYear() === d.getFullYear())
                 .reduce((sum, p) => sum + Number(p.amount), 0);
 
             const monthlyExpenses = historicalExpenses

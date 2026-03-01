@@ -28,7 +28,7 @@ type Pagination = {
 
 type JournalApiResponse = {
   success: boolean;
-  data?: JournalEntry[];
+  data: JournalEntry[];
   pagination?: Pagination;
   message?: string;
 };
@@ -41,18 +41,23 @@ export default function JournalPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState<number>(1);
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, pages: 1 });
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    pages: 1,
+  });
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
 
+  // Debounce search
   useEffect(() => {
-    const t = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm.trim());
+      setPage(1);
       setPage(1);
     }, 350);
 
-    return () => window.clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [searchTerm]);
 
   const queryString = useMemo(() => {
@@ -75,6 +80,7 @@ export default function JournalPage() {
 
       try {
         const res = await fetch(`/api/finance/journal?${queryString}`, {
+        const res = await fetch(`/api/finance/journal?${queryString}`, {
           cache: "no-store",
           ...(signal ? { signal } : {})
         });
@@ -83,6 +89,7 @@ export default function JournalPage() {
           throw new Error(`Request failed (${res.status})`);
         }
 
+        const result: JournalApiResponse = await res.json();
         const result: JournalApiResponse = await res.json();
 
         if (!result.success) {
@@ -96,7 +103,7 @@ export default function JournalPage() {
             pages: 1,
           }
         );
-      } catch (err: unknown) {
+      } catch (err) {
         if ((err as Error).name === "AbortError") return;
 
         const message =
@@ -114,54 +121,45 @@ export default function JournalPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetchJournal(controller.signal);
+    fetchJournal(controller.signal);
     return () => controller.abort();
+  }, [fetchJournal]);
   }, [fetchJournal]);
 
   const canGoPrev = page > 1 && !loading;
   const canGoNext = page < pagination.pages && !loading;
-
-  const pageSummary = useMemo(() => {
-    if (pagination.total === 0) return "No journal entries found";
-    return `Showing page ${page} of ${pagination.pages} • Total entries: ${pagination.total}`;
-  }, [page, pagination.pages, pagination.total]);
 
   return (
     <main className="mx-auto max-w-7xl space-y-8 p-8" aria-busy={loading}>
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="mb-2 flex items-center gap-3 text-3xl font-bold text-gray-900">
-            <FileText className="h-8 w-8 text-blue-600" aria-hidden="true" />
+            <FileText className="h-8 w-8 text-blue-600" />
             Journal Entries
           </h1>
-          <p className="font-medium text-gray-600">
+          <p className="text-gray-600 font-medium">
             Audit trail of all financial postings and transactions.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-              aria-hidden="true"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by description or ref..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-64"
-              aria-label="Search journal entries"
+              placeholder="Search by description or ref..."
+              className="pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64"
             />
           </div>
 
           <button
             type="button"
-            onClick={() => void fetchJournal()}
+            onClick={() => fetchJournal()}
             disabled={loading}
-            aria-label="Refresh journal entries"
+            className="p-2.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
             title="Refresh"
-            className="rounded-lg border border-gray-200 p-2.5 text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -169,11 +167,8 @@ export default function JournalPage() {
       </header>
 
       {error && (
-        <div
-          className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700"
-          role="alert"
-        >
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
             <p className="font-medium">Unable to load journal entries</p>
             <p className="text-sm">{error}</p>
@@ -184,31 +179,36 @@ export default function JournalPage() {
       <JournalTable data={entries as any} loading={loading} />
 
       {!loading && pagination.pages > 1 && (
-        <nav
-          className="flex items-center justify-between border-t border-gray-200 pt-6"
-          aria-label="Journal pagination"
-        >
-          <p className="text-sm text-gray-500">{pageSummary}</p>
+        <nav className="flex items-center justify-between border-t border-gray-200 pt-6">
+          <p className="text-sm text-gray-500">
+            Page{" "}
+            <span className="font-bold text-gray-900">{page}</span> of{" "}
+            <span className="font-bold text-gray-900">
+              {pagination.pages}
+            </span>{" "}
+            • Total:{" "}
+            <span className="font-bold text-gray-900">
+              {pagination.total}
+            </span>
+          </p>
 
           <div className="flex gap-2">
             <button
               type="button"
               disabled={!canGoPrev}
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Previous page"
+              onClick={() => setPage((prev) => prev - 1)}
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 hover:bg-gray-50"
             >
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
 
             <button
               type="button"
               disabled={!canGoNext}
-              onClick={() => setPage((prev) => Math.min(pagination.pages, prev + 1))}
-              className="rounded-lg border border-gray-200 p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Next page"
+              onClick={() => setPage((prev) => prev + 1)}
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 hover:bg-gray-50"
             >
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </nav>

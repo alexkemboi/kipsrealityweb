@@ -121,10 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const response = await fetch('/api/auth/me');
             if (response.ok) {
                 const data = await response.json();
-                if (data.user) {
-                    setStoredUser(data.user);
-                    setUser(data.user);
+                // The endpoint returns user data directly, not wrapped in a user object
+                const userData = data.user || data;
+                if (userData && userData.id) {
+                    setStoredUser(userData);
+                    setUser(userData);
                 }
+            } else {
+                console.error('Failed to refresh user:', response.statusText);
             }
         } catch (error) {
             console.error('Failed to refresh user:', error);
