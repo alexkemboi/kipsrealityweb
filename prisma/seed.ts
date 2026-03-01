@@ -183,25 +183,59 @@ async function importBackupIfPresent() {
   await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
 
   try {
-    const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
+    // 1. Strict Import Order (Parents first, Children last)
+const IMPORT_ORDER = [
+  'Organization',
+  'User',
+  'OrganizationUser',
+  'PropertyType', // Must exist before Property
+  'Location',     // Must exist before Property
+  'ListingStatus',
+  'ActionType',
+  'ServiceType',
+  'Category',     // Was categories
+  'Service',      // Was services
+  'Plan',
+  'Feature',
+  'Property',     // Depends on Org, Type, Location
+  'Listing',      // Depends on Org, User, Location
+  'Unit',         // Depends on Property
+  'Appliance',    // Independent or linked
+  'Tenantapplication', // Depends on Unit/Property/User
+  'Lease',        // Depends on Unit/Property/User/App
+  'Utility',      // Independent
+  'UtilityBill',  // Depends on Property
+  'UtilityAllocation', // Depends on Bill, Unit
+  'Invoice',      // Depends on Lease
+  'Payment',      // Depends on Invoice
+  'Receipt',      // Depends on Payment/Invoice
+  'MaintenanceRequest',
+  // ... add others or let them fall to the end
+];
 
-    const files = fs.readdirSync(backupDir)
-      .filter((f) => f.endsWith('.json'))
-      .sort((a, b) => {
-        const modelA = a.replace('.json', '');
-        const modelB = b.replace('.json', '');
-        const idxA = PRIORITY.indexOf(modelA);
-        const idxB = PRIORITY.indexOf(modelB);
-
-        if (idxA > -1 && idxB > -1) return idxA - idxB;
-        if (idxA > -1) return -1;
-        if (idxB > -1) return 1;
-        return a.localeCompare(b);
-      });
+    const files = fs.readdirSync(backupDir).filter((f) => f.endsWith('.json'));
+    
+    // Sort files based on strict IMPORT_ORDER
+    const sortedFiles = files.sort((a: string, b: string) => {
+      const modelA = a.replace('.json', '');
+      const modelB = b.replace('.json', '');
+      
+      const idxA = IMPORT_ORDER.indexOf(modelA);
+      const idxB = IMPORT_ORDER.indexOf(modelB);
+      
+      // If found in list, use list order
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      // If A is found but B isn't, A comes first
+      if (idxA !== -1) return -1;
+      // If B is found but A isn't, B comes first
+      if (idxB !== -1) return 1;
+      // If neither found, sort alphabetically
+      return modelA.localeCompare(modelB);
+    });
 
     const processedModels = new Set<string>();
 
-    for (const file of files) {
+    for (const file of sortedFiles) {
       const rawModelName = file.replace('.json', '');
       let clientKey = normalizeClientKey(rawModelName);
 
@@ -270,8 +304,8 @@ async function importBackupIfPresent() {
       });
 
       const cleanData = normalizedData.filter((item) => {
-        if (clientKey === 'property' && !item.organizationId) return false;
-        if (clientKey === 'user' && !item.email) return false;
+        if (clientKey === 'property' && !item['organizationId']) return false;
+        if (clientKey === 'user' && !item['email']) return false;
         return true;
       });
 
