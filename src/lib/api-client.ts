@@ -1,19 +1,8 @@
 /**
  * Centralized API Client with authentication handling
- * Automatically adds Authorization headers and handles token refresh
+ * Uses httpOnly cookies set by the backend - no localStorage token management needed
+ * Cookies are automatically included by the browser in all requests
  */
-
-// Storage keys matching AuthContext
-const STORAGE_KEYS = {
-  TOKENS: 'rentflow_tokens',
-  USER: 'rentflow_user'
-} as const;
-
-interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-}
 
 interface ApiResponse<T = unknown> {
   data?: T;
@@ -39,119 +28,32 @@ class ApiError extends Error {
 }
 
 /**
- * Get stored tokens from localStorage
+ * Clear authentication data on the server side
  */
-function getStoredTokens(): AuthTokens | null {
-  if (typeof window === 'undefined') return null;
+async function clearAuthData(): Promise<void> {
   try {
-    const tokens = localStorage.getItem(STORAGE_KEYS.TOKENS);
-    return tokens ? JSON.parse(tokens) : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Update stored tokens in localStorage
- */
-function updateStoredTokens(tokens: AuthTokens | null): void {
-  if (typeof window === 'undefined') return;
-  try {
-    if (tokens) {
-      localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(tokens));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.TOKENS);
-    }
-  } catch (error) {
-    console.error('Failed to update tokens in localStorage:', error);
-  }
-}
-
-/**
- * Clear authentication data
- */
-function clearAuthData(): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(STORAGE_KEYS.TOKENS);
-    localStorage.removeItem(STORAGE_KEYS.USER);
-  } catch (error) {
-    console.error('Failed to clear auth data:', error);
-  }
-}
-
-/**
- * Check if token is expired or about to expire (within 5 minutes)
- */
-function isTokenExpiredOrAboutToExpire(tokens: AuthTokens): boolean {
-  if (!tokens.expiresAt) return true;
-  const currentTime = Math.floor(Date.now() / 1000);
-  const bufferTime = 5 * 60; // 5 minutes buffer
-  return tokens.expiresAt - bufferTime <= currentTime;
-}
-
-/**
- * Attempt to refresh the access token using refresh token
- */
-async function refreshAccessToken(): Promise<AuthTokens | null> {
-  try {
-    const tokens = getStoredTokens();
-    if (!tokens?.refreshToken) {
-      return null;
-    }
-
-    const response = await fetch('/api/auth/refresh', {
+    await fetch('/api/auth/logout', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+      credentials: 'include', // Include cookies
     });
-
-    if (!response.ok) {
-      console.warn('Token refresh failed');
-      return null;
-    }
-
-    const newTokens = await response.json();
-    updateStoredTokens(newTokens);
-    return newTokens;
   } catch (error) {
-    console.error('Token refresh error:', error);
-    return null;
+    console.error('Failed to logout:', error);
   }
-}
-
-/**
- * Get authentication headers
- */
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  let tokens = getStoredTokens();
   
-  // Check if token needs refresh
-  if (tokens && isTokenExpiredOrAboutToExpire(tokens)) {
-    const newTokens = await refreshAccessToken();
-    if (newTokens) {
-      tokens = newTokens;
-    } else {
-      // Refresh failed, clear auth data
-      clearAuthData();
-      throw new ApiError(401, 'Session expired. Please log in again.');
+  // Also clear localStorage
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('rentflow_tokens');
+      localStorage.removeItem('rentflow_user');
+    } catch (error) {
+      console.error('Failed to clear localStorage:', error);
     }
   }
-
-  if (!tokens?.accessToken) {
-    throw new ApiError(401, 'No authentication token found');
-  }
-
-  return {
-    'Authorization': `Bearer ${tokens.accessToken}`,
-    'Content-Type': 'application/json',
-  };
 }
 
 /**
  * Make an authenticated API request
+ * Credentials are automatically included via cookies
  */
 async function apiRequest<T = unknown>(
   url: string,
@@ -164,58 +66,48 @@ async function apiRequest<T = unknown>(
     ...fetchOptions
   } = options;
 
-  let authHeaders: Record<string, string> = {};
-  
-  try {
-    if (auth) {
-      authHeaders = await getAuthHeaders();
-    }
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      // Clear auth and redirect to login
-      clearAuthData();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      return {
-        error: error.message,
-        status: 401
-      };
-    }
-    throw error;
-  }
-
   const requestHeaders = {
-    ...authHeaders,
+    'Content-Type': 'application/json',
     ...headers,
   };
 
   try {
     const response = await fetch(url, {
       ...fetchOptions,
+      // Include cookies in all requests (httpOnly token cookie)
+      credentials: 'include',
       headers: requestHeaders,
     });
 
     // Handle 401 Unauthorized
     if (response.status === 401 && auth && retryOnAuthFailure) {
-      // Try to refresh token and retry once
-      const newTokens = await refreshAccessToken();
-      if (newTokens) {
-        // Retry with new token
-        authHeaders.Authorization = `Bearer ${newTokens.accessToken}`;
-        const retryResponse = await fetch(url, {
-          ...fetchOptions,
-          headers: { ...requestHeaders, ...authHeaders },
+      // Try to refresh token using the httpOnly refresh cookie
+      try {
+        const refreshResponse = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
         });
-        
-        if (retryResponse.ok) {
-          const data = await retryResponse.json();
-          return { data, status: retryResponse.status };
+
+        if (refreshResponse.ok) {
+          // Retry the original request with refreshed token
+          const retryResponse = await fetch(url, {
+            ...fetchOptions,
+            credentials: 'include',
+            headers: requestHeaders,
+          });
+
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            return { data, status: retryResponse.status };
+          }
         }
+      } catch (error) {
+        console.error('Token refresh failed:', error);
       }
-      
-      // Refresh failed or retry failed - clear auth and redirect
-      clearAuthData();
+
+      // Refresh failed - clear auth and redirect
+      await clearAuthData();
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -233,7 +125,7 @@ async function apiRequest<T = unknown>(
       } catch {
         // Ignore JSON parsing errors
       }
-      
+
       throw new ApiError(response.status, errorMessage, response);
     }
 
@@ -251,7 +143,7 @@ async function apiRequest<T = unknown>(
         status: error.status
       };
     }
-    
+
     console.error('API request error:', error);
     return {
       error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -307,24 +199,23 @@ export const api = {
     apiRequest<T>(url, { ...options, method: 'DELETE' }),
 
   /**
-   * Get current access token (for manual use cases)
+   * Logout - clears session on server and client
    */
-  getAccessToken: (): string | null => {
-    const tokens = getStoredTokens();
-    return tokens?.accessToken || null;
-  },
+  logout: clearAuthData,
 
   /**
-   * Clear authentication data
+   * Check if user is authenticated by attempting to fetch /api/auth/me
    */
-  clearAuth: clearAuthData,
-
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated: (): boolean => {
-    const tokens = getStoredTokens();
-    return !!(tokens?.accessToken && !isTokenExpiredOrAboutToExpire(tokens));
+  isAuthenticated: async (): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   },
 };
 

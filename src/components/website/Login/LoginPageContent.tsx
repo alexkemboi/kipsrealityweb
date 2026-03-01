@@ -74,10 +74,12 @@ const LoginPageContent = () => {
 
       if (response.ok) {
         const data = await response.json();
-
-
-        // AuthContext.login expects the full token bundle (access/refresh/expiresAt)
-        login(data.user, data.tokens);
+        
+        login(data.user, {
+          accessToken: '',
+          refreshToken: '',
+          expiresAt: data.session.expiresAt,
+        });
 
         toast.success("Login successful! Redirecting...");
 
