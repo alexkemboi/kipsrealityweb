@@ -462,22 +462,20 @@ const DashboardPage = () => {
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
-                  className={`p-2 rounded-lg ${
-                    paymentInfo.paymentStatus === "overdue"
+                  className={`p-2 rounded-lg ${paymentInfo.paymentStatus === "overdue"
                       ? "bg-red-100"
                       : paymentInfo.paymentStatus === "paid"
-                      ? "bg-green-100"
-                      : "bg-blue-100"
-                  }`}
+                        ? "bg-green-100"
+                        : "bg-blue-100"
+                    }`}
                 >
                   <CreditCard
-                    className={`w-6 h-6 ${
-                      paymentInfo.paymentStatus === "overdue"
+                    className={`w-6 h-6 ${paymentInfo.paymentStatus === "overdue"
                         ? "text-red-600"
                         : paymentInfo.paymentStatus === "paid"
-                        ? "text-green-600"
-                        : "text-blue-600"
-                    }`}
+                          ? "text-green-600"
+                          : "text-blue-600"
+                      }`}
                   />
                 </div>
                 <h2 className="text-xl font-semibold text-gray-900">Rent Payment</h2>
@@ -589,24 +587,24 @@ const DashboardPage = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {maintenanceRequests.map((request) => (
-                    <div key={request.id} className={`p-4 rounded-lg border ${getStatusColor(request.status)}`}>
+                  {maintenanceRequests.map((request: any) => (
+                    <div key={request.id} className={`p-4 rounded-lg border ${getRequestStatusColor(request.status)}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2 flex-wrap">
                             <h3 className="font-semibold text-gray-900 truncate">{request.title}</h3>
                             <span className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap flex-shrink-0 ${request.priority === 'high' || request.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                request.priority === 'medium' || request.priority === 'NORMAL' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-gray-100 text-gray-700'
+                              request.priority === 'medium' || request.priority === 'NORMAL' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-gray-100 text-gray-700'
                               }`}>
                               {request.priority}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {isCompleted ? (
+                            {normalizeStatus(request.status) === 'COMPLETED' ? (
                               <CheckCircle className="w-5 h-5 text-green-600" />
-                            ) : isInProgress ? (
+                            ) : normalizeStatus(request.status) === 'IN_PROGRESS' ? (
                               <Clock className="w-5 h-5 text-blue-600" />
                             ) : (
                               <AlertCircle className="w-5 h-5 text-yellow-600" />
@@ -617,8 +615,8 @@ const DashboardPage = () => {
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -739,14 +737,14 @@ const DashboardPage = () => {
                         type="button"
                         onClick={() => setNewRequestPriority(priority)}
                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${newRequestPriority === priority
-                            ? priority === "URGENT"
-                              ? "bg-red-600 text-white"
-                              : priority === "HIGH"
-                                ? "bg-orange-600 text-white"
-                                : priority === "NORMAL"
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-gray-600 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? priority === "URGENT"
+                            ? "bg-red-600 text-white"
+                            : priority === "HIGH"
+                              ? "bg-orange-600 text-white"
+                              : priority === "NORMAL"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                       >
                         {priority}

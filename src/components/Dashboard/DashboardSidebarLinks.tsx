@@ -42,7 +42,7 @@ export const systemRoutes: SidebarRoute[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
 ]
 
-export const DashboardSidebarLinks: Record<string, RouteGroups> = {
+export const routeConfig: Record<string, RouteGroups> = {
   PROPERTY_MANAGER: {
     main: [
       { label: 'Dashboard', href: '/property-manager', icon: LayoutDashboard },

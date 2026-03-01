@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AlertTriangle, CheckCircle, FileText, XCircle,
-  UserCheck, ShieldAlert
+  UserCheck, ShieldAlert, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +97,7 @@ export default function SigningRoom() {
         const data = await res.json();
 
         if (data.success) {
-          setDocument(data.document);
+          setDocData(data.document);
 
           // Determine current user's role from participants
           const userEmail = await getUserEmail(); // This would come from auth context/token
@@ -277,10 +277,10 @@ export default function SigningRoom() {
         className="flex-1 overflow-y-auto p-8 flex justify-center"
         onScroll={handleScroll}
       >
-        {document.originalFileUrl ? (
+        {docData.originalFileUrl ? (
           <div className="bg-white shadow-lg w-full max-w-4xl min-h-[1000px] p-10 border">
             <iframe
-              src={document.originalFileUrl}
+              src={docData.originalFileUrl}
               className="w-full h-full min-h-[800px]"
               title="Document Viewer"
             />
@@ -396,6 +396,6 @@ export default function SigningRoom() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </div>
   );
 }
