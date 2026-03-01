@@ -85,7 +85,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ tenantId
       payments: (inv.payments || []).map((p: any) => ({
         id: p.id,
         amount: Number(p.amount),
-        paidOn: p.paidOn ? p.paidOn.toISOString() : null,
+        paid_on: p.paidOn ? p.paidOn.toISOString() : null,
         method: p.method,
         reference: p.reference,
       })),

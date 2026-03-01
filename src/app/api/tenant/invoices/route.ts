@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         payments: {
           select: {
             amount: true,
-            paidOn: true
+            paid_on: true
           }
         },
         Lease: {

@@ -147,7 +147,7 @@ export async function GET(
 
     const payments = await prisma.payment.findMany({
       where: { invoiceId: invoiceId },
-      orderBy: { paidOn: "desc" },
+      orderBy: { paid_on: "desc" },
     });
 
     return NextResponse.json(payments);
