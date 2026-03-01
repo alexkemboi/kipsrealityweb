@@ -8,10 +8,10 @@ export default defineConfig({
   workers: 1,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
-  reporter: isCI ? [["html", { open: "never" }]] : [["html"]],
+  reporter: isCI ? [["html", { open: "never" }], ["github"]] : [["html"]],
 
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -68,9 +68,9 @@ export default defineConfig({
   ],
 
   webServer: {
-    // CI runs a production server, so your workflow MUST run `npm run build` first
-    command: isCI ? "npm start" : "npm run dev",
-    url: "http://127.0.0.1:3000",
+    // CI runs production server -> workflow MUST run `npm run build` first
+    command: "npm run dev",
+    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
     reuseExistingServer: !isCI,
     timeout: 120_000,
     stdout: "pipe",
