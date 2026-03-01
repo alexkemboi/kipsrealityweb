@@ -83,7 +83,7 @@ jobs:
 
       # If you have a seed script (highly recommended)
       - name: Seed E2E database
-        run: npx tsx scripts/seed-e2e.ts
+        run: node --loader ts-node/esm scripts/seed-e2e.ts
         # If your seed runs via package.json:
         # run: npm run seed:e2e
 
