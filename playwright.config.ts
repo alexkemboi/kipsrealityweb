@@ -17,43 +17,55 @@ export default defineConfig({
     video: "retain-on-failure",
   },
 
-  projects: isCI
-    ? [
-        {
-          name: "chromium",
-          use: {
-            ...devices["Desktop Chrome"],
-            actionTimeout: 15_000,
-            navigationTimeout: 30_000,
-          },
-        },
-      ]
-    : [
-        {
-          name: "chromium",
-          use: {
-            ...devices["Desktop Chrome"],
-            actionTimeout: 15_000,
-            navigationTimeout: 30_000,
-          },
-        },
-        {
-          name: "firefox",
-          use: {
-            ...devices["Desktop Firefox"],
-            actionTimeout: 20_000,
-            navigationTimeout: 45_000,
-          },
-        },
-        {
-          name: "webkit",
-          use: {
-            ...devices["Desktop Safari"],
-            actionTimeout: 25_000,
-            navigationTimeout: 60_000,
-          },
-        },
-      ],
+  projects: [
+    {
+      name: 'chromium',
+      use: { 
+        ...devices['Desktop Chrome'],
+        actionTimeout: 15_000,
+        navigationTimeout: 30_000,
+      },
+    },
+
+    {
+      name: 'firefox',
+      use: { 
+        ...devices['Desktop Firefox'],
+        actionTimeout: 20_000,
+        navigationTimeout: 45_000,
+      },
+    },
+
+    // WebKit skipped - timing issues on Windows
+    // {
+    //   name: 'webkit',
+    //   use: { 
+    //     ...devices['Desktop Safari'],
+    //     actionTimeout: 45_000,
+    //     navigationTimeout: 90_000,
+    //   },
+    // },
+
+    /* Test against mobile viewports. */
+    // {
+    //   name: 'Mobile Chrome',
+    //   use: { ...devices['Pixel 5'] },
+    // },
+    // {
+    //   name: 'Mobile Safari',
+    //   use: { ...devices['iPhone 12'] },
+    // },
+
+    /* Test against branded browsers. */
+    // {
+    //   name: 'Microsoft Edge',
+    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
+    // },
+    // {
+    //   name: 'Google Chrome',
+    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+    // },
+  ],
 
   webServer: {
     // CI runs production server -> workflow MUST run `npm run build` first

@@ -86,7 +86,7 @@ export default async function Page() {
                 Contact Us
               </h1>
               <p className="mt-2 text-gray-600">
-                We’re unable to load contact information right now. Please try
+                We're unable to load contact information right now. Please try
                 again shortly.
               </p>
             </div>

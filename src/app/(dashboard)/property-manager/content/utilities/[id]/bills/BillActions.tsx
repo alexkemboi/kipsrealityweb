@@ -196,7 +196,7 @@ export function BillActions({
                             <DropdownMenuItem
                                 key={index}
                                 onClick={action.action}
-                                disabled={action.loading}
+                                disabled={action.loading ?? false}
                                 className="flex items-center gap-2 cursor-pointer py-2.5"
                             >
                                 {action.loading ? (

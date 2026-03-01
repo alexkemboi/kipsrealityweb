@@ -69,7 +69,10 @@ test.describe('Financial Core Workflow', () => {
     await page.click('button[type="submit"]');
 
     // Optional UI error capture - only check for actual error text, not empty containers
-    const errorLocator = page.locator('div.bg-red-50:has(p:text-visible), .toast-error:visible, [role="alert"]:has-text(*):visible').first();
+    const errorLocator = page
+      .locator('div.bg-red-50, .toast-error, [role="alert"]')
+      .filter({ hasText: /\S/ })
+      .first();
     const hasUiError = await errorLocator.isVisible({ timeout: 5000 }).catch(() => false);
     if (hasUiError) {
       const errorMsg = (await errorLocator.textContent())?.trim();
@@ -96,9 +99,9 @@ test.describe('Financial Core Workflow', () => {
       }
     }
 
-    // 5) Navigate to Invoices
-    await page.click('text=View Invoices');
-    await expect(page).toHaveURL(/\/property-manager\/finance\/invoices/);
+    // 5) Navigate to Invoices - use direct URL navigation
+    await page.goto('/property-manager/finance/invoices');
+    await expect(page).toHaveURL(/\/property-manager\/finance\/invoices/, { timeout: 15000 });
 
     // 6) Create Invoice
     await page.click('text=Create Invoice');

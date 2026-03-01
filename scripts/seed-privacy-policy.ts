@@ -147,7 +147,7 @@ async function main() {
                 data: {
                     key: section.title.toLowerCase().replace(/['\s]+/g, '-'),
                     title: section.title,
-                    intro: section.intro,
+                    intro: section.intro ?? null,
                     content: section.content,
                     order: section.order,
                     policyId: policy.id,

@@ -61,7 +61,7 @@ export default function LeaseRenewalPage() {
         
         setRenewalForm({
           ...renewalForm,
-          newEndDate: newEnd.toISOString().split("T")[0],
+          newEndDate: newEnd.toISOString().split("T")[0] ?? "",
           newRentAmount: data.rentAmount,
         });
       }
@@ -239,7 +239,7 @@ export default function LeaseRenewalPage() {
                   setRenewalForm({
                     ...renewalForm,
                     newTermMonths: months,
-                    newEndDate: newEnd.toISOString().split("T")[0],
+                    newEndDate: newEnd.toISOString().split("T")[0] ?? "",
                   });
                 }}
               />

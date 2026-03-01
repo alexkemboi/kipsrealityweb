@@ -1,5 +1,5 @@
-import { Metadata } from "next";
-import UnitsClient from "@/components/Dashboard/propertymanagerdash/units/UnitsClient";
+import type { Metadata } from "next";
+import UnitsClient from "@/components/Dashboard/propertymanagerdash/units/unitsClient";
 
 export const metadata: Metadata = {
   title: "Units | Property Manager Dashboard",
