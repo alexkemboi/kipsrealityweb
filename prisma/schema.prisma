@@ -27,6 +27,7 @@ model Organization {
   dssDocuments             DssDocument[]
   dssParticipants          DssParticipant[]
   dssWorkflowTemplates     DssWorkflowTemplate[]
+  dssAuditEvents           DssAuditEvent[]          @relation("DssAuditEventOrganization")
   financialEntities        FinancialEntity[]
   users                    OrganizationUser[]
   plan                     Plan?                    @relation(fields: [planId], references: [id])
@@ -76,6 +77,7 @@ model User {
   sentAgentInvites       AgentInvite[]            @relation("AgentInviteToTenant")
   receivedAgentInvite    AgentInvite?             @relation("AgentInviteToUser")
   vendors                Vendor[]
+  tenantPaymentMethods  TenantPaymentMethod[]
 
   @@map("users")
 }
@@ -159,6 +161,19 @@ model Invite {
 model PasswordResetToken {
   id        String   @id @default(uuid())
   token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// OTP model for phone/email verification
+model Otp {
+  id        String   @id @default(uuid())
+  code      String
+  type      String   // EMAIL, PHONE, etc.
   expiresAt DateTime
   createdAt DateTime @default(now())
   userId    String
@@ -693,7 +708,7 @@ model Payment {
   paymentReversals  PaymentReversal[]
   receipts          Receipt[]
 
-  @@index([status])
+  @@index([postingStatus])
   @@index([invoiceId])
   @@map("payment")
 }
@@ -1832,6 +1847,28 @@ enum payment_processor {
   FLUTTERWAVE
   PLAID
   OTHER
+}
+
+// Payment method enum - used by Payment model
+enum payment_method {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  MPESA
+  PAYSTACK
+  STRIPE
+  FLUTTERWAVE
+  PESAPAL
+  PALPAY
+}
+
+// Utility bill import method enum
+enum utility_bills_import_method {
+  MANUAL_ENTRY
+  CSV_UPLOAD
+  API_IMPORT
+  OCR_SCAN
 }
 
 // =====================================================================
