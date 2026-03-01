@@ -13,10 +13,28 @@ import {
   ChevronDown
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useDashboard } from "@/context/DashboardContext";
 
-export function DashboardNavbar({ toggleSidebar }: { toggleSidebar: () => void }) {
+export function DashboardNavbar({ toggleSidebar: toggleSidebarProp, user: userProp }: { toggleSidebar?: () => void; user?: {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  email?: string;
+  avatar?: string;
+} | null }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  
+  // Proper null handling - prefer userProp but fall back to authUser only if needed
+  // If neither is available, show loading state
+  const user = userProp ?? authUser;
+  
+  // Show loading state if user is not available
+  const isLoading = !user && !authUser;
+  
+  const { setMobileDrawerOpen } = useDashboard();
+  const toggleSidebar = toggleSidebarProp ?? (() => setMobileDrawerOpen(true));
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 

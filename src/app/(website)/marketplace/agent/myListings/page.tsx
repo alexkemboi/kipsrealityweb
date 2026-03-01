@@ -1,35 +1,64 @@
-import type { Metadata } from 'next';
-// import { MarketplaceClientPage } from '@/components/website/marketplace/ListingClientPage';
-// import Navbar from '@/components/website/Navbar';
-// import {MyListings} from "@/components/website/marketplace/MyListings"
-// import { marketplaceListings } from "@/app/data/marketplaceData"
+import * as React from "react";
+import { prisma } from "@/lib/db";
+import { requireAgent } from "@/lib/auth/requireAgent";
+import MyListingsClient, { ListingItem, ListingStatus as UIListingStatus } from "./MyListingsClient";
 
+export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: 'My Listings - Rentflow360',
-  description: 'Manage your Property Listings, Assets and Services on Rentflow 360 Marketplace.',
-  keywords: 'marketplace, property listings, assets, services',
+/**
+ * Maps DB status name to UI status type.
+ */
+function mapStatus(statusName?: string): UIListingStatus {
+  if (!statusName) return "draft";
+  const normalized = statusName.toLowerCase();
+
+  if (normalized.includes("active") || normalized.includes("published")) return "published";
+  if (normalized.includes("pending")) return "pending";
+  if (normalized.includes("archive")) return "archived";
+  if (normalized.includes("reject")) return "rejected";
+
+  return "draft";
 }
 
-export default function MyListingsPage() {
+export default async function MyListingsPage() {
+  const user = await requireAgent();
+
+  const dbListings = await prisma.listing.findMany({
+    where: {
+      createdBy: user.id,
+      organizationId: user.organizationId,
+    },
+    include: {
+      status: true,
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+      },
+      location: true,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+  });
+
+  const listings: ListingItem[] = dbListings.map((l) => ({
+    id: l.id,
+    title: l.title,
+    category: "Real Estate", // Default category if not specified in DB
+    status: mapStatus(l.status?.name),
+    price: l.price,
+    location: l.location?.name || undefined,
+    thumbnailUrl: l.images[0]?.imageUrl || null,
+    updatedAt: l.updatedAt.toISOString(),
+    createdAt: l.createdAt.toISOString(),
+    // Add other fields as needed
+    views: 0, // Placeholder
+    inquiries: 0, // Placeholder
+  }));
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* <Navbar />
-      
-      <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
-        <div className="max-w-3xl mx-auto px-6">
-                            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                                My <span className="text-gradient-primary">Listings</span>
-                            </h1>
-                            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-                                Manage your Property Listings, Assets and Services on Rentflow 360 Marketplace.
-                            </p>
-        
-                           
-                        </div>
-        
-      </section>
-      <MyListings listings={marketplaceListings} /> */}
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <MyListingsClient listings={listings} />
     </div>
   );
 }

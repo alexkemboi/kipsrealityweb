@@ -66,32 +66,16 @@ model User {
   sentInvites            Invite[]                 @relation("UserInvites")
   leases                 Lease[]
   listings               Listing[]
+  ListingAuditEntry      ListingAuditEntry[]
+  Otp                    Otp[]
   passwordResetTokens    PasswordResetToken[]
   tenantApplications     Tenantapplication[]
-  twoFactorEnabled       Boolean                  @default(false)
   dssParticipants        DssParticipant[]
-  listingAuditEntries    ListingAuditEntry[]
+  dssAuditEvents         DssAuditEvent[]       @relation("DssAuditEventUser")
   organizationUsers      OrganizationUser[]
   sentAgentInvites       AgentInvite[]            @relation("AgentInviteToTenant")
   receivedAgentInvite    AgentInvite?             @relation("AgentInviteToUser")
   vendors                Vendor[]
-
-  // Relation to OTPs
-  otps Otp[]
-
-  // --- Payment Profile (Tenant) ---
-  region    Region?   @default(KEN) // Defaulting to KEN for our pilot
-  KycStatus KycStatus @default(PENDING) @map("kyc_status")
-
-  // USA Identifiers
-  stripeCustomerId          String? @map("stripe_customer_id")
-  plaidAccessTokenEncrypted String? @map("plaid_access_token") // App must encrypt/decrypt this
-
-  // Africa Identifiers
-  paystackCustomerCode String? @map("paystack_customer_code")
-
-  // Payment methods
-  paymentMethods TenantPaymentMethod[]
 
   @@map("users")
 }
@@ -99,15 +83,14 @@ model User {
 model TenantPaymentMethod {
   id                    String   @id @default(uuid())
   userId                String   @map("user_id")
-  type                  String // 'ACH', 'CARD'
-  plaidAccessToken      String?  @map("plaid_access_token") // Encrypted
+  type                  String
+  plaidAccessToken      String?  @map("plaid_access_token")
   plaidAccountId        String?  @map("plaid_account_id")
   stripePaymentMethodId String   @map("stripe_payment_method_id")
   isDefault             Boolean  @default(false) @map("is_default")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("tenant_payment_methods")
@@ -117,7 +100,7 @@ model OrganizationUser {
   id                String                  @id @default(uuid())
   userId            String                  @map("user_id")
   organizationId    String                  @map("organization_id")
-  role              organization_users_role
+  role              UserRole                @map("role")
   createdAt         DateTime                @default(now()) @map("created_at")
   adminActions      AdminAction[]           @relation("AdminActionsByAdmin")
   targetActions     AdminAction[]           @relation("AdminActionsTarget")
@@ -130,21 +113,6 @@ model OrganizationUser {
   @@unique([userId, organizationId])
   @@index([organizationId], map: "organization_users_organization_id_fkey")
   @@map("organization_users")
-}
-
-// New Table for 2FA Codes
-model Otp {
-  id        String   @id @default(uuid())
-  code      String // The 6-digit code
-  phone     String // The destination
-  userId    String
-  expiresAt DateTime
-  type      OtpType  @default(TWO_FACTOR)
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([phone])
 }
 
 model Vendor {
@@ -171,7 +139,7 @@ model Invite {
   id             String       @id @default(cuid())
   email          String
   token          String       @unique
-  role           Invite_role
+  role           UserRole
   organizationId String
   invitedById    String?
   expiresAt      DateTime
@@ -227,22 +195,24 @@ model Account {
 }
 
 model JournalEntry {
-  id                 String              @id @default(uuid())
-  entityId           String              @map("entity_id")
-  transactionDate    DateTime            @map("transaction_date")
-  postedAt           DateTime?           @map("posted_at")
-  description        String
-  reference          String?
-  isLocked           Boolean             @default(false)
-  maintenanceRequest MaintenanceRequest?
-  entity             FinancialEntity     @relation(fields: [entityId], references: [id])
-  lines              JournalLine[]
-  invoice            Invoice?
-  payment            Payment?
-  utilityBill        UtilityBill?
+  id                   String              @id @default(uuid())
+  entityId             String              @map("entity_id")
+  transactionDate      DateTime            @map("transaction_date")
+  postedAt             DateTime?           @map("posted_at")
+  description          String
+  reference            String?
+  isLocked             Boolean             @default(false)
+  maintenanceRequestId String?
+  entity               FinancialEntity     @relation(fields: [entityId], references: [id])
+  MaintenanceRequest   MaintenanceRequest? @relation(fields: [maintenanceRequestId], references: [id])
+  lines                JournalLine[]
+  invoice              Invoice?
+  payment              Payment?
+  utilityBill          UtilityBill?
 
   @@index([transactionDate])
   @@index([entityId], map: "gl_journal_entries_entity_id_fkey")
+  @@index([maintenanceRequestId], map: "gl_journal_entries_maintenanceRequestId_fkey")
   @@map("gl_journal_entries")
 }
 
@@ -288,34 +258,34 @@ model FinancialSnapshot {
 }
 
 model UtilityBill {
-  id             String              @id @default(uuid())
-  propertyId     String              @map("property_id")
-  providerName   String              @map("provider_name")
-  totalAmount    Decimal             @db.Decimal(10, 2)
-  billDate       DateTime            @map("bill_date")
-  dueDate        DateTime            @map("due_date")
-  importMethod   UtilityImportMethod @default(MANUAL_ENTRY) @map("import_method")
-  ocrConfidence  Decimal?            @map("ocr_confidence") @db.Decimal(5, 2)
-  status         UtilityBillStatus   @default(DRAFT)
-  journalEntryId String?             @unique @map("journal_entry_id")
-  blockchainHash String?             @map("blockchain_hash")
-  createdAt      DateTime            @default(now()) @map("created_at")
-  fileUrl        String?             @map("file_url")
-  splitMethod    UtilitySplitMethod  @default(EQUAL) @map("split_method")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
-  consumption    Float?              @db.Float
-  periodEnd      DateTime?           @map("period_end")
-  periodStart    DateTime?           @map("period_start")
-  rate           Float?              @db.Float
-  utilityId      String?             @map("utility_id") @db.Char(36)
-  approvedAt     DateTime?           @map("approved_at")
-  approvedBy     String?             @map("approved_by")
-  rawOcrData     Json?               @map("raw_ocr_data")
+  id             String                      @id @default(uuid())
+  propertyId     String                      @map("property_id")
+  providerName   String                      @map("provider_name")
+  totalAmount    Decimal                     @db.Decimal(10, 2)
+  billDate       DateTime                    @map("bill_date")
+  dueDate        DateTime                    @map("due_date")
+  importMethod   utility_bills_import_method @default(MANUAL_ENTRY) @map("import_method")
+  ocrConfidence  Decimal?                    @map("ocr_confidence") @db.Decimal(5, 2)
+  status         UtilityBillStatus           @default(DRAFT)
+  journalEntryId String?                     @unique @map("journal_entry_id")
+  blockchainHash String?                     @map("blockchain_hash")
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  fileUrl        String?                     @map("file_url")
+  splitMethod    utility_bills_split_method  @default(EQUAL) @map("split_method")
+  updatedAt      DateTime                    @updatedAt @map("updated_at")
+  consumption    Float?                      @db.Float
+  periodEnd      DateTime?                   @map("period_end")
+  periodStart    DateTime?                   @map("period_start")
+  rate           Float?                      @db.Float
+  utilityId      String?                     @map("utility_id") @db.Char(36)
+  approvedAt     DateTime?                   @map("approved_at")
+  approvedBy     String?                     @map("approved_by")
+  rawOcrData     Json?                       @map("raw_ocr_data")
   childInvoices  Invoice[]
   allocations    UtilityAllocation[]
-  journalEntry   JournalEntry?       @relation(fields: [journalEntryId], references: [id])
-  property       Property            @relation(fields: [propertyId], references: [id])
-  utility        utility?            @relation(fields: [utilityId], references: [id])
+  journalEntry   JournalEntry?               @relation(fields: [journalEntryId], references: [id])
+  property       Property                    @relation(fields: [propertyId], references: [id])
+  utility        utility?                    @relation(fields: [utilityId], references: [id])
 
   @@index([propertyId])
   @@index([utilityId])
@@ -535,13 +505,13 @@ model Unit {
   currency            String?              @default("USD") @db.VarChar(10)
   squareFootage       Float?               @map("square_footage")
   leases              Lease[]
+  ListingAuditEntry   ListingAuditEntry[]
   maintenanceRequests MaintenanceRequest[]
   tenantApplications  Tenantapplication[]
   listing             Listing?             @relation("UnitListing", fields: [listingId], references: [id])
   property            Property             @relation(fields: [propertyId], references: [id])
   DssDocument         DssDocument[]
   journalLines        JournalLine[]
-  listingAuditEntries ListingAuditEntry[]
   utilityAllocations  UtilityAllocation[]
   appliances          Appliance[]          @relation("UnitAppliances")
 
@@ -665,27 +635,26 @@ model Lease {
 }
 
 model Invoice {
-  id                 String              @id @default(uuid())
-  leaseId            String              @map("lease_id")
-  type               invoice_type
-  totalAmount        Float               @map("amount")
-  amountPaid         Float               @default(0) @map("amount_paid")
-  balance            Float               @default(0)
-  dueDate            DateTime            @db.DateTime(0)
-  status             invoice_status?     @default(PENDING)
-  postingStatus      PostingStatus       @default(PENDING) @map("posting_status")
-  journalEntryId     String?             @unique @map("journal_entry_id")
-  utilityBillId      String?             @map("utility_bill_id")
-  createdAt          DateTime?           @default(now()) @db.DateTime(0)
-  updatedAt          DateTime?           @default(now()) @db.DateTime(0)
-  InvoiceItem        InvoiceItem[]
-  maintenanceRequest MaintenanceRequest?
-  journalEntry       JournalEntry?       @relation(fields: [journalEntryId], references: [id])
-  Lease              Lease               @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  utilityBill        UtilityBill?        @relation(fields: [utilityBillId], references: [id])
-  payments           Payment[]
-  receipts           Receipt[]
-  utilityAllocation  UtilityAllocation?
+  id                String             @id @default(uuid())
+  leaseId           String             @map("lease_id")
+  type              invoice_type
+  totalAmount       Float              @map("amount")
+  amountPaid        Float              @default(0) @map("amount_paid")
+  balance           Float              @default(0)
+  dueDate           DateTime           @db.DateTime(0)
+  status            invoice_status?    @default(PENDING)
+  postingStatus     PostingStatus      @default(PENDING) @map("posting_status")
+  journalEntryId    String?            @unique @map("journal_entry_id")
+  utilityBillId     String?            @map("utility_bill_id")
+  createdAt         DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt         DateTime?          @default(now()) @updatedAt @db.DateTime(0)
+  InvoiceItem       InvoiceItem[]
+  journalEntry      JournalEntry?      @relation(fields: [journalEntryId], references: [id])
+  Lease             Lease              @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  utilityBill       UtilityBill?       @relation(fields: [utilityBillId], references: [id])
+  payments          Payment[]
+  receipts          Receipt[]
+  utilityAllocation UtilityAllocation?
 
   @@index([leaseId], map: "invoice_lease_id_fkey")
   @@index([utilityBillId], map: "invoice_utility_bill_id_fkey")
@@ -698,7 +667,7 @@ model InvoiceItem {
   description String    @db.VarChar(255)
   amount      Float
   createdAt   DateTime? @default(now()) @db.DateTime(0)
-  updatedAt   DateTime? @default(now()) @db.DateTime(0)
+  updatedAt   DateTime? @default(now()) @updatedAt @db.DateTime(0)
   invoice     Invoice   @relation(fields: [invoiceId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "InvoiceItem_ibfk_1")
 
   @@index([invoiceId], map: "invoiceId")
@@ -724,52 +693,39 @@ model Payment {
   paymentReversals  PaymentReversal[]
   receipts          Receipt[]
 
-  amountSubunits BigInt? @map("amount_subunits") // Cents(Integer math)
-  currency       String  @default("KES") @db.VarChar(3)
-
-  gateway          PaymentGateway @default(MANUAL)
-  gatewayReference String?        @map("gateway_reference") //Stripe ID / Paystack Ref
-  riskScore        Int?           @map("risk_score") // Plaid Signal Score
-  metadata         Json? // Additional payment details (phone number, M-Pesa transaction details, etc.)
-
-  // Status State Machine
-  status TransactionStatus @default(PENDING)
-  type   TransactionType   @default(RENT)
-
-  @@index([gatewayReference])
   @@index([status])
   @@index([invoiceId])
   @@map("payment")
 }
 
 model PaymentReversal {
-  id          String   @id @db.Char(36)
-  payment_id  String   @db.Char(36)
-  invoice_id  String   @db.Char(36)
-  amount      Float    @db.Float
+  id          String   @id
+  payment_id  String
+  invoice_id  String
+  amount      Decimal  @db.Decimal(10, 2)
   reason      String?  @db.VarChar(255)
-  created_at  DateTime @default(now()) @db.DateTime(0)
+  created_at  DateTime @default(now())
   reversed_by String?  @db.VarChar(100)
   metadata    Json?
-  payment     Payment  @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reversal_payment")
+  payment     Payment  @relation(fields: [payment_id], references: [id], onDelete: Cascade, map: "fk_reversal_payment")
 
-  @@index([payment_id], map: "idx_payment_id")
+  @@index([payment_id])
   @@map("payment_reversal")
 }
 
 model Receipt {
-  id        String    @id @default(dbgenerated("(uuid())")) @db.Char(36)
-  invoiceId String    @map("invoice_id") @db.Char(36)
-  paymentId String    @map("payment_id") @db.Char(36)
-  receiptNo String    @unique(map: "receiptNo") @db.VarChar(100)
-  issuedOn  DateTime? @default(now()) @db.DateTime(0)
-  createdAt DateTime? @default(now()) @db.DateTime(0)
-  updatedAt DateTime? @default(now()) @db.DateTime(0)
-  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "receipt_ibfk_1")
-  payment   Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "receipt_ibfk_2")
+  id         String    @id
+  invoiceId  String    @map("invoice_id")
+  paymentId  String    @map("payment_id")
+  receiptNo  String    @unique(map: "receiptNo") @db.VarChar(100)
+  created_at DateTime? @default(now())
+  issued_on  DateTime? @default(now())
+  updated_at DateTime?
+  invoice    Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade, map: "receipt_ibfk_1")
+  payment    Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade, map: "receipt_ibfk_2")
 
-  @@index([invoiceId], map: "invoice_id")
-  @@index([paymentId], map: "payment_id")
+  @@index([invoiceId])
+  @@index([paymentId])
   @@map("receipt")
 }
 
@@ -793,7 +749,7 @@ model lease_utility {
   utility_id            String            @db.Char(36)
   is_tenant_responsible Boolean?          @default(true)
   createdAt             DateTime?         @default(now()) @db.DateTime(0)
-  updatedAt             DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt             DateTime?         @default(now()) @updatedAt @db.DateTime(0)
   Lease                 Lease             @relation(fields: [lease_id], references: [id], onDelete: Cascade)
   utility               utility           @relation(fields: [utility_id], references: [id], onDelete: Cascade)
   utility_reading       utility_reading[]
@@ -810,7 +766,7 @@ model utility_reading {
   readingDate      DateTime?     @default(now()) @db.DateTime(0)
   amount           Float?        @db.Float
   createdAt        DateTime?     @default(now()) @db.DateTime(0)
-  updatedAt        DateTime?     @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?     @default(now()) @updatedAt @db.DateTime(0)
   lease_utility    lease_utility @relation(fields: [lease_utility_id], references: [id], onDelete: Cascade)
 
   @@index([lease_utility_id])
@@ -846,9 +802,11 @@ model DssDocument {
   unit                 Unit?                   @relation(fields: [unitId], references: [id])
   participants         DssParticipant[]
   signatures           DssSignature[]
+  auditEvents          DssAuditEvent[]
 
-  @@index([organizationId])
+  @@unique([id, organizationId])
   @@index([leaseId])
+  @@index([organizationId])
   @@index([propertyId], map: "dss_documents_property_id_fkey")
   @@index([unitId], map: "dss_documents_unit_id_fkey")
   @@map("dss_documents")
@@ -871,8 +829,9 @@ model DssParticipant {
   organization    Organization       @relation(fields: [organizationId], references: [id])
   user            User?              @relation(fields: [userId], references: [id])
   signatures      DssSignature[]
+  auditEvents     DssAuditEvent[]
 
-  @@unique([documentId, email], map: "uq_dss_participant_doc_email")
+  @@unique([documentId, email, role], map: "uq_dss_participant_doc_email_role")
   @@index([organizationId], map: "dss_participants_organization_id_fkey")
   @@index([userId], map: "dss_participants_user_id_fkey")
   @@map("dss_participants")
@@ -884,8 +843,6 @@ model DssSignature {
   participantId String         @map("participant_id")
   signatureHash String         @map("signature_hash")
   signedAt      DateTime       @default(now()) @map("signed_at")
-  isProxy       Boolean        @default(false) @map("is_proxy")
-  onBehalfOf    String?        @map("on_behalf_of")
   document      DssDocument    @relation(fields: [documentId], references: [id], onDelete: Cascade)
   participant   DssParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
@@ -909,9 +866,32 @@ model BlockchainNotaryRecord {
   document        DssDocument            @relation(fields: [documentId], references: [id], onDelete: Cascade)
   organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  attempts        BlockchainNotaryAttempt[]
+
   @@index([notarizedHash])
   @@index([organizationId], map: "blockchain_notary_records_organization_id_fkey")
   @@map("blockchain_notary_records")
+}
+
+model BlockchainNotaryAttempt {
+  id              String                        @id @default(uuid())
+  notaryRecordId  String                        @map("notary_record_id")
+  status          BlockchainNotaryAttemptStatus @default(PENDING)
+  txHash          String?                       @map("tx_hash")
+  blockNumber     Int?                          @map("block_number")
+  failureReason   String?                       @map("failure_reason") @db.Text
+  requestPayload  Json?                         @map("request_payload")
+  responsePayload Json?                         @map("response_payload")
+  createdAt       DateTime                      @default(now()) @map("created_at")
+  confirmedAt     DateTime?                     @map("confirmed_at")
+
+  notaryRecord    BlockchainNotaryRecord        @relation(fields: [notaryRecordId], references: [id], onDelete: Cascade)
+
+  @@index([notaryRecordId, createdAt], map: "notary_attempts_record_created_idx")
+  @@index([status, createdAt], map: "notary_attempts_status_created_idx")
+  @@index([txHash], map: "notary_attempts_tx_hash_idx")
+
+  @@map("blockchain_notary_attempts")
 }
 
 model DssWorkflowTemplate {
@@ -944,6 +924,35 @@ model DssWorkflowStep {
   @@map("dss_workflow_steps")
 }
 
+model DssAuditEvent {
+  id              String            @id @default(uuid())
+  organizationId  String            @map("organization_id")
+  documentId      String            @map("document_id")
+  participantId   String?           @map("participant_id")
+  userId          String?           @map("user_id")
+
+  eventType       DssAuditEventType @map("event_type")
+  actorType       DssActorType      @map("actor_type")
+
+  occurredAt      DateTime          @default(now()) @map("occurred_at")
+
+  ipAddress       String?           @map("ip_address") @db.VarChar(64)
+  userAgent       String?           @map("user_agent") @db.Text
+  metadata        Json?             @map("metadata")
+
+  document        DssDocument       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organization    Organization      @relation("DssAuditEventOrganization", fields: [organizationId], references: [id], onDelete: Cascade)
+  participant     DssParticipant?   @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  user            User?             @relation("DssAuditEventUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId], map: "dss_audit_events_org_idx")
+  @@index([documentId, occurredAt], map: "dss_audit_events_doc_time_idx")
+  @@index([participantId, occurredAt], map: "dss_audit_events_participant_time_idx")
+  @@index([eventType, occurredAt], map: "dss_audit_events_type_time_idx")
+
+  @@map("dss_audit_events")
+}
+
 model Listing {
   id                 String              @id @default(uuid())
   organizationId     String
@@ -957,8 +966,6 @@ model Listing {
   updatedAt          DateTime            @updatedAt
   propertyId         String?
   unitId             String?
-  availabilityDate   DateTime?           @map("availability_date")
-  expirationDate     DateTime?           @map("expiration_date")
   adminActions       AdminAction[]
   createdByUser      User                @relation(fields: [createdBy], references: [id])
   location           Location?           @relation(fields: [locationId], references: [id])
@@ -968,7 +975,6 @@ model Listing {
   property           Property?           @relation("PropertyListing")
   serviceMarketplace ServiceMarketplace?
   unit               Unit?               @relation("UnitListing")
-  auditEntries       ListingAuditEntry[]
 
   @@index([createdBy])
   @@index([locationId])
@@ -1009,16 +1015,14 @@ model MaintenanceRequest {
   assigned_vendor_id String?
   cost               Decimal?                  @db.Decimal(10, 2)
   assigned_at        DateTime?                 @db.DateTime(0)
-  invoiceId          String?                   @unique @map("invoice_id")
-  isTenantChargeable Boolean                   @default(false) @map("is_tenant_chargeable")
-  journalEntryId     String?                   @unique @map("journal_entry_id")
-  invoice            Invoice?                  @relation(fields: [invoiceId], references: [id])
-  journalEntry       JournalEntry?             @relation(fields: [journalEntryId], references: [id])
+  invoiceId          String?                  @unique @map("invoice_id")
+  journalEntryId     String?                  @unique @map("journal_entry_id")
   organization       Organization              @relation(fields: [organizationId], references: [id])
   property           Property                  @relation("PropertyMaintenanceRequests", fields: [propertyId], references: [id])
   requestedBy        OrganizationUser          @relation("RequestCreator", fields: [requestedById], references: [id])
   unit               Unit?                     @relation(fields: [unitId], references: [id])
   vendors            Vendor?                   @relation(fields: [assigned_vendor_id], references: [id], onUpdate: NoAction, map: "fk_MaintenanceRequest_assignedVendorId")
+  gl_journal_entries JournalEntry[]
 
   @@index([organizationId])
   @@index([propertyId])
@@ -1433,6 +1437,7 @@ model RentEscalation {
   Lease           Lease                         @relation(fields: [leaseId], references: [id], onDelete: Cascade)
 
   @@index([leaseId])
+  @@index([effectiveDate])
 }
 
 model PropertyType {
@@ -1462,27 +1467,19 @@ model AgentInvite {
 }
 
 model ListingAuditEntry {
-  id             String              @id @default(uuid())
-  unitId         String              @map("unit_id")
-  listingId      String?             @map("listing_id")
-  action         ListingAction_enum
-  previousStatus ListingStatus_enum? @map("previous_status")
-  newStatus      ListingStatus_enum  @map("new_status")
-  userId         String              @map("user_id")
-  timestamp      DateTime            @default(now())
-  reason         String?
-  metadata       Json?
-  createdAt      DateTime            @default(now()) @map("created_at")
-  listing        Listing?            @relation(fields: [listingId], references: [id])
-  unit           Unit                @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  user           User                @relation(fields: [userId], references: [id])
+  id        String   @id
+  listingId String
+  action    String
+  changes   Json?
+  userId    String
+  createdAt DateTime @default(now())
+  unitId    String?
+  Unit      Unit?    @relation(fields: [unitId], references: [id])
+  users     User     @relation(fields: [userId], references: [id])
 
-  @@index([unitId])
   @@index([listingId])
+  @@index([unitId], map: "ListingAuditEntry_unitId_fkey")
   @@index([userId])
-  @@index([timestamp])
-  @@index([action])
-  @@map("listing_audit_entries")
 }
 
 
@@ -1513,27 +1510,9 @@ enum ApplicationStatus {
   UNDER_REVIEW
 }
 
-enum invoice_type {
-  RENT
-  UTILITY
-  MAINTENANCE
-  DAMAGE
-}
-
 enum utility_type {
   FIXED
   METERED
-}
-
-enum payment_method {
-  CASH
-  BANK
-  CREDIT_CARD
-  MPESA
-  PAYPAL
-  STRIPE
-  PAYSTACK
-  MANUAL
 }
 
 enum invoice_status {
@@ -1683,6 +1662,32 @@ enum DssSigningMode {
   PARALLEL
 }
 
+enum DssAuditEventType {
+  DOCUMENT_CREATED
+  DOCUMENT_UPDATED
+  DOCUMENT_SENT
+  DOCUMENT_VIEWED
+  PARTICIPANT_VIEWED
+  CONSENT_ACCEPTED
+  AUTH_VERIFIED
+  SIGNATURE_APPLIED
+  SIGNATURE_DECLINED
+  REMINDER_SENT
+  STEP_ADVANCED
+  DOCUMENT_COMPLETED
+  DOCUMENT_VOIDED
+  NOTARY_REQUESTED
+  NOTARY_CONFIRMED
+  NOTARY_FAILED
+}
+
+enum DssActorType {
+  SYSTEM
+  ADMIN
+  PARTICIPANT
+  USER
+}
+
 enum BlockchainNotaryStatus {
   PENDING
   SUBMITTED
@@ -1690,13 +1695,11 @@ enum BlockchainNotaryStatus {
   FAILED
 }
 
-enum UtilitySplitMethod {
-  EQUAL
-  OCCUPANCY_BASED
-  SQ_FOOTAGE
-  SUB_METERED
-  CUSTOM_RATIO
-  AI_OPTIMIZED
+enum BlockchainNotaryAttemptStatus {
+  PENDING
+  SUBMITTED
+  CONFIRMED
+  FAILED
 }
 
 enum UtilityBillStatus {
@@ -1706,14 +1709,6 @@ enum UtilityBillStatus {
   APPROVED
   POSTED
   REJECTED
-}
-
-enum UtilityImportMethod {
-  CSV
-  API
-  PDF_OCR
-  MANUAL_ENTRY
-  IMAGE_SCAN
 }
 
 enum UtilityAllocationStatus {
@@ -1781,11 +1776,6 @@ enum organization_users_role {
   ALL
 }
 
-enum OtpType {
-  TWO_FACTOR
-  PHONE_VERIFICATION
-}
-
 enum SidebarItem_role {
   SYSTEM_ADMIN
   PROPERTY_MANAGER
@@ -1795,57 +1785,134 @@ enum SidebarItem_role {
   ALL
 }
 
-enum ListingStatus_enum {
-  PRIVATE
-  ACTIVE
-  SUSPENDED
-  PENDING
-  EXPIRED
-}
-
-enum ListingAction_enum {
-  CREATE
-  REMOVE
-  SUSPEND
-  ACTIVATE
-  UPDATE
-  EXPIRE
+enum invoice_type {
+  RENT
+  UTILITY
+  MAINTENANCE
+  DAMAGE
+  LATE_FEE
+  DEPOSIT
 }
 
 
-// -------PAYMENT INFRASTRUCTURE ENUMS--------
-
-enum Region {
-  USA
-  KEN
+enum utility_bills_split_method {
+  EQUAL
+  OCCUPANCY_BASED
+  SQ_FOOTAGE
+  SUB_METERED
+  CUSTOM_RATIO
+  AI_OPTIMIZED
+  FIXED
 }
 
-enum KycStatus {
+enum users_kyc_status {
   PENDING
   VERIFIED
-  FAILED
+  REJECTED
+  MANUAL_REVIEW
 }
 
-enum PaymentGateway {
+enum users_region {
+  KEN
+  USA
+  NG
+  SA
+  RW
+  UG
+  TZ
+}
+
+enum payment_processor {
+  MANUAL
   STRIPE
-  PLAID
+  PAYPAL
   PAYSTACK
-  MPESA_DIRECT
-  MANUAL // for existing cash/bank logic
+  MPESA
+  PESAPAL
+  FLUTTERWAVE
+  PLAID
+  OTHER
 }
 
+// =====================================================================
+// CONSOLIDATED ENUMS (New unified enums replacing old ones)
+// =====================================================================
+
+// Unified Region enum - replaces organizations_region and users_region
+enum Region {
+  USA    @map("USA")
+  AFRICA @map("AFRICA")
+  GLOBAL @map("GLOBAL")
+  // Legacy values for backward compatibility
+  KEN    @map("KEN")
+  NG     @map("NG")
+  SA     @map("SA")
+  RW     @map("RW")
+  UG     @map("UG")
+  TZ     @map("TZ")
+}
+
+// Unified KycStatus enum - replaces users_kyc_status
+enum KycStatus {
+  PENDING       @map("PENDING")
+  VERIFIED      @map("VERIFIED")
+  FAILED        @map("FAILED")
+  REJECTED      @map("REJECTED")
+  MANUAL_REVIEW @map("MANUAL_REVIEW")
+}
+
+// Unified TransactionStatus enum - replaces payment_status
 enum TransactionStatus {
-  PENDING
-  AUTHORIZED
-  SETTLED
-  FAILED
-  DISPUTED
-  REVERSED
+  PENDING    @map("PENDING")
+  AUTHORIZED @map("AUTHORIZED")
+  SETTLED    @map("SETTLED")
+  COMPLETED  @map("COMPLETED")
+  FAILED     @map("FAILED")
+  DISPUTED   @map("DISPUTED")
+  REVERSED   @map("REVERSED")
+  REFUNDED   @map("REFUNDED")
+  CANCELLED  @map("CANCELLED")
 }
 
+// Unified TransactionType enum - replaces payment_type
 enum TransactionType {
-  RENT
-  DEPOSIT
-  SAAS_FEE
-  MAINTENANCE
+  RENT        @map("RENT")
+  UTILITY     @map("UTILITY")
+  MAINTENANCE @map("MAINTENANCE")
+  DEPOSIT     @map("DEPOSIT")
+  SAAS_FEE    @map("SAAS_FEE")
+  OTHER       @map("OTHER")
+}
+
+// Unified UserRole enum - replaces organization_users_role, Invite_role, SidebarItem_role
+enum UserRole {
+  SYSTEM_ADMIN
+  PROPERTY_MANAGER
+  TENANT
+  VENDOR
+  ALL
+}
+
+// Unified PaymentMethod enum - replaces payment_method
+enum PaymentMethod {
+  CASH                        @map("CASH")
+  CHECK                       @map("CHECK")
+  BANK_TRANSFER_MANUAL        @map("BANK_TRANSFER_MANUAL")
+  BANK_TRANSFER_ACH           @map("BANK_TRANSFER_ACH")
+  CREDIT_CARD                 @map("CREDIT_CARD")
+  DEBIT_CARD                  @map("DEBIT_CARD")
+  MOBILE_MONEY_MPESA          @map("MOBILE_MONEY_MPESA")
+  MOBILE_MONEY_AIRTEL         @map("MOBILE_MONEY_AIRTEL")
+  MOBILE_MONEY_OTHER          @map("MOBILE_MONEY_OTHER")
+  USSD                        @map("USSD")
+  DIGITAL_WALLET_APPLE        @map("DIGITAL_WALLET_APPLE")
+  DIGITAL_WALLET_GOOGLE       @map("DIGITAL_WALLET_GOOGLE")
+  P2P_ZELLE                   @map("P2P_ZELLE")
+  P2P_VENMO                   @map("P2P_VENMO")
+  CRYPTO                      @map("CRYPTO")
+  PAYPAL                      @map("PAYPAL")
+  STRIPE                      @map("STRIPE")
+  PAYSTACK                    @map("PAYSTACK")
+  MANUAL                      @map("MANUAL")
+  OTHER                       @map("OTHER")
 }

@@ -1,154 +1,148 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auditService } from '@/lib/audit-service';
-import { ListingAction, ListingStatus } from '@/lib/listing-types';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
 
-/**
- * GET /api/audit/statistics
- * Retrieves audit statistics for reporting and analytics
- */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    
-    // Extract filter parameters for statistics
-    const unitId = searchParams.get('unitId') || undefined;
-    const listingId = searchParams.get('listingId') || undefined;
-    const userId = searchParams.get('userId') || undefined;
-    const action = searchParams.get('action') as ListingAction | undefined;
-    const status = searchParams.get('status') as ListingStatus | undefined;
-    const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
-    const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
+export const dynamic = "force-dynamic";
 
-    // Validate date range
-    if (dateFrom && dateTo && dateFrom > dateTo) {
-      return NextResponse.json(
-        { error: 'dateFrom cannot be after dateTo' },
-        { status: 400 }
-      );
-    }
+type AuditWhere = {
+  listingId?: string;
+  unitId?: string;
+  userId?: string;
+  action?: string;
+  newStatus?: string;
+  createdAt?: {
+    gte?: Date;
+    lte?: Date;
+  };
+};
 
-    // Get audit statistics
-    const statistics = await auditService.getAuditStatistics({
-      unitId,
-      listingId,
-      userId,
-      action,
-      status,
-      dateFrom,
-      dateTo
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: statistics
-    });
-
-  } catch (error) {
-    console.error('Error retrieving audit statistics:', error);
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Failed to retrieve audit statistics',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
-  }
+function parseDateStart(value: string | null): Date | undefined {
+  if (!value) return undefined;
+  const d = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
-/**
- * POST /api/audit/statistics
- * Creates custom audit statistics report with advanced filtering
- */
-export async function POST(request: NextRequest) {
+function parseDateEnd(value: string | null): Date | undefined {
+  if (!value) return undefined;
+  const d = new Date(`${value}T23:59:59.999Z`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
+}
+
+function buildWhere(searchParams: URLSearchParams): AuditWhere {
+  const listingId = searchParams.get("listingId")?.trim() || undefined;
+  const unitId = searchParams.get("unitId")?.trim() || undefined;
+  const userId = searchParams.get("userId")?.trim() || undefined;
+  const action = searchParams.get("action")?.trim() || undefined;
+  const status = searchParams.get("status")?.trim() || undefined;
+
+  const dateFrom = parseDateStart(searchParams.get("dateFrom"));
+  const dateTo = parseDateEnd(searchParams.get("dateTo"));
+
+  const where: AuditWhere = {};
+
+  if (listingId) where.listingId = listingId;
+  if (unitId) where.unitId = unitId;
+  if (userId) where.userId = userId;
+  if (action) where.action = action;
+  if (status) where.newStatus = status;
+
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = dateFrom;
+    if (dateTo) where.createdAt.lte = dateTo;
+  }
+
+  return where;
+}
+
+function groupCount<T extends string>(rows: Array<{ key: T | null; _count: { _all: number } }>) {
+  return rows.reduce<Record<string, number>>((acc, row) => {
+    const key = row.key ?? "UNKNOWN";
+    acc[key] = row._count._all;
+    return acc;
+  }, {});
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
+    const where = buildWhere(request.nextUrl.searchParams);
+
+    const [
+      totalEntries,
+      actionBreakdownRows,
+      recentItems,
+    ] = await Promise.all([
+      prisma.listingAuditEntry.count({ where }),
+      prisma.listingAuditEntry.groupBy({
+        by: ["action"],
+        where,
+        _count: { _all: true },
+        orderBy: {
+          _count: {
+            action: "desc",
+          },
+        },
+      }) as unknown as Promise<Array<{ key: string | null; _count: { _all: number } }>>,
+      prisma.listingAuditEntry.findMany({
+        where,
+        select: {
+          id: true,
+          userId: true,
+          action: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      }),
+    ]);
+
+    // Normalize groupBy rows because Prisma returns { action, _count }
+    interface GroupByResult {
+      action: string | null;
+      _count: { _all: number };
+    }
     
-    const {
-      filters = {},
-      groupBy = [],
-      dateRange,
-      includeTimeline = true,
-      includeUserActivity = true
-    } = body;
+    const normalizedActionRows = (actionBreakdownRows as GroupByResult[]).map((r) => ({
+      key: r.action ?? null,
+      _count: r._count,
+    }));
 
-    // Validate groupBy options
-    const validGroupByOptions = ['action', 'status', 'userId', 'unitId', 'date'];
-    const invalidGroupBy = groupBy.filter((option: string) => !validGroupByOptions.includes(option));
-    
-    if (invalidGroupBy.length > 0) {
-      return NextResponse.json(
-        { error: `Invalid groupBy options: ${invalidGroupBy.join(', ')}` },
-        { status: 400 }
-      );
-    }
+    const actionBreakdown = groupCount(normalizedActionRows);
 
-    // Process date range
-    let dateFrom: Date | undefined;
-    let dateTo: Date | undefined;
-    
-    if (dateRange) {
-      dateFrom = dateRange.from ? new Date(dateRange.from) : undefined;
-      dateTo = dateRange.to ? new Date(dateRange.to) : undefined;
-      
-      if (dateFrom && dateTo && dateFrom > dateTo) {
-        return NextResponse.json(
-          { error: 'dateRange.from cannot be after dateRange.to' },
-          { status: 400 }
-        );
-      }
-    }
+    // Simple user activity aggregation
+    const userActivity = recentItems.reduce<Record<string, number>>((acc, item) => {
+      const key = item.userId ?? "UNKNOWN";
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
 
-    // Get comprehensive statistics
-    const statistics = await auditService.getAuditStatistics({
-      ...filters,
-      dateFrom,
-      dateTo
-    });
+    // Simple daily timeline aggregation
+    const timelineData = recentItems.reduce<Record<string, number>>((acc, item) => {
+      const d = new Date(item.createdAt);
+      const key = d.toISOString().slice(0, 10); // YYYY-MM-DD
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
 
-    // Build custom response based on requested data
-    const response: any = {
-      totalEntries: statistics.totalEntries,
-      summary: {
-        actions: statistics.actionBreakdown,
-        statuses: statistics.statusBreakdown
-      }
-    };
-
-    if (includeUserActivity) {
-      response.userActivity = statistics.userActivity;
-    }
-
-    if (includeTimeline) {
-      response.timeline = statistics.timelineData;
-    }
-
-    // Add custom groupings if requested
-    if (groupBy.length > 0) {
-      response.customGroupings = {
-        groupedBy: groupBy,
-        note: 'Custom groupings would require additional implementation based on specific requirements'
-      };
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: response,
-      metadata: {
-        generatedAt: new Date().toISOString(),
-        filters: filters,
-        groupBy: groupBy,
-        dateRange: dateRange
-      }
-    });
-
-  } catch (error) {
-    console.error('Error creating custom audit statistics:', error);
     return NextResponse.json(
-      { 
+      {
+        success: true,
+        data: {
+          totalEntries,
+          actionBreakdown,
+          userActivity,
+          timelineData,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[GET /api/audit/statistics] Error:", error);
+
+    return NextResponse.json(
+      {
         success: false,
-        error: 'Failed to create custom audit statistics',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        error: "Failed to load audit statistics",
+        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

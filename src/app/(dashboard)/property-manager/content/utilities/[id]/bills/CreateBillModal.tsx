@@ -122,7 +122,9 @@ export function CreateBillModal({
             return;
         }
 
-        if (new Date(dueDate) < new Date(billDate)) {
+        const parsedDueDate = dueDate || '';
+        const parsedBillDate = billDate || '';
+        if (new Date(parsedDueDate) < new Date(parsedBillDate)) {
             setError("Due date cannot be before bill date");
             return;
         }
@@ -138,8 +140,8 @@ export function CreateBillModal({
                     propertyId: selectedPropertyId,
                     providerName: providerName.trim(),
                     totalAmount: amount,
-                    billDate: new Date(billDate),
-                    dueDate: new Date(dueDate),
+                    billDate: new Date(parsedBillDate),
+                    dueDate: new Date(parsedDueDate),
                     splitMethod,
                 }),
             });
@@ -171,7 +173,7 @@ export function CreateBillModal({
         setSelectedPropertyId("");
         setProviderName("");
         setTotalAmount("");
-        setBillDate(new Date().toISOString().split("T")[0]);
+        setBillDate(new Date().toISOString().split("T")[0] ?? "");
         setDueDate("");
         setSplitMethod(UtilitySplitMethod.EQUAL);
         setError(null);

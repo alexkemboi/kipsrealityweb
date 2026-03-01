@@ -6,23 +6,51 @@ on:
   pull_request:
     branches: [main, master]
 
+concurrency:
+  group: playwright-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test:
+    name: E2E (Playwright + MySQL)
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: rentflow360_test
+          MYSQL_USER: testuser
+          MYSQL_PASSWORD: testpass
+          MYSQL_ROOT_PASSWORD: rootpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=30
 
     env:
       CI: "true"
       NODE_ENV: "test"
-      #  CRITICAL: Pointing to Remote IP, but specifically the TEST database
-      DATABASE_URL: 'mysql://rentflow_dev:DevPassword123!@184.168.21.114:3306/rentflow360_test?connect_timeout=60'
+      DB_HOST: "127.0.0.1"
+      DB_PORT: "3306"
 
-      # Using Localhost for the app execution within the CI runner
-      NEXTAUTH_URL: "http://localhost:3000"
-      NEXT_PUBLIC_API_URL: "http://localhost:3000"
-      NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
+      # IMPORTANT: use test DB
+      DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test"
 
-      # Secrets
+      # Next/Auth (adjust to your app)
+      NEXTAUTH_URL: "http://127.0.0.1:3000"
+      NEXT_PUBLIC_BASE_URL: "http://127.0.0.1:3000"
+      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
+
+      # Secrets for CI only
+      # Secrets for CI only
       JWT_SECRET: "ci-jwt-secret-secure-enough"
       JWT_REFRESH_SECRET: "ci-refresh-secret-secure-enough"
       NEXTAUTH_SECRET: "ci-nextauth-secret-secure-enough"
@@ -42,125 +70,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # ✅ NEW: Check connectivity to Remote VPS (184...) instead of localhost
-      - name: Check Remote Database Connectivity
-        shell: bash
-        run: |
-          for i in {1..10}; do
-            # nc -z checks if port is open
-            if nc -z 184.168.21.114 3306; then
-              echo "Remote MySQL is reachable."
-              exit 0
-            fi
-            echo "Waiting for Remote MySQL... ($i/10)"
-            sleep 2
-          done
-          echo "Could not connect to Remote MySQL."
-          exit 1
-
-      - name: Create .env.test
-        run: |
-          cat > .env.test <<EOF
-          NODE_ENV=test
-          DATABASE_URL="${DATABASE_URL}"
-          NEXTAUTH_URL="${NEXTAUTH_URL}"
-          NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}"
-          NEXT_PUBLIC_BASE_URL="${NEXT_PUBLIC_BASE_URL}"
-          JWT_SECRET="${JWT_SECRET}"
-          NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
-          AUTH_SECRET="${AUTH_SECRET}"
-          NEXTAUTH_TRUST_HOST="true"
-          EOF
-          # Copy to .env so standard commands pick it up if they forget to use dotenv
-          cp .env.test .env
-
-      - name: Generate Prisma Client
+      - name: Prisma generate
         run: npx prisma generate
 
-      #  DANGER ZONE: This wipes the remote rentflow360_test DB
-      - name: Reset & Seed Remote Test DB
-        run: |
-          echo "Syncing Remote Test DB to current Schema..."
-          # ✅ Use db push. It ignores migration history and forces the DB 
-          # to match your current schema.prisma file exactly.
-          # ✅ FIX: Added --force-reset to drop existing tables before creation
-          npx prisma db push --force-reset --accept-data-loss
+      # Choose ONE of these (migration recommended if you use prisma migrate)
+      - name: Apply migrations (recommended)
+        run: npx prisma migrate deploy
 
-          echo "Seeding E2E Data..."
-          # Ensure you are running the specific E2E seed (corrected path)
-          npx tsx prisma/seed.e2e.ts
-          
-          echo "Debug: Verifying seeded data..."
-          npx tsx -e "
-          import { PrismaClient } from '@prisma/client';
-          const prisma = new PrismaClient();
+      # OR if you don’t use migrations in CI:
+      # - name: Push schema (dev-style)
+      #   run: npx prisma db push --force-reset
 
-          (async () => {
-            try {
-              console.log('=== CI DEBUG AFTER SEEDING ===');
-              console.log('Users:', await prisma.user.count());
-              console.log('Properties:', await prisma.property.count());
-              console.log('Leases:', await prisma.lease.count());
+      # If you have a seed script (highly recommended)
+      - name: Seed E2E database
+        run: npx tsx scripts/seed-e2e.ts
+        # If your seed runs via package.json:
+        # run: npm run seed:e2e
 
-              const leases = await prisma.lease.findMany({
-                include: {
-                  property: {
-                    include: { manager: { include: { user: true } } }
-                  },
-                  tenant: true,
-                  unit: true
-                }
-              });
-
-              leases.forEach((lease, i) => {
-                console.log(\`Lease \${i}: \${lease.id}\`);
-                console.log(\`  Property Manager User ID: \${lease.property?.manager?.user?.id}\`);
-                console.log(\`  Tenant: \${lease.tenant?.email}\`);
-                console.log(\`  Unit: \${lease.unit?.unitNumber}\`);
-              });
-
-              // Verify manager user is email verified
-              const manager = await prisma.user.findUnique({
-                where: { email: 'manager@test.com' }
-              });
-              console.log(\`Manager emailVerified: \${manager?.emailVerified}\`);
-              
-            } catch (err) {
-              console.error('Debug script error:', err);
-              process.exit(1);
-            } finally {
-              await prisma.\$disconnect();
-            }
-          })();
-          "
-
-      - name: Install Playwright browsers
+      - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
-      - name: Debug DB Content
-        shell: bash
-        run: |
-          echo "Checking if manager@test.com exists in DB..."
-          npx tsx -e "
-            import { PrismaClient } from '@prisma/client';
-            const prisma = new PrismaClient();
-            async function main() {
-              const count = await prisma.user.count();
-              const manager = await prisma.user.findUnique({ where: { email: 'manager@test.com' } });
-              console.log('Total Users:', count);
-              console.log('Manager User:', manager ? 'FOUND' : 'MISSING');
-              if (manager) console.log('Manager Verified:', manager.emailVerified);
-            }
-            main().finally(() => prisma.\$disconnect());
-          "
-
+      # If your playwright config starts webServer, you can run tests directly.
+      # Otherwise, start Next and run tests.
+      # If your playwright config starts webServer, you can run tests directly.
+      # Otherwise, start Next and run tests.
       - name: Run Playwright tests
-        run: npx playwright test --project=chromium --reporter=line
+        run: npx playwright test --reporter=html
 
-      - name: Upload Report
-        if: always()
+      - name: Upload Playwright report
         uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() }}
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 7
+          retention-days: 30

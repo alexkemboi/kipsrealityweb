@@ -1,45 +1,65 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/Getcurrentuser";
 import { prisma } from "@/lib/db";
-import { verifyAccessToken } from "@/lib/auth";
-import { cookies } from "next/headers";
 
-export async function POST(req: Request) {
+export const dynamic = "force-dynamic";
+
+type ToggleBody = {
+  enabled?: boolean;
+};
+
+export async function POST(request: Request) {
   try {
-    // 1. Verify User
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
-    let userPayload;
+    const user = await getCurrentUser(request);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let body: ToggleBody = {};
     try {
-        userPayload = verifyAccessToken(token);
-    } catch(e) {
-        return NextResponse.json({ error: "Invalid Token" }, { status: 401 });
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { enable } = await req.json();
-
-    // 2. Security Check (If Enabling)
-    if (enable) {
-        const user = await prisma.user.findUnique({ where: { id: userPayload.userId }});
-        if (!user?.phone) {
-            return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-        }
-        if (!user?.phoneVerified) {
-            return NextResponse.json({ error: "Phone number must be verified first" }, { status: 400 });
-        }
+    if (typeof body.enabled !== "boolean") {
+      return NextResponse.json(
+        { error: "Field 'enabled' (boolean) is required" },
+        { status: 400 }
+      );
     }
 
-    // 3. Update DB
-    await prisma.user.update({
-        where: { id: userPayload.userId },
-        data: { twoFactorEnabled: enable }
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        twoFactorEnabled: body.enabled,
+      },
+      select: {
+        id: true,
+        twoFactorEnabled: true,
+      },
     });
 
-    return NextResponse.json({ success: true, enabled: enable });
-
+    return NextResponse.json(
+      {
+        ok: true,
+        enabled: updatedUser.twoFactorEnabled,
+        message: `Two-factor authentication ${
+          updatedUser.twoFactorEnabled ? "enabled" : "disabled"
+        } successfully.`,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('2FA toggle error:', error);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    console.error("[POST /api/auth/2fa/toggle]", error);
+
+    return NextResponse.json(
+      {
+        error: "Failed to update 2FA setting",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }

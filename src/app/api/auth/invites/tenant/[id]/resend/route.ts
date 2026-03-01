@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyAccessToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { sendTenantInviteEmail } from "@/lib/mail-service";
+import crypto from "crypto";
 
 type TokenPayload = {
   userId: string;
@@ -10,22 +11,47 @@ type TokenPayload = {
   organizationId: string;
 };
 
+function getSafeDisplayNameFromEmail(email: string) {
+  return email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Tenant";
+}
+
+async function getBaseUrl(request: Request) {
+  // Prefer explicit env
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+
+  // Fallback to forwarded headers (works behind proxies)
+  const h = await headers();
+  const host = h.get("x-forwarded-host") || h.get("host");
+  const proto = h.get("x-forwarded-proto") || "http";
+
+  if (host) {
+    return `${proto}://${host}`;
+  }
+
+  // Final fallback
+  return new URL(request.url).origin;
+}
+
 export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // --- 1. Verify token ---
+    // --- 1) Verify auth token ---
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     let payload: TokenPayload;
     try {
       payload = verifyAccessToken(token) as TokenPayload;
     } catch (err) {
-      console.error("Token verification failed:", err);
+      console.error("[ResendInvite] Token verification failed:", err);
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
 
@@ -36,25 +62,34 @@ export async function POST(
       );
     }
 
+    // --- 2) Resolve invite id ---
     const params = await context.params;
-    const inviteId = params.id;
+    const inviteId = params.id?.trim();
 
-    // --- 2. Find the invite ---
-    const invite = await prisma.invite.findUnique({
+    if (!inviteId) {
+      return NextResponse.json({ error: "Invite ID is required" }, { status: 400 });
+    }
+
+    // --- 3) Find invite ---
+    const invite = await prisma.invite.findFirst({
       where: {
         id: inviteId,
         organizationId: payload.organizationId,
-        role: "TENANT"
+        role: "TENANT",
       },
       include: {
         lease: {
           include: {
-            unit: { include: { property: true } },
-            tenant: true
-          }
+            unit: {
+              include: {
+                property: true,
+              },
+            },
+            tenant: true,
+          },
         },
-        invitedBy: true
-      }
+        invitedBy: true,
+      },
     });
 
     if (!invite) {
@@ -62,49 +97,72 @@ export async function POST(
     }
 
     if (invite.accepted) {
-      return NextResponse.json({ error: "Invite already accepted" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invite already accepted" },
+        { status: 400 }
+      );
     }
 
-    // Check if invite has expired
-    if (invite.expiresAt < new Date()) {
-      return NextResponse.json({ error: "Invite has expired" }, { status: 400 });
-    }
+    // --- 4) Rotate token + refresh expiry on resend (better UX/security) ---
+    // This lets resend work even if old invite expired.
+    const newToken = crypto.randomBytes(32).toString("hex");
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // --- 3. Find the tenant user ---
-    const tenantUser = await prisma.user.findFirst({
-      where: {
-        email: invite.email,
-        organizationUsers: {
-          some: {
-            organizationId: payload.organizationId,
-            role: "TENANT"
-          }
-        }
-      }
+    const updatedInvite = await prisma.invite.update({
+      where: { id: invite.id },
+      data: {
+        token: newToken,
+        expiresAt: newExpiresAt,
+      },
+      include: {
+        lease: {
+          include: {
+            unit: {
+              include: {
+                property: true,
+              },
+            },
+            tenant: true,
+          },
+        },
+        invitedBy: true,
+      },
     });
 
-    if (!tenantUser) {
-      return NextResponse.json({ error: "Tenant user not found" }, { status: 404 });
+    // --- 5) Build invite link ---
+    const baseUrl = await getBaseUrl(request);
+    const query = new URLSearchParams({
+      token: updatedInvite.token,
+      email: updatedInvite.email,
+    });
+
+    if (updatedInvite.leaseId) {
+      query.set("leaseId", updatedInvite.leaseId);
     }
 
-    // --- 4. Send email ---
+    const inviteLink = `${baseUrl}/invite/tenant/accept?${query.toString()}`;
+
+    // --- 6) Build email data (NO hard dependency on existing tenant user) ---
+    const propertyName = updatedInvite.lease?.unit?.property?.name || "Unknown Property";
+    const unitNumber = updatedInvite.lease?.unit?.unitNumber || "N/A";
+
+    const landlordName =
+      updatedInvite.invitedBy
+        ? `${updatedInvite.invitedBy.firstName || ""} ${updatedInvite.invitedBy.lastName || ""}`
+            .trim() || "Property Manager"
+        : "Property Manager";
+
+    const hasLandlordSigned = Boolean(updatedInvite.lease?.landlordSignedAt);
+
+    const tenantFirstName =
+      updatedInvite.lease?.tenant?.firstName?.trim() ||
+      getSafeDisplayNameFromEmail(updatedInvite.email);
+
+    // --- 7) Send email ---
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-      const inviteLink = `${baseUrl}/invite/tenant/accept?token=${invite.token}&email=${encodeURIComponent(invite.email)}&leaseId=${invite.leaseId}`;
-
-      const propertyName = invite.lease?.unit?.property?.name || "Unknown Property";
-      const unitNumber = invite.lease?.unit?.unitNumber || "N/A";
-      
-      let landlordName = "Property Manager";
-      if (invite.invitedBy) {
-        landlordName = `${invite.invitedBy.firstName || ""} ${invite.invitedBy.lastName || ""}`.trim() || "Property Manager";
-      }
-
-      const hasLandlordSigned = !!invite.lease?.landlordSignedAt;
-
       await sendTenantInviteEmail(
         invite.email,
-        tenantUser.firstName || invite.email.split('@')[0],
+        tenantFirstName,
         propertyName,
         unitNumber,
         landlordName,
@@ -112,29 +170,27 @@ export async function POST(
         hasLandlordSigned
       );
     } catch (emailError) {
-      console.error("Failed to send tenant invite email:", emailError);
+      console.error("[ResendInvite] Failed to send tenant invite email:", emailError);
       return NextResponse.json(
         { error: "Failed to send email. Please try again." },
         { status: 500 }
       );
     }
 
-    // --- 5. Update last sent timestamp (optional, could add a field to invite model) ---
-    // For now, we'll just return success
-
+    // --- 8) Success response ---
     return NextResponse.json({
       success: true,
       message: "Invite resent successfully",
       invite: {
-        id: invite.id,
-        email: invite.email,
-        leaseId: invite.leaseId,
-        resentAt: new Date().toISOString()
-      }
+        id: updatedInvite.id,
+        email: updatedInvite.email,
+        leaseId: updatedInvite.leaseId,
+        resentAt: new Date().toISOString(),
+        expiresAt: updatedInvite.expiresAt.toISOString(),
+      },
     });
-
   } catch (error) {
-    console.error("Resend invite error:", error);
+    console.error("[ResendInvite] Internal error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
+import Navbar from "@/components/website/Navbar";
+import Footer from "@/components/website/Footer";
 import { prisma } from "@/lib/db";
 import { MarketplaceClientPage } from "@/components/website/marketplace/ListingClientPage";
-import Navbar from "@/components/website/Navbar";
 
 export const dynamic = "force-dynamic";
 
-// Define the interface here to match what we're creating
+export const metadata: Metadata = {
+  title: "Marketplace Listings | Rentflow 360",
+  description:
+    "Explore property listings, assets, and services on the Rentflow 360 Marketplace.",
+};
+
 interface MarketplaceItem {
   id: string;
   title: string;
@@ -13,9 +20,9 @@ interface MarketplaceItem {
   image: string;
   category: string;
   location: string;
-  unitId: string;
+  unitId?: string;
   propertyId: string;
-  unit: {
+  unit?: {
     id: string;
     unitNumber?: string;
     property: {
@@ -29,27 +36,40 @@ interface MarketplaceItem {
   };
 }
 
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop";
+
+function safeText(value: unknown, fallback = ""): string {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function toSafeNumber(value: unknown): number {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function isMarketplaceItem(item: MarketplaceItem | null): item is MarketplaceItem {
+  return item !== null;
+}
+
 export default async function MarketplacePage() {
   let listings: MarketplaceItem[] = [];
+  let hasError = false;
 
   try {
-    // Fetch ALL listings (both property and unit listings)
     const listingsData = await prisma.listing.findMany({
       where: {
         AND: [
           {
-            OR: [
-              { unit: { isNot: null } },
-              { property: { isNot: null } }
-            ]
+            OR: [{ unit: { isNot: null } }, { property: { isNot: null } }],
           },
           {
             OR: [
-              { status: { name: { in: ["ACTIVE", "COMING_SOON"] } } },
-              { statusId: null }
-            ]
-          }
-        ]
+              { status: { is: { name: { in: ["ACTIVE", "COMING_SOON"] } } } },
+              { statusId: null },
+            ],
+          },
+        ],
       },
       include: {
         images: true,
@@ -74,80 +94,105 @@ export default async function MarketplacePage() {
       orderBy: { createdAt: "desc" },
     });
 
-    console.log(`Found ${listingsData.length} total listings (property + unit)`);
+    listings = listingsData
+      .map((listing): MarketplaceItem | null => {
+        const isUnitListing = Boolean(listing.unitId);
 
-    // Map listings to MarketplaceItems
-    const mappedListings = listingsData
-      .map((listing) => {
-        // Determine if this is a unit listing or property listing
-        const isUnitListing = !!listing.unitId;
-        const targetEntity = isUnitListing ? listing.unit : listing.property;
-        
-        if (!targetEntity) {
-          return null;
-        }
+        // Unit listing -> use unit.property
+        // Property listing -> use property directly
+        const sourceProperty = isUnitListing
+          ? listing.unit?.property ?? null
+          : listing.property ?? null;
 
-        const property = isUnitListing ? listing.unit?.property : listing.property;
-        
-        if (!property) {
-          return null;
-        }
+        if (!sourceProperty) return null;
 
-        const unitNumber = isUnitListing ? listing.unit?.unitNumber : undefined;
-        const unitId = isUnitListing ? listing.unitId : undefined;
-        
+        const image =
+          listing.images?.find((img) => safeText(img.imageUrl))?.imageUrl ??
+          FALLBACK_IMAGE;
+
+        const propertyName = safeText(sourceProperty.name);
+        const propertyTypeName = safeText(sourceProperty.propertyType?.name);
+
+        // Support different location shapes safely
+        const locationObj = sourceProperty.location as
+          | { name?: string | null; city?: string | null }
+          | null
+          | undefined;
+
+        const locationName =
+          safeText(locationObj?.name) || safeText(locationObj?.city) || "Unknown Location";
+
+        const description =
+          safeText(listing.description) ||
+          safeText((sourceProperty as { amenities?: string | null }).amenities) ||
+          `Listing for ${propertyName || "property"} in ${locationName}.`;
+
+        const unitId = isUnitListing ? listing.unitId ?? undefined : undefined;
+        const unitNumber = isUnitListing
+          ? safeText(listing.unit?.unitNumber, "")
+          : "";
+
         return {
           id: listing.id,
-          title: listing.title || "Untitled Listing",
-          description: listing.description || property.amenities || "No description available",
-          price: listing.price || 0,
-          location: property.city || property.location?.name || "Unknown Location",
-          image: listing.images?.[0]?.imageUrl || `https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop`,
-          unitId: unitId || undefined,
-          propertyId: property.id,
-          unit: unitId ? {
-            id: unitId,
-            unitNumber: unitNumber || undefined,
-            property: {
-              id: property.id,
-              name: property.name || undefined,
-            },
-          } : undefined,
+          title: safeText(listing.title, "Untitled Listing"),
+          description,
+          price: toSafeNumber(listing.price),
+          image,
+          category: propertyTypeName || (isUnitListing ? "Unit" : "Property"),
+          location: locationName,
+          unitId,
+          propertyId: sourceProperty.id,
+          unit: unitId
+            ? {
+                id: unitId,
+                unitNumber: unitNumber || undefined,
+                property: {
+                  id: sourceProperty.id,
+                  name: propertyName || undefined,
+                },
+              }
+            : undefined,
           property: {
-            id: property.id,
-            name: property.name || undefined,
+            id: sourceProperty.id,
+            name: propertyName || undefined,
           },
         };
       })
-      .filter((item) => item !== null);
-    
-    listings = mappedListings as MarketplaceItem[];
-    
-    console.log(`Successfully mapped ${listings.length} marketplace items`);
-
+      .filter(isMarketplaceItem);
   } catch (error) {
+    hasError = true;
     console.error("Error fetching marketplace listings:", error);
+    listings = [];
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <section className="w-full bg-[#18181a] text-white py-32 flex flex-col items-center justify-center text-center">
-        <div className="max-w-3xl mx-auto px-6">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+
+      <section className="flex w-full flex-col items-center justify-center bg-[#18181a] py-32 text-center text-white">
+        <div className="mx-auto max-w-3xl px-6">
+          <h1 className="mb-6 text-5xl font-bold md:text-6xl">
             Marketplace <span className="text-gradient-primary">Listings</span>
           </h1>
-          <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
-            Explore Property Listings, Assets, and Services on Rentflow 360 Marketplace.
+
+          <p className="mx-auto mb-8 max-w-2xl text-lg text-white/80">
+            Explore property listings, assets, and services on RentFlow360 Marketplace.
           </p>
 
-          {listings.length === 0 ? (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-4">
-                No listings found
+          {hasError ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+              <h2 className="mb-2 text-2xl font-bold text-white">
+                Unable to load listings
               </h2>
               <p className="text-white/80">
-                Please try again later or contact support if the problem persists.
+                Please check back later, or contact support if the issue persists.
+              </p>
+            </div>
+          ) : listings.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6">
+              <h2 className="mb-2 text-2xl font-bold text-white">No listings found</h2>
+              <p className="text-white/80">
+                Check back soon for new marketplace listings.
               </p>
             </div>
           ) : null}
@@ -155,6 +200,7 @@ export default async function MarketplacePage() {
       </section>
 
       <MarketplaceClientPage listings={listings} />
-    </>
+      <Footer />
+    </div>
   );
 }
