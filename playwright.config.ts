@@ -57,7 +57,7 @@ export default defineConfig({
 
   webServer: {
     // CI runs production server -> workflow MUST run `npm run build` first
-    command: isCI ? "npm run start:next" : "npm run dev",
+    command: "npm run dev",
     url: process.env.NEXTAUTH_URL || "http://localhost:3000",
     reuseExistingServer: !isCI,
     timeout: 120_000,
