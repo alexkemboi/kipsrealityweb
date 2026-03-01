@@ -74,8 +74,9 @@ const FIELD_TRANSLATIONS: Record<string, Record<string, string>> = {
   },
 };
 
-const toCamelCase = (str: string) =>
-  str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+const toCamelCase = (str: string) => {
+    return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+};
 
 function normalizeClientKey(rawModelName: string): string {
   let clientKey = rawModelName;
@@ -233,28 +234,113 @@ const IMPORT_ORDER = [
       return modelA.localeCompare(modelB);
     });
 
-    const processedModels = new Set<string>();
+    const backupDir = path.join(process.cwd(), 'backup');
+    const hasBackupDir = fs.existsSync(backupDir);
 
-    for (const file of sortedFiles) {
-      const rawModelName = file.replace('.json', '');
-      let clientKey = normalizeClientKey(rawModelName);
+    try {
+        if (hasBackupDir) {
+            await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
 
-      if (processedModels.has(clientKey)) {
-        console.log(`⚠️ Skipping duplicate normalized model "${clientKey}" from file "${file}"`);
-        continue;
-      }
+            const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
 
-      // @ts-ignore dynamic Prisma model access
-      if (!prisma[clientKey]) {
-        const pascalKey = rawModelName.charAt(0).toUpperCase() + rawModelName.slice(1);
-        // @ts-ignore
-        if (prisma[pascalKey]) {
-          clientKey = pascalKey;
-        } else {
-          console.log(`⚠️ No Prisma client model found for file "${file}" (raw="${rawModelName}", normalized="${clientKey}")`);
-          continue;
+            const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.json')).sort((a, b) => {
+                const modelA = a.replace('.json', '');
+                const modelB = b.replace('.json', '');
+                const idxA = PRIORITY.indexOf(modelA);
+                const idxB = PRIORITY.indexOf(modelB);
+                if (idxA > -1 && idxB > -1) return idxA - idxB;
+                if (idxA > -1) return -1;
+                if (idxB > -1) return 1;
+                return 0;
+            });
+
+            const processedModels = new Set<string>();
+
+            for (const file of files) {
+                const rawModelName = file.replace('.json', '');
+                let clientKey = rawModelName;
+
+                // Map common plural/casing issues
+                if (clientKey === 'vendors') clientKey = 'vendor';
+                if (clientKey === 'services') clientKey = 'service';
+                if (clientKey === 'categories') clientKey = 'category';
+                if (clientKey === 'invoice') clientKey = 'invoice';
+                if (clientKey === 'payment') clientKey = 'payment';
+                if (clientKey === 'receipt') clientKey = 'receipt';
+                if (clientKey === 'utility') clientKey = 'utility';
+                if (clientKey === 'lease_utility') clientKey = 'leaseUtility';
+                if (clientKey === 'utility_reading') clientKey = 'utilityReading';
+                if (clientKey === 'payment_reversal') clientKey = 'paymentReversal';
+                if (clientKey === 'Tenantapplication') clientKey = 'tenantapplication';
+                if (clientKey === 'PropertyImage') clientKey = 'propertyImage';
+
+                clientKey = clientKey.charAt(0).toLowerCase() + clientKey.slice(1);
+
+                if (processedModels.has(clientKey)) continue;
+                processedModels.add(clientKey);
+
+                // @ts-ignore
+                if (!prisma[clientKey]) {
+                    const pascalKey = rawModelName.charAt(0).toUpperCase() + rawModelName.slice(1);
+                    // @ts-ignore
+                    if (prisma[pascalKey]) clientKey = pascalKey;
+                    else {
+                        continue;
+                    }
+                }
+
+                const filePath = path.join(backupDir, file);
+                const rawData = JSON.parse(fs.readFileSync(filePath, 'utf-8'), (key, value) => {
+                    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) return new Date(value);
+                    return value;
+                });
+
+                if (!Array.isArray(rawData) || rawData.length === 0) continue;
+
+                const normalizedData = rawData.map(item => {
+                    const newItem: any = {};
+                    for (const key in item) {
+                        let value = item[key];
+                        let newKey = key;
+
+                        // 1. Apply Manual Translation (Backup Key -> Client Key)
+                        if (FIELD_TRANSLATIONS[rawModelName] && FIELD_TRANSLATIONS[rawModelName][key]) {
+                            newKey = FIELD_TRANSLATIONS[rawModelName][key];
+                        }
+                        // 2. Auto-convert snake_case -> camelCase
+                        else if (key.includes('_')) {
+                            newKey = toCamelCase(key);
+                        }
+
+                        // 3. Boolean Conversion
+                        // Check against the *original* key or the *new* key
+                        if ((BOOLEAN_FIELDS.has(key) || BOOLEAN_FIELDS.has(newKey)) && (value === 0 || value === 1)) {
+                            value = value === 1;
+                        }
+
+                        newItem[newKey] = value;
+                    }
+                    return newItem;
+                });
+
+                // 4. Safety Filter: Remove rows with null required FKs
+                const cleanData = normalizedData.filter(item => {
+                    if (clientKey === 'property' && !item.organizationId) return false;
+                    if (clientKey === 'user' && !item.email) return false;
+                    return true;
+                });
+
+
+                try {
+                    // @ts-ignore
+                    await prisma[clientKey].createMany({
+                        data: cleanData,
+                        skipDuplicates: true
+                    });
+                } catch (err: any) {
+                }
+            }
         }
-      }
 
       processedModels.add(clientKey);
 

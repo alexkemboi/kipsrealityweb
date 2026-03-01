@@ -202,7 +202,7 @@ export async function POST(request: Request) {
           id: crypto.randomUUID(),
           inviteTokenHash,
           tenantId: payload.userId,
-          userId: user.id, // <- keeps GET include(users) / mapping consistent
+          invitedAgentId: user.id,
           expiresAt: inviteExpires,
           updatedAt: new Date(),
         },
@@ -274,7 +274,7 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
       include: {
-        users: {
+        invitedAgent: {
           select: {
             id: true,
             email: true,
@@ -289,11 +289,11 @@ export async function GET() {
 
     const mappedInvites = agentInvites.map((inv) => ({
       id: inv.id,
-      email: inv.users?.email ?? "",
-      firstName: inv.users?.firstName ?? "",
-      lastName: inv.users?.lastName ?? "",
-      phone: inv.users?.phone ?? "",
-      status: inv.users?.status ?? "UNKNOWN",
+      email: inv.invitedAgent?.email || "",
+      firstName: inv.invitedAgent?.firstName || "",
+      lastName: inv.invitedAgent?.lastName || "",
+      phone: inv.invitedAgent?.phone || "",
+      status: inv.invitedAgent?.status || "INACTIVE",
       isUsed: inv.isUsed,
       usedAt: inv.usedAt,
       createdAt: inv.createdAt,

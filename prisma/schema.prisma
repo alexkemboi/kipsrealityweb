@@ -8,65 +8,62 @@ datasource db {
 }
 
 model Organization {
-  id                     String                   @id @default(uuid())
-  name                   String
-  slug                   String                   @unique
-  logoUrl                String?                  @map("logo_url")
-  website                String?
-  phone                  String?
-  address                String?
-  isActive               Boolean                  @default(true) @map("is_active")
-  createdAt              DateTime                 @default(now()) @map("created_at")
-  updatedAt              DateTime                 @updatedAt @map("updated_at")
-  planId                 Int?
-  paystackSubaccountCode String?                  @map("paystack_subaccount_code")
-  // Payment & Region - using unified Region enum
-  region                 Region?                  @default(AFRICA)
-  stripeConnectId        String?                  @map("stripe_connect_id")
-  invites                Invite[]
-  listings               Listing[]
-  maintenanceRequests    MaintenanceRequest[]
-  properties             Property[]               @relation("OrganizationToProperty")
-  notaryRecords          BlockchainNotaryRecord[]
-  dssDocuments           DssDocument[]
-  dssParticipants        DssParticipant[]
-  dssWorkflowTemplates   DssWorkflowTemplate[]
-  dssAuditEvents         DssAuditEvent[]          @relation("DssAuditEventOrganization")
-  financialEntities      FinancialEntity[]
-  users                  OrganizationUser[]
-  plan                   Plan?                    @relation(fields: [planId], references: [id])
-  vendors                Vendor[]
+  id                       String                   @id @default(uuid())
+  name                     String
+  slug                     String                   @unique
+  logoUrl                  String?                  @map("logo_url")
+  website                  String?
+  phone                    String?
+  address                  String?
+  isActive                 Boolean                  @default(true) @map("is_active")
+  createdAt                DateTime                 @default(now()) @map("created_at")
+  updatedAt                DateTime                 @updatedAt @map("updated_at")
+  planId                   Int?
+  invites                  Invite[]
+  listings                 Listing[]
+  maintenanceRequests      MaintenanceRequest[]
+  properties               Property[]               @relation("OrganizationToProperty")
+  notaryRecords            BlockchainNotaryRecord[]
+  dssDocuments             DssDocument[]
+  dssParticipants          DssParticipant[]
+  dssWorkflowTemplates     DssWorkflowTemplate[]
+  financialEntities        FinancialEntity[]
+  users                    OrganizationUser[]
+  plan                     Plan?                    @relation(fields: [planId], references: [id])
+  vendors                  Vendor[]
+
+  // --- Payment Settlement (Landlord) ---
+  region Region? @default(KEN)
+
+  // Africa (Split Logic)
+  paystackSubaccountCode String? @map("paystack_subaccount_code")
+
+  // USA (Payout Logic)
+  stripeConnectId String? @map("stripe_connect_id")
 
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
 
 model User {
-  id                     String                @id @default(uuid())
-  email                  String                @unique
-  passwordHash           String                @map("password_hash")
-  firstName              String?               @map("first_name")
-  lastName               String?               @map("last_name")
-  phone                  String?               @unique
-  avatarUrl              String?               @map("avatar_url")
-  status                 UserStatus            @default(ACTIVE)
-  lastLoginAt            DateTime?             @map("last_login_at")
-  createdAt              DateTime              @default(now()) @map("created_at")
-  updatedAt              DateTime              @updatedAt @map("updated_at")
-  emailVerified          DateTime?             @map("email_verified")
-  verificationToken      String?               @unique
-  consentMarketing       Boolean               @default(false) @map("consent_marketing")
-  consentNotifications   Boolean               @default(true) @map("consent_notifications")
-  consentTransactional   Boolean               @default(true) @map("consent_transactional")
-  kycStatus              KycStatus             @default(PENDING) @map("kyc_status")
-  paystackCustomerCode String?               @map("paystack_customer_code")
-  plaidAccessToken     String?               @map("plaid_access_token")
-  region              Region?               @default(AFRICA)
-  stripeCustomerId    String?
-  phoneVerified          DateTime?
-  twoFactorEnabled       Boolean               @default(false)
-  AgentInvite            AgentInvite[]
-  sentInvites            Invite[]              @relation("UserInvites")
+  id                     String                   @id @default(uuid())
+  email                  String                   @unique
+  passwordHash           String                   @map("password_hash")
+  firstName              String?                  @map("first_name")
+  lastName               String?                  @map("last_name")
+  phone                  String?                  @unique // E.164 format (e.g. +2547...)
+  phoneVerified          DateTime? // Null = not verified
+  avatarUrl              String?                  @map("avatar_url")
+  status                 UserStatus               @default(ACTIVE)
+  lastLoginAt            DateTime?                @map("last_login_at")
+  createdAt              DateTime                 @default(now()) @map("created_at")
+  updatedAt              DateTime                 @updatedAt @map("updated_at")
+  emailVerified          DateTime?                @map("email_verified")
+  verificationToken      String?                  @unique
+  consentMarketing       Boolean                  @default(false) @map("consent_marketing")
+  consentNotifications   Boolean                  @default(true) @map("consent_notifications")
+  consentTransactional   Boolean                  @default(true) @map("consent_transactional")
+  sentInvites            Invite[]                 @relation("UserInvites")
   leases                 Lease[]
   listings               Listing[]
   ListingAuditEntry      ListingAuditEntry[]
@@ -76,7 +73,8 @@ model User {
   dssParticipants        DssParticipant[]
   dssAuditEvents         DssAuditEvent[]       @relation("DssAuditEventUser")
   organizationUsers      OrganizationUser[]
-  paymentMethods         TenantPaymentMethod[]
+  sentAgentInvites       AgentInvite[]            @relation("AgentInviteToTenant")
+  receivedAgentInvite    AgentInvite?             @relation("AgentInviteToUser")
   vendors                Vendor[]
 
   @@map("users")
@@ -676,43 +674,27 @@ model InvoiceItem {
 }
 
 model Payment {
-  id                String             @id @default(uuid())
-  invoiceId         String             @map("invoice_id")
-  amount            Decimal            @db.Decimal(10, 2)
-  method            PaymentMethod      @map("method")
-  reference         String?            @db.VarChar(100)
-  postingStatus     PostingStatus      @default(PENDING) @map("posting_status")
-  journalEntryId    String?            @unique @map("journal_entry_id")
-  amount_subunits   BigInt?
-  currency          String             @default("USD") @db.VarChar(3)
-  status            payment_status     @default(PENDING)
-  type              payment_type       @default(RENT)
-  metadata          Json?
-  bank_name         String?
-  countryCode       String?            @db.Char(2)
-  created_at        DateTime?          @default(now()) @db.DateTime(0)
-  exchange_rate     Decimal?           @db.Decimal(10, 6)
-  failure_reason    String?
-  ip_address        String?
-  last_4            String?
-  next_retry_at     DateTime?
-  paid_on           DateTime?          @default(now()) @db.DateTime(0)
-  payment_method_id String?
-  processor         payment_processor? @default(MANUAL)
-  processor_id      String?            @unique
-  processor_status  String?
-  retry_count       Int                @default(0)
-  routing_number    String?
-  updated_at        DateTime?          @default(now()) @db.DateTime(0)
-  invoice           Invoice            @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  journalEntry      JournalEntry?      @relation(fields: [journalEntryId], references: [id])
+  id                String            @id @default(uuid())
+  invoiceId         String            @map("invoice_id")
+  amount            Decimal           @db.Decimal(10, 2)
+  method            payment_method
+  reference         String?           @db.VarChar(100)
+  paidOn            DateTime?         @default(now()) @db.DateTime(0)
+  postingStatus     PostingStatus     @default(PENDING) @map("posting_status")
+  journalEntryId    String?           @unique @map("journal_entry_id")
+  createdAt         DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt         DateTime?         @default(now()) @db.DateTime(0)
+  isReversed        Boolean           @default(false) @map("is_reversed")
+  reversedAt        DateTime?         @map("reversed_at") @db.DateTime(0)
+  reversalReason    String?           @map("reversal_reason") @db.VarChar(255)
+  reversedBy        String?           @map("reversed_by") @db.VarChar(100)
+  invoice           Invoice           @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  journalEntry      JournalEntry?     @relation(fields: [journalEntryId], references: [id])
   paymentReversals  PaymentReversal[]
   receipts          Receipt[]
 
   @@index([status])
   @@index([invoiceId])
-  @@index([method])
-  @@index([processor_id])
   @@map("payment")
 }
 
@@ -1473,12 +1455,15 @@ model AgentInvite {
   usedAt          DateTime?
   isUsed          Boolean   @default(false)
   tenantId        String
+  invitedAgentId  String?   @unique @map("invited_agent_id")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  tenant          User      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant          User      @relation("AgentInviteToTenant", fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedAgent    User?     @relation("AgentInviteToUser", fields: [invitedAgentId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
   @@index([tenantId])
+  @@index([invitedAgentId])
 }
 
 model ListingAuditEntry {
@@ -1497,19 +1482,6 @@ model ListingAuditEntry {
   @@index([userId])
 }
 
-model Otp {
-  id        String   @id
-  code      String
-  phone     String
-  userId    String
-  expiresAt DateTime
-  type      Otp_type @default(TWO_FACTOR)
-  createdAt DateTime @default(now())
-  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([phone])
-  @@index([userId], map: "Otp_userId_fkey")
-}
 
 enum Priority {
   LOW
@@ -1822,65 +1794,6 @@ enum invoice_type {
   DEPOSIT
 }
 
-enum payment_method {
-  CASH
-  CHECK
-  BANK_TRANSFER_MANUAL
-  BANK_TRANSFER_ACH
-  CREDIT_CARD
-  DEBIT_CARD
-  MOBILE_MONEY_MPESA
-  MOBILE_MONEY_AIRTEL
-  MOBILE_MONEY_OTHER
-  USSD
-  DIGITAL_WALLET_APPLE
-  DIGITAL_WALLET_GOOGLE
-  P2P_ZELLE
-  P2P_VENMO
-  CRYPTO
-  OTHER
-}
-
-enum Otp_type {
-  TWO_FACTOR
-  VERIFICATION
-  PASSWORD_RESET
-  PHONE_VERIFICATION
-}
-
-enum utility_bills_import_method {
-  MANUAL_ENTRY
-  CSV_UPLOAD
-  API_SYNC
-  PDF_OCR
-  IMAGE_SCAN
-}
-
-enum payment_status {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-  CANCELLED
-}
-
-enum payment_type {
-  RENT
-  UTILITY
-  MAINTENANCE
-  DEPOSIT
-  OTHER
-}
-
-enum organizations_region {
-  KEN
-  USA
-  NG
-  SA
-  RW
-  UG
-  TZ
-}
 
 enum utility_bills_split_method {
   EQUAL

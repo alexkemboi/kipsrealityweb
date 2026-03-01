@@ -4,13 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  AlertTriangle,
-  CheckCircle,
-  FileText,
-  XCircle,
-  UserCheck,
-  ShieldAlert,
-  Loader2,
+  AlertTriangle, CheckCircle, FileText, XCircle,
+  UserCheck, ShieldAlert, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,35 +92,23 @@ export default function SigningRoom() {
       setLoading(true);
 
       try {
-        const res = await fetch(`/api/dss/documents/${documentId}`, {
-          signal: controller.signal,
-          cache: "no-store",
-        });
+        const res = await fetch(`/api/dss/documents/${documentId}`);
+        if (!res.ok) throw new Error("Failed to load document");
+        const data = await res.json();
 
-        if (!res.ok) {
-          throw new Error(`Failed to load document (${res.status})`);
-        }
+        if (data.success) {
+          setDocData(data.document);
 
-        const data = await safeJson<ApiDocResponse>(res);
-        if (!data?.success || !data.document) {
-          throw new Error(data?.error || "Invalid document response");
-        }
-
-        if (!mountedRef.current) return;
-        setDocData(data.document);
-
-        // Determine current user's role from participants
-        const userEmail = (await getUserEmail()).toLowerCase().trim();
-        const participant = data.document.participants.find(
-          (p) => p.email.toLowerCase().trim() === userEmail
-        );
-
-        if (participant) {
-          setMyRole(participant.role);
-
-          if (participant.role === "CUSTODIAN") {
-            // Replace with real metadata-driven beneficiary name
-            setBeneficiaryName("Elderly Tenant (John Doe)");
+          // Determine current user's role from participants
+          const userEmail = await getUserEmail(); // This would come from auth context/token
+          const participant = data.document.participants.find((p: { email: string; role: string }) => p.email === userEmail);
+          if (participant) {
+            setMyRole(participant.role);
+            // For custodian, we need to know who they're signing for
+            // In a real app, this might come from the participant metadata or separate API
+            if (participant.role === "CUSTODIAN") {
+              setBeneficiaryName("Elderly Tenant (John Doe)"); // Placeholder - should be dynamic
+            }
           }
         }
       } catch (error) {
@@ -177,19 +160,18 @@ export default function SigningRoom() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documentId,
-          signatureData: "Signed via RentFlow360 Web UI", // replace with actual signature capture if needed
-          onBehalfOf: myRole === "CUSTODIAN" ? beneficiaryName : null,
-        }),
+          documentId: documentId,
+          signatureData: "Signed via RentFlow360 Web UI", // In real app, use canvas signature
+          onBehalfOf: myRole === 'CUSTODIAN' ? beneficiaryName : null
+        })
       });
 
-      const result = await safeJson<{ error?: string; success?: boolean }>(res);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
 
-      if (!res.ok) {
-        throw new Error(result?.error || "Signing failed");
-      }
-
-      toast.success("Document signed successfully.");
+      toast.success("Document Signed Successfully");
+      // Refresh page data
+      router.refresh();
       setIsSignModalOpen(false);
 
       // If this page is client-fetched, router.refresh() may not refetch local state.
@@ -206,12 +188,8 @@ export default function SigningRoom() {
   };
 
   const handleReject = async () => {
-    if (!documentId || !docData) return;
-    if (isSubmitting) return;
-
-    const reason = rejectReason.trim();
-    if (!reason) {
-      toast.error("Please provide a reason.");
+    if (!rejectReason) {
+      toast.error("Please provide a reason");
       return;
     }
 
@@ -222,18 +200,15 @@ export default function SigningRoom() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documentId,
-          reason,
-        }),
+          documentId: documentId,
+          reason: rejectReason
+        })
       });
 
-      const result = await safeJson<{ error?: string; success?: boolean }>(res);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
 
-      if (!res.ok) {
-        throw new Error(result?.error || "Rejection failed");
-      }
-
-      toast.success("Document rejected.");
+      toast.success("Document Rejected");
       setIsRejectModalOpen(false);
       setRejectReason("");
       router.refresh();
@@ -273,7 +248,8 @@ export default function SigningRoom() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50" aria-busy={isSubmitting}>
+    <div className="h-screen flex flex-col bg-gray-50">
+
       {/* HEADER */}
       <header className="bg-white border-b px-6 py-4 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center shadow-sm z-10">
         <div>
@@ -289,28 +265,24 @@ export default function SigningRoom() {
 
         <div className="text-sm text-gray-500">
           {hasReviewed ? (
-            <span className="flex items-center gap-2 text-green-600">
-              <CheckCircle size={16} aria-hidden="true" />
-              Reviewed
-            </span>
+            <span className="flex items-center gap-2 text-green-600"><CheckCircle size={16} /> Reviewed</span>
           ) : (
-            <span className="flex items-center gap-2">
-              <FileText size={16} aria-hidden="true" />
-              Scroll to end to review
-            </span>
+            <span className="flex items-center gap-2"><FileText size={16} /> Scroll to end to review</span>
           )}
         </div>
       </header>
 
-      {/* DOCUMENT VIEWER */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex justify-center" onScroll={handleScroll}>
-        {hasFile ? (
-          <div className="bg-white shadow-lg w-full max-w-4xl min-h-[900px] p-4 sm:p-6 lg:p-10 border rounded-md">
+      {/* DOCUMENT VIEWER (The PDF) */}
+      <div
+        className="flex-1 overflow-y-auto p-8 flex justify-center"
+        onScroll={handleScroll}
+      >
+        {docData.originalFileUrl ? (
+          <div className="bg-white shadow-lg w-full max-w-4xl min-h-[1000px] p-10 border">
             <iframe
               src={docData.originalFileUrl}
-              className="w-full min-h-[75vh] rounded"
+              className="w-full h-full min-h-[800px]"
               title="Document Viewer"
-              referrerPolicy="no-referrer"
             />
           </div>
         ) : (
@@ -321,22 +293,20 @@ export default function SigningRoom() {
       </div>
 
       {/* ACTION FOOTER */}
-      <footer className="bg-white border-t px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3 shadow-lg z-10">
+      <footer className="bg-white border-t px-6 py-4 flex justify-end gap-4 shadow-lg z-10">
         <Button
           variant="destructive"
           onClick={() => setIsRejectModalOpen(true)}
-          disabled={isSubmitting}
         >
           Decline / Reject
         </Button>
 
         <Button
           className="bg-blue-600 hover:bg-blue-700 px-8"
-          disabled={!canSign}
+          disabled={!hasReviewed} // Forces user to scroll first
           onClick={() => setIsSignModalOpen(true)}
-          title={!hasReviewed ? "Review the document before signing" : undefined}
         >
-          {myRole === "CUSTODIAN" ? "Sign as Custodian" : "Sign Document"}
+          {myRole === 'CUSTODIAN' ? "Sign as Custodian" : "Sign Document"}
         </Button>
       </footer>
 
@@ -358,17 +328,13 @@ export default function SigningRoom() {
               By clicking confirm, you agree to be legally bound by this document.
             </div>
 
-            {myRole === "CUSTODIAN" && (
+            {myRole === 'CUSTODIAN' && (
               <div className="flex items-start gap-3 bg-amber-50 p-4 rounded-lg border border-amber-100">
-                <UserCheck className="text-amber-600 shrink-0 mt-0.5" size={20} aria-hidden="true" />
+                <UserCheck className="text-amber-600 shrink-0 mt-0.5" size={20} />
                 <div>
-                  <p className="font-semibold text-amber-800 text-sm">
-                    Custodian Declaration
-                  </p>
+                  <p className="font-semibold text-amber-800 text-sm">Custodian Declaration</p>
                   <p className="text-amber-700 text-xs mt-1">
-                    I certify that I am the authorized custodian for{" "}
-                    <strong>{beneficiaryName}</strong> and I am signing this document
-                    on their behalf in their best interest.
+                    I certify that I am the authorized custodian for <strong>{beneficiaryName}</strong> and I am signing this document on their behalf in their best interest.
                   </p>
                 </div>
               </div>
@@ -401,23 +367,18 @@ export default function SigningRoom() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600 flex items-center gap-2">
-              <AlertTriangle size={20} aria-hidden="true" />
-              Reject Document
+              <AlertTriangle size={20} /> Reject Document
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
-            <label htmlFor="reject-reason" className="block text-sm font-medium mb-2">
-              Reason for rejection:
-            </label>
+            <label className="block text-sm font-medium mb-2">Reason for rejection:</label>
             <textarea
-              id="reject-reason"
               className="w-full border rounded-md p-3 text-sm focus:ring-2 focus:ring-red-500 outline-none"
               rows={3}
               placeholder="E.g., The rent amount is incorrect..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              disabled={isSubmitting}
             />
           </div>
 
@@ -435,6 +396,6 @@ export default function SigningRoom() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </div>
   );
 }
