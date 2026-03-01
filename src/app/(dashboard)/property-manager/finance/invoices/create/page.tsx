@@ -16,13 +16,8 @@ export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
 
     setLoading(true);
 
-    const payload: FullInvoiceInput = {
-      leaseId,
-      type: "RENT",
-    };
-
     try {
-      const invoice: Invoice = await generateFullInvoice(payload);
+      const invoice: Invoice = await generateFullInvoice(leaseId);
       toast.success(`Invoice created: ${invoice.id}`);
     } catch (error: unknown) {
       const message =

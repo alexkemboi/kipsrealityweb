@@ -39,9 +39,8 @@ const decodeJWT = (token: string): { role?: string } => {
   }
 };
 
-export function middleware(request: NextRequest) {
-  const rawPath = request.nextUrl.pathname;
-  const pathname = normalizePath(rawPath);
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
 
   // Skip static assets eg images and favicons early

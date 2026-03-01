@@ -75,8 +75,8 @@ export default function JournalPage() {
 
       try {
         const res = await fetch(`/api/finance/journal?${queryString}`, {
-          signal,
           cache: "no-store",
+          ...(signal ? { signal } : {})
         });
 
         if (!res.ok) {
@@ -181,7 +181,7 @@ export default function JournalPage() {
         </div>
       )}
 
-      <JournalTable data={entries} loading={loading} />
+      <JournalTable data={entries as any} loading={loading} />
 
       {!loading && pagination.pages > 1 && (
         <nav

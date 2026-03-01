@@ -229,3 +229,6 @@ describe('Fraud Detection Service', () => {
   });
 
   describe('Rule: Email Domain Validation', () => {
+    // TODO: Implement email domain validation tests
+  });
+});

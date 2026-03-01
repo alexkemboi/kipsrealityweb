@@ -384,7 +384,7 @@ export default function TenantInvoicesPage() {
                               onClick={async () => {
                                 try {
                                   setDownloadingId(invoice.id);
-                                  await downloadInvoicePDF(invoice.id);
+                                  await downloadInvoicePDF(String(invoice.id));
                                   toast.success("Invoice downloaded successfully");
                                 } catch (err: unknown) {
                                   console.error(err);

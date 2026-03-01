@@ -219,7 +219,7 @@ export default function MeterReadingsPage() {
                     </p>
                     <p className="text-lg font-semibold mb-1">
                       {filteredReadings.length > 0
-                        ? formatDate(filteredReadings[0].readingDate)
+                        ? formatDate(filteredReadings[0]?.readingDate ?? "")
                         : "—"}
                     </p>
                     <p className="text-purple-200 text-xs">

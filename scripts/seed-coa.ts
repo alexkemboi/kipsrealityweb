@@ -2,7 +2,7 @@ import { PrismaClient, AccountType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Standard GAAP Chart of Accounts for Property Management - Updated to match CHART_OF_ACCOUNTS constants
+// Standard GAAP Chart of Accounts for Property Management
 const STANDARD_COA = [
     // ASSETS (1000-1999)
     { code: "1000", name: "Cash - Operating Account", type: AccountType.ASSET },

@@ -34,11 +34,14 @@ const LedgerPage = () => {
     setError(null);
 
     try {
-      const res = await fetch("/api/finance/ledger", {
+      const fetchOptions: RequestInit = {
         method: "GET",
-        signal,
         cache: "no-store",
-      });
+      };
+      if (signal) {
+        fetchOptions.signal = signal;
+      }
+      const res = await fetch("/api/finance/ledger", fetchOptions);
 
       if (!res.ok) {
         throw new Error(`Request failed (${res.status})`);
@@ -113,7 +116,7 @@ const LedgerPage = () => {
         </div>
       )}
 
-      <LedgerTable data={ledgerData} loading={loading} />
+      <LedgerTable data={ledgerData as any} loading={loading} />
 
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-6">
         <h4 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">

@@ -1,51 +1,10 @@
-// @/lib/Invoice.ts
+import { Loader2 } from "lucide-react";
 
-import type { FullInvoiceInput, Invoice } from "@/app/data/FinanceData";
-
-type ApiErrorResponse = {
-  error?: string;
-};
-
-function getErrorMessage(data: unknown, fallback: string): string {
-  if (
-    typeof data === "object" &&
-    data !== null &&
-    "error" in data &&
-    typeof (data as ApiErrorResponse).error === "string"
-  ) {
-    return (data as ApiErrorResponse).error as string;
-  }
-
-  return fallback;
-}
-
-/**
- * Calls the backend API route to generate a full invoice.
- * Backend route expected at: /api/invoices/full
- */
-export async function generateFullInvoice(
-  payload: FullInvoiceInput
-): Promise<Invoice> {
-  const res = await fetch("/api/invoices/full", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-    body: JSON.stringify(payload),
-  });
-
-  let data: unknown;
-
-  try {
-    data = await res.json();
-  } catch {
-    throw new Error("Invalid server response");
-  }
-
-  if (!res.ok) {
-    throw new Error(getErrorMessage(data, "Failed to generate invoice"));
-  }
-
-  return data as Invoice;
+export default function HomeLoading() {
+  return (
+    <div className="min-h-[50vh] w-full flex flex-col items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
+      <p className="text-gray-500 font-medium">Loading...</p>
+    </div>
+  );
 }
