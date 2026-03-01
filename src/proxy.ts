@@ -51,7 +51,7 @@ const decodeJWT = (token: string): { role?: string; userId?: string; organizatio
   }
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const rawPath = request.nextUrl.pathname;
   const pathname = normalizePath(rawPath);
   const token = request.cookies.get("token")?.value;
