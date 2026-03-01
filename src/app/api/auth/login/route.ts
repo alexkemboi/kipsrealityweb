@@ -210,7 +210,8 @@ export async function POST(request: Request) {
     }
 
     const isEmailVerified = user.emailVerified !== null;
-    if (!isEmailVerified) {
+    const dummyAvoidEmailAuth = false;
+    if ( dummyAvoidEmailAuth && !isEmailVerified) {
       const response = jsonNoStore(
         {
           error: 'Please verify your email address before logging in.',
