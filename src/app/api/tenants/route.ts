@@ -22,9 +22,9 @@ export async function GET(req: Request) {
 
     // Compute financial summary per lease
     const result = leases.map((l) => {
-      const totalInvoiced = (l.invoices || []).reduce((s, inv) => s + (inv.totalAmount ?? 0), 0);
+      const totalInvoiced = (l.invoices || []).reduce((s, inv) => s + Number(inv.totalAmount ?? 0), 0);
       const totalPaid = (l.invoices || []).reduce(
-        (s, inv) => s + ((inv.payments || []).reduce((ps, p) => ps + (p.amount ?? 0), 0)),
+        (s, inv) => s + ((inv.payments || []).reduce((ps, p) => ps + Number(p.amount ?? 0), 0)),
         0
       );
       const balance = totalInvoiced - totalPaid;

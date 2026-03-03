@@ -46,11 +46,12 @@ export async function POST(
 
     // ✅ Filter out reversed payments (same as frontend)
     const validPayments = invoice.payments?.filter(p => !p.isReversed) || [];
-    const paidAmount = validPayments.reduce((sum, p) => sum + p.amount, 0);
-    const remaining = invoice.totalAmount - paidAmount;
+    const invoiceTotalAmount = Number(invoice.totalAmount);
+    const paidAmount = validPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const remaining = invoiceTotalAmount - paidAmount;
 
     console.log("Invoice details:", {
-      invoiceAmount: invoice.totalAmount,
+      invoiceAmount: invoiceTotalAmount,
       totalPayments: invoice.payments?.length,
       validPayments: validPayments.length,
       paidAmount,
@@ -63,7 +64,7 @@ export async function POST(
         {
           error: `Payment amount (${numericAmount}) exceeds remaining balance (${remaining.toFixed(2)})`,
           details: {
-            invoiceAmount: invoice.totalAmount,
+            invoiceAmount: invoiceTotalAmount,
             alreadyPaid: paidAmount,
             remaining: remaining,
             attemptedPayment: numericAmount,
@@ -84,7 +85,7 @@ export async function POST(
     });
 
     const newTotalPaid = paidAmount + numericAmount;
-    const isPaidInFull = newTotalPaid >= invoice.totalAmount - 0.01;
+    const isPaidInFull = newTotalPaid >= invoiceTotalAmount - 0.01;
 
     let newStatus = invoice.status;
 
@@ -101,7 +102,7 @@ export async function POST(
       data: {
         status: newStatus as any,
         amountPaid: newTotalPaid,
-        balance: invoice.totalAmount - newTotalPaid,
+        balance: invoiceTotalAmount - newTotalPaid,
       },
     });
 
@@ -124,7 +125,7 @@ export async function POST(
       payment: refreshedPayment || payment,
       status: newStatus,
       totalPaid: newTotalPaid,
-      remaining: invoice.totalAmount - newTotalPaid,
+      remaining: invoiceTotalAmount - newTotalPaid,
     });
   } catch (error) {
     console.error("Error processing payment:", error);

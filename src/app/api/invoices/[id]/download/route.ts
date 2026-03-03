@@ -44,7 +44,7 @@ export async function GET(
     const dueDate = new Date(dateString);
 
     // Fetch all invoices for this lease and due date
-    const invoices = await prisma.invoice.findMany({
+    const rawInvoices = await prisma.invoice.findMany({
       where: {
         leaseId: leaseId,
         dueDate: {
@@ -64,7 +64,40 @@ export async function GET(
         }
       },
       orderBy: { type: 'asc' }
-    }) as Invoice[];
+    });
+
+    const invoices: Invoice[] = rawInvoices.map((invoice) => ({
+      totalAmount: Number(invoice.totalAmount),
+      status: String(invoice.status),
+      type: String(invoice.type),
+      InvoiceItem: invoice.InvoiceItem.map((item) => ({
+        description: item.description,
+        amount: Number(item.amount),
+      })),
+      payments: invoice.payments.map((payment) => ({
+        amount: Number(payment.amount),
+      })),
+      Lease: invoice.Lease
+        ? {
+            tenant: invoice.Lease.tenant
+              ? {
+                  firstName: invoice.Lease.tenant.firstName ?? undefined,
+                  lastName: invoice.Lease.tenant.lastName ?? undefined,
+                }
+              : undefined,
+            property: invoice.Lease.property
+              ? {
+                  name: invoice.Lease.property.name ?? undefined,
+                }
+              : undefined,
+            unit: invoice.Lease.unit
+              ? {
+                  unitNumber: invoice.Lease.unit.unitNumber ?? undefined,
+                }
+              : undefined,
+          }
+        : undefined,
+    }));
 
     if (!invoices.length) {
       return NextResponse.json(

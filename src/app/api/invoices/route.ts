@@ -74,8 +74,9 @@ export async function GET(req: Request) {
 
     // Add financial calculations and building name
     const invoicesWithFinancials = invoices.map((invoice) => {
-      const totalPaid = invoice.payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-      const balance = invoice.totalAmount - totalPaid;
+      const invoiceTotalAmount = Number(invoice.totalAmount);
+      const totalPaid = invoice.payments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+      const balance = invoiceTotalAmount - totalPaid;
 
       // Get building name from property details
       const buildingName =
@@ -86,6 +87,7 @@ export async function GET(req: Request) {
 
       return {
         ...invoice,
+        totalAmount: invoiceTotalAmount,
         buildingName,
         financialSummary: {
           totalPaid,
@@ -111,7 +113,7 @@ export async function GET(req: Request) {
           };
         }
 
-        acc[groupKey].totalAmount += inv.totalAmount;
+        acc[groupKey].totalAmount += Number(inv.totalAmount);
         acc[groupKey].invoices.push(inv);
 
         return acc;

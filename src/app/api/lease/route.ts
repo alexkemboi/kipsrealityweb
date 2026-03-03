@@ -156,13 +156,13 @@ export async function GET(req: NextRequest) {
     // Add financial summary
     const leasesWithFinancials = leases.map((lease) => {
       const totalInvoiced =
-        lease.invoices?.reduce((sum, inv) => sum + inv.totalAmount, 0) ?? 0;
+        lease.invoices?.reduce((sum, inv) => sum + Number(inv.totalAmount), 0) ?? 0;
 
       const totalPaid =
         lease.invoices?.reduce(
           (sum, inv) =>
             sum +
-            inv.payments.reduce((paySum, pay) => paySum + pay.amount, 0),
+            inv.payments.reduce((paySum, pay) => paySum + Number(pay.amount), 0),
           0
         ) ?? 0;
 
