@@ -31,7 +31,7 @@ export function useInvoices(): UseInvoicesState {
       setLoading(true);
       setError(null);
 
-      const res = await fetch("/api/tenant/[id]/invoices", {
+      const res = await fetch("/api/tenant/invoices", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",

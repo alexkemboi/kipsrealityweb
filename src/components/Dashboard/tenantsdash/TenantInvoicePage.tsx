@@ -128,13 +128,13 @@ export default function TenantInvoices({ tenantId }: TenantInvoicesProps) {
                     <Button onClick={() => payInvoice(inv.id)}>Pay Now</Button>
                   )}
                   {inv.status === "PAID" &&
-                    inv.payment.map(pmt =>
+                    inv.payment?.map(pmt =>
                       pmt.receipt?.map(rcpt => (
                         <Button key={rcpt.id} onClick={() => viewReceipt(pmt.id)}>
                           View Receipt
                         </Button>
                       ))
-                    )}
+                    ) || []}
                 </td>
               </tr>
             ))}

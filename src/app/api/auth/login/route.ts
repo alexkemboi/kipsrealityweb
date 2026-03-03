@@ -40,6 +40,19 @@ export async function POST(request: Request) {
       );
     }
 
+    // 2FA CHECK: Is Two-Factor Authentication Enabled?
+    if (user.twoFactorEnabled) {
+      // User has 2FA enabled - require OTP verification
+      return NextResponse.json(
+        {
+          require2FA: true,
+          userId: user.id,
+          message: 'Two-factor authentication required. Please enter the code sent to your phone.'
+        },
+        { status: 200 }
+      );
+    }
+
     const primaryOrgUser = user.organizationUsers[0];
     let role = primaryOrgUser?.role || 'TENANT';
 
@@ -64,16 +77,18 @@ export async function POST(request: Request) {
       data: { lastLoginAt: new Date() }
     });
 
-    // Updated user response to include organizationUserId
+    // Updated user response to include phone, phoneVerified, and twoFactorEnabled
     const userResponse = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      phoneVerified: user.phoneVerified,
+      twoFactorEnabled: user.twoFactorEnabled,
       avatarUrl: user.avatarUrl,
       role: role,
-      organizationUserId: primaryOrgUser?.id, // <-- Added
+      organizationUserId: primaryOrgUser?.id,
       organization: primaryOrgUser
         ? {
           id: primaryOrgUser.organization.id,

@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import crypto from "crypto";
 import { invoice_status } from "@prisma/client";
+import { toNumber } from "./decimal-utils";
 
 export async function reversePayment(paymentId: string, userId: string, reason: string) {
   return await prisma.$transaction(async (tx) => {

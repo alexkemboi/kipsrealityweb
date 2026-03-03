@@ -12,6 +12,10 @@ export function getJwtSecret(): string {
 export function getJwtRefreshSecret(): string {
     const secret = process.env.JWT_REFRESH_SECRET;
     if (!secret) {
+        if (process.env.NODE_ENV === 'test') {
+            console.warn("JWT_REFRESH_SECRET missing - using fallback (test only)");
+            return "test-fallback-secret";
+        }
         throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
     }
     return secret;

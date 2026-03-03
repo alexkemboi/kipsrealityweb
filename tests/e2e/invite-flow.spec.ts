@@ -16,16 +16,33 @@ test.describe('Tenant Invitation Flow', () => {
         });
 
         // 1. Verification Bypass (The "Magic" Step)
-        const user = await prisma.user.findUnique({
-            where: { email: 'manager@test.com' },
-            select: { verificationToken: true, emailVerified: true }
-        });
+        // Poll for user creation (seed may still be committing)
+        let user = null;
+        for (let i = 0; i < 20; i++) {
+            user = await prisma.user.findUnique({
+                where: { email: 'manager@test.com' },
+                select: { verificationToken: true, emailVerified: true }
+            });
+            if (user) break;
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        if (!user) {
+            throw new Error('User manager@test.com not found after 10 seconds of polling. Seed may have failed.');
+        }
 
         if (user?.emailVerified) {
             await page.goto('/login');
         } else if (user?.verificationToken) {
             await page.goto(`/api/auth/verify-email?token=${user.verificationToken}`);
             await expect(page).toHaveURL(/\/login\?verified=true/, { timeout: 20000 });
+        }
+
+        // DEBUG: Check if we hit a server error
+        const content = await page.content();
+        if (content.includes('Internal Server Error') || content.includes('Application error')) {
+            console.error('🚨 SERVER ERROR DETECTED ON LOGIN PAGE:');
+            console.error(content); // This will print the stack trace in CI logs
         }
 
         // 2. Login

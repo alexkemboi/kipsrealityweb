@@ -141,7 +141,6 @@ async function seedTestimonialsIfMissing() {
 async function main() {
     // Run this seed when setting up a new database or environment.
     // Uses upsert to prevent duplicates - safe to run multiple times.
-    console.log('Seeding Property Types...');
     const propertyTypes = [
         { id: "1", name: "House", description: "Single family home" },
         { id: "2", name: "Apartment", description: "Apartment unit" },
@@ -157,19 +156,13 @@ async function main() {
             create: type,
         });
     }
-    console.log('Property types seeded!');
 
     const backupDir = path.join(process.cwd(), 'backup');
     const hasBackupDir = fs.existsSync(backupDir);
 
-    if (!hasBackupDir) {
-        console.log(`⚠️ Backup directory not found at ${backupDir}. Skipping restore.`);
-    }
-
     try {
         if (hasBackupDir) {
             await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=0;');
-            console.log('🔄 Foreign key checks disabled.');
 
             const PRIORITY = ['Organization', 'User', 'Property', 'Unit', 'Lease'];
 
@@ -215,7 +208,6 @@ async function main() {
                 // @ts-ignore
                 if (prisma[pascalKey]) clientKey = pascalKey;
                 else {
-                    console.warn(`⚠️ Model '${clientKey}' not found. Skipping.`);
                     continue;
                 }
             }
@@ -261,7 +253,6 @@ async function main() {
                 return true;
             });
 
-            console.log(`📥 Restoring ${rawModelName} -> ${clientKey} (${cleanData.length})...`);
 
             try {
                 // @ts-ignore
@@ -270,10 +261,8 @@ async function main() {
                     skipDuplicates: true
                 });
             } catch (err: any) {
-                console.error(`❌ Error on ${rawModelName}: ${err.message.split('\n').pop()}`);
             }
         }
-        console.log('✅ Done.');
         }
 
         // Always ensure navbar items exist for the website top nav
@@ -282,7 +271,6 @@ async function main() {
         // Ensure the marketing testimonials section has content
         await seedTestimonialsIfMissing();
     } catch (e) {
-        console.error(e);
     } finally {
         if (hasBackupDir) {
             await prisma.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS=1;');

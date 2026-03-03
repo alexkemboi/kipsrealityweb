@@ -49,11 +49,25 @@ export default function TenantInvoices() {
     try {
       const res = await fetch(`/api/invoices/tenant`);
       if (!res.ok) throw new Error("Failed to fetch invoices");
-      const data: Invoice[] = await res.json();
-      setInvoices(data);
+      const data = await res.json();
+      // Ensure data is always an array, even if API returns null/undefined
+      const normalizedInvoices = Array.isArray(data) ? data : [];
+      
+      // Transform invoices to match frontend interface
+      // Backend returns 'payments' but frontend expects 'payment'
+      const transformedInvoices = normalizedInvoices.map(invoice => ({
+        ...invoice,
+        // Use 'payments' from backend if available, otherwise empty array
+        payment: invoice.payments || invoice.payment || [],
+        // Remove duplicate 'payments' field to avoid confusion
+        ...(invoice.payments && { payments: undefined })
+      }));
+      
+      setInvoices(transformedInvoices);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch invoices");
+      setInvoices([]); // Set to empty array on error too
     } finally { setLoading(false); }
   }
 
@@ -112,9 +126,10 @@ export default function TenantInvoices() {
       if (!res.ok) throw new Error("Receipt not found");
       const receipt: Receipt = await res.json();
       setViewingReceipt(receipt); // store receipt for modal
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Failed to fetch receipt");
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch receipt";
+      toast.error(errorMessage);
     }
   }
 
@@ -191,7 +206,7 @@ export default function TenantInvoices() {
     overdue: invoices.filter(i => i.status === "OVERDUE").length,
     paid: invoices.filter(i => i.status === "PAID").length,
     totalAmount: invoices.reduce((sum, inv) => {
-      const paidAmount = inv.payment.filter(p => !p.isReversed).reduce((s, p) => s + p.amount, 0);
+      const paidAmount = inv.payment?.filter(p => !p.isReversed).reduce((s, p) => s + p.amount, 0) || 0;
       return sum + (inv.amount - paidAmount);
     }, 0)
   };
@@ -229,7 +244,7 @@ export default function TenantInvoices() {
                 {(() => {
                   const invoice = invoices.find(i => i.id === payingInvoice);
                   if (!invoice) return null;
-                  const paidAmount = invoice.payment.filter(p => !p.isReversed).reduce((sum, p) => sum + p.amount, 0);
+                  const paidAmount = invoice.payment?.filter(p => !p.isReversed).reduce((sum, p) => sum + p.amount, 0) || 0;
                   const remaining = invoice.amount - paidAmount;
 
                   return (
@@ -726,7 +741,7 @@ export default function TenantInvoices() {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {invoices.map((inv) => {
-                    const paidAmount = inv.payment.filter(p => !p.isReversed).reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const paidAmount = inv.payment?.filter(p => !p.isReversed).reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
                     const remaining = inv.amount - paidAmount;
 
                     return (
@@ -776,7 +791,7 @@ export default function TenantInvoices() {
 
                             {/* Show View Receipt for any payment that has receipts */}
                             {inv.payment
-                              .filter(pmt => pmt.receipt && pmt.receipt.length > 0)
+                              ?.filter(pmt => pmt.receipt && pmt.receipt.length > 0)
                               .map(pmt =>
                                 pmt.receipt!.map(rcpt => (
                                   <Button
@@ -788,7 +803,7 @@ export default function TenantInvoices() {
                                     View Receipt
                                   </Button>
                                 ))
-                              )
+                              ) || []
                             }
                           </div>
                         </td>

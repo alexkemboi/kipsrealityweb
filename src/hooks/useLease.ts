@@ -36,10 +36,8 @@ export function useLease(): UseLeaseState {
       setLoading(true);
       setError(null);
 
-      // NOTE:
-      // Replace this endpoint with your real one.
-      // If you already have /api/tenant/[id]/leases, keep it.
-      const res = await fetch("/api/tenant/[id]/leases", {
+      // Fetch authenticated tenant's leases
+      const res = await fetch("/api/tenant/leases", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",

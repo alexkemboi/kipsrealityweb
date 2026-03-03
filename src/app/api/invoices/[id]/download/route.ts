@@ -1,36 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { toNumber } from "@/lib/decimal-utils";
+import type { Prisma } from "@prisma/client";
 
-interface InvoiceItem {
-  description: string;
-  amount: number;
-}
-
-interface Payment {
-  amount: number;
-}
-
-interface Lease {
-  tenant?: {
-    firstName?: string;
-    lastName?: string;
+type InvoiceWithRelations = Prisma.InvoiceGetPayload<{
+  include: {
+    InvoiceItem: true;
+    payments: true;
+    Lease: {
+      include: {
+        tenant: true;
+        property: true;
+        unit: true;
+      };
+    };
   };
-  property?: {
-    name?: string;
-  };
-  unit?: {
-    unitNumber?: string;
-  };
-}
-
-interface Invoice {
-  totalAmount: number;
-  status: string;
-  type: string;
-  InvoiceItem: InvoiceItem[];
-  payments: Payment[];
-  Lease?: Lease;
-}
+}>;
 
 export async function GET(
   req: Request,
@@ -129,15 +114,15 @@ export async function GET(
   }
 }
 
-function generateTextContent(invoices: Invoice[], dateString: string): string {
+function generateTextContent(invoices: InvoiceWithRelations[], dateString: string): string {
   const tenant = invoices[0]?.Lease?.tenant;
   const property = invoices[0]?.Lease?.property;
   const unit = invoices[0]?.Lease?.unit;
 
   // Fixed: Added proper types for reduce functions
-  const totalAmount = invoices.reduce((sum: number, inv: Invoice) => sum + inv.totalAmount, 0);
-  const totalPaid = invoices.reduce((sum: number, inv: Invoice) =>
-    sum + inv.payments.reduce((pSum: number, p: Payment) => pSum + p.amount, 0), 0
+  const totalAmount = invoices.reduce((sum: number, inv) => sum + toNumber(inv.totalAmount), 0);
+  const totalPaid = invoices.reduce((sum: number, inv) =>
+    sum + inv.payments.reduce((pSum: number, p) => pSum + toNumber(p.amount), 0), 0
   );
 
   let content = `
@@ -152,13 +137,13 @@ Due Date: ${dateString}
 INVOICE BREAKDOWN:
 `;
 
-  invoices.forEach((invoice: Invoice) => {
+  invoices.forEach((invoice) => {
     content += `
 ${invoice.type} INVOICE:
-  Amount: USD ${invoice.totalAmount.toLocaleString()}
-  Status: ${invoice.status}
+  Amount: USD ${toNumber(invoice.totalAmount).toLocaleString()}
+  Status: ${invoice.status || 'PENDING'}
   Items:${invoice.InvoiceItem.length > 0 ? '' : ' None'}
-${invoice.InvoiceItem.map((item: InvoiceItem) => `    - ${item.description}: USD ${item.amount.toLocaleString()}`).join('\n')}
+${invoice.InvoiceItem.map((item) => `    - ${item.description}: USD ${toNumber(item.amount).toLocaleString()}`).join('\n')}
 `;
   });
 

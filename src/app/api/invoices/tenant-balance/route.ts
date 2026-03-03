@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { toNumber } from "@/lib/decimal-utils";
 
 async function getTenantBalance(leaseId: string) {
   try {

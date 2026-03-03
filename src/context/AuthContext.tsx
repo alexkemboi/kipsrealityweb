@@ -10,12 +10,15 @@ interface User {
     lastName: string;
     role: 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR';
     avatarUrl?: string;
+    phone?: string | null;
+    phoneVerified?: Date | null;
+    twoFactorEnabled?: boolean;
     organization?: {
         id: string;
         name: string;
         slug: string;
     };
-    organizationUserId?: string; // <- add this
+    organizationUserId?: string;
     consentNotifications?: boolean;
     consentMarketing?: boolean;
 }
@@ -30,6 +33,7 @@ interface AuthContextType {
     user: User | null;
     login: (userData: User, tokens: AuthTokens) => void;
     logout: () => void;
+    refreshUser: () => Promise<void>;
     isLoading: boolean;
     hasRole: (roles: string[]) => boolean;
 }
@@ -112,12 +116,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push('/login');
     };
 
+    const refreshUser = async () => {
+        try {
+            const response = await fetch('/api/auth/me');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.user) {
+                    setStoredUser(data.user);
+                    setUser(data.user);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to refresh user:', error);
+        }
+    };
+
     const hasRole = (roles: string[]) => {
         return user ? roles.includes(user.role) : false;
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading, hasRole }}>
+        <AuthContext.Provider value={{ user, login, logout, refreshUser, isLoading, hasRole }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,7 +1,11 @@
 import { config } from "dotenv";
 
-config({ path: ".env.local" });
-config();
+if (process.env.NODE_ENV === "test") {
+  config({ path: ".env.test" });
+} else {
+  config({ path: ".env.local" });
+  config();
+}
 import { defineConfig, env } from "prisma/config";
 
 export default defineConfig({

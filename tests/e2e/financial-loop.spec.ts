@@ -14,10 +14,20 @@ test.describe('Financial Core Workflow', () => {
     test('Manager can create invoice and record payment', async ({ page }) => {
         test.setTimeout(90000); // Give it plenty of time for GL posting + toast
         // 1. Verification Bypass (The "Magic" Step)
-        const user = await prisma.user.findUnique({
-            where: { email: 'manager@test.com' },
-            select: { verificationToken: true, emailVerified: true, id: true }
-        });
+        // Poll for user creation (seed may still be committing)
+        let user = null;
+        for (let i = 0; i < 20; i++) {
+            user = await prisma.user.findUnique({
+                where: { email: 'manager@test.com' },
+                select: { verificationToken: true, emailVerified: true, id: true }
+            });
+            if (user) break;
+            await new Promise(r => setTimeout(r, 500));
+        }
+
+        if (!user) {
+            throw new Error('User manager@test.com not found after 10 seconds of polling. Seed may have failed.');
+        }
 
         if (user?.emailVerified) {
             console.log('DEBUG: User already verified, navigating to login');
