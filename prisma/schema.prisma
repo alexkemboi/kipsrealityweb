@@ -35,15 +35,6 @@ model Organization {
   plan                     Plan?                    @relation(fields: [planId], references: [id])
   vendors                  Vendor[]
 
-  // --- Payment Settlement (Landlord) ---
-  region Region? @default(KEN)
-
-  // Africa (Split Logic)
-  paystackSubaccountCode String? @map("paystack_subaccount_code")
-
-  // USA (Payout Logic)
-  stripeConnectId String? @map("stripe_connect_id")
-
   @@index([planId], map: "organizations_planId_fkey")
   @@map("organizations")
 }
@@ -87,38 +78,7 @@ model User {
   // Relation to OTPs
   otps Otp[]
 
-  // --- Payment Profile (Tenant) ---
-  region    Region?   @default(KEN) // Defaulting to KEN for our pilot
-  KycStatus KycStatus @default(PENDING) @map("kyc_status")
-
-  // USA Identifiers
-  stripeCustomerId          String? @map("stripe_customer_id")
-  plaidAccessTokenEncrypted String? @map("plaid_access_token") // App must encrypt/decrypt this
-
-  // Africa Identifiers
-  paystackCustomerCode String? @map("paystack_customer_code")
-
-  // Payment methods
-  paymentMethods TenantPaymentMethod[]
-
   @@map("users")
-}
-
-model TenantPaymentMethod {
-  id                    String   @id @default(uuid())
-  userId                String   @map("user_id")
-  type                  String // 'ACH', 'CARD'
-  plaidAccessToken      String?  @map("plaid_access_token") // Encrypted
-  plaidAccountId        String?  @map("plaid_account_id")
-  stripePaymentMethodId String   @map("stripe_payment_method_id")
-  isDefault             Boolean  @default(false) @map("is_default")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("tenant_payment_methods")
 }
 
 model OrganizationUser {
@@ -731,7 +691,6 @@ model Payment {
   currency          String            @default("KES") @db.VarChar(3)
   gateway           payment_gateway   @default(MANUAL)
   gateway_reference String?
-  risk_score        Int?
   status            payment_status    @default(PENDING)
   type              payment_type      @default(RENT)
   metadata          Json?
@@ -740,20 +699,8 @@ model Payment {
   paymentReversals  PaymentReversal[]
   receipts          Receipt[]
 
-  amountSubunits BigInt? @map("amount_subunits") // Cents(Integer math)
-  currency       String  @default("KES") @db.VarChar(3)
-
-  gateway          PaymentGateway @default(MANUAL)
-  gatewayReference String?        @map("gateway_reference") //Stripe ID / Paystack Ref
   riskScore        Int?           @map("risk_score") // Plaid Signal Score
-  metadata         Json? // Additional payment details (phone number, M-Pesa transaction details, etc.)
 
-  // Status State Machine
-  status TransactionStatus @default(PENDING)
-  type   TransactionType   @default(RENT)
-
-  @@index([gatewayReference])
-  @@index([status])
   @@index([invoiceId])
   @@index([gateway_reference])
   @@index([status])
@@ -1879,17 +1826,6 @@ enum payment_type {
   DEPOSIT
   SAAS_FEE
   MAINTENANCE
-}
-
-enum payment_method {
-  CASH
-  BANK
-  CREDIT_CARD
-  MPESA
-  PAYPAL
-  STRIPE
-  PAYSTACK
-  MANUAL
 }
 
 // -------PAYMENT INFRASTRUCTURE ENUMS--------
