@@ -1,6 +1,6 @@
 "use client"
 import React from "react";
-import Dashboard from "@/components/Dashboard/agentDash/DashboardOverview";
+import Dashboard from "@/components/Dashboard/propertymanagerdash/dashboardOverview";
 
 const DashboardPage = () => {
   return (

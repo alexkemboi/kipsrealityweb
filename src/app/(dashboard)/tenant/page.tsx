@@ -26,6 +26,7 @@ const DashboardPage = () => {
   const router = useRouter();
 
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);

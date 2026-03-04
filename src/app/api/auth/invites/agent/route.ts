@@ -169,7 +169,7 @@ export async function GET() {
       },
       orderBy: { createdAt: "desc" },
       include: { 
-        users: {
+        tenant: {
           select: {
             id: true,
             email: true,
@@ -184,11 +184,11 @@ export async function GET() {
 
     const mappedInvites = agentInvites.map(inv => ({
       id: inv.id,
-      email: inv.users.email,
-      firstName: inv.users.firstName,
-      lastName: inv.users.lastName || "",
-      phone: inv.users.phone || "",
-      status: inv.users.status,
+      email: inv.tenant.email,
+      firstName: inv.tenant.firstName,
+      lastName: inv.tenant.lastName || "",
+      phone: inv.tenant.phone || "",
+      status: inv.tenant.status,
       isUsed: inv.isUsed,
       usedAt: inv.usedAt,
       createdAt: inv.createdAt,

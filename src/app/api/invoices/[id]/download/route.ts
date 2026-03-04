@@ -51,38 +51,7 @@ export async function GET(
       orderBy: { type: 'asc' }
     });
 
-    const invoices: Invoice[] = rawInvoices.map((invoice) => ({
-      totalAmount: Number(invoice.totalAmount),
-      status: String(invoice.status),
-      type: String(invoice.type),
-      InvoiceItem: invoice.InvoiceItem.map((item) => ({
-        description: item.description,
-        amount: Number(item.amount),
-      })),
-      payments: invoice.payments.map((payment) => ({
-        amount: Number(payment.amount),
-      })),
-      Lease: invoice.Lease
-        ? {
-            tenant: invoice.Lease.tenant
-              ? {
-                  firstName: invoice.Lease.tenant.firstName ?? undefined,
-                  lastName: invoice.Lease.tenant.lastName ?? undefined,
-                }
-              : undefined,
-            property: invoice.Lease.property
-              ? {
-                  name: invoice.Lease.property.name ?? undefined,
-                }
-              : undefined,
-            unit: invoice.Lease.unit
-              ? {
-                  unitNumber: invoice.Lease.unit.unitNumber ?? undefined,
-                }
-              : undefined,
-          }
-        : undefined,
-    }));
+    const invoices: InvoiceWithRelations[] = rawInvoices;
 
     if (!invoices.length) {
       return NextResponse.json(
