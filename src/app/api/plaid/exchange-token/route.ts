@@ -3,12 +3,26 @@ import { plaidClient, createStripeBankAccountToken } from "@/lib/payment/service
 import { prisma } from "@/lib/db";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: "2026-01-28.clover"
-});
+let stripeClient: Stripe | null = null;
+
+function getStripeClient() {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+        throw new Error("Stripe not configured: STRIPE_SECRET_KEY is missing");
+    }
+
+    if (!stripeClient) {
+        stripeClient = new Stripe(stripeSecretKey, {
+            apiVersion: "2026-01-28.clover"
+        });
+    }
+
+    return stripeClient;
+}
 
 export async function POST(req: Request) {
     try {
+        const stripe = getStripeClient();
         const body = await req.json();
         const { publicToken, accountId, userId } = body; // Data from Frontend
 
