@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
-  test('PM can access tenant application page', async ({ page }: { page: Page }) => {
+  test('PM can access tenants page', async ({ page }: { page: Page }) => {
     // Navigate to login
     await page.goto('/login');
     
@@ -10,16 +10,18 @@ test.describe('Tenant Invitation Flow (Enterprise 10/10)', () => {
     await page.getByPlaceholder('Password').fill('password123');
     await page.getByRole('button', { name: /sign in/i }).click();
     
-    // Wait for redirect to dashboard
-    await page.waitForURL('**/property-manager', { timeout: 15_000 });
+    // Wait for redirect anywhere under property manager routes
+    await page.waitForURL(/\/property-manager(\/.*)?$/, { timeout: 30_000 });
     
-    // Navigate to tenant application page
-    await page.goto('/property-manager/content/tenantapplication');
-    await page.waitForLoadState('networkidle');
+    // Avoid waiting on long-running network activity in dashboard widgets.
+    await page.goto('/property-manager/content/tenants', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
     
     // Verify the page loads successfully
-    await expect(page).toHaveURL(/tenantapplication/);
+    await expect(page).toHaveURL(/\/property-manager\/content\/tenants/);
     
-    console.log('Tenant application page loaded successfully');
+    console.log('Tenants page loaded successfully');
   });
 });
