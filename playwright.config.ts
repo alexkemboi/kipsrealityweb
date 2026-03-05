@@ -12,9 +12,9 @@ export default defineConfig({
 
   use: {
     baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
-    trace: "on-first-retry",
+    trace: isCI ? "retain-on-failure" : "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: isCI ? "off" : "retain-on-failure",
   },
 
   projects: [
