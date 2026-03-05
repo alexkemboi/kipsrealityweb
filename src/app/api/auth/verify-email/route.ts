@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import crypto from 'crypto';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -23,9 +24,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
     // 1. Find user
     const user = await prisma.user.findUnique({
-      where: { verificationToken: token },
+      where: { verificationToken: hashedToken },
     });
 
     if (!user) {

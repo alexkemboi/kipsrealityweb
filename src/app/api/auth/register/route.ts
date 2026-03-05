@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '@/lib/mail-service';
+import { getBaseUrl } from '@/lib/constants';
 
 // UserRole type - matches OrganizationUser.role accepted values
 type UserRole = 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'VENDOR' | 'TENANT' | 'AGENT';
@@ -153,11 +154,18 @@ export async function POST(request: Request) {
     // 6. Send Verification Email (send raw token; DB stores hash only)
     await sendVerificationEmail(result.email, emailVerificationToken);
 
+    const smtpConfigured = Boolean(process.env.SMTP_USER && process.env.SMTP_PASSWORD);
+    const isDevLike = process.env.NODE_ENV !== 'production';
+    const verificationUrl = `${getBaseUrl()}/api/auth/verify-email?token=${emailVerificationToken}`;
+
     return NextResponse.json(
       {
         success: true,
-        message: 'Account created. Please check your email.',
+        message: smtpConfigured
+          ? 'Account created. Please check your email.'
+          : 'Account created. SMTP is not configured in this environment, so email delivery was skipped.',
         userId: result.id,
+        ...(isDevLike && !smtpConfigured ? { verificationUrl } : {}),
       },
       { status: 201 }
     );

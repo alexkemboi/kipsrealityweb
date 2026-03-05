@@ -37,6 +37,10 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [successMessage, setSuccessMessage] = useState("Please check your inbox to verify your account before logging in.");
+  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -50,6 +54,15 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
       setFormData(prev => ({ ...prev, role: propRole }));
     }
   }, [propRole]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // ✅ Input Handler
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -156,6 +169,8 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
       }
 
       setIsSuccess(true);
+      setSuccessMessage(result?.message || "Please check your inbox to verify your account before logging in.");
+      setDevVerificationUrl(typeof result?.verificationUrl === 'string' ? result.verificationUrl : null);
       toast.success("Account created successfully! Please check your email.");
 
       // Removed auto-redirect
@@ -167,6 +182,41 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
       toast.error(message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      toast.error('Missing email address for resend request.');
+      return;
+    }
+
+    if (resendCooldown > 0) {
+      return;
+    }
+
+    try {
+      setIsResending(true);
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to resend verification email right now.');
+      }
+
+      toast.success(data?.message || 'If your account is pending verification, we sent a new email.');
+      setSuccessMessage(data?.message || 'If your account is pending verification, we sent a new email.');
+      setDevVerificationUrl(typeof data?.verificationUrl === 'string' ? data.verificationUrl : null);
+      setResendCooldown(60);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unable to resend verification email right now.';
+      toast.error(message);
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -205,9 +255,36 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
               We have sent a verification link to <span className="font-semibold text-gray-900">{formData.email}</span>.
             </p>
             <p className="text-sm text-gray-400">
-              Please check your inbox to verify your account before logging in.
+              {successMessage}
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={isResending || resendCooldown > 0}
+            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline disabled:opacity-60"
+          >
+            {isResending
+              ? "Sending..."
+              : resendCooldown > 0
+                ? `Resend available in ${resendCooldown}s`
+                : "Resend verification email"}
+          </button>
+
+          {devVerificationUrl && (
+            <div className="space-y-1">
+              <p className="text-xs text-amber-700">
+                SMTP is not configured in this environment. Use the link below to verify directly.
+              </p>
+              <a
+                href={devVerificationUrl}
+                className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+              >
+                Verify now (dev only)
+              </a>
+            </div>
+          )}
 
           <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline mt-4 block">
             &larr; Return to Login

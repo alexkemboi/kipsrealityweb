@@ -18,6 +18,10 @@ const LoginPageContent = () => {
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [devVerificationUrl, setDevVerificationUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -48,6 +52,15 @@ const LoginPageContent = () => {
     }
   }, [searchParams, router]);
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -57,6 +70,8 @@ const LoginPageContent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setShowResendVerification(false);
+    setDevVerificationUrl(null);
 
     if (!formData.email || !formData.password) {
       setError("Please fill in all fields");
@@ -110,6 +125,9 @@ const LoginPageContent = () => {
         } else if (response.status === 401) {
           // credential mismatch
           errorMsg = 'Invalid email or password.';
+        } else if (response.status === 403 && err?.requiresVerification) {
+          errorMsg = 'Please verify your email before logging in.';
+          setShowResendVerification(true);
         }
 
         setError(errorMsg);
@@ -121,6 +139,42 @@ const LoginPageContent = () => {
       toast.error(errorMsg, { duration: 4000 });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!formData.email) {
+      setError('Enter your email first to resend verification.');
+      return;
+    }
+
+    if (resendCooldown > 0) {
+      return;
+    }
+
+    try {
+      setIsResending(true);
+      const response = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || 'Unable to resend verification email right now.');
+      }
+
+      toast.success(data?.message || 'If your account is pending verification, we sent a new email.');
+      setDevVerificationUrl(typeof data?.verificationUrl === 'string' ? data.verificationUrl : null);
+      setResendCooldown(60);
+      setError('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to resend verification email right now.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -189,6 +243,36 @@ const LoginPageContent = () => {
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-600 text-sm text-center">{error}</p>
+          </div>
+        )}
+
+        {showResendVerification && (
+          <div className="space-y-2 text-center">
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={isResending || resendCooldown > 0}
+              className="w-full text-sm text-[#003b73] hover:underline disabled:opacity-60"
+            >
+              {isResending
+                ? 'Sending verification email...'
+                : resendCooldown > 0
+                  ? `Resend available in ${resendCooldown}s`
+                  : 'Resend verification email'}
+            </button>
+            {devVerificationUrl && (
+              <div className="space-y-1">
+                <p className="text-xs text-amber-700">
+                  SMTP is not configured in this environment. Use the link below to verify directly.
+                </p>
+                <a
+                  href={devVerificationUrl}
+                  className="text-xs text-neutral-500 hover:text-neutral-700 underline"
+                >
+                  Verify now (dev only)
+                </a>
+              </div>
+            )}
           </div>
         )}
 
