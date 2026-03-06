@@ -3,9 +3,8 @@
 
 import Image
   from "next/image";
-import Link from "next/link";
 
-import { MapPin, Clock, ArrowLeft, Phone, Mail } from "lucide-react";
+import { MapPin, Clock, Phone } from "lucide-react";
 import React from "react";
 import { MarketplaceItem } from "@/app/data/marketplaceData"
 

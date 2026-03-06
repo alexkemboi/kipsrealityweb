@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { FileText, Upload, Trash2, FileCheck } from "lucide-react";
+import { FileText, Upload, FileCheck } from "lucide-react";
 import { LeaseDocument_documentType } from "@prisma/client";
 
 interface Lease {

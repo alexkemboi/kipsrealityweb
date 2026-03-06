@@ -1,6 +1,6 @@
 "use client";
 
-import { Building, Bed, Bath, DollarSign, Users, Home, Utensils } from "lucide-react";
+import { Building, Bed, Bath, Home } from "lucide-react";
 import Link from "next/link";
 
 interface Unit {

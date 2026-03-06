@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Bell,
   Search,
@@ -23,15 +22,11 @@ export function DashboardNavbar({ toggleSidebar: toggleSidebarProp, user: userPr
   email?: string;
   avatar?: string;
 } | null }) {
-  const router = useRouter();
-  const { user: authUser } = useAuth();
+  const { user: authUser, logout } = useAuth();
   
   // Proper null handling - prefer userProp but fall back to authUser only if needed
   // If neither is available, show loading state
   const user = userProp ?? authUser;
-  
-  // Show loading state if user is not available
-  const isLoading = !user && !authUser;
   
   const { setMobileDrawerOpen } = useDashboard();
   const toggleSidebar = toggleSidebarProp ?? (() => setMobileDrawerOpen(true));
@@ -49,21 +44,31 @@ export function DashboardNavbar({ toggleSidebar: toggleSidebarProp, user: userPr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const settingsBasePath = (() => {
+    const role = user?.role;
+    switch (role) {
+      case "SYSTEM_ADMIN":
+        return "/admin/settings";
+      case "PROPERTY_MANAGER":
+        return "/property-manager/settings";
+      case "TENANT":
+        return "/tenant/settings";
+      case "VENDOR":
+        return "/vendor/settings";
+      case "AGENT":
+        return "/agent/settings";
+      default:
+        return "/login";
+    }
+  })();
+
   // ✅ FIX: Logout Logic
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      // 1. Clear Local Storage
-      localStorage.removeItem("rentflow_tokens");
-      localStorage.removeItem("rentflow_user"); // Also clear user data if it exists under this key
-
-      // 2. Call Logout API (Optional, to clear cookies)
-      await fetch("/api/auth/logout", { method: "POST" });
-
-      // 3. Force Redirect to Login
-      window.location.href = "/login";
+      logout();
     } catch (error) {
       console.error("Logout failed", error);
-      // Force redirect anyway
+      // Fallback hard redirect if context logout fails unexpectedly.
       window.location.href = "/login";
     }
   };
@@ -137,7 +142,7 @@ export function DashboardNavbar({ toggleSidebar: toggleSidebarProp, user: userPr
 
                 <div className="py-1">
                   <Link
-                    href="/property-manager/settings/profile"
+                    href={`${settingsBasePath}/profile`}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"
                     onClick={() => setIsDropdownOpen(false)}
                   >
@@ -145,7 +150,7 @@ export function DashboardNavbar({ toggleSidebar: toggleSidebarProp, user: userPr
                     Profile
                   </Link>
                   <Link
-                    href="/property-manager/settings"
+                    href={settingsBasePath}
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600"
                     onClick={() => setIsDropdownOpen(false)}
                   >

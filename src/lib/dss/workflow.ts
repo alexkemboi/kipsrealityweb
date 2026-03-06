@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { DssDocumentStatus, DssParticipantRole, DssParticipant } from "@prisma/client";
+import { DssDocumentStatus, DssParticipant } from "@prisma/client";
 import { WorkflowResult } from "./types";
 
 /**

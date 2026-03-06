@@ -1,6 +1,5 @@
 // API endpoint for maintenance-listing integration operations
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { maintenanceListingIntegration } from "@/lib/maintenance-listing-integration";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
 

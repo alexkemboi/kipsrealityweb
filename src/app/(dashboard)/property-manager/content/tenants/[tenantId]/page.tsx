@@ -2,15 +2,15 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { fetchInvoicesForTenant, downloadInvoicePDF, generateFullInvoice, generateUtilityInvoice, createManualInvoice } from "@/lib/Invoice";
+import { fetchInvoicesForTenant, generateFullInvoice, generateUtilityInvoice, createManualInvoice } from "@/lib/Invoice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { fetchLeaseForTenant } from "@/lib/InvoiceLease";
-import { GroupedInvoice, Invoice, Payment, InvoiceItem } from "@/app/data/FinanceData";
+import { GroupedInvoice, Invoice, Payment } from "@/app/data/FinanceData";
 
-import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, ChevronDown, ChevronRight, Home, Zap, FileBarChart, ChevronUp } from "lucide-react";
+import { Download, FileText, Calendar, DollarSign, CreditCard, AlertCircle, Eye, Filter, Home, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // PDF Generator function with proper null checking

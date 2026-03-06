@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Search, MapPin, Grid, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import ApplyModal from "./ApplyModal";
 
 export interface MarketplaceItem {

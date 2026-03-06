@@ -1,7 +1,6 @@
 // src/components/finance/TenantCard.tsx
 "use client";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
 
 export default function TenantCard({ lease }: { lease: any }) {
   const router = useRouter();

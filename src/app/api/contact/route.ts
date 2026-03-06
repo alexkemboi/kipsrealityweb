@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 import { NextResponse,NextRequest } from "next/server";
-import { z } from "zod";
 import {contactSchema, ContactData} from "@/app/data/ContactData";
 
 const prisma = new PrismaClient();

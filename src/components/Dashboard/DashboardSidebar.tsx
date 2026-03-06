@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ChevronLeft, Building2, Menu, X } from "lucide-react";
+import { ChevronLeft, Building2, X } from "lucide-react";
 import { DashboardSidebarLinks } from "./DashboardSidebarLinks";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/context/DashboardContext";

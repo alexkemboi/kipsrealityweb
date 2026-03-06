@@ -1,9 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fc from 'fast-check';
 import { 
-    CreateListingData, 
-    ListingStatus, 
-    CreateListingError 
+    ListingStatus 
 } from '../../src/lib/listing-types';
 
 /**

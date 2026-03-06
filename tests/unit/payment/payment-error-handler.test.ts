@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PaymentErrorHandler, PaymentError, PaymentErrorType, DEFAULT_RETRY_CONFIG } from '@/lib/payment/payment-error-handler';
-import { PaymentGateway } from '@prisma/client';
+import { PaymentGateway } from '@/lib/payment/types';
 
 describe('Payment Error Handler', () => {
   let errorHandler: PaymentErrorHandler;
@@ -191,8 +191,8 @@ describe('Payment Error Handler', () => {
       errorHandler.sleep = mockSleep.mockResolvedValue(undefined);
       
       const operation = vi.fn()
-        .mockRejectedValueOnce(new Error('First attempt'))
-        .mockRejectedValueOnce(new Error('Second attempt'))
+        .mockRejectedValueOnce(new Error('Network timeout'))
+        .mockRejectedValueOnce(new Error('Network timeout'))
         .mockResolvedValue('Third attempt success');
       
       await errorHandler.withRetry(operation, 'test-backoff');
@@ -298,7 +298,7 @@ describe('Payment Error Handler', () => {
         { message: 'Paystack API error', expectedGateway: PaymentGateway.PAYSTACK },
         { message: 'Stripe declined', expectedGateway: PaymentGateway.STRIPE },
         { message: 'M-Pesa failed', expectedGateway: PaymentGateway.MPESA_DIRECT },
-        { message: 'Gateway timeout', expectedGateway: undefined }
+        { message: 'Gateway unavailable', expectedGateway: undefined }
       ];
       
       gatewayTests.forEach(({ message, expectedGateway }) => {

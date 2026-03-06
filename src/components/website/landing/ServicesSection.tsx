@@ -1,10 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import aboutBg from "@/assets/hero-cityscape.jpg";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 
 export default function WhatMakes() {
   return (

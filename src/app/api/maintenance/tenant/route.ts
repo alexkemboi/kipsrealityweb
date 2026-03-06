@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/Getcurrentuser";
-import type { MaintenanceRequest } from "@prisma/client";
 
 // GET /api/maintenance/tenant - Get tenant's maintenance requests
 export async function GET(req: NextRequest) {

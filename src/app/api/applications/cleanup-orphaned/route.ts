@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/Getcurrentuser";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";

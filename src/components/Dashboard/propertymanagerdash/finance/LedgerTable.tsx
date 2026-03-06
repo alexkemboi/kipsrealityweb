@@ -1,6 +1,6 @@
 "use client"
 import React from 'react';
-import { Calculator, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Calculator } from 'lucide-react';
 
 interface Account {
     id: string;

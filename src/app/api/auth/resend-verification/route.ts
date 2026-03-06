@@ -78,7 +78,8 @@ export async function POST(request: Request) {
     // Basic throttle to reduce abuse and accidental rapid re-sends.
     const now = Date.now();
     const lastUpdated = new Date(user.updatedAt).getTime();
-    if (now - lastUpdated < RESEND_COOLDOWN_MS && (smtpConfigured || !isDevLike)) {
+    // Enforce resend cooldown in all environments except dev-like without SMTP.
+    if (now - lastUpdated < RESEND_COOLDOWN_MS && !(isDevLike && !smtpConfigured)) {
       await applyTimingPadding(start);
       return jsonNoStore(successResponse, { status: 200 });
     }

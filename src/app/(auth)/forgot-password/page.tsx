@@ -51,6 +51,7 @@ export default function ForgotPasswordPage() {
 
       // Keep loading state while redirecting
       redirectTimeoutRef.current = window.setTimeout(() => {
+        setIsLoading(false);
         router.push("/login");
       }, 2000);
     } catch (error) {
@@ -68,8 +69,11 @@ export default function ForgotPasswordPage() {
           Enter your email address to receive a password reset link.
         </p>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4" aria-busy={isLoading}>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4"
+        aria-busy={isLoading ? "true" : "false"}
+      >
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-gray-700">
             Email Address <span className="text-red-500">*</span>

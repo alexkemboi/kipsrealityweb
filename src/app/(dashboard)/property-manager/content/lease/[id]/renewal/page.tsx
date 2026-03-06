@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, DollarSign, FileText, RefreshCw, Send } from "lucide-react";
+import { Calendar, FileText, RefreshCw, Send } from "lucide-react";
 
 interface Lease {
   id: string;

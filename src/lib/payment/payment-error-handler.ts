@@ -3,7 +3,7 @@
  * Provides standardized error handling, retry mechanisms, and user-friendly messages for payment operations
  */
 
-import { PaymentGateway, TransactionStatus } from '@prisma/client';
+import { PaymentGateway } from './types';
 
 export enum PaymentErrorType {
   NETWORK_ERROR = 'NETWORK_ERROR',
@@ -232,6 +232,7 @@ export class PaymentErrorHandler {
 
     const err = error as Error;
     const errorMessage = err.message || 'Unknown error';
+    const messageLower = errorMessage.toLowerCase();
     
     // Determine error type based on message patterns
     let type = PaymentErrorType.UNKNOWN_ERROR;
@@ -240,59 +241,61 @@ export class PaymentErrorHandler {
 
     // Network errors
     if (
-      errorMessage.includes('network') ||
-      errorMessage.includes('fetch') ||
-      errorMessage.includes('connection')
+      messageLower.includes('network') ||
+      messageLower.includes('fetch') ||
+      messageLower.includes('connection') ||
+      messageLower.includes('socket')
     ) {
       type = PaymentErrorType.NETWORK_ERROR;
       retryable = true;
     }
     // Timeout errors
-    else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    else if (messageLower.includes('timeout') || messageLower.includes('timed out')) {
       type = PaymentErrorType.TIMEOUT_ERROR;
       retryable = true;
     }
     // Authentication errors
     else if (
-      errorMessage.includes('auth') ||
-      errorMessage.includes('unauthorized') ||
-      errorMessage.includes('invalid credentials')
+      messageLower.includes('auth') ||
+      messageLower.includes('unauthorized') ||
+      messageLower.includes('invalid credentials')
     ) {
       type = PaymentErrorType.AUTHENTICATION_ERROR;
     }
     // Validation errors
     else if (
-      errorMessage.includes('invalid') ||
-      errorMessage.includes('validation') ||
-      errorMessage.includes('required')
+      messageLower.includes('invalid') ||
+      messageLower.includes('validation') ||
+      messageLower.includes('required')
     ) {
       type = PaymentErrorType.VALIDATION_ERROR;
     }
     // Payment gateway errors
     else if (
-      errorMessage.includes('paystack') ||
-      errorMessage.includes('stripe') ||
-      errorMessage.includes('mpesa') ||
-      errorMessage.includes('gateway')
+      messageLower.includes('paystack') ||
+      messageLower.includes('stripe') ||
+      messageLower.includes('mpesa') ||
+      messageLower.includes('m-pesa') ||
+      messageLower.includes('gateway')
     ) {
       type = PaymentErrorType.PAYMENT_GATEWAY_ERROR;
       retryable = true;
       
       // Determine gateway
-      if (errorMessage.toLowerCase().includes('paystack')) {
+      if (messageLower.includes('paystack')) {
         gateway = PaymentGateway.PAYSTACK;
-      } else if (errorMessage.toLowerCase().includes('stripe')) {
+      } else if (messageLower.includes('stripe')) {
         gateway = PaymentGateway.STRIPE;
-      } else if (errorMessage.toLowerCase().includes('mpesa')) {
+      } else if (messageLower.includes('mpesa') || messageLower.includes('m-pesa')) {
         gateway = PaymentGateway.MPESA_DIRECT;
       }
     }
     // Fraud detection
-    else if (errorMessage.includes('fraud') || errorMessage.includes('suspicious')) {
+    else if (messageLower.includes('fraud') || messageLower.includes('suspicious')) {
       type = PaymentErrorType.FRAUD_DETECTED;
     }
     // Insufficient funds
-    else if (errorMessage.includes('insufficient') || errorMessage.includes('funds')) {
+    else if (messageLower.includes('insufficient') || messageLower.includes('funds')) {
       type = PaymentErrorType.INSUFFICIENT_FUNDS;
     }
 

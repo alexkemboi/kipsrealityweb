@@ -8,7 +8,7 @@ function LoginFallback() {
       role="status"
       aria-live="polite"
     >
-      Loading login...
+      <span>Loading login...</span>
     </div>
   );
 }

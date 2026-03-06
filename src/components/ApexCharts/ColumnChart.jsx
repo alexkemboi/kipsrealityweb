@@ -1,7 +1,6 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ApexAxisChartSeries, ApexOptions } from "apexcharts";
 import { useMemo } from "react";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), {
@@ -18,7 +17,8 @@ const ApexChart = dynamic(() => import("react-apexcharts"), {
 });
 
 export default function ColumnChart() {
-  const series = useMemo<ApexAxisChartSeries>(
+  /** @type {import("apexcharts").ApexAxisChartSeries} */
+  const series = useMemo(
     () => [
       {
         name: "Net Profit",
@@ -36,7 +36,8 @@ export default function ColumnChart() {
     []
   );
 
-  const options = useMemo<ApexOptions>(
+  /** @type {import("apexcharts").ApexOptions} */
+  const options = useMemo(
     () => ({
       chart: {
         type: "bar",
@@ -80,7 +81,7 @@ export default function ColumnChart() {
       },
       tooltip: {
         y: {
-          formatter: (val: number) => `$ ${val} thousands`,
+          formatter: (val) => `$ ${val} thousands`,
         },
       },
       legend: {

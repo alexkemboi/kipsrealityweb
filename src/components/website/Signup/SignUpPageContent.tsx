@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Mail } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -275,7 +275,7 @@ const SignupPageContent = ({ role: propRole }: SignUpPageContentProps) => {
           {devVerificationUrl && (
             <div className="space-y-1">
               <p className="text-xs text-amber-700">
-                SMTP is not configured in this environment. Use the link below to verify directly.
+                Email delivery is not available in this environment. Use the link below to verify directly.
               </p>
               <a
                 href={devVerificationUrl}

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(url.searchParams.get("limit") || "20");
 
         // Build where clause based on filters
-        let whereClause: any = {
+        const whereClause: any = {
             Lease: {
                 property: {
                     manager: {

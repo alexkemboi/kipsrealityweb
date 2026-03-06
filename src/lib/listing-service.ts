@@ -5,12 +5,8 @@ import { prisma } from "./db";
 import { auditService } from "./audit-service";
 import { applicationListingIntegration, createListingChangeEvent } from "./application-listing-integration";
 import { 
-    listingErrorHandler, 
-    ListingError, 
-    ListingErrorType, 
-    ErrorSeverity,
+    listingErrorHandler,
     validateRequiredFields,
-    validatePermissions,
     createNotFoundError,
     createConflictError
 } from "./listing-error-handler";
@@ -26,7 +22,6 @@ import {
     BulkListingOperation,
     BulkListingActionType,
     BulkResult,
-    ListingAuditEntry,
     CreateListingError,
     RemoveListingError,
     UpdateStatusError,

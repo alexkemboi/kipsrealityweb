@@ -3,6 +3,19 @@ import nodemailer from 'nodemailer';
 import { render } from '@react-email/render';
 import React from 'react';
 
+const DEFAULT_SMTP_TIMEOUT_MS = 10_000;
+const MIN_SMTP_TIMEOUT_MS = 1_000;
+const MAX_SMTP_TIMEOUT_MS = 60_000;
+
+function getSmtpTimeoutMs() {
+    const raw = Number(process.env.SMTP_TIMEOUT_MS);
+    if (!Number.isFinite(raw)) {
+        return DEFAULT_SMTP_TIMEOUT_MS;
+    }
+
+    return Math.min(MAX_SMTP_TIMEOUT_MS, Math.max(MIN_SMTP_TIMEOUT_MS, Math.floor(raw)));
+}
+
 export function getMissingSmtpEnvVars() {
     const required = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD'];
     return required.filter((key) => !process.env[key]);
@@ -13,10 +26,15 @@ export function isSmtpConfigured() {
 }
 
 function createTransporter() {
+    const timeoutMs = getSmtpTimeoutMs();
+
     return nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT),
         secure: process.env.SMTP_SECURE === 'true',
+        connectionTimeout: timeoutMs,
+        greetingTimeout: timeoutMs,
+        socketTimeout: timeoutMs,
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASSWORD,

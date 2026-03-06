@@ -34,7 +34,6 @@ export default function InvoicesPage() {
 
     const q = qs.toString();
     router.replace(`/property-manager/finance/invoices${q ? `?${q}` : ""}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, type, pastDue]);
   const queryString = useMemo(() => {
     const qs = new URLSearchParams();
@@ -47,7 +46,6 @@ export default function InvoicesPage() {
   // Keep URL synced with filters
   useEffect(() => {
     router.replace(`/property-manager/finance/invoices${queryString ? `?${queryString}` : ""}`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString]);
 
   const loadInvoices = async () => {
@@ -66,7 +64,6 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     loadInvoices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, type, pastDue]);
 
   const downloadPDF = () => {

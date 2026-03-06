@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Copy, CheckCircle2, Clock, Trash2, Send, X } from "lucide-react";
+import { Copy, CheckCircle2, Clock, Send, X } from "lucide-react";
 
 interface Invite {
   id: string;

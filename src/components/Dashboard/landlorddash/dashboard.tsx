@@ -1,10 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
-import Navbar from "../Navbar/Navbar";
-import Footer from "../Footer/Footer";
 import TopCards from "./TopCards";
 
-import { AreaChart } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Disable SSR for ApexCharts

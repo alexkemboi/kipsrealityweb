@@ -66,8 +66,8 @@ test.describe('Financial Core Workflow', () => {
     await passwordInput.fill(E2E_MANAGER_PASSWORD);
 
     console.log('DEBUG: Filling credentials and clicking sign-in');
-    const loginResponsePromise = page.waitForResponse((resp) =>
-      resp.url().includes('/api/auth/login') && resp.request().method() === 'POST'
+    const loginResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/auth/login') && response.request().method() === 'POST'
     );
     await page.click('button[type="submit"]');
     const loginResponse = await loginResponsePromise;

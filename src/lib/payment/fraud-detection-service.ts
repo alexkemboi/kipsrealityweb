@@ -3,8 +3,8 @@
  * Provides basic fraud detection rules for payment transactions
  */
 
-import { PaymentRequest, PaymentResult } from './types';
-import { PaymentError, PaymentErrorType } from './payment-error-handler';
+import { PaymentRequest } from './types';
+import { PaymentError } from './payment-error-handler';
 
 export interface FraudDetectionRule {
   name: string;
@@ -287,7 +287,7 @@ export class FraudDetectionService {
     request: PaymentRequest,
     context: FraudDetectionContext
   ): Promise<FraudDetectionResult> {
-    const now = new Date();
+    const now = context.timestamp;
     const hour = now.getHours();
     
     // Normal business hours: 8 AM - 8 PM

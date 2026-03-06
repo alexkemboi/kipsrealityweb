@@ -1,5 +1,4 @@
 // Service for managing lease-related notifications and alerts
-import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 
 export interface LeaseNotificationConfig {

@@ -1,5 +1,13 @@
-import { PaymentGateway, TransactionStatus, User, Organization } from "@prisma/client";
-export { PaymentGateway, TransactionStatus };
+import { TransactionStatus, User, Organization } from "@prisma/client";
+export { TransactionStatus };
+
+export const PaymentGateway = {
+    PAYSTACK: "PAYSTACK",
+    STRIPE: "STRIPE",
+    MPESA_DIRECT: "MPESA_DIRECT",
+} as const;
+
+export type PaymentGateway = (typeof PaymentGateway)[keyof typeof PaymentGateway];
 
 export interface PaymentRequest {
     user: User;

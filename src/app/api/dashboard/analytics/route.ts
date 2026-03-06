@@ -88,7 +88,7 @@ export async function GET(req: Request) {
         const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
         // --- TIME RANGE LOGIC ---
         const timeRange = searchParams.get("timeRange") || "6m"; // Default to 6 months
-        let chartStartDate = new Date();
+        const chartStartDate = new Date();
         let monthsToLookBack = 6;
 
         switch (timeRange) {

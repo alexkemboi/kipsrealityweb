@@ -12,7 +12,7 @@ import fc from 'fast-check';
 import { prisma } from '@/lib/db';
 import { listingService } from '@/lib/listing-service';
 import { maintenanceListingIntegration } from '@/lib/maintenance-listing-integration';
-import { ListingStatus, ListingAction, MaintenanceModeConfig } from '@/lib/listing-types';
+import { ListingStatus, MaintenanceModeConfig } from '@/lib/listing-types';
 import { MaintenanceRequest_status, Priority, RequestCategory } from '@prisma/client';
 
 // Test data generators

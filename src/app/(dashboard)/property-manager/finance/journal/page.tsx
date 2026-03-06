@@ -80,7 +80,6 @@ export default function JournalPage() {
 
       try {
         const res = await fetch(`/api/finance/journal?${queryString}`, {
-        const res = await fetch(`/api/finance/journal?${queryString}`, {
           cache: "no-store",
           ...(signal ? { signal } : {})
         });
@@ -89,7 +88,6 @@ export default function JournalPage() {
           throw new Error(`Request failed (${res.status})`);
         }
 
-        const result: JournalApiResponse = await res.json();
         const result: JournalApiResponse = await res.json();
 
         if (!result.success) {
@@ -123,7 +121,6 @@ export default function JournalPage() {
     const controller = new AbortController();
     fetchJournal(controller.signal);
     return () => controller.abort();
-  }, [fetchJournal]);
   }, [fetchJournal]);
 
   const canGoPrev = page > 1 && !loading;

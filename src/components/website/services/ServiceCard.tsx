@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowUpRight, Zap, CheckCircle2, Sparkles, HelpCircle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { theme } from "@/app/data/servicesData";
 

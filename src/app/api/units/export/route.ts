@@ -342,7 +342,7 @@ function generateUnitCSV(units: any[], options?: UnitExportOptions): string {
         'Organization'
     ];
 
-    let columns = [...baseColumns];
+    const columns = [...baseColumns];
     
     // Add custom fields if specified
     if (options?.customFields) {

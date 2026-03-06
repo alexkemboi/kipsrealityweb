@@ -11,26 +11,80 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { prisma } from '@/lib/db';
 import { applicationControlService } from '@/lib/application-control-service';
-import { applicationListingIntegration, createListingChangeEvent } from '@/lib/application-listing-integration';
-import { ListingStatus, ListingAction } from '@/lib/listing-types';
+import { ListingStatus } from '@/lib/listing-types';
+import { ApplicationStatus, type Prisma } from "@prisma/client";
+
+// Add near top of file
+function buildPropertyCreateData(input: {
+  id?: string;
+  name: string;
+  city: string;
+  managerId?: string;
+  organizationId?: string;
+}): Prisma.PropertyUncheckedCreateInput {
+  return {
+    id: input.id,
+    name: input.name,
+    city: input.city,
+    // required in current schema
+    address: "Test Address",
+    zipCode: "00000",
+    managerId: input.managerId ?? null,
+    organizationId: input.organizationId ?? null,
+  };
+}
+
+function buildTenantApplicationCreateData(input: {
+  id?: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  dob?: Date;
+  moveInDate?: Date;
+  unitId: string;
+  propertyId?: string;
+  userId?: string | null;
+  status?: ApplicationStatus;
+}): Prisma.TenantapplicationUncheckedCreateInput {
+  return {
+    id: input.id,
+    fullName: input.fullName,
+    email: input.email,
+    phone: input.phone,
+    dob: input.dob ?? new Date("1995-01-01T00:00:00.000Z"),
+    leaseType: "long-term",
+    occupancyType: "single",
+    moveInDate: input.moveInDate ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    leaseDuration: "12",
+    consent: true,
+    propertyId: input.propertyId ?? "",
+    userId: input.userId ?? null,
+    unitId: input.unitId,
+    status: input.status ?? ApplicationStatus.PENDING,
+  };
+}
 
 // Test data generators for property-based testing
-function generateApplicationData(unitId: string, propertyId: string, userId?: string) {
+function generateApplicationData(unitId: string, propertyId: string, userId?: string): Prisma.TenantapplicationUncheckedCreateInput {
+  const fullName = `Test Applicant ${Math.floor(Math.random() * 1000)}`.trim();
+  const dob = new Date(1990 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+  const moveInDate = new Date(Date.now() + Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000);
+
   return {
     id: `app-${Math.random().toString(36).substr(2, 9)}`,
-    fullName: `Test Applicant ${Math.floor(Math.random() * 1000)}`,
+    fullName,
     email: `applicant-${Math.random().toString(36).substr(2, 9)}@example.com`,
     phone: `+1${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-    dob: new Date(1990 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+    dob,
     leaseType: Math.random() > 0.5 ? 'long-term' : 'short-term',
     occupancyType: ['single', 'family', 'shared'][Math.floor(Math.random() * 3)],
-    moveInDate: new Date(Date.now() + Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000), // Next 90 days
-    leaseDuration: (Math.floor(Math.random() * 24) + 6).toString(), // 6-30 months
+    moveInDate,
+    leaseDuration: (Math.floor(Math.random() * 24) + 6).toString(),
     consent: true,
-    unitId,
     propertyId,
+    unitId,
     userId: userId || null,
-    status: 'PENDING'
+    status: ApplicationStatus.PENDING
   };
 }
 
@@ -51,6 +105,8 @@ function generatePropertyData(managerId: string) {
     id: `prop-${Math.random().toString(36).substr(2, 9)}`,
     name: `Test Property ${Math.floor(Math.random() * 1000)}`,
     city: 'Test City',
+    address: 'Test Address',
+    zipCode: '00000',
     managerId,
     organizationId: 'test-org'
   };

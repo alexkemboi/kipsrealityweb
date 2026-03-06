@@ -4,6 +4,24 @@ import { ListingService } from "@/lib/listing-service";
 import { AuditService } from "@/lib/audit-service";
 import { ListingStatus } from "@/lib/listing-types";
 
+// Compatibility helpers
+type FnAny = (...args: any[]) => any;
+
+async function callByArity<T>(
+  fn: FnAny,
+  args2: [any, any],
+  args3: [any, any, any],
+  args4: [any, any, any, any]
+): Promise<T> {
+  if (fn.length <= 2) return fn(...args2);
+  if (fn.length === 3) return fn(...args3);
+  return fn(...args4);
+}
+
+function pickListingId(result: any): string {
+  return result?.id ?? result?.listingId ?? result?.listing?.id ?? "";
+}
+
 describe("Concurrent User Scenarios Integration Tests", () => {
   let listingService: ListingService;
   let auditService: AuditService;
@@ -50,7 +68,7 @@ describe("Concurrent User Scenarios Integration Tests", () => {
           unitNumber: `10${i}`,
           bedrooms: 2,
           bathrooms: 1,
-          rent: 1500 + (i * 100),
+          // rent: 1500 + (i * 100),
           propertyId: testPropertyId
         }
       });

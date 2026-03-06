@@ -1,10 +1,11 @@
 name: Playwright Tests
 
 on:
+  workflow_dispatch:
   push:
-    branches: [main, master, reset-main-branch, fix/schema-definations]
+    branches: [main, master, reset-main-branch, fix/schema-definitions, fix/playwright-tenants-flow]
   pull_request:
-    branches: [main, master, reset-main-branch, fix/schema-definations]
+    branches: [main, master, reset-main-branch, fix/schema-definitions, fix/playwright-tenants-flow]
 
 concurrency:
   group: playwright-${{ github.workflow }}-${{ github.ref }}
@@ -45,9 +46,11 @@ jobs:
       DATABASE_URL: "mysql://testuser:testpass@127.0.0.1:3306/rentflow360_test"
 
       # Next/Auth (adjust to your app)
-      NEXTAUTH_URL: "http://localhost:3000"
-      NEXT_PUBLIC_BASE_URL: "http://localhost:3000"
-      NEXT_PUBLIC_API_URL: "http://localhost:3000"
+      NEXTAUTH_URL: "http://127.0.0.1:3000"
+      NEXT_PUBLIC_BASE_URL: "http://127.0.0.1:3000"
+      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3000"
+      E2E_MANAGER_EMAIL: ${{ secrets.E2E_MANAGER_EMAIL }}
+      E2E_MANAGER_PASSWORD: ${{ secrets.E2E_MANAGER_PASSWORD }}
 
       # Secrets for CI only
       JWT_SECRET: "ci-jwt-secret-secure-enough"
@@ -82,7 +85,7 @@ jobs:
 
       # If you have a seed script (highly recommended)
       - name: Seed E2E database
-        run: node --loader ts-node/esm scripts/seed-e2e.ts
+        run: npx tsx scripts/seed-e2e.ts
         # If your seed runs via package.json:
         # run: npm run seed:e2e
 
@@ -92,12 +95,20 @@ jobs:
       # If your playwright config starts webServer, you can run tests directly.
       # Otherwise, start Next and run tests.
       - name: Run Playwright tests
-        run: npx playwright test tests/e2e/invite-flow.spec.ts --project=chromium --reporter=line
+        run: npx playwright test tests/e2e --project=chromium --reporter=line
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+        if: ${{ always() }}
         with:
           name: playwright-report
           path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Playwright test results
+        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: playwright-test-results
+          path: test-results/
           retention-days: 30

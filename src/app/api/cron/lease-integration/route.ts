@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { leaseListingIntegration } from "@/lib/lease-listing-integration";
-import { Lease_leaseStatus } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
     try {

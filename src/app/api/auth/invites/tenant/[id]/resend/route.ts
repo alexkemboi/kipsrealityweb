@@ -161,7 +161,7 @@ export async function POST(
     // --- 7) Send email ---
     try {
       await sendTenantInviteEmail(
-        invite.email,
+        updatedInvite.email,
         tenantFirstName,
         propertyName,
         unitNumber,

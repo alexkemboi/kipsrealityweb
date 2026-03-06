@@ -23,9 +23,9 @@ interface Vendor {
 }
 
 type Request = {
-  id: String,
-  title: String,
-  status: String,
+  id: string,
+  title: string,
+  status: string,
 }
 export default function VendorDetailsPage() {
   const router = useRouter();

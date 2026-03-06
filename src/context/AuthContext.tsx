@@ -8,7 +8,7 @@ interface User {
     email: string;
     firstName: string;
     lastName: string;
-    role: 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR';
+    role: 'SYSTEM_ADMIN' | 'PROPERTY_MANAGER' | 'TENANT' | 'VENDOR' | 'AGENT';
     avatarUrl?: string;
     phone?: string | null;
     phoneVerified?: Date | null;
@@ -44,6 +44,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_KEYS = {
     USER: 'rentflow_user',
     TOKENS: 'rentflow_tokens'
+};
+
+const EMPTY_TOKENS: AuthTokens = {
+    accessToken: '',
+    refreshToken: '',
+    expiresAt: 0,
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -92,8 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedUser = getStoredUser();
         if (storedUser) {
             setUser(storedUser);
-        } else {
-            console.log('AuthContext - No user found in storage');
         }
         setIsLoading(false);
     };
@@ -104,8 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = (userData: User, tokens: AuthTokens) => {
         // Make sure the API returns organizationUserId here
+        const safeTokens = tokens || EMPTY_TOKENS;
         setStoredUser(userData);
-        setStoredTokens(tokens);
+        setStoredTokens(safeTokens);
         setUser(userData);
     };
 
@@ -113,12 +118,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStoredUser(null);
         setStoredTokens(null);
         setUser(null);
-        router.push('/login');
+        router.replace('/login');
     };
 
     const refreshUser = async () => {
         try {
-            const response = await fetch('/api/auth/me');
+            const response = await fetch('/api/auth/me', {
+                method: 'GET',
+                cache: 'no-store',
+                credentials: 'include',
+            });
             if (response.ok) {
                 const data = await response.json();
                 // The endpoint returns user data directly, not wrapped in a user object
@@ -128,7 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser(userData);
                 }
             } else {
-                console.error('Failed to refresh user:', response.statusText);
+                setStoredUser(null);
+                setUser(null);
             }
         } catch (error) {
             console.error('Failed to refresh user:', error);

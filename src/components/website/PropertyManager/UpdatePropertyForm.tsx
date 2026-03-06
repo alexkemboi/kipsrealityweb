@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Property } from "@/app/data/PropertyData";
 import { PropertyType } from "@/app/data/PropertTypeData";
 import { Appliance } from "@/app/data/ApplianceData";
 import { fetchPropertyTypes } from "@/lib/property-type";
 import { fetchAppliances } from "@/lib/appliance";
-import { updateProperty, PropertyPayload } from "@/lib/property-manager";
+import { updateProperty } from "@/lib/property-manager";
 import { HomeIcon } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";

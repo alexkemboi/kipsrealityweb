@@ -129,7 +129,7 @@ body {
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.488 0.243 259.3);
 
-    --gradient-primary: linear-gradient(135deg, var(--color-blue-700), var(--color-blue-800));
+    --gradient-primary: linear-gradient(135deg, var(--color-navy-700), var(--color-navy-800));
     --gradient-hero-overlay: linear-gradient(135deg, oklch(0.141 0.005 285.823 / 0.95), oklch(0.21 0.006 285.885 / 0.9));
   }
 }

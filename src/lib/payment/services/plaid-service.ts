@@ -17,7 +17,6 @@ export async function createStripeBankAccountToken(accessToken: string, accountI
     const response = await plaidClient.processorTokenCreate({
         access_token: accessToken,
         account_id: accountId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         processor: 'stripe' as any, // Using type assertion due to Plaid enum type mismatch
     });
     return response.data.processor_token;

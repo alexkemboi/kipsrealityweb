@@ -2,7 +2,11 @@
 
 import { Suspense, useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Button, TextField, Card, Typography, CircularProgress } from '@mui/material'
+import { Button } from '@mui/material'
+import Card from '@mui/material/Card'
+import CircularProgress from '@mui/material/CircularProgress'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
 import { toast } from 'react-toastify'
 
 interface FormData {
@@ -15,14 +19,58 @@ interface FormData {
   leaseId?: string
 }
 
+interface LeaseStatusResponse {
+  tenantSignedAt?: string | null
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message
+  }
+
+  return 'Something went wrong.'
+}
+
+async function getResponseErrorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data: unknown = await res.json()
+    if (data && typeof data === 'object' && 'error' in data) {
+      const maybeError = (data as { error?: unknown }).error
+      if (typeof maybeError === 'string' && maybeError.trim()) {
+        return maybeError
+      }
+    }
+  } catch {
+    // Keep fallback when response isn't JSON.
+  }
+
+  return res.statusText || fallback
+}
+
+function persistInviteToken(token: string) {
+  window.sessionStorage.setItem('tenantInviteToken', token)
+}
+
 function AcceptInviteForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const email = searchParams.get('email')
+  const token = searchParams.get('token')
+  const leaseId = searchParams.get('leaseId')
+
   const [loading, setLoading] = useState(false)
   const [inviteValid, setInviteValid] = useState(true)
   const [leaseSigned, setLeaseSigned] = useState(false)
   const [checkingLease, setCheckingLease] = useState(true)
-
   const [formData, setFormData] = useState<FormData>({
     email: '',
     token: '',
@@ -34,18 +82,14 @@ function AcceptInviteForm() {
   })
 
   useEffect(() => {
-    const email = searchParams.get('email')
-    const token = searchParams.get('token')
-    const leaseId = searchParams.get('leaseId')
-
-    console.log("Accept page URL params:", { email, token, leaseId }) // Debug
-
     if (!email || !token || !leaseId) {
-      console.error("Missing required params:", { email: !!email, token: !!token, leaseId: !!leaseId })
       setInviteValid(false)
       setCheckingLease(false)
       return
     }
+
+    let cancelled = false
+    const controller = new AbortController()
 
     setFormData(prev => ({
       ...prev,
@@ -57,37 +101,67 @@ function AcceptInviteForm() {
     // Check if tenant signed lease
     async function checkLease() {
       try {
-        // IMPORTANT: Include token in request
-        const res = await fetch(`/api/lease/${leaseId}?token=${token}`)
-        const data = await res.json()
-
-        console.log("Lease check response:", data) // Debug
+        // Include token in Authorization header to avoid leaking it in URL/query logs.
+        const res = await fetch(`/api/lease/${leaseId}`, {
+          signal: controller.signal,
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
 
         if (!res.ok) {
-          console.error("Lease fetch error:", data.error)
+          const errorMessage = await getResponseErrorMessage(res, 'Lease fetch error')
+          console.error('Lease fetch error:', errorMessage)
+          if (cancelled) return
           setInviteValid(false)
           setCheckingLease(false)
           return
         }
 
-        if (data.tenantSignedAt) {
-          console.log("Lease is signed, showing form")
+        let data: LeaseStatusResponse
+        try {
+          const parsed: unknown = await res.json()
+          if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Invalid lease response format.')
+          }
+          data = parsed as LeaseStatusResponse
+        } catch (parseErr) {
+          console.error('Failed to parse lease response JSON:', parseErr)
+          if (cancelled) return
+          setInviteValid(false)
+          setCheckingLease(false)
+          return
+        }
+
+        if (cancelled) return
+
+        if (data && data.tenantSignedAt) {
           setLeaseSigned(true)
           setCheckingLease(false)
         } else {
-          console.log("Lease not signed, redirecting to sign page")
-          // Redirect to lease sign page with token
-          router.push(`/invite/tenant/lease/${leaseId}/sign?token=${token}`)
+          persistInviteToken(token)
+          // Replace keeps history cleaner and avoids an extra back-navigation hop.
+          router.replace(`/invite/tenant/lease/${leaseId}/sign`)
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return
+        }
+
         console.error("Lease fetch failed:", err)
+        if (cancelled) return
         setInviteValid(false)
         setCheckingLease(false)
       }
     }
 
     checkLease()
-  }, [searchParams, router])
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [email, token, leaseId, router])
 
   // Handle input change
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -97,33 +171,47 @@ function AcceptInviteForm() {
   // Handle account creation AFTER signing lease
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (loading) return
 
-    if (!leaseSigned) {
-      toast.info('Please sign your lease before creating an account.')
-      router.push(`/invite/tenant/lease/${formData.leaseId}/sign?token=${formData.token}`)
+    if (!formData.leaseId || !formData.token || !formData.email) {
+      toast.error('Invite details are incomplete. Please reopen your invite link.')
       return
     }
 
     setLoading(true)
 
     try {
-      console.log("Creating account with:", formData) // Debug
-
       const res = await fetch(`/api/auth/invites/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
 
-      const data = await res.json()
+      let data: unknown = null
+      try {
+        data = await res.json()
+      } catch (parseError) {
+        if (!res.ok) {
+          throw new Error(`Failed to create account. Server returned status ${res.status}.`)
+        }
+        throw parseError
+      }
 
-      if (!res.ok) throw new Error(data.error)
+      if (!res.ok) {
+        const apiMessage =
+          data && typeof data === 'object' && 'error' in data
+            ? (data as { error?: unknown }).error
+            : undefined
 
-      toast.success('Account created successfully! Redirecting to login...')
-      setTimeout(() => router.push('/login'), 1500)
-    } catch (error: any) {
+        throw new Error(typeof apiMessage === 'string' ? apiMessage : 'Failed to create account.')
+      }
+
+      toast.success('Account created successfully!')
+      router.replace('/dashboard')
+    } catch (error: unknown) {
       console.error("Account creation error:", error)
-      toast.error(error.message || 'Something went wrong.')
+      const message = getErrorMessage(error)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -141,7 +229,7 @@ function AcceptInviteForm() {
           </Typography>
           <Button 
             variant="outlined" 
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
           >
             Go Back
           </Button>
@@ -177,7 +265,12 @@ function AcceptInviteForm() {
           </Typography>
           <Button 
             variant="contained" 
-            onClick={() => router.push(`/invite/tenant/lease/${formData.leaseId}/sign?token=${formData.token}`)}
+            onClick={() => {
+              if (formData.token) {
+                persistInviteToken(formData.token)
+              }
+              router.replace(`/invite/tenant/lease/${formData.leaseId}/sign`)
+            }}
           >
             Sign Lease Now
           </Button>

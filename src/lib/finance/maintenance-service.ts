@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/db";
-import { Decimal } from "@prisma/client/runtime/library";
 import { CHART_OF_ACCOUNTS } from "./types";
 import { journalService } from "./journal-service";
 import { MaintenanceRequest_status } from "@prisma/client";

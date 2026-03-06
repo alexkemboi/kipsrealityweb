@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Clock, MapPin } from "lucide-react";
+import { ArrowUpRight, Clock } from "lucide-react";
 
 interface ReusableCardProps {
   image: string;

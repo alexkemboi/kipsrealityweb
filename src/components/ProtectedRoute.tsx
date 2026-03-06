@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
                 } catch (error) {
                     console.error('Failed to refresh user:', error);
                     // If refresh fails, redirect to login
-                    router.push('/login');
+                    router.replace('/login');
                 }
             }
             setHasCheckedAuth(true);

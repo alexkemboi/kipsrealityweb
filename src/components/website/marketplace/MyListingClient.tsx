@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { MapPin, Clock, Phone } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MarketplaceItem } from "@/app/data/marketplaceData";
 

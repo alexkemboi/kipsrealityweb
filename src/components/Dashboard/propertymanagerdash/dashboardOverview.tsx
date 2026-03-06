@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import {
 	Building2, Users, Wallet, AlertCircle,
-	Plus, ArrowUpRight, ArrowDownRight, FileText,
-	Home, Sparkles, TrendingUp, DollarSign, Activity, Wrench, Calendar
+	Plus, FileText,
+	Home, TrendingUp, DollarSign, Activity, Wrench, Calendar
 } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";

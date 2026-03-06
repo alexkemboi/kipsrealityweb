@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { generateFullInvoice } from "@/lib/Invoice";
-import type { FullInvoiceInput, Invoice } from "@/app/data/FinanceData";
+import type { Invoice } from "@/app/data/FinanceData";
 
 export default function FullInvoiceButton({ leaseId }: { leaseId: string }) {
   const [loading, setLoading] = useState(false);

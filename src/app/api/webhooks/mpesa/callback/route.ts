@@ -30,17 +30,18 @@ import { TransactionStatus, Payment, Prisma } from "@prisma/client";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        
+
         // Log the incoming webhook for debugging
-        console.log('M-Pesa Webhook Received:', JSON.stringify(body, null, 2));
+        console.log("M-Pesa Webhook Received:", JSON.stringify(body, null, 2));
 
         // Extract STK callback data
         const stkCallback = body?.Body?.stkCallback;
         if (!stkCallback) {
-            console.error('Invalid M-Pesa webhook format:', body);
-            return NextResponse.json({ 
-                error: "Invalid webhook format" 
-            }, { status: 400 });
+            console.error("Invalid M-Pesa webhook format:", body);
+            return NextResponse.json(
+                { error: "Invalid webhook format" },
+                { status: 400 }
+            );
         }
 
         const {
@@ -51,58 +52,75 @@ export async function POST(req: Request) {
             CallbackMetadata
         } = stkCallback;
 
+        if (typeof CheckoutRequestID !== "string" || CheckoutRequestID.length === 0) {
+            return NextResponse.json(
+                { error: "Missing CheckoutRequestID" },
+                { status: 400 }
+            );
+        }
+
+        if (typeof MerchantRequestID !== "string" || MerchantRequestID.length === 0) {
+            return NextResponse.json(
+                { error: "Missing MerchantRequestID" },
+                { status: 400 }
+            );
+        }
+
         // Check if payment was successful
         if (ResultCode !== 0) {
             console.warn(`M-Pesa payment failed: ${ResultDesc} (Code: ${ResultCode})`);
-            
+
             // Update payment status to FAILED if we can find it
             await updatePaymentStatus(CheckoutRequestID, TransactionStatus.FAILED, {
                 errorCode: ResultCode,
                 errorDescription: ResultDesc
             });
-            
-            return NextResponse.json({ 
-                received: true, 
-                message: 'Payment failed - logged' 
+
+            return NextResponse.json({
+                received: true,
+                message: "Payment failed - logged"
             });
         }
 
         // Extract payment details from callback metadata
         const metadata = extractCallbackMetadata(CallbackMetadata);
         if (!metadata) {
-            console.error('Failed to extract callback metadata:', CallbackMetadata);
-            return NextResponse.json({ 
-                error: "Missing payment metadata" 
-            }, { status: 400 });
+            console.error("Failed to extract callback metadata:", CallbackMetadata);
+            return NextResponse.json(
+                { error: "Missing payment metadata" },
+                { status: 400 }
+            );
         }
 
-        // Find payment by CheckoutRequestID (stored in gatewayReference or metadata)
+        // Find payment by CheckoutRequestID
         const payment = await findPaymentByCheckoutId(CheckoutRequestID);
         if (!payment) {
             console.error(`Payment not found for CheckoutRequestID: ${CheckoutRequestID}`);
-            return NextResponse.json({ 
-                error: "Payment not found" 
-            }, { status: 404 });
+            return NextResponse.json({ error: "Payment not found" }, { status: 404 });
         }
 
-        // Update payment with M-Pesa transaction details
-        // Create update data with proper typing
+        // Idempotency: if already settled with same receipt, acknowledge and exit
+        const existingMeta = parseMetadataObject((payment as Payment & { metadata?: unknown }).metadata);
+        if (
+            payment.transactionStatus === TransactionStatus.SETTLED &&
+            payment.gatewayReference === metadata.mpesaReceiptNumber &&
+            existingMeta?.checkoutRequestId === CheckoutRequestID
+        ) {
+            return NextResponse.json({
+                ResultCode: 0,
+                ResultDesc: "Success"
+            });
+        }
+
         const updateData: Prisma.PaymentUpdateInput = {
-            status: TransactionStatus.SETTLED,
-            gatewayReference: metadata.mpesaReceiptNumber,
-            method: 'MPESA' as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-            paidOn: new Date()
+            transactionStatus: TransactionStatus.SETTLED,
+            gatewayReference: metadata.mpesaReceiptNumber
         };
 
-        // Add metadata if it exists
-        const paymentWithMeta = payment as Payment & { metadata?: Record<string, unknown> };
-        const existingMetadata = paymentWithMeta.metadata 
-            ? (typeof paymentWithMeta.metadata === 'string' 
-                ? JSON.parse(paymentWithMeta.metadata) 
-                : paymentWithMeta.metadata)
-            : {};
+        const existingMetadata = toInputJsonObject(
+            parseMetadataObject((payment as Payment & { metadata?: unknown }).metadata)
+        );
 
-        // Create metadata object, filtering out undefined values
         const mpesaMetadata: Record<string, Prisma.InputJsonValue> = {
             ...existingMetadata,
             checkoutRequestId: CheckoutRequestID,
@@ -110,7 +128,6 @@ export async function POST(req: Request) {
             processedAt: new Date().toISOString()
         };
 
-        // Add optional fields only if they are defined
         if (metadata.transactionDate !== undefined) {
             mpesaMetadata.mpesaTransactionDate = metadata.transactionDate;
         }
@@ -133,21 +150,21 @@ export async function POST(req: Request) {
             await financeActions.postPaymentToGL(updatedPayment.id);
             console.log(`✅ M-Pesa Payment ${metadata.mpesaReceiptNumber} Settled & Posted to GL.`);
         } catch (glError) {
-            console.error('Failed to post payment to GL:', glError);
+            console.error("Failed to post payment to GL:", glError);
             // Don't fail the webhook - log and continue
         }
 
         // Send success response to M-Pesa
-        return NextResponse.json({ 
+        return NextResponse.json({
             ResultCode: 0,
             ResultDesc: "Success"
         });
-
     } catch (error) {
         console.error("M-Pesa Webhook Error:", error);
-        return NextResponse.json({ 
-            error: "Webhook processing failed" 
-        }, { status: 500 });
+        return NextResponse.json(
+            { error: "Webhook processing failed" },
+            { status: 500 }
+        );
     }
 }
 
@@ -155,10 +172,10 @@ export async function POST(req: Request) {
  * Extract metadata from M-Pesa callback
  */
 function extractCallbackMetadata(callbackMetadata: unknown) {
-    if (!callbackMetadata || typeof callbackMetadata !== 'object') {
+    if (!callbackMetadata || typeof callbackMetadata !== "object") {
         return null;
     }
-    
+
     const callback = callbackMetadata as Record<string, unknown>;
     if (!callback?.Item || !Array.isArray(callback.Item)) {
         return null;
@@ -173,28 +190,30 @@ function extractCallbackMetadata(callbackMetadata: unknown) {
     } = {};
 
     items.forEach((item: unknown) => {
-        if (!item || typeof item !== 'object') return;
+        if (!item || typeof item !== "object") return;
         const itemObj = item as Record<string, unknown>;
         const name = itemObj.Name;
         const value = itemObj.Value;
-        
+
         switch (name) {
-            case 'Amount':
-                if (typeof value === 'number') metadata.amount = value;
+            case "Amount":
+                if (typeof value === "number") metadata.amount = value;
                 break;
-            case 'MpesaReceiptNumber':
-                if (typeof value === 'string') metadata.mpesaReceiptNumber = value;
+            case "MpesaReceiptNumber":
+                if (typeof value === "string") metadata.mpesaReceiptNumber = value;
                 break;
-            case 'TransactionDate':
-                if (typeof value === 'number') metadata.transactionDate = value;
+            case "TransactionDate":
+                if (typeof value === "number") metadata.transactionDate = value;
                 break;
-            case 'PhoneNumber':
-                if (typeof value === 'number') metadata.phoneNumber = value;
+            case "PhoneNumber":
+                if (typeof value === "number") metadata.phoneNumber = value;
                 break;
         }
     });
 
-    return metadata.amount && metadata.mpesaReceiptNumber ? metadata : null;
+    return metadata.amount !== undefined && metadata.mpesaReceiptNumber
+        ? metadata
+        : null;
 }
 
 /**
@@ -203,7 +222,6 @@ function extractCallbackMetadata(callbackMetadata: unknown) {
  */
 async function findPaymentByCheckoutId(checkoutRequestId: string) {
     try {
-        // First, try to find by gatewayReference (might be the same)
         const paymentByRef = await prisma.payment.findFirst({
             where: {
                 gatewayReference: checkoutRequestId
@@ -214,31 +232,23 @@ async function findPaymentByCheckoutId(checkoutRequestId: string) {
             return paymentByRef;
         }
 
-        // Last resort: search all M-Pesa payments and filter manually
         const allPayments = await prisma.payment.findMany({
             where: {
-                gateway: 'MPESA_DIRECT'
+                gateway: "MPESA_DIRECT"
             }
         });
 
-        return allPayments.find(p => {
-            // Try to parse metadata if it exists
-            const paymentWithMeta = p as Payment & { metadata?: unknown };
-            if (!paymentWithMeta.metadata) return false;
-            
-            try {
-                const meta = typeof paymentWithMeta.metadata === 'string' 
-                    ? JSON.parse(paymentWithMeta.metadata)
-                    : paymentWithMeta.metadata;
-                    
-                return meta?.checkoutRequestId === checkoutRequestId || 
-                       meta?.CheckoutRequestID === checkoutRequestId;
-            } catch {
-                return false;
-            }
+        return allPayments.find((p) => {
+            const meta = parseMetadataObject((p as Payment & { metadata?: unknown }).metadata);
+            if (!meta) return false;
+
+            const checkoutA = typeof meta.checkoutRequestId === "string" ? meta.checkoutRequestId : null;
+            const checkoutB = typeof meta.CheckoutRequestID === "string" ? meta.CheckoutRequestID : null;
+
+            return checkoutA === checkoutRequestId || checkoutB === checkoutRequestId;
         });
     } catch (error) {
-        console.error('Error finding payment by checkout ID:', error);
+        console.error("Error finding payment by checkout ID:", error);
         return null;
     }
 }
@@ -250,36 +260,85 @@ async function updatePaymentStatus(checkoutRequestId: string, status: Transactio
     try {
         const payment = await findPaymentByCheckoutId(checkoutRequestId);
         if (payment) {
-            const paymentWithMeta = payment as Payment & { metadata?: Record<string, unknown> };
-            const currentMeta = paymentWithMeta.metadata 
-                ? (typeof paymentWithMeta.metadata === 'string' 
-                    ? JSON.parse(paymentWithMeta.metadata)
-                    : paymentWithMeta.metadata)
-                : {};
-            
+            const currentMeta = toInputJsonObject(
+                parseMetadataObject((payment as Payment & { metadata?: unknown }).metadata)
+            );
+
             const updateData: Prisma.PaymentUpdateInput = {
-                status
+                transactionStatus: status
             };
-            
-            // Add metadata if field exists
+
             const metadataUpdate: Record<string, Prisma.InputJsonValue> = {
                 ...currentMeta,
                 failedAt: new Date().toISOString()
             };
-            
-            if (errorDetails !== undefined) {
-                metadataUpdate.errorDetails = errorDetails as Prisma.InputJsonValue;
+
+            if (errorDetails !== undefined && isInputJsonValue(errorDetails)) {
+                metadataUpdate.errorDetails = errorDetails;
             }
-            
+
             updateData.metadata = metadataUpdate;
-            
+
             await prisma.payment.update({
                 where: { id: payment.id },
                 data: updateData
             });
+
             console.log(`Updated payment ${payment.id} to status: ${status}`);
         }
     } catch (error) {
-        console.error('Failed to update payment status:', error);
+        console.error("Failed to update payment status:", error);
     }
+}
+
+/**
+ * Parse metadata object
+ */
+function parseMetadataObject(value: unknown): Record<string, unknown> | null {
+    if (value == null) return null;
+
+    if (typeof value === "string") {
+        try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                ? (parsed as Record<string, unknown>)
+                : null;
+        } catch {
+            return null;
+        }
+    }
+
+    if (typeof value === "object" && !Array.isArray(value)) {
+        return value as Record<string, unknown>;
+    }
+
+    return null;
+}
+
+/**
+ * Check if value is a valid InputJsonValue
+ */
+function isInputJsonValue(value: unknown): value is Prisma.InputJsonValue {
+    if (value === null) return true;
+    const t = typeof value;
+    if (t === "string" || t === "number" || t === "boolean") return true;
+    if (Array.isArray(value)) return value.every(isInputJsonValue);
+    if (t === "object") {
+        return Object.values(value as Record<string, unknown>).every(isInputJsonValue);
+    }
+    return false;
+}
+
+/**
+ * Convert object to InputJsonValue
+ */
+function toInputJsonObject(
+    value: Record<string, unknown> | null
+): Record<string, Prisma.InputJsonValue> {
+    if (!value) return {};
+    const out: Record<string, Prisma.InputJsonValue> = {};
+    for (const [k, v] of Object.entries(value)) {
+        if (isInputJsonValue(v)) out[k] = v;
+    }
+    return out;
 }

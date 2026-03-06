@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X, Image as ImageIcon, MapPin, Tag, DollarSign } from "lucide-react";
+import { Upload, X, Image as ImageIcon, MapPin, Tag } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
 export default function ListingForm() {
