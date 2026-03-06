@@ -175,7 +175,7 @@ export async function POST(request: Request) {
       return response;
     }
 
-    const email = parsed.data.email.trim().toLowerCase();
+    const email = parsed.data.email.toLowerCase();
     const password = parsed.data.password;
 
     const user = await prisma.user.findUnique({
@@ -260,18 +260,12 @@ export async function POST(request: Request) {
       }))
     );
 
-    let role = primaryOrgUser?.role ?? 'TENANT';
-
-    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-    if (adminEmail && email === adminEmail) {
-      role = 'SYSTEM_ADMIN';
-    }
-
+    const role = primaryOrgUser?.role ?? 'TENANT';
     const accessToken = generateAccessToken({
       userId: user.id,
       email: user.email,
       role,
-      // If your auth helper supports optional org IDs, prefer undefined/null instead of ''
+      // If your auth helper supports optional org IDs, prefer undefined/null instead of ''.
       organizationId: primaryOrgUser?.organizationId ?? '',
       organizationUserId: primaryOrgUser?.id,
     });
@@ -282,7 +276,7 @@ export async function POST(request: Request) {
 
     const expiresAt = Date.now() + ACCESS_TOKEN_MAX_AGE_SECONDS * 1000;
 
-    // Best-effort audit update; do not fail login if this write fails
+    // Best-effort audit update; do not fail login if this write fails.
     await prisma.user
       .update({
         where: { id: user.id },

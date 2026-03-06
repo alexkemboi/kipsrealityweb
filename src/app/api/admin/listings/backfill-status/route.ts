@@ -51,33 +51,39 @@ export async function POST(req: Request) {
       orgFilter,
     ];
 
-    // availabilityDate in the future => COMING_SOON
-    const comingSoonResult = await prisma.listing.updateMany({
-      where: {
-        AND: [
-          ...baseFilters,
-          { availabilityDate: { gt: now } },
-        ],
-      },
-      data: { statusId: comingSoonStatusId },
-    });
-
-    // availabilityDate null or <= now => ACTIVE
-    const activeResult = await prisma.listing.updateMany({
-      where: {
-        AND: [
-          ...baseFilters,
-          {
-            OR: [
-              { availabilityDate: null },
-              { availabilityDate: { lte: now } },
+    // Perform both updates in a single transaction to avoid race conditions
+    const [comingSoonResult, activeResult] = await prisma.$transaction(
+      async (tx) => {
+        // availabilityDate in the future => COMING_SOON
+        const comingSoon = await tx.listing.updateMany({
+          where: {
+            AND: [
+              ...baseFilters,
+              { availabilityDate: { gt: now } },
             ],
           },
-        ],
-      },
-      data: { statusId: activeStatusId },
-    });
+          data: { statusId: comingSoonStatusId },
+        });
 
+        // availabilityDate null or <= now => ACTIVE
+        const active = await tx.listing.updateMany({
+          where: {
+            AND: [
+              ...baseFilters,
+              {
+                OR: [
+                  { availabilityDate: null },
+                  { availabilityDate: { lte: now } },
+                ],
+              },
+            ],
+          },
+          data: { statusId: activeStatusId },
+        });
+
+        return [comingSoon, active];
+      }
+    );
     return NextResponse.json(
       {
         success: true,

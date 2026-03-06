@@ -2,7 +2,6 @@
 import { prisma } from "@/lib/db";
 import { ListingService } from "@/lib/listing-service";
 import { ListingAction, ListingStatus } from "@/lib/listing-types";
-import { sendEmail } from "@/lib/mail";
 import { auditService } from "@/lib/audit-service";
 import { leaseNotificationService } from "@/lib/lease-notification-service";
 import { Lease_leaseStatus } from "@prisma/client";

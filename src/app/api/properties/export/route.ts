@@ -239,7 +239,7 @@ function generatePropertyCSV(properties: any[], options?: PropertyExportOptions)
         'Occupancy Rate (%)'
     ];
 
-    let columns = [...baseColumns];
+    const columns = [...baseColumns];
     
     // Add listing status columns if data is available
     if (properties.length > 0 && 'listedUnits' in properties[0]) {

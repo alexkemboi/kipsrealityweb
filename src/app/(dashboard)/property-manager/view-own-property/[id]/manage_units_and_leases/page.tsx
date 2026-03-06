@@ -9,8 +9,7 @@ import {
   AlertCircle,
   Clock,
   Eye,
-  PenTool,
-  Building2
+  PenTool
 } from "lucide-react";
 
 interface Tenant {

@@ -6,9 +6,7 @@ import {
   Filter, 
   Download, 
   Search, 
-  Calendar, 
   User, 
-  Activity, 
   ChevronDown,
   ChevronUp,
   FileText,
@@ -31,7 +29,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ListingAuditEntry, ListingAction, ListingStatus } from '@/lib/listing-types'

@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
-  User, Home, FileText, Mail, DollarSign, Calendar,
-  Phone, Search, Eye, Download, Check, X,
-  AlertCircle, Plus, ExternalLink, TrendingUp,
-  Clock, CheckCircle, AlertTriangle, Edit,
+  User, Home, FileText, Mail, DollarSign, Search, Eye, Download, Check, X,
+  AlertCircle, Plus, ExternalLink, TrendingUp, CheckCircle, Edit,
   RefreshCw // Added for resend icon
 } from "lucide-react";
 import {

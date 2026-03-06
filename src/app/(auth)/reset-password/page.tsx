@@ -83,7 +83,17 @@ function ResetPasswordForm() {
       }, 2000);
     } catch (error) {
       console.error('Reset password error:', error);
-      toast.error('Something went wrong. Please try again.');
+      let errorMessage =
+        'We ran into an unexpected problem while resetting your password. Please try again in a moment.';
+
+      if (error instanceof TypeError) {
+        errorMessage =
+          'We were unable to reach the server. Please check your internet connection and try again.';
+      }
+
+      errorMessage += ' If the problem continues, please contact support.';
+
+      toast.error(errorMessage);
       setIsSubmitting(false);
     }
   };

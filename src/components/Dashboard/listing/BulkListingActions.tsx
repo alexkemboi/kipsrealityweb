@@ -5,8 +5,6 @@ import {
   Eye, 
   EyeOff, 
   Pause, 
-  CheckSquare, 
-  Square, 
   MoreHorizontal,
   AlertTriangle,
   CheckCircle,

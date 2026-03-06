@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyAccessToken } from "@/lib/auth";
 import { cookies } from "next/headers";
-import { Decimal } from "@prisma/client/runtime/library";
 import { CHART_OF_ACCOUNTS } from "@/lib/finance/types";
 
 export async function GET(req: Request) {

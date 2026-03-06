@@ -10,7 +10,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fc from 'fast-check'
 import { ListingService } from '@/lib/listing-service'
-import { ListingStatus, CreateListingData, BulkListingActionType } from '@/lib/listing-types'
+import { ListingStatus, BulkListingActionType } from '@/lib/listing-types'
 
 // Mock the database and external dependencies
 vi.mock('@/lib/db', () => ({

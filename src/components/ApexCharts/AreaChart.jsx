@@ -1,9 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ApexOptions } from "apexcharts";
-import type { ApexAxisChartSeries } from "apexcharts";
 import { useMemo } from "react";
+
+/** @type {typeof import("apexcharts").ApexAxisChartSeries} */
 
 const DynamicReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -19,21 +19,21 @@ const DynamicReactApexChart = dynamic(() => import("react-apexcharts"), {
 });
 
 export default function AreaChart() {
-  const series = useMemo<ApexAxisChartSeries>(
+  const series = useMemo(
     () => [
       {
-        name: "Series 1",
+        name: "Credit transactions",
         data: [31, 40, 28, 51, 42, 109, 100],
       },
       {
-        name: "Series 2",
+        name: "Debit transactions",
         data: [11, 32, 45, 32, 34, 52, 41],
       },
     ],
     []
   );
 
-  const options = useMemo<ApexOptions>(
+  const options = useMemo(
     () => ({
       chart: {
         type: "area",

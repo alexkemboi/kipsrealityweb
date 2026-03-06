@@ -1,7 +1,7 @@
 // app/dashboard/services/ServiceCrudWrapper.tsx
 import { prisma } from "@/lib/db";
 import ServiceCrud from "./ServiceCrud";
-import { Category, Service } from "../../type";
+import { Category } from "../../type";
 
 export default async function ServiceCrudWrapper() {
   const categoriesFromDB = await prisma.categories.findMany({

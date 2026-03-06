@@ -2,7 +2,6 @@
 
 import { JobCard } from './JobCard';
 import { Jobs } from '@/app/data/jobData';
-import Footer from '../website/Footer';
 
 interface JobsClientPageProps {
   initialJobs: Jobs[];

@@ -2,17 +2,12 @@
 
 import React, { useState } from 'react'
 import {
-  Eye,
   EyeOff,
   PauseCircle,
   Rocket,
   MoreHorizontal,
-  Building2,
-  CheckCircle,
-  Clock
+  Building2
 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,

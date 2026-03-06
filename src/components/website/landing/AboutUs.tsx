@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
 import { FlipWords } from "../../ui/flip-words";
-import aboutBg from "@/assets/hero-cityscape.jpg";
 import { AboutUs as AboutUsType } from "@/app/data/AboutUsData";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

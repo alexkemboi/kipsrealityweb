@@ -1,4 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+
+// Load test env vars for local E2E runs while preserving explicit CI env.
+const envFromFile = dotenv.config({ path: ".env.test", override: false }).parsed ?? {};
+
+const appBaseUrl = process.env.NEXTAUTH_URL || "http://127.0.0.1:3000";
+
+process.env.NEXTAUTH_URL = appBaseUrl;
+process.env.NEXT_PUBLIC_API_URL = appBaseUrl;
 
 const isCI = !!process.env.CI;
 
@@ -11,10 +20,10 @@ export default defineConfig({
   reporter: isCI ? [["html", { open: "never" }], ["github"]] : [["html"]],
 
   use: {
-    baseURL: process.env.NEXTAUTH_URL || "http://localhost:3000",
-    trace: "on-first-retry",
+    baseURL: appBaseUrl,
+    trace: isCI ? "retain-on-failure" : "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: isCI ? "off" : "retain-on-failure",
   },
 
   projects: [
@@ -70,9 +79,18 @@ export default defineConfig({
   webServer: {
     // CI runs production server -> workflow MUST run `npm run build` first
     command: "npm run dev",
-    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
+    url: appBaseUrl,
+    env: {
+      ...process.env,
+      ...envFromFile,
+      HOSTNAME: "127.0.0.1",
+      PORT: "3000",
+      NEXTAUTH_URL: appBaseUrl,
+      NEXT_PUBLIC_API_URL: appBaseUrl,
+      DATABASE_URL: process.env.DATABASE_URL || envFromFile.DATABASE_URL || "",
+    },
     reuseExistingServer: !isCI,
-    timeout: 120_000,
+    timeout: 240_000,
     stdout: "pipe",
     stderr: "pipe",
   },

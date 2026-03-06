@@ -212,7 +212,7 @@ export class ListingSanitizer {
         } = options;
 
         // Convert to number
-        let num = Number(input);
+        const num = Number(input);
 
         // Validation checks
         if (isNaN(num) || !isFinite(num)) {

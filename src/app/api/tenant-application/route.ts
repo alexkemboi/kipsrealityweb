@@ -5,7 +5,6 @@ import {
   sendTenantApplicationNotification, 
   sendApplicationConfirmation 
 } from "@/lib/mail-service";
-import { APP_NAME } from "@/lib/constants";
 import { encryptSSN } from '@/lib/encryption';
 
 export async function POST(request: Request) {

@@ -2,11 +2,8 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Image from "next/image";
-import aboutBg from "@/assets/hero-cityscape.jpg";
 import { contactSchema, ContactData } from "@/app/data/ContactData";
-import { useState } from "react";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface ContactProps {

@@ -73,10 +73,10 @@ export async function POST(request: Request) {
     // Hash outside the transaction for performance
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const maxRetries = 3;
+    const MAX_TRANSACTION_RETRIES = 3;
     let lastError: unknown = null;
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt++) {
       try {
         const result = await prisma.$transaction(
           async (tx) => {
@@ -181,18 +181,26 @@ export async function POST(request: Request) {
             if (existingUser) {
               // Safer behavior:
               // - update profile data
-              // - set password (invite onboarding flow)
+              // - set password only if the user does not already have one
               // - reactivate account and verify email
+              const updateData: Prisma.UserUpdateInput = {
+                firstName,
+                lastName,
+                phone,
+                status: "ACTIVE",
+                emailVerified: new Date(),
+              };
+
+              // Do not overwrite an existing password via invite acceptance.
+              // Only set the password if this is an invite-onboarded user who
+              // does not yet have a password.
+              if (!existingUser.passwordHash) {
+                updateData.passwordHash = hashedPassword;
+              }
+
               userRecord = await tx.user.update({
                 where: { id: existingUser.id },
-                data: {
-                  passwordHash: hashedPassword,
-                  firstName,
-                  lastName,
-                  phone,
-                  status: "ACTIVE",
-                  emailVerified: new Date(),
-                },
+                data: updateData,
                 select: {
                   id: true,
                   email: true,
@@ -239,6 +247,11 @@ export async function POST(request: Request) {
                   role: invite.role,
                 },
               });
+            } else if (existingOrgUser.role !== invite.role) {
+              // Prevent unexpected role discrepancies between existing membership and invite
+              throw new Error(
+                "User already belongs to this organization with a different role"
+              );
             }
 
             // 5) Link tenant to lease if this invite is tied to a lease
@@ -339,7 +352,7 @@ export async function POST(request: Request) {
           }
         }
 
-        if (attempt < maxRetries && isRetryableTransactionError(error)) {
+        if (attempt < MAX_TRANSACTION_RETRIES && isRetryableTransactionError(error)) {
           const delayMs = 200 * Math.pow(2, attempt - 1); // 200, 400, 800
           await sleep(delayMs);
           continue;

@@ -3,7 +3,7 @@
  * Tests input validation, role-based permissions, data sanitization, and rate limiting
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { 
     ListingValidationService, 
     UserRole, 
@@ -20,7 +20,6 @@ import {
     PathSanitizer,
     SecurityAuditor 
 } from '@/lib/listing-sanitizer';
-import { ListingSecurityMiddleware } from '@/lib/listing-security-middleware';
 import { getSecurityPolicy, requiresAuth, getRequiredRole } from '@/lib/listing-security-config';
 
 describe('Listing Validation Service', () => {

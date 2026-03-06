@@ -14,9 +14,7 @@ import { ListingService } from '@/lib/listing-service'
 import { 
   BulkListingOperation, 
   BulkListingActionType, 
-  ListingStatus,
-  CreateListingData,
-  BulkResult
+  ListingStatus
 } from '@/lib/listing-types'
 
 // Mock Prisma

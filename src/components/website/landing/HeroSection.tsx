@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, PlayCircle, ShieldCheck, Zap } from "lucide-react";
+import { PlayCircle, ShieldCheck, Zap } from "lucide-react";
 import ClientAnimations from "./ClientAnimation";
 
 interface HeroData {

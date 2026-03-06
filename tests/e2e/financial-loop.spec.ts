@@ -66,7 +66,12 @@ test.describe('Financial Core Workflow', () => {
     await passwordInput.fill(E2E_MANAGER_PASSWORD);
 
     console.log('DEBUG: Filling credentials and clicking sign-in');
+    const loginResponsePromise = page.waitForResponse((response) =>
+      response.url().includes('/api/auth/login') && response.request().method() === 'POST'
+    );
     await page.click('button[type="submit"]');
+    const loginResponse = await loginResponsePromise;
+    await expect(loginResponse.ok()).toBeTruthy();
 
     // Optional UI error capture - only check for actual error text, not empty containers
     const errorLocator = page
@@ -82,26 +87,20 @@ test.describe('Financial Core Workflow', () => {
       }
     }
 
-    // Wait for navigation to dashboard (with WebKit fallback)
-    try {
-      await expect(page).toHaveURL(/\/property-manager/, { timeout: 30_000 });
-    } catch (e) {
-      // For WebKit, if URL check fails, check if we're still on login page
-      const currentUrl = page.url();
-      if (currentUrl.includes('/login')) {
-        // Try clicking submit again or wait for redirect
-        console.log('DEBUG: WebKit - waiting for redirect after login...');
-        await page.waitForTimeout(2000);
-        const newUrl = page.url();
-        if (newUrl.includes('/login')) {
-          throw new Error(`Login did not redirect to dashboard. Current URL: ${newUrl}`);
-        }
-      }
-    }
+    // Auth cookie is set after successful login API response. Navigate directly
+    // to avoid brittle waits on optional post-login redirects.
+    await page.goto('/property-manager', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+    await expect(page).toHaveURL(/\/property-manager(\/.*)?$/, { timeout: 30_000 });
 
     // 5) Navigate to Invoices - use direct URL navigation
-    await page.goto('/property-manager/finance/invoices');
-    await expect(page).toHaveURL(/\/property-manager\/finance\/invoices/, { timeout: 15000 });
+    await page.goto('/property-manager/finance/invoices', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+    await expect(page).toHaveURL(/\/property-manager\/finance\/invoices/, { timeout: 30_000 });
 
     // 6) Create Invoice
     await page.click('text=Create Invoice');

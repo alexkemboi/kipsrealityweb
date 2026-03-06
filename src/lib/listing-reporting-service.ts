@@ -98,17 +98,14 @@ export class ListingReportingService {
                         tenantApplications: true
                     }
                 },
-                status: true,
-                auditEntries: {
-                    orderBy: { timestamp: 'asc' }
-                }
+                status: true
             }
         });
 
         if (!listing) return null;
 
         const applications = listing.unit?.tenantApplications || [];
-        const auditEntries = listing.auditEntries || [];
+        const auditEntries: Array<{ timestamp: Date }> = [];
         
         // Calculate days listed
         const createdAt = listing.createdAt;
@@ -122,7 +119,7 @@ export class ListingReportingService {
         // Calculate average time to first application
         let averageTimeToApplication = 0;
         if (applications.length > 0) {
-            const firstApplication = applications.sort((a: any, b: any) => a.createdAt.getTime() - b.createdAt.getTime())[0];
+            const firstApplication = [...applications].sort((a: any, b: any) => a.createdAt.getTime() - b.createdAt.getTime())[0];
             const timeToFirstApp = (firstApplication.createdAt.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
             averageTimeToApplication = timeToFirstApp;
         }
@@ -165,7 +162,6 @@ export class ListingReportingService {
                     include: {
                         listing: {
                             include: {
-                                auditEntries: true,
                                 status: true
                             }
                         },
@@ -178,22 +174,23 @@ export class ListingReportingService {
 
         if (!property) return null;
 
-        const units = property.units;
-        const totalUnits = units.length;
-        const listedUnits = units.filter(unit => unit.listing && 
+        const propertyUnits = property.units;
+
+        const totalUnits = propertyUnits.length;
+        const listedUnits = propertyUnits.filter(unit => unit.listing && 
             this.mapPrismaStatusToEnum(unit.listing.status?.name) === ListingStatus.ACTIVE).length;
         const privateUnits = totalUnits - listedUnits;
 
         // Calculate total applications across all units
-        const totalApplications = units.reduce((sum, unit) => sum + unit.tenantApplications.length, 0);
+        const totalApplications = propertyUnits.reduce((sum, unit) => sum + unit.tenantApplications.length, 0);
         
         // Calculate conversion rate
-        const approvedApplications = units.reduce((sum, unit) => 
-            sum + unit.tenantApplications.filter(app => app.status === 'APPROVED').length, 0);
+        const approvedApplications = propertyUnits.reduce((sum, unit) => 
+            sum + unit.tenantApplications.filter((app) => app.status === 'APPROVED').length, 0);
         const conversionRate = totalApplications > 0 ? (approvedApplications / totalApplications) * 100 : 0;
 
         // Calculate average days to lease
-        const leasedUnits = units.filter(unit => unit.leases.length > 0);
+        const leasedUnits = propertyUnits.filter(unit => unit.leases.length > 0);
         let averageDaysToLease = 0;
         if (leasedUnits.length > 0) {
             const totalDays = leasedUnits.reduce((sum, unit) => {
@@ -209,14 +206,14 @@ export class ListingReportingService {
         }
 
         // Calculate total revenue
-        const totalRevenue = units.reduce((sum, unit) => {
-            const approvedApps = unit.tenantApplications.filter(app => app.status === 'APPROVED');
-            return sum + approvedApps.reduce((appSum, app) => appSum + (unit.listing?.price || 0), 0);
+        const totalRevenue = propertyUnits.reduce((sum, unit) => {
+            const approvedApps = unit.tenantApplications.filter((app) => app.status === 'APPROVED');
+            return sum + approvedApps.reduce((appSum, _app) => appSum + (unit.listing?.price || 0), 0);
         }, 0);
 
         // Calculate occupancy rate
-        const occupiedUnits = units.filter(unit => 
-            unit.leases.some(lease => lease.leaseStatus === 'ACTIVE')).length;
+        const occupiedUnits = propertyUnits.filter(unit => 
+            unit.leases.some((lease) => lease.leaseStatus === 'ACTIVE')).length;
         const occupancyRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100 : 0;
 
         return {
@@ -255,11 +252,11 @@ export class ListingReportingService {
                 unit: {
                     include: {
                         property: true,
-                        tenantApplications: true
+                        tenantApplications: true,
+                        leases: true
                     }
                 },
-                status: true,
-                auditEntries: true
+                status: true
             }
         });
 
@@ -280,7 +277,7 @@ export class ListingReportingService {
             sum + (listing.unit?.tenantApplications?.length || 0), 0);
         
         const totalConversions = listings.reduce((sum, listing) => 
-            sum + (listing.unit?.tenantApplications?.filter(app => app.status === 'APPROVED').length || 0), 0);
+            sum + (listing.unit?.tenantApplications?.filter((app) => app.status === 'APPROVED').length || 0), 0);
         
         const overallConversionRate = totalApplications > 0 ? (totalConversions / totalApplications) * 100 : 0;
 
@@ -401,7 +398,7 @@ export class ListingReportingService {
                     include: {
                         listing: {
                             include: {
-                                auditEntries: true
+                                status: true
                             }
                         },
                         tenantApplications: true,
@@ -479,18 +476,13 @@ export class ListingReportingService {
                         leases: true
                     }
                 },
-                status: true,
-                auditEntries: {
-                    orderBy: { timestamp: 'desc' },
-                    take: 10
-                }
+                status: true
             }
         });
 
         return listings.map(listing => {
             const applications = listing.unit?.tenantApplications || [];
             const leases = listing.unit?.leases || [];
-            const auditEntries = listing.auditEntries || [];
 
             // Calculate metrics
             const now = new Date();
@@ -511,15 +503,13 @@ export class ListingReportingService {
                 price: listing.price,
                 status: listing.status?.name,
                 createdAt: listing.createdAt,
-                availabilityDate: listing.availabilityDate,
-                expirationDate: listing.expirationDate,
                 daysListed,
                 applicationCount,
                 approvedApplications,
                 conversionRate,
                 hasActiveLease,
-                statusChanges: auditEntries.length,
-                lastStatusChange: auditEntries[0]?.timestamp,
+                statusChanges: 0,
+                lastStatusChange: listing.createdAt,
                 totalRevenue: approvedApplications * (listing.price || 0)
             };
         });
@@ -586,7 +576,7 @@ export class ListingReportingService {
             'Total Revenue'
         ];
 
-        let columns = [...baseColumns];
+        const columns = [...baseColumns];
         
         // Add custom fields if specified
         if (options?.customFields) {

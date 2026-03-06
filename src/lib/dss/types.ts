@@ -1,4 +1,4 @@
-import { DssParticipantRole, DssDocumentStatus } from "@prisma/client";
+import { DssParticipantRole } from "@prisma/client";
 
 // Define the hierarchy of signing power if needed
 export const ROLE_HIERARCHY: Record<DssParticipantRole, number> = {

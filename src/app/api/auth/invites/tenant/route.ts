@@ -204,37 +204,43 @@ export async function GET() {
       include: { invitedBy: true, lease: { include: { unit: true } } },
     });
 
-    const mappedInvites = await Promise.all(
-      invites.map(async inv => {
-        const user = await prisma.user.findFirst({
+    // Batch-fetch users for all invite emails to avoid N+1 queries
+    const inviteEmails = invites.map(inv => inv.email);
+
+    const users = inviteEmails.length
+      ? await prisma.user.findMany({
           where: {
-            email: inv.email,
+            email: { in: inviteEmails },
             organizationUsers: { some: { organizationId: payload.organizationId } },
           },
-        });
+        })
+      : [];
 
-        return {
-          id: inv.id,
-          token: inv.token,
-          email: inv.email,
-          accepted: inv.accepted,
-          createdAt: inv.createdAt,
-          firstName: user?.firstName || "",
-          lastName: user?.lastName || "",
-          phone: user?.phone || "",
-          status: user?.status || "INACTIVE",
-          leaseId: inv.leaseId,
-          lease: inv.lease ? {
-            id: inv.lease.id,
-            startDate: inv.lease.startDate,
-            endDate: inv.lease.endDate,
-            rentAmount: inv.lease.rentAmount,
-            unit: inv.lease.unit ? { id: inv.lease.unit.id, unitNumber: inv.lease.unit.unitNumber } : null,
-          } : null,
-        };
-      })
-    );
+    const userByEmail = new Map(users.map(user => [user.email, user]));
 
+    const mappedInvites = invites.map(inv => {
+      const user = userByEmail.get(inv.email);
+
+      return {
+        id: inv.id,
+        token: inv.token,
+        email: inv.email,
+        accepted: inv.accepted,
+        createdAt: inv.createdAt,
+        firstName: user?.firstName || "",
+        lastName: user?.lastName || "",
+        phone: user?.phone || "",
+        status: user?.status || "INACTIVE",
+        leaseId: inv.leaseId,
+        lease: inv.lease ? {
+          id: inv.lease.id,
+          startDate: inv.lease.startDate,
+          endDate: inv.lease.endDate,
+          rentAmount: inv.lease.rentAmount,
+          unit: inv.lease.unit ? { id: inv.lease.unit.id, unitNumber: inv.lease.unit.unitNumber } : null,
+        } : null,
+      };
+    });
     return NextResponse.json({ invites: mappedInvites });
   } catch (error) {
     console.error("List invites error:", error);

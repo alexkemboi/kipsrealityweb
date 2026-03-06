@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { cookies } from "next/headers";
-import { Decimal } from "@prisma/client/runtime/library";
 
 export async function GET(req: Request) {
     try {

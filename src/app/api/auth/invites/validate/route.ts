@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       { status: 200 }
     );
   } catch (error: unknown) {
-    console.error("[GET /api/invite/validate]", error);
+    console.error("[GET /api/auth/invites/validate]", error);
 
     return NextResponse.json(
       { valid: false, error: "Internal Server Error" },

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { computeDocumentHash, verifyDocumentIntegrity } from "./hashing";
+import { computeDocumentHash } from "./hashing";
 import { getNextSigner } from "./workflow";
 import { DssParticipantRole, DssDocumentStatus, DssSigningMode, DssParticipant } from "@prisma/client";
 import fs from "fs/promises";

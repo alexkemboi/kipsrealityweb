@@ -1,6 +1,6 @@
 "use client"
 import React from 'react';
-import { FileText, Link as LinkIcon, Building2 } from 'lucide-react';
+import { FileText, Building2 } from 'lucide-react';
 
 interface JournalLine {
     id: string;

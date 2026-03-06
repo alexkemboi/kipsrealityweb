@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Building2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { Building2, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { UnitWithListingStatus } from '@/lib/listing-types'
 
 interface ListingDecisionModalProps {

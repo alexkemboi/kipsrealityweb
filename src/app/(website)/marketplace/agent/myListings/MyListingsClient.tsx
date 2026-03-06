@@ -14,7 +14,6 @@ import {
     Plus,
     Search,
     SquarePen,
-    Trash2,
     Archive,
     Upload,
 } from "lucide-react";

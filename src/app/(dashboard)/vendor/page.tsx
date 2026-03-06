@@ -15,7 +15,6 @@ import {
   Settings, 
   Wrench,
   CheckCircle,
-  AlertCircle,
   TrendingUp
 } from "lucide-react";
 

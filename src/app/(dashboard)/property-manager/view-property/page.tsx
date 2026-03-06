@@ -1,5 +1,4 @@
 import Navbar from "@/components/Dashboard/Navbar/Navbar";
-import Footer from "@/components/website/Footer";
 import PropertyCards from "@/components/PropertyManagement/ViewProperty";
 
 export default function CategoriesPage() {

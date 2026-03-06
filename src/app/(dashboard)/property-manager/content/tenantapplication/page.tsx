@@ -1,9 +1,9 @@
-import AdminTenantApplications from "@/components/Dashboard/propertymanagerdash/tenants/TenantApplication";
+import PropertyManagerTenantApplications from "@/components/Dashboard/propertymanagerdash/tenants/TenantApplication";
 
 export default function TenantApplicationPage() {
   return (
     <div>
-      <AdminTenantApplications/>
+      <PropertyManagerTenantApplications/>
     </div>
   );
 }

@@ -3,8 +3,8 @@
  * Tests fraud detection rules, scoring, and decision making
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { fraudDetectionService, FraudDetectionService, FraudDetectionContext } from '@/lib/payment/fraud-detection-service';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { FraudDetectionService, FraudDetectionContext } from '@/lib/payment/fraud-detection-service';
 import { PaymentRequest } from '@/lib/payment/types';
 
 describe('Fraud Detection Service', () => {
@@ -229,6 +229,16 @@ describe('Fraud Detection Service', () => {
   });
 
   describe('Rule: Email Domain Validation', () => {
-    // TODO: Implement email domain validation tests
+    it('should flag disposable email domains', async () => {
+      mockPaymentRequest.user.email = 'user@mailinator.com';
+
+      const report = await service.checkPayment(mockPaymentRequest, mockContext);
+      const emailRule = report.results.find(r => r.ruleName === 'EMAIL_DOMAIN_VALIDATION');
+
+      expect(emailRule).toBeDefined();
+      expect(emailRule?.passed).toBe(false);
+      expect(emailRule?.score).toBe(80);
+      expect(emailRule?.message).toContain('disposable/temporary');
+    });
   });
 });

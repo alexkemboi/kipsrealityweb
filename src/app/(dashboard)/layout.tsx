@@ -52,14 +52,14 @@ export default function DashboardLayout({
 
     // If user doesn't have a valid role mapping, redirect to login
     if (!allowedPath) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
     // Check if current path is allowed for user's role
     if (!hasAccessToPath(pathname, userRole)) {
       // Redirect to user's home dashboard
-      router.push(allowedPath);
+      router.replace(allowedPath);
     }
   }, [user, authLoading, isHydrated, pathname, router]);
 

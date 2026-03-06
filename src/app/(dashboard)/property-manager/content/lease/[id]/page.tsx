@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import FullInvoiceButton from "@/components/Dashboard/propertymanagerdash/invoice/CreateInvoice";
 import ManualInvoiceForm from "@/components/Dashboard/propertymanagerdash/invoice/ManualInvoice";
 import UtilityInvoice from "@/components/Dashboard/propertymanagerdash/invoice/UtilityInvoice";
-import ManualUtilityInvoice from "@/components/Dashboard/propertymanagerdash/invoice/ManualUtility";
 
 interface Lease {
   id: string;

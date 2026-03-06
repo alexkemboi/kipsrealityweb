@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import logo from '@/assets/rf_logo.jpeg';
-import Link from 'next/link';
 
 type LogoProps = {
     className?: string;

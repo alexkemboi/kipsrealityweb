@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Plus, Trash2, Edit, Layers, Eye, ArrowLeft, RefreshCw, Image, Layout } from 'lucide-react'
+import { Plus, Trash2, Edit, Layers, Eye, ArrowLeft, RefreshCw, ImageIcon, Layout } from 'lucide-react'
 
 interface HeroSection {
   id: number
@@ -168,7 +168,7 @@ export default function HeroSectionAdmin() {
                 
                 <div className="bg-[#15386a]/50 backdrop-blur-sm rounded-lg p-3 sm:p-4 border border-[#30D5C8]/10 hover:border-[#30D5C8]/30 transition-all">
                   <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-                    <Image className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+                    <ImageIcon className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
                     <div className="text-xl sm:text-2xl font-bold text-purple-400">{stats.withImages}</div>
                   </div>
                   <div className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wide">With Media</div>

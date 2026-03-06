@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { fetchInvoices } from "@/lib/Invoice";
-import { GroupedInvoice, Invoice, Payment } from "@/app/data/FinanceData";
+import { GroupedInvoice, Payment } from "@/app/data/FinanceData";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Link from "next/link";

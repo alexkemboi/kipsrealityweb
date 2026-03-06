@@ -1,7 +1,7 @@
 // src/app/(dashboard)/property-manager/view-own-property/[id]/units/page.tsx
 import { fetchUnits } from "@/lib/units";
 import Link from "next/link";
-import { Building, Bed, Bath, DollarSign, Users, Home, Wifi, Utensils, Eye } from "lucide-react";
+import { Building, Bed, Bath, DollarSign, Users, Home, Utensils, Eye } from "lucide-react";
 import { ListingStatus } from "@/lib/listing-types";
 
 export default async function ManageUnitsPage({
