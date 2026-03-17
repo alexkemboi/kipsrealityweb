@@ -6,7 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-# Prevent overlapping deploys (important for production stability)
 concurrency:
   group: production-deploy
   cancel-in-progress: false
@@ -24,40 +23,44 @@ jobs:
       APP_DIR: /home/kipsreality/kipsrealityweb
 
     steps:
-      # NOTE: No checkout needed — deployment happens on the server using git fetch/reset
-
       - name: Validate required secrets
         shell: bash
+        env:
+          SSH_PRIVATE_KEY: "${{ secrets.SSH_PRIVATE_KEY }}"
+          SERVER_HOST: "${{ secrets.SERVER_HOST }}"
+          SERVER_USER: "${{ secrets.SERVER_USER }}"
+          SSH_KNOWN_HOSTS: "${{ secrets.SSH_KNOWN_HOSTS }}"
         run: |
           set -euo pipefail
-          test -n "${{ secrets.SSH_PRIVATE_KEY }}"
-          test -n "${{ secrets.SERVER_HOST }}"
-          test -n "${{ secrets.SERVER_USER }}"
-          test -n "${{ secrets.SSH_KNOWN_HOSTS }}"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SERVER_HOST"
+          test -n "$SERVER_USER"
+          test -n "$SSH_KNOWN_HOSTS"
 
       - name: Set up SSH key and known_hosts
         shell: bash
+        env:
+          SSH_PRIVATE_KEY: "${{ secrets.SSH_PRIVATE_KEY }}"
+          SSH_KNOWN_HOSTS: "${{ secrets.SSH_KNOWN_HOSTS }}"
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          # Use modern key filename (works even if content is RSA/ED25519)
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy_key
+          chmod 600 ~/.ssh/id_deploy_key
 
-          # Strict host key pinning (recommended for production)
-          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
       - name: Test SSH connectivity
         shell: bash
         env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_HOST: "${{ secrets.SERVER_HOST }}"
+          SERVER_USER: "${{ secrets.SERVER_USER }}"
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_ed25519 \
+          ssh -i ~/.ssh/id_deploy_key \
             -o BatchMode=yes \
             -o ConnectTimeout=15 \
             -o StrictHostKeyChecking=yes \
@@ -67,77 +70,73 @@ jobs:
       - name: Deploy to server
         shell: bash
         env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          SERVER_HOST: "${{ secrets.SERVER_HOST }}"
+          SERVER_USER: "${{ secrets.SERVER_USER }}"
+          GITHUB_SHA: "${{ github.sha }}"
+          GITHUB_REF_NAME: "${{ github.ref_name }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+          APP_DIR: "${{ env.APP_DIR }}"
         run: |
           set -euo pipefail
 
           echo "Connecting to ${SERVER_USER}@${SERVER_HOST}..."
           echo "Deploying commit ${GITHUB_SHA} from branch ${GITHUB_REF_NAME}"
 
-          ssh -i ~/.ssh/id_ed25519 \
+          ssh -i ~/.ssh/id_deploy_key \
             -o BatchMode=yes \
             -o ConnectTimeout=20 \
             -o StrictHostKeyChecking=yes \
-            "${SERVER_USER}@${SERVER_HOST}" << EOF
-            set -euo pipefail
+            "${SERVER_USER}@${SERVER_HOST}" <<EOF
+          set -euo pipefail
 
-            APP_DIR="${APP_DIR}"
-            REPO_URL="https://github.com/${GITHUB_REPOSITORY}.git"
-            TARGET_BRANCH="${GITHUB_REF_NAME}"
-            TARGET_COMMIT="${GITHUB_SHA}"
+          APP_DIR="${APP_DIR}"
+          TARGET_BRANCH="${GITHUB_REF_NAME}"
+          TARGET_COMMIT="${GITHUB_SHA}"
 
-            echo "==> Server: \$(hostname)"
-            echo "==> App dir: \$APP_DIR"
-            echo "==> Branch: \$TARGET_BRANCH"
-            echo "==> Commit: \$TARGET_COMMIT"
+          echo "==> Server: \$(hostname)"
+          echo "==> App dir: \$APP_DIR"
+          echo "==> Branch: \$TARGET_BRANCH"
+          echo "==> Commit: \$TARGET_COMMIT"
 
-            if [ ! -d "\$APP_DIR" ]; then
-              echo "ERROR: App directory not found: \$APP_DIR"
-              exit 1
-            fi
+          if [ ! -d "\$APP_DIR" ]; then
+            echo "ERROR: App directory not found: \$APP_DIR"
+            exit 1
+          fi
 
-            cd "\$APP_DIR"
+          cd "\$APP_DIR"
 
-            # Safety check: ensure this is a git repo
-            if [ ! -d .git ]; then
-              echo "ERROR: \$APP_DIR is not a git repository"
-              exit 1
-            fi
+          if [ ! -d .git ]; then
+            echo "ERROR: \$APP_DIR is not a git repository"
+            exit 1
+          fi
 
-            # Optional sanity check: show current remote
-            CURRENT_REMOTE=\$(git remote get-url origin || true)
-            echo "==> Current origin: \$CURRENT_REMOTE"
+          CURRENT_REMOTE=\$(git remote get-url origin || true)
+          echo "==> Current origin: \$CURRENT_REMOTE"
 
-            echo "==> Fetching latest code..."
-            git fetch --prune origin
+          echo "==> Fetching latest code..."
+          git fetch --prune origin
 
-            # Verify the commit exists after fetch (extra safety)
-            git rev-parse --verify "\$TARGET_COMMIT^{commit}" >/dev/null 2>&1 || {
-              echo "ERROR: Target commit not found: \$TARGET_COMMIT"
-              exit 1
-            }
+          git rev-parse --verify "\$TARGET_COMMIT^{commit}" >/dev/null 2>&1 || {
+            echo "ERROR: Target commit not found: \$TARGET_COMMIT"
+            exit 1
+          }
 
-            echo "==> Checking out branch..."
-            git checkout -f "\$TARGET_BRANCH"
+          echo "==> Checking out branch..."
+          git checkout -f "\$TARGET_BRANCH"
 
-            echo "==> Resetting to exact commit..."
-            git reset --hard "\$TARGET_COMMIT"
+          echo "==> Resetting to exact commit..."
+          git reset --hard "\$TARGET_COMMIT"
 
-            echo "==> Running deploy script..."
-            chmod +x deploy.sh
+          echo "==> Running deploy script..."
+          chmod +x deploy.sh
 
-            # If 'timeout' exists, prevent hanging deployments
-            if command -v timeout >/dev/null 2>&1; then
-              timeout 900 ./deploy.sh
-            else
-              ./deploy.sh
-            fi
+          if command -v timeout >/dev/null 2>&1; then
+            timeout 900 ./deploy.sh
+          else
+            ./deploy.sh
+          fi
 
-            echo "==> Deployment completed successfully"
+          echo "==> Deployment completed successfully"
           EOF
 
       - name: Deployment summary
@@ -157,6 +156,7 @@ jobs:
 
       - name: Success log
         if: success()
+        shell: bash
         run: |
           echo "✅ Production deploy succeeded"
           echo "Repository: ${{ github.repository }}"
